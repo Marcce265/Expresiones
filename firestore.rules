@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Las consultas públicas deben incluir where('isActive', isEqualTo: true).
+    // Firestore valida la consulta completa y no filtra documentos después.
+    function isActiveCatalogDocument() {
+      return resource.data.isActive == true;
+    }
+
+    match /categories/{categoryId} {
+      allow get, list: if isActiveCatalogDocument();
+      allow create, update, delete: if false;
+    }
+
+    match /products/{productId} {
+      allow get, list: if isActiveCatalogDocument();
+      allow create, update, delete: if false;
+    }
+
+    // Único documento de configuración que puede leer el cliente.
+    match /settings/public {
+      allow get: if true;
+      allow list, create, update, delete: if false;
+    }
+
+    // Un único documento compacto con el horizonte público de fechas.
+    match /availability/public {
+      allow get: if true;
+      allow list, create, update, delete: if false;
+    }
+
+    // Cualquier colección o subcolección no declarada queda cerrada.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,3618 @@
+[
+  {
+    "id": "limpiapipas-premium-8mm",
+    "name": "Limpiapipas premium 8 mm",
+    "category": "materials",
+    "description": "Paquete de 100 cheniles para elaborar rosas eternas.",
+    "sku": "XS",
+    "unitLabel": "paquete",
+    "basePrice": 5,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 12,
+        "unitPrice": 4.5,
+        "label": "Desde 12"
+      },
+      {
+        "minQuantity": 100,
+        "unitPrice": 4.3,
+        "label": "Desde 100"
+      },
+      {
+        "minQuantity": 200,
+        "unitPrice": 4,
+        "label": "Desde 200"
+      }
+    ],
+    "variants": [
+      {
+        "id": "verde-militar",
+        "name": "Verde militar",
+        "sku": "XS-1",
+        "colorHex": "#435529",
+        "imageUrl": "assets/images/limpiapipas_verde_militar_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "001",
+          "sourceImage": "assets/images/canva_raw/canva_raw_001.webp"
+        }
+      },
+      {
+        "id": "verde-pasto",
+        "name": "Verde pasto",
+        "sku": "XS-6",
+        "colorHex": "#0F5E36",
+        "imageUrl": "assets/images/limpiapipas_verde_pasto_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "002",
+          "sourceImage": "assets/images/canva_raw/canva_raw_002.webp"
+        }
+      },
+      {
+        "id": "verde-agua",
+        "name": "Verde agua",
+        "sku": "XS-7",
+        "colorHex": "#A3DF7B",
+        "imageUrl": "assets/images/limpiapipas_verde_agua_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "003",
+          "sourceImage": "assets/images/canva_raw/canva_raw_003.png"
+        }
+      },
+      {
+        "id": "morado-uva",
+        "name": "Morado uva",
+        "sku": "XS-9",
+        "colorHex": "#7B2D85",
+        "imageUrl": "assets/images/limpiapipas_morado_uva_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "004",
+          "sourceImage": "assets/images/canva_raw/canva_raw_004.webp"
+        }
+      },
+      {
+        "id": "lila-bebe",
+        "name": "Lila bebé",
+        "sku": "XS-10",
+        "colorHex": "#D8B5E8",
+        "imageUrl": "assets/images/limpiapipas_lila_bebe_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "005",
+          "sourceImage": "assets/images/canva_raw/canva_raw_005.webp"
+        }
+      },
+      {
+        "id": "palo-rosa",
+        "name": "Palo rosa",
+        "sku": "XS-11",
+        "colorHex": "#B97980",
+        "imageUrl": "assets/images/limpiapipas_palo_rosa_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "006",
+          "sourceImage": "assets/images/canva_raw/canva_raw_006.webp"
+        }
+      },
+      {
+        "id": "palo-rosa-bebe",
+        "name": "Palo rosa bebé",
+        "sku": "XS-12",
+        "colorHex": "#E9B2B8",
+        "imageUrl": "assets/images/limpiapipas_palo_rosa_bebe_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "007",
+          "sourceImage": "assets/images/canva_raw/canva_raw_007.webp"
+        }
+      },
+      {
+        "id": "rosado-bebe",
+        "name": "Rosado bebé",
+        "sku": "XS-13",
+        "colorHex": "#F0A9BE",
+        "imageUrl": "assets/images/limpiapipas_rosado_bebe_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "008",
+          "sourceImage": "assets/images/canva_raw/canva_raw_008.webp"
+        }
+      },
+      {
+        "id": "vino",
+        "name": "Vino",
+        "sku": "XS-14",
+        "colorHex": "#6B1533",
+        "imageUrl": "assets/images/limpiapipas_vino_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "009",
+          "sourceImage": "assets/images/canva_raw/canva_raw_009.webp"
+        }
+      },
+      {
+        "id": "azul-bebe",
+        "name": "Azul bebé",
+        "sku": "XS-15",
+        "colorHex": "#8FB6DB",
+        "imageUrl": "assets/images/limpiapipas_azul_bebe_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "010",
+          "sourceImage": "assets/images/canva_raw/canva_raw_010.webp"
+        }
+      },
+      {
+        "id": "rust",
+        "name": "Rust",
+        "sku": "XS-16",
+        "colorHex": "#8E3B2E",
+        "imageUrl": "assets/images/limpiapipas_rust_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "011",
+          "sourceImage": "assets/images/canva_raw/canva_raw_011.webp"
+        }
+      },
+      {
+        "id": "fucsia",
+        "name": "Fucsia",
+        "sku": "XS-17",
+        "colorHex": "#D41474",
+        "imageUrl": "assets/images/limpiapipas_fucsia_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "012",
+          "sourceImage": "assets/images/canva_raw/canva_raw_012.webp"
+        }
+      },
+      {
+        "id": "rojo",
+        "name": "Rojo",
+        "sku": "XS-18",
+        "colorHex": "#D32F2F",
+        "imageUrl": "assets/images/limpiapipas_rojo_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "013",
+          "sourceImage": "assets/images/canva_raw/canva_raw_013.webp"
+        }
+      },
+      {
+        "id": "rojo-sangre",
+        "name": "Rojo sangre",
+        "sku": "XS-19",
+        "colorHex": "#A11226",
+        "imageUrl": "assets/images/limpiapipas_rojo_sangre_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "014",
+          "sourceImage": "assets/images/canva_raw/canva_raw_014.webp"
+        }
+      },
+      {
+        "id": "negro",
+        "name": "Negro",
+        "sku": "XS-20",
+        "colorHex": "#202020",
+        "imageUrl": "assets/images/limpiapipas_negro_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "015",
+          "sourceImage": "assets/images/canva_raw/canva_raw_015.webp"
+        }
+      },
+      {
+        "id": "blanco",
+        "name": "Blanco",
+        "sku": "XS-21",
+        "colorHex": "#F6F4EF",
+        "imageUrl": "assets/images/limpiapipas_blanco_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "016",
+          "sourceImage": "assets/images/canva_raw/canva_raw_016.webp"
+        }
+      },
+      {
+        "id": "gris",
+        "name": "Gris",
+        "sku": "XS-23",
+        "colorHex": "#8D8D8D",
+        "imageUrl": "assets/images/limpiapipas_gris_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "017",
+          "sourceImage": "assets/images/canva_raw/canva_raw_017.webp"
+        }
+      },
+      {
+        "id": "marron-claro",
+        "name": "Marrón claro",
+        "sku": "XS-25",
+        "colorHex": "#B17647",
+        "imageUrl": "assets/images/limpiapipas_marron_claro_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "025",
+          "sourceImage": "assets/images/canva_raw/canva_raw_025.webp"
+        }
+      },
+      {
+        "id": "beige",
+        "name": "Beige",
+        "sku": "XS-26",
+        "colorHex": "#BBA68E",
+        "imageUrl": "assets/images/limpiapipas_beige_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "026",
+          "sourceImage": "assets/images/canva_raw/canva_raw_026.webp"
+        }
+      },
+      {
+        "id": "piel",
+        "name": "Piel",
+        "sku": "XS-27",
+        "colorHex": "#D7B394",
+        "imageUrl": "assets/images/limpiapipas_piel_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "027",
+          "sourceImage": "assets/images/canva_raw/canva_raw_027.webp"
+        }
+      },
+      {
+        "id": "azul-electrico",
+        "name": "Azul eléctrico",
+        "sku": "XS-28",
+        "colorHex": "#3445B5",
+        "imageUrl": "assets/images/limpiapipas_azul_electrico_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "028",
+          "sourceImage": "assets/images/canva_raw/canva_raw_028.webp"
+        }
+      },
+      {
+        "id": "celeste",
+        "name": "Celeste",
+        "sku": "XS-30",
+        "colorHex": "#9FCBDA",
+        "imageUrl": "assets/images/limpiapipas_celeste_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "029",
+          "sourceImage": "assets/images/canva_raw/canva_raw_029.webp"
+        }
+      },
+      {
+        "id": "lotso",
+        "name": "Lotso",
+        "sku": "XS-31",
+        "colorHex": "#E9548F",
+        "imageUrl": "assets/images/limpiapipas_lotso_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "030",
+          "sourceImage": "assets/images/canva_raw/canva_raw_030.webp"
+        }
+      },
+      {
+        "id": "verde-turquesa",
+        "name": "Verde turquesa",
+        "sku": "XS-32",
+        "colorHex": "#50BBA9",
+        "imageUrl": "assets/images/limpiapipas_verde_turquesa_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "031",
+          "sourceImage": "assets/images/canva_raw/canva_raw_031.webp"
+        }
+      },
+      {
+        "id": "mango",
+        "name": "Mango",
+        "sku": "XS-34",
+        "colorHex": "#E97724",
+        "imageUrl": "assets/images/limpiapipas_mango_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "032",
+          "sourceImage": "assets/images/canva_raw/canva_raw_032.webp"
+        }
+      },
+      {
+        "id": "rosado",
+        "name": "Rosado",
+        "sku": "XS-35",
+        "colorHex": "#D97997",
+        "imageUrl": "assets/images/limpiapipas_rosado_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "033",
+          "sourceImage": "assets/images/canva_raw/canva_raw_033.webp"
+        }
+      },
+      {
+        "id": "amarillo-mostaza",
+        "name": "Amarillo mostaza",
+        "sku": "XS-36",
+        "colorHex": "#D5A600",
+        "imageUrl": "assets/images/limpiapipas_amarillo_mostaza_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "034",
+          "sourceImage": "assets/images/canva_raw/canva_raw_034.webp"
+        }
+      },
+      {
+        "id": "amarillo-brazil",
+        "name": "Amarillo Brazil",
+        "sku": "XS-37",
+        "colorHex": "#D8E600",
+        "imageUrl": "assets/images/limpiapipas_amarillo_brazil_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "035",
+          "sourceImage": "assets/images/canva_raw/canva_raw_035.webp"
+        }
+      },
+      {
+        "id": "lila-claro",
+        "name": "Lila claro",
+        "sku": "XS-40",
+        "colorHex": "#B999E9",
+        "imageUrl": "assets/images/limpiapipas_lila_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "036",
+          "sourceImage": "assets/images/canva_raw/canva_raw_036.webp"
+        }
+      },
+      {
+        "id": "amarillo-beige",
+        "name": "Amarillo beige",
+        "sku": "XS-41",
+        "colorHex": "#D8B776",
+        "imageUrl": "assets/images/limpiapipas_amarillo_beige_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "037",
+          "sourceImage": "assets/images/canva_raw/canva_raw_037.webp"
+        }
+      },
+      {
+        "id": "perla",
+        "name": "Perla",
+        "sku": "XS-42",
+        "colorHex": "#F1EEE4",
+        "imageUrl": "assets/images/limpiapipas_perla_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "038",
+          "sourceImage": "assets/images/canva_raw/canva_raw_038.webp"
+        }
+      },
+      {
+        "id": "marron",
+        "name": "Marrón",
+        "sku": "XS-43",
+        "colorHex": "#4E332C",
+        "imageUrl": "assets/images/limpiapipas_marron_clean.png",
+        "priceTiers": [],
+        "stockStatus": "out_of_stock",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "039",
+          "sourceImage": "assets/images/canva_raw/canva_raw_039.webp"
+        }
+      },
+      {
+        "id": "celeste-turquesa",
+        "name": "Celeste turquesa",
+        "sku": "XS-B01",
+        "colorHex": "#77B9BD",
+        "imageUrl": "assets/images/limpiapipas_celeste_turquesa_clean.png",
+        "priceTiers": [],
+        "stockStatus": "out_of_stock",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "040",
+          "sourceImage": "assets/images/canva_raw/canva_raw_040.webp"
+        }
+      },
+      {
+        "id": "rojo-coral",
+        "name": "Rojo coral",
+        "sku": "XS-B02",
+        "colorHex": "#EC5F5B",
+        "imageUrl": "assets/images/limpiapipas_rojo_coral_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "041",
+          "sourceImage": "assets/images/canva_raw/canva_raw_041.webp"
+        }
+      },
+      {
+        "id": "catalogo-042",
+        "name": "Marrón · segunda referencia",
+        "sku": "XS-CAT-42",
+        "imageUrl": "assets/images/limpiapipas_marron_clean.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "042",
+          "sourceImage": "assets/images/canva_raw/canva_raw_042.webp"
+        },
+        "colorHex": "#4E332C"
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": true,
+    "sortOrder": 10,
+    "tags": [
+      "chenil",
+      "limpiapipa",
+      "rosa eterna",
+      "colores"
+    ],
+    "attributes": {
+      "contenido": "100 unidades",
+      "ancho": "8 mm",
+      "catalogGroup": "Limpiapipas",
+      "assetCount": "35"
+    },
+    "imageUrl": "assets/images/limpiapipas_verde_militar_clean.png"
+  },
+  {
+    "id": "cinta-satinada-100m",
+    "name": "Cinta satinada 100 m",
+    "category": "materials",
+    "description": "Rollos de cinta satinada organizados por color y referencia del catálogo.",
+    "unitLabel": "rollo",
+    "basePrice": 29,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 3,
+        "unitPrice": 28,
+        "label": "Desde 3"
+      },
+      {
+        "minQuantity": 12,
+        "unitPrice": 27,
+        "label": "Desde 12"
+      },
+      {
+        "minQuantity": 36,
+        "unitPrice": 25,
+        "label": "Desde 36"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-018",
+        "name": "Turquesa",
+        "sku": "CAT-018",
+        "imageUrl": "assets/images/canva_raw/canva_raw_018.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "018",
+          "sourceImage": "assets/images/canva_raw/canva_raw_018.webp"
+        }
+      },
+      {
+        "id": "catalogo-019",
+        "name": "Morado tono 51",
+        "sku": "CAT-019",
+        "imageUrl": "assets/images/canva_raw/canva_raw_019.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "019",
+          "sourceImage": "assets/images/canva_raw/canva_raw_019.webp"
+        }
+      },
+      {
+        "id": "catalogo-020",
+        "name": "Rosa bebé",
+        "sku": "CAT-020",
+        "imageUrl": "assets/images/canva_raw/canva_raw_020.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "020",
+          "sourceImage": "assets/images/canva_raw/canva_raw_020.webp"
+        }
+      },
+      {
+        "id": "catalogo-021",
+        "name": "Fucsia",
+        "sku": "CAT-021",
+        "imageUrl": "assets/images/canva_raw/canva_raw_021.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "021",
+          "sourceImage": "assets/images/canva_raw/canva_raw_021.webp"
+        }
+      },
+      {
+        "id": "catalogo-022",
+        "name": "Palo rosa claro",
+        "sku": "CAT-022",
+        "imageUrl": "assets/images/canva_raw/canva_raw_022.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "022",
+          "sourceImage": "assets/images/canva_raw/canva_raw_022.webp"
+        }
+      },
+      {
+        "id": "catalogo-023",
+        "name": "Palo rosa",
+        "sku": "CAT-023",
+        "imageUrl": "assets/images/canva_raw/canva_raw_023.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "023",
+          "sourceImage": "assets/images/canva_raw/canva_raw_023.webp"
+        }
+      },
+      {
+        "id": "catalogo-024",
+        "name": "Piel bebé",
+        "sku": "CAT-024",
+        "imageUrl": "assets/images/canva_raw/canva_raw_024.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "024",
+          "sourceImage": "assets/images/canva_raw/canva_raw_024.webp"
+        }
+      },
+      {
+        "id": "catalogo-043",
+        "name": "Turquesa · segunda referencia",
+        "sku": "CAT-043",
+        "imageUrl": "assets/images/canva_raw/canva_raw_043.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "043",
+          "sourceImage": "assets/images/canva_raw/canva_raw_043.webp"
+        }
+      },
+      {
+        "id": "catalogo-044",
+        "name": "Morado tono 51 · segunda referencia",
+        "sku": "CAT-044",
+        "imageUrl": "assets/images/canva_raw/canva_raw_044.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "044",
+          "sourceImage": "assets/images/canva_raw/canva_raw_044.webp"
+        }
+      },
+      {
+        "id": "catalogo-045",
+        "name": "Rosa bebé · segunda referencia",
+        "sku": "CAT-045",
+        "imageUrl": "assets/images/canva_raw/canva_raw_045.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "045",
+          "sourceImage": "assets/images/canva_raw/canva_raw_045.webp"
+        }
+      },
+      {
+        "id": "catalogo-046",
+        "name": "Fucsia · segunda referencia",
+        "sku": "CAT-046",
+        "imageUrl": "assets/images/canva_raw/canva_raw_046.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "046",
+          "sourceImage": "assets/images/canva_raw/canva_raw_046.webp"
+        }
+      },
+      {
+        "id": "catalogo-047",
+        "name": "Palo rosa claro · segunda referencia",
+        "sku": "CAT-047",
+        "imageUrl": "assets/images/canva_raw/canva_raw_047.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "047",
+          "sourceImage": "assets/images/canva_raw/canva_raw_047.webp"
+        }
+      },
+      {
+        "id": "catalogo-048",
+        "name": "Palo rosa · segunda referencia",
+        "sku": "CAT-048",
+        "imageUrl": "assets/images/canva_raw/canva_raw_048.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "048",
+          "sourceImage": "assets/images/canva_raw/canva_raw_048.webp"
+        }
+      },
+      {
+        "id": "catalogo-049",
+        "name": "Piel bebé · segunda referencia",
+        "sku": "CAT-049",
+        "imageUrl": "assets/images/canva_raw/canva_raw_049.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "049",
+          "sourceImage": "assets/images/canva_raw/canva_raw_049.webp"
+        }
+      },
+      {
+        "id": "catalogo-050",
+        "name": "Piel",
+        "sku": "CAT-050",
+        "imageUrl": "assets/images/canva_raw/canva_raw_050.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "050",
+          "sourceImage": "assets/images/canva_raw/canva_raw_050.webp"
+        }
+      },
+      {
+        "id": "catalogo-051",
+        "name": "Amarillo pastel tono 31C",
+        "sku": "CAT-051",
+        "imageUrl": "assets/images/canva_raw/canva_raw_051.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "051",
+          "sourceImage": "assets/images/canva_raw/canva_raw_051.webp"
+        }
+      },
+      {
+        "id": "catalogo-052",
+        "name": "Amarillo vivo",
+        "sku": "CAT-052",
+        "imageUrl": "assets/images/canva_raw/canva_raw_052.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "052",
+          "sourceImage": "assets/images/canva_raw/canva_raw_052.webp"
+        }
+      },
+      {
+        "id": "catalogo-053",
+        "name": "Coral · segunda referencia",
+        "sku": "CAT-053",
+        "imageUrl": "assets/images/canva_raw/canva_raw_056.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "053",
+          "sourceImage": "assets/images/canva_raw/canva_raw_053.jpg"
+        }
+      },
+      {
+        "id": "catalogo-054",
+        "name": "Rosa pastel · segunda referencia",
+        "sku": "CAT-054",
+        "imageUrl": "assets/images/canva_raw/canva_raw_057.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "054",
+          "sourceImage": "assets/images/canva_raw/canva_raw_054.jpg"
+        }
+      },
+      {
+        "id": "catalogo-055",
+        "name": "Fucsia intenso · segunda referencia",
+        "sku": "CAT-055",
+        "imageUrl": "assets/images/canva_raw/canva_raw_058.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "055",
+          "sourceImage": "assets/images/canva_raw/canva_raw_055.jpg"
+        }
+      },
+      {
+        "id": "catalogo-056",
+        "name": "Coral",
+        "sku": "CAT-056",
+        "imageUrl": "assets/images/canva_raw/canva_raw_056.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "056",
+          "sourceImage": "assets/images/canva_raw/canva_raw_056.webp"
+        }
+      },
+      {
+        "id": "catalogo-057",
+        "name": "Rosa pastel",
+        "sku": "CAT-057",
+        "imageUrl": "assets/images/canva_raw/canva_raw_057.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "057",
+          "sourceImage": "assets/images/canva_raw/canva_raw_057.webp"
+        }
+      },
+      {
+        "id": "catalogo-058",
+        "name": "Fucsia intenso",
+        "sku": "CAT-058",
+        "imageUrl": "assets/images/canva_raw/canva_raw_058.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "058",
+          "sourceImage": "assets/images/canva_raw/canva_raw_058.webp"
+        }
+      },
+      {
+        "id": "catalogo-059",
+        "name": "Fucsia rosado",
+        "sku": "CAT-059",
+        "imageUrl": "assets/images/canva_raw/canva_raw_059.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "059",
+          "sourceImage": "assets/images/canva_raw/canva_raw_059.webp"
+        }
+      },
+      {
+        "id": "catalogo-060",
+        "name": "Rosa claro · segunda referencia",
+        "sku": "CAT-060",
+        "imageUrl": "assets/images/canva_raw/canva_raw_061.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "060",
+          "sourceImage": "assets/images/canva_raw/canva_raw_060.jpg"
+        }
+      },
+      {
+        "id": "catalogo-061",
+        "name": "Rosa claro",
+        "sku": "CAT-061",
+        "imageUrl": "assets/images/canva_raw/canva_raw_061.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "061",
+          "sourceImage": "assets/images/canva_raw/canva_raw_061.webp"
+        }
+      },
+      {
+        "id": "catalogo-062",
+        "name": "Blanco",
+        "sku": "CAT-062",
+        "imageUrl": "assets/images/canva_raw/canva_raw_062.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "062",
+          "sourceImage": "assets/images/canva_raw/canva_raw_062.webp"
+        }
+      },
+      {
+        "id": "catalogo-064",
+        "name": "Champagne",
+        "sku": "CAT-064",
+        "imageUrl": "assets/images/canva_raw/canva_raw_064.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "064",
+          "sourceImage": "assets/images/canva_raw/canva_raw_064.webp"
+        }
+      },
+      {
+        "id": "catalogo-066",
+        "name": "Fucsia · tercera referencia",
+        "sku": "CAT-066",
+        "imageUrl": "assets/images/canva_raw/canva_raw_066.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "066",
+          "sourceImage": "assets/images/canva_raw/canva_raw_066.webp"
+        }
+      },
+      {
+        "id": "catalogo-067",
+        "name": "Blanco perlado",
+        "sku": "CAT-067",
+        "imageUrl": "assets/images/canva_raw/canva_raw_067.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "067",
+          "sourceImage": "assets/images/canva_raw/canva_raw_067.webp"
+        }
+      },
+      {
+        "id": "catalogo-068",
+        "name": "Marfil",
+        "sku": "CAT-068",
+        "imageUrl": "assets/images/canva_raw/canva_raw_068.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "068",
+          "sourceImage": "assets/images/canva_raw/canva_raw_068.webp"
+        }
+      },
+      {
+        "id": "catalogo-069",
+        "name": "Blanco tornasol",
+        "sku": "CAT-069",
+        "imageUrl": "assets/images/canva_raw/canva_raw_069.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "069",
+          "sourceImage": "assets/images/canva_raw/canva_raw_069.webp"
+        }
+      },
+      {
+        "id": "catalogo-070",
+        "name": "Amarillo tono 31C",
+        "sku": "CAT-070",
+        "imageUrl": "assets/images/canva_raw/canva_raw_070.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "070",
+          "sourceImage": "assets/images/canva_raw/canva_raw_070.webp"
+        }
+      },
+      {
+        "id": "catalogo-073",
+        "name": "Champagne uva",
+        "sku": "CAT-073",
+        "imageUrl": "assets/images/canva_raw/canva_raw_073.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "073",
+          "sourceImage": "assets/images/canva_raw/canva_raw_073.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": true,
+    "sortOrder": 20,
+    "tags": [
+      "cinta",
+      "satén",
+      "satinada",
+      "rollo",
+      "colores"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_018.webp",
+    "attributes": {
+      "catalogGroup": "Cintas satinadas",
+      "assetCount": "34"
+    }
+  },
+  {
+    "id": "coronitas-decorativas",
+    "name": "Coronitas decorativas",
+    "category": "materials",
+    "description": "Coronas decorativas en acabados dorado, plateado y perlado.",
+    "unitLabel": "unidad",
+    "basePrice": 4,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 6,
+        "unitPrice": 3,
+        "label": "Desde 6"
+      },
+      {
+        "minQuantity": 12,
+        "unitPrice": 2.5,
+        "label": "Desde 12"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-063",
+        "name": "Coronitas dorada y plateada",
+        "sku": "CAT-063",
+        "imageUrl": "assets/images/canva_raw/canva_raw_063.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "063",
+          "sourceImage": "assets/images/canva_raw/canva_raw_063.webp"
+        }
+      },
+      {
+        "id": "catalogo-065",
+        "name": "Corona perlada plateada",
+        "sku": "CAT-065",
+        "imageUrl": "assets/images/canva_raw/canva_raw_065.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "065",
+          "sourceImage": "assets/images/canva_raw/canva_raw_065.webp"
+        }
+      },
+      {
+        "id": "catalogo-071",
+        "name": "Coronita dorada",
+        "sku": "CAT-071",
+        "imageUrl": "assets/images/canva_raw/canva_raw_071.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "071",
+          "sourceImage": "assets/images/canva_raw/canva_raw_071.webp"
+        }
+      },
+      {
+        "id": "catalogo-072",
+        "name": "Coronitas dorada y plateada · referencia 2",
+        "sku": "CAT-072",
+        "imageUrl": "assets/images/canva_raw/canva_raw_072.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "072",
+          "sourceImage": "assets/images/canva_raw/canva_raw_072.webp"
+        }
+      },
+      {
+        "id": "catalogo-074",
+        "name": "Corona plateada 5 cm",
+        "sku": "CAT-074",
+        "imageUrl": "assets/images/canva_raw/canva_raw_074.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "074",
+          "sourceImage": "assets/images/canva_raw/canva_raw_074.webp"
+        }
+      },
+      {
+        "id": "catalogo-075",
+        "name": "Corona dorada perlada 5 cm",
+        "sku": "CAT-075",
+        "imageUrl": "assets/images/canva_raw/canva_raw_075.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "075",
+          "sourceImage": "assets/images/canva_raw/canva_raw_075.webp"
+        }
+      },
+      {
+        "id": "catalogo-076",
+        "name": "Corona dorada perlada 7 cm",
+        "sku": "CAT-076",
+        "imageUrl": "assets/images/canva_raw/canva_raw_076.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "076",
+          "sourceImage": "assets/images/canva_raw/canva_raw_076.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 30,
+    "tags": [
+      "corona",
+      "coronita",
+      "perlas",
+      "dorado",
+      "plateado"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_063.webp",
+    "attributes": {
+      "catalogGroup": "Accesorios",
+      "assetCount": "7"
+    }
+  },
+  {
+    "id": "tul-con-perlas",
+    "name": "Tul con perlas",
+    "category": "materials",
+    "description": "Tul decorativo con borde perlado en varios colores.",
+    "unitLabel": "unidad",
+    "basePrice": 8,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 6,
+        "unitPrice": 7,
+        "label": "Media docena"
+      },
+      {
+        "minQuantity": 12,
+        "unitPrice": 6,
+        "label": "Docena"
+      },
+      {
+        "minQuantity": 100,
+        "unitPrice": 5,
+        "label": "Desde 100"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-077",
+        "name": "Blanco",
+        "sku": "CAT-077",
+        "imageUrl": "assets/images/canva_raw/canva_raw_077.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "077",
+          "sourceImage": "assets/images/canva_raw/canva_raw_077.webp"
+        }
+      },
+      {
+        "id": "catalogo-078",
+        "name": "Rosa bebé",
+        "sku": "CAT-078",
+        "imageUrl": "assets/images/canva_raw/canva_raw_078.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "078",
+          "sourceImage": "assets/images/canva_raw/canva_raw_078.webp"
+        }
+      },
+      {
+        "id": "catalogo-079",
+        "name": "Negro",
+        "sku": "CAT-079",
+        "imageUrl": "assets/images/canva_raw/canva_raw_079.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "079",
+          "sourceImage": "assets/images/canva_raw/canva_raw_079.webp"
+        }
+      },
+      {
+        "id": "catalogo-080",
+        "name": "Lila",
+        "sku": "CAT-080",
+        "imageUrl": "assets/images/canva_raw/canva_raw_080.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "080",
+          "sourceImage": "assets/images/canva_raw/canva_raw_080.webp"
+        }
+      },
+      {
+        "id": "catalogo-081",
+        "name": "Melón",
+        "sku": "CAT-081",
+        "imageUrl": "assets/images/canva_raw/canva_raw_081.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "081",
+          "sourceImage": "assets/images/canva_raw/canva_raw_081.webp"
+        }
+      },
+      {
+        "id": "catalogo-082",
+        "name": "Rojo",
+        "sku": "CAT-082",
+        "imageUrl": "assets/images/canva_raw/canva_raw_082.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "082",
+          "sourceImage": "assets/images/canva_raw/canva_raw_082.webp"
+        }
+      },
+      {
+        "id": "catalogo-083",
+        "name": "Beige",
+        "sku": "CAT-083",
+        "imageUrl": "assets/images/canva_raw/canva_raw_083.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "083",
+          "sourceImage": "assets/images/canva_raw/canva_raw_083.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 40,
+    "tags": [
+      "tul",
+      "perlas",
+      "envoltura"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_077.webp",
+    "attributes": {
+      "catalogGroup": "Envolturas",
+      "assetCount": "7"
+    }
+  },
+  {
+    "id": "tarjetero-acrilico",
+    "name": "Tarjetero acrílico",
+    "category": "materials",
+    "description": "Sujetadores transparentes de 23.3 cm para tarjetas y dedicatorias.",
+    "unitLabel": "paquete",
+    "basePrice": 12,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 3,
+        "unitPrice": 10,
+        "label": "Desde 3"
+      },
+      {
+        "minQuantity": 12,
+        "unitPrice": 8,
+        "label": "Docena"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-084",
+        "name": "Tarjetero acrílico 23.3 cm",
+        "sku": "CAT-084",
+        "imageUrl": "assets/images/canva_raw/canva_raw_084.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "084",
+          "sourceImage": "assets/images/canva_raw/canva_raw_084.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 50,
+    "tags": [
+      "tarjetero",
+      "acrílico",
+      "dedicatoria",
+      "23.3 cm"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_084.webp",
+    "attributes": {
+      "catalogGroup": "Accesorios",
+      "assetCount": "1"
+    }
+  },
+  {
+    "id": "alambre-floral",
+    "name": "Alambre floral",
+    "category": "materials",
+    "description": "Alambre verde militar de 40 cm para tallos y estructuras florales.",
+    "unitLabel": "paquete",
+    "basePrice": 13,
+    "startingAt": false,
+    "priceIsEstimate": true,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "catalogo-085",
+        "name": "Verde militar 40 cm",
+        "sku": "CAT-085",
+        "imageUrl": "assets/images/canva_raw/canva_raw_085.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "085",
+          "sourceImage": "assets/images/canva_raw/canva_raw_085.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 60,
+    "tags": [
+      "alambre",
+      "tallo",
+      "estructura",
+      "40 cm"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_085.webp",
+    "attributes": {
+      "catalogGroup": "Accesorios",
+      "assetCount": "1"
+    }
+  },
+  {
+    "id": "ganchos-para-foto",
+    "name": "Ganchos para foto",
+    "category": "materials",
+    "description": "Mini ganchos de madera de 2.5 cm; paquete de 100 unidades.",
+    "unitLabel": "paquete",
+    "basePrice": 12,
+    "startingAt": false,
+    "priceIsEstimate": true,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "catalogo-086",
+        "name": "100 ganchos de 2.5 cm",
+        "sku": "CAT-086",
+        "imageUrl": "assets/images/canva_raw/canva_raw_086.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "086",
+          "sourceImage": "assets/images/canva_raw/canva_raw_086.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 70,
+    "tags": [
+      "gancho",
+      "foto",
+      "madera",
+      "100 unidades"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_086.webp",
+    "attributes": {
+      "catalogGroup": "Accesorios",
+      "assetCount": "1"
+    }
+  },
+  {
+    "id": "papel-leche-cortado",
+    "name": "Papel leche cortado",
+    "category": "materials",
+    "description": "Papel leche de 30 × 30 cm para envolver ramos.",
+    "unitLabel": "paquete",
+    "basePrice": 7,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 3,
+        "unitPrice": 6.5,
+        "label": "Desde 3"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-087",
+        "name": "Blanco",
+        "sku": "CAT-087",
+        "imageUrl": "assets/images/canva_raw/canva_raw_087.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "087",
+          "sourceImage": "assets/images/canva_raw/canva_raw_087.webp"
+        }
+      },
+      {
+        "id": "catalogo-088",
+        "name": "Rojo",
+        "sku": "CAT-088",
+        "imageUrl": "assets/images/canva_raw/canva_raw_088.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "088",
+          "sourceImage": "assets/images/canva_raw/canva_raw_088.webp"
+        }
+      },
+      {
+        "id": "catalogo-089",
+        "name": "Rosa bebé",
+        "sku": "CAT-089",
+        "imageUrl": "assets/images/canva_raw/canva_raw_089.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "089",
+          "sourceImage": "assets/images/canva_raw/canva_raw_089.webp"
+        }
+      },
+      {
+        "id": "catalogo-090",
+        "name": "Negro",
+        "sku": "CAT-090",
+        "imageUrl": "assets/images/canva_raw/canva_raw_090.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "090",
+          "sourceImage": "assets/images/canva_raw/canva_raw_090.webp"
+        }
+      },
+      {
+        "id": "catalogo-091",
+        "name": "Perla",
+        "sku": "CAT-091",
+        "imageUrl": "assets/images/canva_raw/canva_raw_091.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "091",
+          "sourceImage": "assets/images/canva_raw/canva_raw_091.webp"
+        }
+      },
+      {
+        "id": "catalogo-092",
+        "name": "Verde agua",
+        "sku": "CAT-092",
+        "imageUrl": "assets/images/canva_raw/canva_raw_092.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "092",
+          "sourceImage": "assets/images/canva_raw/canva_raw_092.webp"
+        }
+      },
+      {
+        "id": "catalogo-093",
+        "name": "Fucsia",
+        "sku": "CAT-093",
+        "imageUrl": "assets/images/canva_raw/canva_raw_093.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "093",
+          "sourceImage": "assets/images/canva_raw/canva_raw_093.webp"
+        }
+      },
+      {
+        "id": "catalogo-094",
+        "name": "Lila",
+        "sku": "CAT-094",
+        "imageUrl": "assets/images/canva_raw/canva_raw_094.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "094",
+          "sourceImage": "assets/images/canva_raw/canva_raw_094.webp"
+        }
+      },
+      {
+        "id": "catalogo-095",
+        "name": "Amarillo bebé",
+        "sku": "CAT-095",
+        "imageUrl": "assets/images/canva_raw/canva_raw_095.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "095",
+          "sourceImage": "assets/images/canva_raw/canva_raw_095.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 80,
+    "tags": [
+      "papel leche",
+      "envoltura",
+      "ramo",
+      "30 × 30 cm",
+      "colores"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_087.webp",
+    "attributes": {
+      "catalogGroup": "Envolturas",
+      "assetCount": "9"
+    }
+  },
+  {
+    "id": "cinta-tornasol-4cm-7m",
+    "name": "Cinta tornasol 4 cm × 7 m",
+    "category": "materials",
+    "description": "Cinta tornasol de 4 cm de ancho y 7 m de largo.",
+    "unitLabel": "rollo",
+    "basePrice": 11,
+    "startingAt": false,
+    "priceIsEstimate": true,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "catalogo-096",
+        "name": "Perla",
+        "sku": "CAT-096",
+        "imageUrl": "assets/images/canva_raw/canva_raw_096.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "096",
+          "sourceImage": "assets/images/canva_raw/canva_raw_096.webp"
+        }
+      },
+      {
+        "id": "catalogo-097",
+        "name": "Melón",
+        "sku": "CAT-097",
+        "imageUrl": "assets/images/canva_raw/canva_raw_097.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "097",
+          "sourceImage": "assets/images/canva_raw/canva_raw_097.webp"
+        }
+      },
+      {
+        "id": "catalogo-098",
+        "name": "Rosa bebé",
+        "sku": "CAT-098",
+        "imageUrl": "assets/images/canva_raw/canva_raw_098.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "098",
+          "sourceImage": "assets/images/canva_raw/canva_raw_098.webp"
+        }
+      },
+      {
+        "id": "catalogo-099",
+        "name": "Blanco",
+        "sku": "CAT-099",
+        "imageUrl": "assets/images/canva_raw/canva_raw_099.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "099",
+          "sourceImage": "assets/images/canva_raw/canva_raw_099.webp"
+        }
+      },
+      {
+        "id": "catalogo-100",
+        "name": "Amarillo tornasol",
+        "sku": "CAT-100",
+        "imageUrl": "assets/images/canva_raw/canva_raw_100.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "100",
+          "sourceImage": "assets/images/canva_raw/canva_raw_100.webp"
+        }
+      },
+      {
+        "id": "catalogo-101",
+        "name": "Rojo coral",
+        "sku": "CAT-101",
+        "imageUrl": "assets/images/canva_raw/canva_raw_101.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "101",
+          "sourceImage": "assets/images/canva_raw/canva_raw_101.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 90,
+    "tags": [
+      "cinta",
+      "tornasol",
+      "4 cm",
+      "7 m",
+      "colores"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_096.webp",
+    "attributes": {
+      "catalogGroup": "Cintas especiales",
+      "assetCount": "6"
+    }
+  },
+  {
+    "id": "cinta-organza-tornasol",
+    "name": "Cinta organza tornasol",
+    "category": "materials",
+    "description": "Cinta de organza tornasol de 7 m para lazos y detalles.",
+    "unitLabel": "rollo",
+    "basePrice": 8,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 6,
+        "unitPrice": 7.5,
+        "label": "Media docena"
+      },
+      {
+        "minQuantity": 12,
+        "unitPrice": 7,
+        "label": "Docena"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-102",
+        "name": "Turquesa",
+        "sku": "CAT-102",
+        "imageUrl": "assets/images/canva_raw/canva_raw_102.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "102",
+          "sourceImage": "assets/images/canva_raw/canva_raw_102.webp"
+        }
+      },
+      {
+        "id": "catalogo-103",
+        "name": "Celeste",
+        "sku": "CAT-103",
+        "imageUrl": "assets/images/canva_raw/canva_raw_103.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "103",
+          "sourceImage": "assets/images/canva_raw/canva_raw_103.webp"
+        }
+      },
+      {
+        "id": "catalogo-104",
+        "name": "Lila",
+        "sku": "CAT-104",
+        "imageUrl": "assets/images/canva_raw/canva_raw_104.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "104",
+          "sourceImage": "assets/images/canva_raw/canva_raw_104.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 100,
+    "tags": [
+      "cinta",
+      "organza",
+      "tornasol",
+      "7 m"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_102.webp",
+    "attributes": {
+      "catalogGroup": "Cintas especiales",
+      "assetCount": "3"
+    }
+  },
+  {
+    "id": "cinta-organza-con-perlas",
+    "name": "Cinta organza con perlas",
+    "category": "materials",
+    "description": "Cinta de organza con borde perlado de 7 m.",
+    "unitLabel": "rollo",
+    "basePrice": 11,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 12,
+        "unitPrice": 9,
+        "label": "Docena"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-105",
+        "name": "Vino",
+        "sku": "CAT-105",
+        "imageUrl": "assets/images/canva_raw/canva_raw_105.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "105",
+          "sourceImage": "assets/images/canva_raw/canva_raw_105.webp"
+        }
+      },
+      {
+        "id": "catalogo-106",
+        "name": "Rosa bebé",
+        "sku": "CAT-106",
+        "imageUrl": "assets/images/canva_raw/canva_raw_106.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "106",
+          "sourceImage": "assets/images/canva_raw/canva_raw_106.webp"
+        }
+      },
+      {
+        "id": "catalogo-107",
+        "name": "Blanco",
+        "sku": "CAT-107",
+        "imageUrl": "assets/images/canva_raw/canva_raw_107.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "107",
+          "sourceImage": "assets/images/canva_raw/canva_raw_107.webp"
+        }
+      },
+      {
+        "id": "catalogo-108",
+        "name": "Celeste",
+        "sku": "CAT-108",
+        "imageUrl": "assets/images/canva_raw/canva_raw_108.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "108",
+          "sourceImage": "assets/images/canva_raw/canva_raw_108.webp"
+        }
+      },
+      {
+        "id": "catalogo-109",
+        "name": "Negro",
+        "sku": "CAT-109",
+        "imageUrl": "assets/images/canva_raw/canva_raw_109.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "109",
+          "sourceImage": "assets/images/canva_raw/canva_raw_109.webp"
+        }
+      },
+      {
+        "id": "catalogo-110",
+        "name": "Morado",
+        "sku": "CAT-110",
+        "imageUrl": "assets/images/canva_raw/canva_raw_110.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "110",
+          "sourceImage": "assets/images/canva_raw/canva_raw_110.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 110,
+    "tags": [
+      "cinta",
+      "organza",
+      "perlas",
+      "7 m"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_105.webp",
+    "attributes": {
+      "catalogGroup": "Cintas especiales",
+      "assetCount": "6"
+    }
+  },
+  {
+    "id": "cinta-tornasol-7m",
+    "name": "Cinta tornasol 7 m",
+    "category": "materials",
+    "description": "Cinta tornasol para envolturas y lazos.",
+    "unitLabel": "rollo",
+    "basePrice": 11,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 6,
+        "unitPrice": 9,
+        "label": "Media docena"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-111",
+        "name": "Blanco",
+        "sku": "CAT-111",
+        "imageUrl": "assets/images/canva_raw/canva_raw_111.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "111",
+          "sourceImage": "assets/images/canva_raw/canva_raw_111.webp"
+        }
+      },
+      {
+        "id": "catalogo-112",
+        "name": "Rosa bebé",
+        "sku": "CAT-112",
+        "imageUrl": "assets/images/canva_raw/canva_raw_112.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "112",
+          "sourceImage": "assets/images/canva_raw/canva_raw_112.webp"
+        }
+      },
+      {
+        "id": "catalogo-113",
+        "name": "Lila",
+        "sku": "CAT-113",
+        "imageUrl": "assets/images/canva_raw/canva_raw_113.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "113",
+          "sourceImage": "assets/images/canva_raw/canva_raw_113.webp"
+        }
+      },
+      {
+        "id": "catalogo-114",
+        "name": "Rojo",
+        "sku": "CAT-114",
+        "imageUrl": "assets/images/canva_raw/canva_raw_114.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "114",
+          "sourceImage": "assets/images/canva_raw/canva_raw_114.webp"
+        }
+      },
+      {
+        "id": "catalogo-115",
+        "name": "Melón",
+        "sku": "CAT-115",
+        "imageUrl": "assets/images/canva_raw/canva_raw_115.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "115",
+          "sourceImage": "assets/images/canva_raw/canva_raw_115.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 120,
+    "tags": [
+      "cinta",
+      "tornasol",
+      "7 m",
+      "colores"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_111.webp",
+    "attributes": {
+      "catalogGroup": "Cintas especiales",
+      "assetCount": "5"
+    }
+  },
+  {
+    "id": "cinta-corazones-dorados",
+    "name": "Cinta con corazones dorados",
+    "category": "materials",
+    "description": "Cinta decorativa con estampado metálico de corazones.",
+    "unitLabel": "rollo",
+    "basePrice": 11,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 6,
+        "unitPrice": 9,
+        "label": "Media docena"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-116",
+        "name": "Rosa",
+        "sku": "CAT-116",
+        "imageUrl": "assets/images/canva_raw/canva_raw_116.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "116",
+          "sourceImage": "assets/images/canva_raw/canva_raw_116.webp"
+        }
+      },
+      {
+        "id": "catalogo-117",
+        "name": "Negro",
+        "sku": "CAT-117",
+        "imageUrl": "assets/images/canva_raw/canva_raw_117.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "117",
+          "sourceImage": "assets/images/canva_raw/canva_raw_117.webp"
+        }
+      },
+      {
+        "id": "catalogo-118",
+        "name": "Blanco",
+        "sku": "CAT-118",
+        "imageUrl": "assets/images/canva_raw/canva_raw_118.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "118",
+          "sourceImage": "assets/images/canva_raw/canva_raw_118.webp"
+        }
+      },
+      {
+        "id": "catalogo-119",
+        "name": "Marfil",
+        "sku": "CAT-119",
+        "imageUrl": "assets/images/canva_raw/canva_raw_119.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "119",
+          "sourceImage": "assets/images/canva_raw/canva_raw_119.webp"
+        }
+      },
+      {
+        "id": "catalogo-120",
+        "name": "Vino",
+        "sku": "CAT-120",
+        "imageUrl": "assets/images/canva_raw/canva_raw_120.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "120",
+          "sourceImage": "assets/images/canva_raw/canva_raw_120.webp"
+        }
+      },
+      {
+        "id": "catalogo-121",
+        "name": "Rojo",
+        "sku": "CAT-121",
+        "imageUrl": "assets/images/canva_raw/canva_raw_121.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "121",
+          "sourceImage": "assets/images/canva_raw/canva_raw_121.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 130,
+    "tags": [
+      "cinta",
+      "corazones",
+      "dorado",
+      "estampada"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_116.webp",
+    "attributes": {
+      "catalogGroup": "Cintas especiales",
+      "assetCount": "6"
+    }
+  },
+  {
+    "id": "cinta-estampada-lujo",
+    "name": "Cinta estampada de lujo",
+    "category": "materials",
+    "description": "Cinta decorativa con estampado dorado para regalos.",
+    "unitLabel": "rollo",
+    "basePrice": 11,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 6,
+        "unitPrice": 9,
+        "label": "Media docena"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-122",
+        "name": "Rosa",
+        "sku": "CAT-122",
+        "imageUrl": "assets/images/canva_raw/canva_raw_122.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "122",
+          "sourceImage": "assets/images/canva_raw/canva_raw_122.webp"
+        }
+      },
+      {
+        "id": "catalogo-123",
+        "name": "Negro",
+        "sku": "CAT-123",
+        "imageUrl": "assets/images/canva_raw/canva_raw_123.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "123",
+          "sourceImage": "assets/images/canva_raw/canva_raw_123.webp"
+        }
+      },
+      {
+        "id": "catalogo-124",
+        "name": "Blanco",
+        "sku": "CAT-124",
+        "imageUrl": "assets/images/canva_raw/canva_raw_124.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "124",
+          "sourceImage": "assets/images/canva_raw/canva_raw_124.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 140,
+    "tags": [
+      "cinta",
+      "lujo",
+      "dorado",
+      "estampada"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_122.webp",
+    "attributes": {
+      "catalogGroup": "Cintas especiales",
+      "assetCount": "3"
+    }
+  },
+  {
+    "id": "cinta-eternal-love",
+    "name": "Cinta Eternal Love",
+    "category": "materials",
+    "description": "Cinta con mensaje y corazones para regalos románticos.",
+    "unitLabel": "rollo",
+    "basePrice": 11,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 6,
+        "unitPrice": 9,
+        "label": "Media docena"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-125",
+        "name": "Rosa bebé",
+        "sku": "CAT-125",
+        "imageUrl": "assets/images/canva_raw/canva_raw_125.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "125",
+          "sourceImage": "assets/images/canva_raw/canva_raw_125.webp"
+        }
+      },
+      {
+        "id": "catalogo-126",
+        "name": "Negro",
+        "sku": "CAT-126",
+        "imageUrl": "assets/images/canva_raw/canva_raw_126.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "126",
+          "sourceImage": "assets/images/canva_raw/canva_raw_126.webp"
+        }
+      },
+      {
+        "id": "catalogo-127",
+        "name": "Vino",
+        "sku": "CAT-127",
+        "imageUrl": "assets/images/canva_raw/canva_raw_127.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "127",
+          "sourceImage": "assets/images/canva_raw/canva_raw_127.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 150,
+    "tags": [
+      "cinta",
+      "Eternal Love",
+      "amor",
+      "corazones"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_125.webp",
+    "attributes": {
+      "catalogGroup": "Cintas especiales",
+      "assetCount": "3"
+    }
+  },
+  {
+    "id": "perlas-decorativas",
+    "name": "Perlas decorativas",
+    "category": "materials",
+    "description": "Perlas para centros de flores y detalles artesanales.",
+    "unitLabel": "paquete",
+    "basePrice": 2.5,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "catalogo-128",
+        "name": "Dorado",
+        "sku": "CAT-128",
+        "imageUrl": "assets/images/canva_raw/canva_raw_128.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "128",
+          "sourceImage": "assets/images/canva_raw/canva_raw_128.webp"
+        }
+      },
+      {
+        "id": "catalogo-129",
+        "name": "Blanco",
+        "sku": "CAT-129",
+        "imageUrl": "assets/images/canva_raw/canva_raw_129.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "129",
+          "sourceImage": "assets/images/canva_raw/canva_raw_129.webp"
+        }
+      },
+      {
+        "id": "catalogo-130",
+        "name": "Perla",
+        "sku": "CAT-130",
+        "imageUrl": "assets/images/canva_raw/canva_raw_130.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "130",
+          "sourceImage": "assets/images/canva_raw/canva_raw_130.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 150,
+    "tags": [
+      "perlas",
+      "decoración",
+      "colores"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_128.webp",
+    "attributes": {
+      "catalogGroup": "Accesorios",
+      "assetCount": "3"
+    }
+  },
+  {
+    "id": "cinta-doble-contacto",
+    "name": "Cinta doble contacto",
+    "category": "materials",
+    "description": "Cinta adhesiva para el armado de flores y envolturas.",
+    "unitLabel": "rollo",
+    "basePrice": 4.5,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 12,
+        "unitPrice": 4,
+        "label": "Docena"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-131",
+        "name": "Cinta doble contacto",
+        "sku": "CAT-131",
+        "imageUrl": "assets/images/canva_raw/canva_raw_131.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "131",
+          "sourceImage": "assets/images/canva_raw/canva_raw_131.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 160,
+    "tags": [
+      "cinta",
+      "adhesivo",
+      "doble contacto"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_131.webp",
+    "attributes": {
+      "catalogGroup": "Herramientas",
+      "assetCount": "1"
+    }
+  },
+  {
+    "id": "floratape",
+    "name": "Floratape",
+    "category": "materials",
+    "description": "Cinta floral para tallos y uniones.",
+    "unitLabel": "rollo",
+    "basePrice": 2.5,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 12,
+        "unitPrice": 2,
+        "label": "Docena"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-132",
+        "name": "Verde militar",
+        "sku": "CAT-132",
+        "imageUrl": "assets/images/canva_raw/canva_raw_132.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "132",
+          "sourceImage": "assets/images/canva_raw/canva_raw_132.webp"
+        }
+      },
+      {
+        "id": "catalogo-133",
+        "name": "Verde lechuga",
+        "sku": "CAT-133",
+        "imageUrl": "assets/images/canva_raw/canva_raw_133.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "133",
+          "sourceImage": "assets/images/canva_raw/canva_raw_133.webp"
+        }
+      },
+      {
+        "id": "catalogo-134",
+        "name": "Verde olivo",
+        "sku": "CAT-134",
+        "imageUrl": "assets/images/canva_raw/canva_raw_134.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "134",
+          "sourceImage": "assets/images/canva_raw/canva_raw_134.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 170,
+    "tags": [
+      "floratape",
+      "cinta floral",
+      "verde"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_132.webp",
+    "attributes": {
+      "catalogGroup": "Accesorios",
+      "assetCount": "3"
+    }
+  },
+  {
+    "id": "tiza-difuminador",
+    "name": "Tiza difuminador",
+    "category": "materials",
+    "description": "Pasteles para sombrear y dar profundidad a los pétalos.",
+    "unitLabel": "set",
+    "basePrice": 25,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "catalogo-135",
+        "name": "Set de tizas pastel",
+        "sku": "CAT-135",
+        "imageUrl": "assets/images/canva_raw/canva_raw_135.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "135",
+          "sourceImage": "assets/images/canva_raw/canva_raw_135.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 180,
+    "tags": [
+      "tiza",
+      "pastel",
+      "difuminador"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_135.webp",
+    "attributes": {
+      "catalogGroup": "Herramientas",
+      "assetCount": "1"
+    }
+  },
+  {
+    "id": "diamantes-de-alfiler",
+    "name": "Diamantes de alfiler",
+    "category": "materials",
+    "description": "Alfileres con cristal para decorar flores y arreglos.",
+    "unitLabel": "paquete",
+    "basePrice": 9.5,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "catalogo-136",
+        "name": "Alfiler de cristal transparente",
+        "sku": "CAT-136",
+        "imageUrl": "assets/images/canva_raw/canva_raw_136.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "136",
+          "sourceImage": "assets/images/canva_raw/canva_raw_136.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 190,
+    "tags": [
+      "diamante",
+      "alfiler",
+      "cristal"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_136.webp",
+    "attributes": {
+      "catalogGroup": "Accesorios",
+      "assetCount": "1"
+    }
+  },
+  {
+    "id": "brochetas",
+    "name": "Brochetas",
+    "category": "materials",
+    "description": "Varillas de madera para sostener accesorios y dedicatorias.",
+    "unitLabel": "paquete",
+    "basePrice": 4,
+    "startingAt": false,
+    "priceIsEstimate": true,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "catalogo-137",
+        "name": "Paquete múltiple 01",
+        "sku": "CAT-137",
+        "imageUrl": "assets/images/canva_raw/canva_raw_137.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "137",
+          "sourceImage": "assets/images/canva_raw/canva_raw_137.webp"
+        }
+      },
+      {
+        "id": "catalogo-138",
+        "name": "Paquete múltiple 02",
+        "sku": "CAT-138",
+        "imageUrl": "assets/images/canva_raw/canva_raw_138.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "138",
+          "sourceImage": "assets/images/canva_raw/canva_raw_138.webp"
+        }
+      },
+      {
+        "id": "catalogo-139",
+        "name": "Paquete individual",
+        "sku": "CAT-139",
+        "imageUrl": "assets/images/canva_raw/canva_raw_139.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "139",
+          "sourceImage": "assets/images/canva_raw/canva_raw_139.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 200,
+    "tags": [
+      "brocheta",
+      "varilla",
+      "madera"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_137.webp",
+    "attributes": {
+      "catalogGroup": "Accesorios",
+      "assetCount": "3"
+    }
+  },
+  {
+    "id": "luz-hada",
+    "name": "Luz hada",
+    "category": "materials",
+    "description": "Guirnaldas LED para iluminar arreglos y cajas.",
+    "unitLabel": "unidad",
+    "basePrice": 10,
+    "startingAt": false,
+    "priceIsEstimate": true,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "catalogo-140",
+        "name": "Infinito cálida",
+        "sku": "CAT-140",
+        "imageUrl": "assets/images/canva_raw/canva_raw_140.png",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "140",
+          "sourceImage": "assets/images/canva_raw/canva_raw_140.png"
+        }
+      },
+      {
+        "id": "catalogo-141",
+        "name": "Infinito blanca",
+        "sku": "CAT-141",
+        "imageUrl": "assets/images/canva_raw/canva_raw_141.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "141",
+          "sourceImage": "assets/images/canva_raw/canva_raw_141.webp"
+        }
+      },
+      {
+        "id": "catalogo-142",
+        "name": "Infinito azul",
+        "sku": "CAT-142",
+        "imageUrl": "assets/images/canva_raw/canva_raw_142.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "142",
+          "sourceImage": "assets/images/canva_raw/canva_raw_142.webp"
+        }
+      },
+      {
+        "id": "catalogo-143",
+        "name": "Infinito rosada",
+        "sku": "CAT-143",
+        "imageUrl": "assets/images/canva_raw/canva_raw_143.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "143",
+          "sourceImage": "assets/images/canva_raw/canva_raw_143.webp"
+        }
+      },
+      {
+        "id": "catalogo-144",
+        "name": "Infinito multicolor",
+        "sku": "CAT-144",
+        "imageUrl": "assets/images/canva_raw/canva_raw_144.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "144",
+          "sourceImage": "assets/images/canva_raw/canva_raw_144.webp"
+        }
+      },
+      {
+        "id": "catalogo-145",
+        "name": "Tipo diamante",
+        "sku": "CAT-145",
+        "imageUrl": "assets/images/canva_raw/canva_raw_145.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "145",
+          "sourceImage": "assets/images/canva_raw/canva_raw_145.webp"
+        }
+      },
+      {
+        "id": "catalogo-146",
+        "name": "Infinito roja",
+        "sku": "CAT-146",
+        "imageUrl": "assets/images/canva_raw/canva_raw_146.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "146",
+          "sourceImage": "assets/images/canva_raw/canva_raw_146.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 210,
+    "tags": [
+      "luz",
+      "hada",
+      "LED",
+      "infinito",
+      "diamante"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_140.png",
+    "attributes": {
+      "catalogGroup": "Accesorios",
+      "assetCount": "7"
+    }
+  },
+  {
+    "id": "mariposas-decorativas",
+    "name": "Mariposas decorativas",
+    "category": "materials",
+    "description": "Mariposas 3D para ramos, cajas y regalos.",
+    "unitLabel": "paquete",
+    "basePrice": 5,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 12,
+        "unitPrice": 4.5,
+        "label": "Docena"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-147",
+        "name": "Dorada con morado",
+        "sku": "CAT-147",
+        "imageUrl": "assets/images/canva_raw/canva_raw_147.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "147",
+          "sourceImage": "assets/images/canva_raw/canva_raw_147.webp"
+        }
+      },
+      {
+        "id": "catalogo-148",
+        "name": "Fucsia con dorado",
+        "sku": "CAT-148",
+        "imageUrl": "assets/images/canva_raw/canva_raw_148.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "148",
+          "sourceImage": "assets/images/canva_raw/canva_raw_148.webp"
+        }
+      },
+      {
+        "id": "catalogo-149",
+        "name": "Rosa dorado",
+        "sku": "CAT-149",
+        "imageUrl": "assets/images/canva_raw/canva_raw_149.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "149",
+          "sourceImage": "assets/images/canva_raw/canva_raw_149.webp"
+        }
+      },
+      {
+        "id": "catalogo-150",
+        "name": "Dorado clásico",
+        "sku": "CAT-150",
+        "imageUrl": "assets/images/canva_raw/canva_raw_150.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "150",
+          "sourceImage": "assets/images/canva_raw/canva_raw_150.webp"
+        }
+      },
+      {
+        "id": "catalogo-151",
+        "name": "Tornasol",
+        "sku": "CAT-151",
+        "imageUrl": "assets/images/canva_raw/canva_raw_151.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "151",
+          "sourceImage": "assets/images/canva_raw/canva_raw_151.webp"
+        }
+      },
+      {
+        "id": "catalogo-152",
+        "name": "Dorado compacto",
+        "sku": "CAT-152",
+        "imageUrl": "assets/images/canva_raw/canva_raw_152.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "152",
+          "sourceImage": "assets/images/canva_raw/canva_raw_152.webp"
+        }
+      },
+      {
+        "id": "catalogo-153",
+        "name": "Amarillo tornasol",
+        "sku": "CAT-153",
+        "imageUrl": "assets/images/canva_raw/canva_raw_153.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "153",
+          "sourceImage": "assets/images/canva_raw/canva_raw_153.webp"
+        }
+      },
+      {
+        "id": "catalogo-154",
+        "name": "Verde con dorado",
+        "sku": "CAT-154",
+        "imageUrl": "assets/images/canva_raw/canva_raw_154.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "154",
+          "sourceImage": "assets/images/canva_raw/canva_raw_154.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 230,
+    "tags": [
+      "mariposa",
+      "3D",
+      "decoración",
+      "dorado"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_147.webp",
+    "attributes": {
+      "catalogGroup": "Accesorios",
+      "assetCount": "8"
+    }
+  },
+  {
+    "id": "pistola-de-silicona",
+    "name": "Pistola de silicona",
+    "category": "materials",
+    "description": "Pistola térmica para el armado de manualidades.",
+    "unitLabel": "unidad",
+    "basePrice": 25,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 12,
+        "unitPrice": 20,
+        "label": "Docena"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-155",
+        "name": "Pistola de silicona rosada",
+        "sku": "CAT-155",
+        "imageUrl": "assets/images/canva_raw/canva_raw_155.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "155",
+          "sourceImage": "assets/images/canva_raw/canva_raw_155.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 240,
+    "tags": [
+      "pistola",
+      "silicona",
+      "herramienta"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_155.webp",
+    "attributes": {
+      "catalogGroup": "Herramientas",
+      "assetCount": "1"
+    }
+  },
+  {
+    "id": "barras-de-silicona",
+    "name": "Barras de silicona",
+    "category": "materials",
+    "description": "Barras adhesivas de repuesto para pistola térmica.",
+    "unitLabel": "paquete",
+    "basePrice": 1,
+    "startingAt": false,
+    "priceIsEstimate": true,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "catalogo-156",
+        "name": "Paquete de barras PMC",
+        "sku": "CAT-156",
+        "imageUrl": "assets/images/canva_raw/canva_raw_156.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "156",
+          "sourceImage": "assets/images/canva_raw/canva_raw_156.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 250,
+    "tags": [
+      "barra",
+      "silicona",
+      "adhesivo"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_156.webp",
+    "attributes": {
+      "catalogGroup": "Herramientas",
+      "assetCount": "1"
+    }
+  },
+  {
+    "id": "frases-en-vinil",
+    "name": "Frases en vinil",
+    "category": "materials",
+    "description": "Diseños de frases adhesivas para personalizar regalos.",
+    "unitLabel": "plancha",
+    "basePrice": 6,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [
+      {
+        "minQuantity": 3,
+        "unitPrice": 5.5,
+        "label": "Desde 3"
+      },
+      {
+        "minQuantity": 12,
+        "unitPrice": 5,
+        "label": "Docena"
+      },
+      {
+        "minQuantity": 100,
+        "unitPrice": 4.5,
+        "label": "Desde 100"
+      }
+    ],
+    "variants": [
+      {
+        "id": "catalogo-157",
+        "name": "Quinceañera y 15 años",
+        "sku": "CAT-157",
+        "imageUrl": "assets/images/canva_raw/canva_raw_157.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "157",
+          "sourceImage": "assets/images/canva_raw/canva_raw_157.webp"
+        }
+      },
+      {
+        "id": "catalogo-158",
+        "name": "Frases para mamá",
+        "sku": "CAT-158",
+        "imageUrl": "assets/images/canva_raw/canva_raw_158.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "158",
+          "sourceImage": "assets/images/canva_raw/canva_raw_158.webp"
+        }
+      },
+      {
+        "id": "catalogo-159",
+        "name": "Amor y noviazgo",
+        "sku": "CAT-159",
+        "imageUrl": "assets/images/canva_raw/canva_raw_159.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "159",
+          "sourceImage": "assets/images/canva_raw/canva_raw_159.webp"
+        }
+      },
+      {
+        "id": "catalogo-160",
+        "name": "Novia, reina y princesa",
+        "sku": "CAT-160",
+        "imageUrl": "assets/images/canva_raw/canva_raw_160.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "160",
+          "sourceImage": "assets/images/canva_raw/canva_raw_160.webp"
+        }
+      },
+      {
+        "id": "catalogo-161",
+        "name": "Flores por Bonita",
+        "sku": "CAT-161",
+        "imageUrl": "assets/images/canva_raw/canva_raw_161.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "161",
+          "sourceImage": "assets/images/canva_raw/canva_raw_161.webp"
+        }
+      },
+      {
+        "id": "catalogo-162",
+        "name": "Feliz cumpleaños mamita",
+        "sku": "CAT-162",
+        "imageUrl": "assets/images/canva_raw/canva_raw_162.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "162",
+          "sourceImage": "assets/images/canva_raw/canva_raw_162.webp"
+        }
+      },
+      {
+        "id": "catalogo-163",
+        "name": "Cumpleaños amor y princesa",
+        "sku": "CAT-163",
+        "imageUrl": "assets/images/canva_raw/canva_raw_163.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "163",
+          "sourceImage": "assets/images/canva_raw/canva_raw_163.webp"
+        }
+      },
+      {
+        "id": "catalogo-164",
+        "name": "Para la más bella",
+        "sku": "CAT-164",
+        "imageUrl": "assets/images/canva_raw/canva_raw_164.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "164",
+          "sourceImage": "assets/images/canva_raw/canva_raw_164.webp"
+        }
+      },
+      {
+        "id": "catalogo-165",
+        "name": "Felicitaciones y graduación",
+        "sku": "CAT-165",
+        "imageUrl": "assets/images/canva_raw/canva_raw_165.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "165",
+          "sourceImage": "assets/images/canva_raw/canva_raw_165.webp"
+        }
+      },
+      {
+        "id": "catalogo-166",
+        "name": "Nunca dejes de sonreír",
+        "sku": "CAT-166",
+        "imageUrl": "assets/images/canva_raw/canva_raw_166.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "166",
+          "sourceImage": "assets/images/canva_raw/canva_raw_166.webp"
+        }
+      },
+      {
+        "id": "catalogo-167",
+        "name": "Graduación y logros",
+        "sku": "CAT-167",
+        "imageUrl": "assets/images/canva_raw/canva_raw_167.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "167",
+          "sourceImage": "assets/images/canva_raw/canva_raw_167.webp"
+        }
+      },
+      {
+        "id": "catalogo-168",
+        "name": "Amor y novia",
+        "sku": "CAT-168",
+        "imageUrl": "assets/images/canva_raw/canva_raw_168.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "168",
+          "sourceImage": "assets/images/canva_raw/canva_raw_168.webp"
+        }
+      },
+      {
+        "id": "catalogo-169",
+        "name": "Cumpleaños y aniversario",
+        "sku": "CAT-169",
+        "imageUrl": "assets/images/canva_raw/canva_raw_169.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "169",
+          "sourceImage": "assets/images/canva_raw/canva_raw_169.webp"
+        }
+      },
+      {
+        "id": "catalogo-170",
+        "name": "Cumpleaños general",
+        "sku": "CAT-170",
+        "imageUrl": "assets/images/canva_raw/canva_raw_170.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "170",
+          "sourceImage": "assets/images/canva_raw/canva_raw_170.webp"
+        }
+      },
+      {
+        "id": "catalogo-171",
+        "name": "Flores amarillas",
+        "sku": "CAT-171",
+        "imageUrl": "assets/images/canva_raw/canva_raw_171.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "171",
+          "sourceImage": "assets/images/canva_raw/canva_raw_171.webp"
+        }
+      },
+      {
+        "id": "catalogo-172",
+        "name": "Mensaje de primavera",
+        "sku": "CAT-172",
+        "imageUrl": "assets/images/canva_raw/canva_raw_172.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "172",
+          "sourceImage": "assets/images/canva_raw/canva_raw_172.webp"
+        }
+      },
+      {
+        "id": "catalogo-173",
+        "name": "Mensaje de amor con flores",
+        "sku": "CAT-173",
+        "imageUrl": "assets/images/canva_raw/canva_raw_173.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "173",
+          "sourceImage": "assets/images/canva_raw/canva_raw_173.webp"
+        }
+      },
+      {
+        "id": "catalogo-174",
+        "name": "Para la flor más hermosa",
+        "sku": "CAT-174",
+        "imageUrl": "assets/images/canva_raw/canva_raw_174.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "174",
+          "sourceImage": "assets/images/canva_raw/canva_raw_174.webp"
+        }
+      },
+      {
+        "id": "catalogo-175",
+        "name": "Cumpleaños familiar",
+        "sku": "CAT-175",
+        "imageUrl": "assets/images/canva_raw/canva_raw_175.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "175",
+          "sourceImage": "assets/images/canva_raw/canva_raw_175.webp"
+        }
+      },
+      {
+        "id": "catalogo-176",
+        "name": "Día de la mujer",
+        "sku": "CAT-176",
+        "imageUrl": "assets/images/canva_raw/canva_raw_176.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "176",
+          "sourceImage": "assets/images/canva_raw/canva_raw_176.webp"
+        }
+      },
+      {
+        "id": "catalogo-177",
+        "name": "Para la mejor mujer del mundo",
+        "sku": "CAT-177",
+        "imageUrl": "assets/images/canva_raw/canva_raw_177.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "177",
+          "sourceImage": "assets/images/canva_raw/canva_raw_177.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 260,
+    "tags": [
+      "vinil",
+      "frase",
+      "dedicatoria",
+      "personalización"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_157.webp",
+    "attributes": {
+      "catalogGroup": "Frases",
+      "assetCount": "21"
+    }
+  },
+  {
+    "id": "maquina-cortadora",
+    "name": "Máquina cortadora",
+    "category": "materials",
+    "description": "Máquina automática para cortar cintas y materiales.",
+    "unitLabel": "unidad",
+    "basePrice": 410,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "catalogo-178",
+        "name": "Máquina cortadora automática",
+        "sku": "CAT-178",
+        "imageUrl": "assets/images/canva_raw/canva_raw_178.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "178",
+          "sourceImage": "assets/images/canva_raw/canva_raw_178.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 270,
+    "tags": [
+      "máquina",
+      "cortadora",
+      "herramienta"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_178.webp",
+    "attributes": {
+      "catalogGroup": "Herramientas",
+      "assetCount": "1"
+    }
+  },
+  {
+    "id": "cautin",
+    "name": "Cautín",
+    "category": "materials",
+    "description": "Herramienta térmica para sellar y trabajar cintas.",
+    "unitLabel": "unidad",
+    "basePrice": 25,
+    "startingAt": false,
+    "priceIsEstimate": false,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "catalogo-179",
+        "name": "Cautín 30 W",
+        "sku": "CAT-179",
+        "imageUrl": "assets/images/canva_raw/canva_raw_179.webp",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true,
+        "attributes": {
+          "catalogIndex": "179",
+          "sourceImage": "assets/images/canva_raw/canva_raw_179.webp"
+        }
+      }
+    ],
+    "stockStatus": "check_availability",
+    "leadDays": 0,
+    "productionPoints": 0,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 280,
+    "tags": [
+      "cautín",
+      "sellado",
+      "herramienta"
+    ],
+    "imageUrl": "assets/images/canva_raw/canva_raw_179.webp",
+    "attributes": {
+      "catalogGroup": "Herramientas",
+      "assetCount": "1"
+    }
+  },
+  {
+    "id": "ramo-clasico-6-rosas",
+    "name": "Ramo clásico de 6 rosas",
+    "category": "bouquets",
+    "description": "Ramo artesanal de rosas eternas con envoltura y lazo.",
+    "unitLabel": "ramo",
+    "basePrice": 45,
+    "startingAt": true,
+    "priceIsEstimate": true,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "rojo",
+        "name": "Rojo clásico",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true
+      },
+      {
+        "id": "rosado",
+        "name": "Rosado suave",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true
+      },
+      {
+        "id": "personalizado",
+        "name": "Color personalizado",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true
+      }
+    ],
+    "stockStatus": "made_to_order",
+    "leadDays": 2,
+    "productionPoints": 3,
+    "isActive": true,
+    "isFeatured": true,
+    "sortOrder": 300,
+    "tags": [
+      "ramo",
+      "6 rosas",
+      "rosas eternas"
+    ]
+  },
+  {
+    "id": "ramo-especial-12-rosas",
+    "name": "Ramo especial de 12 rosas",
+    "category": "bouquets",
+    "description": "Doce rosas eternas con acabado y dedicatoria personalizada.",
+    "unitLabel": "ramo",
+    "basePrice": 85,
+    "startingAt": true,
+    "priceIsEstimate": true,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "un-color",
+        "name": "Un color",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true
+      },
+      {
+        "id": "dos-colores",
+        "name": "Combinación de dos colores",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true
+      },
+      {
+        "id": "personalizado",
+        "name": "Diseño personalizado",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true
+      }
+    ],
+    "stockStatus": "made_to_order",
+    "leadDays": 3,
+    "productionPoints": 6,
+    "isActive": true,
+    "isFeatured": true,
+    "sortOrder": 310,
+    "tags": [
+      "ramo",
+      "12 rosas",
+      "dedicatoria"
+    ]
+  },
+  {
+    "id": "ramo-premium-24-rosas",
+    "name": "Ramo premium de 24 rosas",
+    "category": "bouquets",
+    "description": "Ramo amplio para ocasiones especiales, hecho a medida.",
+    "unitLabel": "ramo",
+    "basePrice": 160,
+    "startingAt": true,
+    "priceIsEstimate": true,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "elegante",
+        "name": "Estilo elegante",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true
+      },
+      {
+        "id": "romantico",
+        "name": "Estilo romántico",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true
+      },
+      {
+        "id": "personalizado",
+        "name": "Diseño personalizado",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true
+      }
+    ],
+    "stockStatus": "made_to_order",
+    "leadDays": 5,
+    "productionPoints": 10,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 320,
+    "tags": [
+      "ramo",
+      "24 rosas",
+      "premium"
+    ]
+  },
+  {
+    "id": "regalo-rosas-y-peluche",
+    "name": "Rosas eternas con peluche",
+    "category": "personalized_gifts",
+    "description": "Composición personalizada de rosas eternas y peluche.",
+    "unitLabel": "arreglo",
+    "basePrice": 65,
+    "startingAt": true,
+    "priceIsEstimate": true,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "mini",
+        "name": "Mini",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "productionPoints": 4,
+        "isActive": true
+      },
+      {
+        "id": "especial",
+        "name": "Especial",
+        "priceOverride": 95,
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "leadDays": 4,
+        "productionPoints": 7,
+        "isActive": true
+      }
+    ],
+    "stockStatus": "made_to_order",
+    "leadDays": 3,
+    "productionPoints": 5,
+    "isActive": true,
+    "isFeatured": true,
+    "sortOrder": 400,
+    "tags": [
+      "regalo",
+      "rosas",
+      "peluche"
+    ]
+  },
+  {
+    "id": "ramo-hot-wheels",
+    "name": "Ramo con Hot Wheels",
+    "category": "personalized_gifts",
+    "description": "Ramo temático con autos Hot Wheels y dedicatoria.",
+    "unitLabel": "ramo",
+    "basePrice": 85,
+    "startingAt": true,
+    "priceIsEstimate": true,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "tres-autos",
+        "name": "3 autos",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true
+      },
+      {
+        "id": "cinco-autos",
+        "name": "5 autos",
+        "priceOverride": 115,
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "productionPoints": 7,
+        "isActive": true
+      }
+    ],
+    "stockStatus": "made_to_order",
+    "leadDays": 3,
+    "productionPoints": 5,
+    "isActive": true,
+    "isFeatured": true,
+    "sortOrder": 410,
+    "tags": [
+      "regalo",
+      "ramo",
+      "Hot Wheels",
+      "autos"
+    ]
+  },
+  {
+    "id": "caja-decorativa-personalizada",
+    "name": "Caja decorativa personalizada",
+    "category": "personalized_gifts",
+    "description": "Caja con rosas eternas, mensaje y detalles a elección.",
+    "unitLabel": "caja",
+    "basePrice": 95,
+    "startingAt": true,
+    "priceIsEstimate": true,
+    "priceTiers": [],
+    "variants": [
+      {
+        "id": "clasica",
+        "name": "Clásica",
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "isActive": true
+      },
+      {
+        "id": "premium",
+        "name": "Premium",
+        "priceOverride": 140,
+        "priceTiers": [],
+        "stockStatus": "check_availability",
+        "leadDays": 5,
+        "productionPoints": 9,
+        "isActive": true
+      }
+    ],
+    "stockStatus": "made_to_order",
+    "leadDays": 4,
+    "productionPoints": 7,
+    "isActive": true,
+    "isFeatured": false,
+    "sortOrder": 420,
+    "tags": [
+      "regalo",
+      "caja",
+      "personalizado",
+      "rosas"
+    ]
+  }
+]

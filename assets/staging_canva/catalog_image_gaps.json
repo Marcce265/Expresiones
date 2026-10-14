@@ -1,0 +1,460 @@
+{
+  "summary": {
+    "productFamilies": 31,
+    "categories": {
+      "bouquets": 3,
+      "materials": 25,
+      "personalized_gifts": 3
+    },
+    "productsWithProductImage": 0,
+    "productsWithAnyVariantImage": 1,
+    "variantCount": 26,
+    "variantImagesPresent": 8,
+    "variantImagesMissing": 18,
+    "nonVariantProductsMissingImage": 23
+  },
+  "products": [
+    {
+      "id": "limpiapipas-premium-8mm",
+      "name": "Limpiapipas premium 8 mm",
+      "category": "materials",
+      "productImage": null,
+      "variants": [
+        {
+          "id": "verde-militar",
+          "name": "Verde militar",
+          "image": "assets/images/limpiapipas_verde_militar.webp"
+        },
+        {
+          "id": "palo-rosa",
+          "name": "Palo rosa",
+          "image": "assets/images/limpiapipas_palo_rosa.png"
+        },
+        {
+          "id": "verde-pasto",
+          "name": "Verde pasto",
+          "image": "assets/images/limpiapipas_verde_pasto.webp"
+        },
+        {
+          "id": "verde-agua",
+          "name": "Verde agua",
+          "image": "assets/images/limpiapipas_verde_agua.webp"
+        },
+        {
+          "id": "morado-uva",
+          "name": "Morado uva",
+          "image": "assets/images/limpiapipas_morado_uva.webp"
+        },
+        {
+          "id": "lila-bebe",
+          "name": "Lila bebé",
+          "image": "assets/images/limpiapipas_lila_bebe.webp"
+        },
+        {
+          "id": "palo-rosa-bebe",
+          "name": "Palo rosa bebé",
+          "image": "assets/images/limpiapipas_palo_rosa_bebe.webp"
+        },
+        {
+          "id": "lila",
+          "name": "Lila",
+          "image": "assets/images/limpiapipas_lila.png"
+        }
+      ],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "cinta-satinada-100m",
+      "name": "Cinta satinada 100 m",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "coronitas-decorativas",
+      "name": "Coronitas decorativas",
+      "category": "materials",
+      "productImage": null,
+      "variants": [
+        {
+          "id": "coronita-3cm",
+          "name": "Coronita 3 cm",
+          "image": null
+        },
+        {
+          "id": "corona-5cm",
+          "name": "Corona 5 cm",
+          "image": null
+        },
+        {
+          "id": "coronita-perlada-7cm",
+          "name": "Coronita perlada 7 cm",
+          "image": null
+        }
+      ],
+      "missingProductImage": true,
+      "missingVariantImages": [
+        "coronita-3cm",
+        "corona-5cm",
+        "coronita-perlada-7cm"
+      ]
+    },
+    {
+      "id": "tul-con-perlas",
+      "name": "Tul con perlas",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "tarjetero",
+      "name": "Tarjetero",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "alambre-floral",
+      "name": "Alambre floral",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "ganchos-para-peluche",
+      "name": "Ganchos para peluche",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "papel-leche",
+      "name": "Papel leche",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "cinta-organza-tornasol",
+      "name": "Cinta organza tornasol",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "cinta-organza-con-perlas",
+      "name": "Cinta organza con perlas",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "cinta-tornasol-decorativa",
+      "name": "Cinta tornasol decorativa",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "perlas-paquete-100",
+      "name": "Perlas decorativas",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "cinta-doble-contacto",
+      "name": "Cinta doble contacto",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "floratape",
+      "name": "Floratape",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "tiza-difuminador",
+      "name": "Tiza difuminador",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "diamantes-de-alfiler",
+      "name": "Diamantes de alfiler",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "brochetas",
+      "name": "Brochetas",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "luz-hada",
+      "name": "Luz hada",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "mariposa-doble",
+      "name": "Mariposa doble",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "mariposa-dorada",
+      "name": "Mariposa dorada",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "pistola-de-silicona",
+      "name": "Pistola de silicona",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "barras-de-silicona",
+      "name": "Barras de silicona",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "frase-en-vinil",
+      "name": "Frase en vinil",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "maquina-cortadora",
+      "name": "Máquina cortadora",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "cautin",
+      "name": "Cautín",
+      "category": "materials",
+      "productImage": null,
+      "variants": [],
+      "missingProductImage": true,
+      "missingVariantImages": []
+    },
+    {
+      "id": "ramo-clasico-6-rosas",
+      "name": "Ramo clásico de 6 rosas",
+      "category": "bouquets",
+      "productImage": null,
+      "variants": [
+        {
+          "id": "rojo",
+          "name": "Rojo clásico",
+          "image": null
+        },
+        {
+          "id": "rosado",
+          "name": "Rosado suave",
+          "image": null
+        },
+        {
+          "id": "personalizado",
+          "name": "Color personalizado",
+          "image": null
+        }
+      ],
+      "missingProductImage": true,
+      "missingVariantImages": [
+        "rojo",
+        "rosado",
+        "personalizado"
+      ]
+    },
+    {
+      "id": "ramo-especial-12-rosas",
+      "name": "Ramo especial de 12 rosas",
+      "category": "bouquets",
+      "productImage": null,
+      "variants": [
+        {
+          "id": "un-color",
+          "name": "Un color",
+          "image": null
+        },
+        {
+          "id": "dos-colores",
+          "name": "Combinación de dos colores",
+          "image": null
+        },
+        {
+          "id": "personalizado",
+          "name": "Diseño personalizado",
+          "image": null
+        }
+      ],
+      "missingProductImage": true,
+      "missingVariantImages": [
+        "un-color",
+        "dos-colores",
+        "personalizado"
+      ]
+    },
+    {
+      "id": "ramo-premium-24-rosas",
+      "name": "Ramo premium de 24 rosas",
+      "category": "bouquets",
+      "productImage": null,
+      "variants": [
+        {
+          "id": "elegante",
+          "name": "Estilo elegante",
+          "image": null
+        },
+        {
+          "id": "romantico",
+          "name": "Estilo romántico",
+          "image": null
+        },
+        {
+          "id": "personalizado",
+          "name": "Diseño personalizado",
+          "image": null
+        }
+      ],
+      "missingProductImage": true,
+      "missingVariantImages": [
+        "elegante",
+        "romantico",
+        "personalizado"
+      ]
+    },
+    {
+      "id": "regalo-rosas-y-peluche",
+      "name": "Rosas eternas con peluche",
+      "category": "personalized_gifts",
+      "productImage": null,
+      "variants": [
+        {
+          "id": "mini",
+          "name": "Mini",
+          "image": null
+        },
+        {
+          "id": "especial",
+          "name": "Especial",
+          "image": null
+        }
+      ],
+      "missingProductImage": true,
+      "missingVariantImages": [
+        "mini",
+        "especial"
+      ]
+    },
+    {
+      "id": "ramo-hot-wheels",
+      "name": "Ramo con Hot Wheels",
+      "category": "personalized_gifts",
+      "productImage": null,
+      "variants": [
+        {
+          "id": "tres-autos",
+          "name": "3 autos",
+          "image": null
+        },
+        {
+          "id": "cinco-autos",
+          "name": "5 autos",
+          "image": null
+        }
+      ],
+      "missingProductImage": true,
+      "missingVariantImages": [
+        "tres-autos",
+        "cinco-autos"
+      ]
+    },
+    {
+      "id": "caja-decorativa-personalizada",
+      "name": "Caja decorativa personalizada",
+      "category": "personalized_gifts",
+      "productImage": null,
+      "variants": [
+        {
+          "id": "clasica",
+          "name": "Clásica",
+          "image": null
+        },
+        {
+          "id": "premium",
+          "name": "Premium",
+          "image": null
+        }
+      ],
+      "missingProductImage": true,
+      "missingVariantImages": [
+        "clasica",
+        "premium"
+      ]
+    }
+  ]
+}
