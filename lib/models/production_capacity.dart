@@ -1,0 +1,236 @@
+import 'dart:math' as math;
+
+/// Public, aggregate production availability.
+///
+/// It deliberately contains no customer, quote or order identifiers. Firestore
+/// can therefore expose `availability/public` without exposing private data.
+class ProductionCapacitySnapshot {
+  const ProductionCapacitySnapshot({
+    required this.weeklyCapacityPoints,
+    this.reservedPointsByDate = const {},
+    this.overridesByDate = const {},
+    this.horizonDays = 120,
+    this.timezone = 'America/Lima',
+    this.updatedAt,
+  });
+
+  /// Keys use [DateTime.weekday] (`1` Monday through `7` Sunday).
+  final Map<int, int> weeklyCapacityPoints;
+
+  /// Aggregated confirmed workload, keyed as `yyyy-MM-dd`.
+  final Map<String, int> reservedPointsByDate;
+
+  /// Closures and exceptional capacity, keyed as `yyyy-MM-dd`.
+  final Map<String, ProductionDayOverride> overridesByDate;
+  final int horizonDays;
+  final String timezone;
+  final DateTime? updatedAt;
+
+  /// Conservative local fallback until the owner configures Firestore.
+  ///
+  /// One point should represent roughly 30 minutes of combined workshop time.
+  /// These values must be calibrated from real work before publishing dates as
+  /// confirmed promises.
+  factory ProductionCapacitySnapshot.twoPersonFallback() {
+    return const ProductionCapacitySnapshot(
+      weeklyCapacityPoints: {
+        DateTime.monday: 24,
+        DateTime.tuesday: 24,
+        DateTime.wednesday: 24,
+        DateTime.thursday: 24,
+        DateTime.friday: 24,
+        DateTime.saturday: 12,
+        DateTime.sunday: 0,
+      },
+    );
+  }
+
+  factory ProductionCapacitySnapshot.fromMap(Map<String, dynamic> map) {
+    final weekly = <int, int>{};
+    final rawWeekly = map['weeklyCapacityPoints'];
+    if (rawWeekly is Map) {
+      for (final entry in rawWeekly.entries) {
+        final weekday = int.tryParse(entry.key.toString());
+        final points = _nonNegativeInt(entry.value);
+        if (weekday != null && weekday >= 1 && weekday <= 7) {
+          weekly[weekday] = points;
+        }
+      }
+    }
+
+    final reserved = <String, int>{};
+    final rawReserved = map['reservedPointsByDate'];
+    if (rawReserved is Map) {
+      for (final entry in rawReserved.entries) {
+        final key = entry.key.toString();
+        if (_isDateKey(key)) reserved[key] = _nonNegativeInt(entry.value);
+      }
+    }
+
+    final overrides = <String, ProductionDayOverride>{};
+    final rawOverrides = map['overridesByDate'];
+    if (rawOverrides is Map) {
+      for (final entry in rawOverrides.entries) {
+        final key = entry.key.toString();
+        final value = entry.value;
+        if (_isDateKey(key) && value is Map) {
+          overrides[key] = ProductionDayOverride.fromMap(
+            value.map((key, value) => MapEntry(key.toString(), value)),
+          );
+        }
+      }
+    }
+
+    return ProductionCapacitySnapshot(
+      weeklyCapacityPoints: weekly.isEmpty
+          ? ProductionCapacitySnapshot.twoPersonFallback().weeklyCapacityPoints
+          : Map.unmodifiable(weekly),
+      reservedPointsByDate: Map.unmodifiable(reserved),
+      overridesByDate: Map.unmodifiable(overrides),
+      horizonDays: math.max(1, _int(map['horizonDays'], fallback: 120)),
+      timezone: _nonEmptyString(map['timezone']) ?? 'America/Lima',
+      updatedAt: _dateTime(map['updatedAt']),
+    );
+  }
+
+  int capacityFor(DateTime date) {
+    final normalized = dateOnly(date);
+    final override = overridesByDate[dateKey(normalized)];
+    if (override?.isClosed ?? false) return 0;
+    return math.max(
+      0,
+      override?.capacityPoints ?? weeklyCapacityPoints[normalized.weekday] ?? 0,
+    );
+  }
+
+  int reservedFor(DateTime date) =>
+      math.max(0, reservedPointsByDate[dateKey(date)] ?? 0);
+
+  int availableFor(DateTime date) =>
+      math.max(0, capacityFor(date) - reservedFor(date));
+
+  Map<String, dynamic> toMap() => {
+    'weeklyCapacityPoints': {
+      for (final entry in weeklyCapacityPoints.entries)
+        entry.key.toString(): entry.value,
+    },
+    'reservedPointsByDate': reservedPointsByDate,
+    'overridesByDate': {
+      for (final entry in overridesByDate.entries)
+        entry.key: entry.value.toMap(),
+    },
+    'horizonDays': horizonDays,
+    'timezone': timezone,
+    if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+  };
+}
+
+class ProductionDayOverride {
+  const ProductionDayOverride({
+    this.capacityPoints,
+    this.isClosed = false,
+    this.reason = '',
+  });
+
+  final int? capacityPoints;
+  final bool isClosed;
+  final String reason;
+
+  factory ProductionDayOverride.fromMap(Map<String, dynamic> map) {
+    return ProductionDayOverride(
+      capacityPoints: map['capacityPoints'] == null
+          ? null
+          : _nonNegativeInt(map['capacityPoints']),
+      isClosed: map['isClosed'] == true,
+      reason: _nonEmptyString(map['reason']) ?? '',
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+    if (capacityPoints != null) 'capacityPoints': capacityPoints,
+    'isClosed': isClosed,
+    if (reason.isNotEmpty) 'reason': reason,
+  };
+}
+
+class ProductionDayAllocation {
+  const ProductionDayAllocation({
+    required this.date,
+    required this.points,
+    required this.capacityBeforeAllocation,
+  });
+
+  final DateTime date;
+  final int points;
+  final int capacityBeforeAllocation;
+}
+
+enum ProductionPlanStatus {
+  available,
+  noCapacity,
+  outsideBookingWindow,
+  invalidRequest,
+}
+
+class ProductionPlan {
+  const ProductionPlan({
+    required this.status,
+    required this.requiredPoints,
+    required this.scheduledPoints,
+    required this.notBefore,
+    required this.allocations,
+    this.completionDate,
+    this.requestedDate,
+    this.message = '',
+  });
+
+  final ProductionPlanStatus status;
+  final int requiredPoints;
+  final int scheduledPoints;
+  final DateTime notBefore;
+  final DateTime? completionDate;
+  final DateTime? requestedDate;
+  final List<ProductionDayAllocation> allocations;
+  final String message;
+
+  bool get isAvailable => status == ProductionPlanStatus.available;
+  int get unscheduledPoints => math.max(0, requiredPoints - scheduledPoints);
+}
+
+DateTime dateOnly(DateTime value) =>
+    DateTime(value.year, value.month, value.day);
+
+String dateKey(DateTime value) {
+  final date = dateOnly(value);
+  return '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+}
+
+bool _isDateKey(String value) =>
+    RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value) &&
+    DateTime.tryParse(value) != null;
+
+int _int(Object? value, {required int fallback}) {
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '') ?? fallback;
+}
+
+int _nonNegativeInt(Object? value) => math.max(0, _int(value, fallback: 0));
+
+String? _nonEmptyString(Object? value) {
+  final text = value?.toString().trim() ?? '';
+  return text.isEmpty ? null : text;
+}
+
+DateTime? _dateTime(Object? value) {
+  if (value is DateTime) return value;
+  try {
+    final dynamic candidate = value;
+    final converted = candidate?.toDate();
+    if (converted is DateTime) return converted;
+  } catch (_) {
+    // Firestore Timestamp is optional; ISO strings remain supported.
+  }
+  return DateTime.tryParse(value?.toString() ?? '');
+}

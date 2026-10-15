@@ -1,0 +1,6 @@
+# Copia este archivo como android/key.properties y reemplaza los valores.
+# android/key.properties y los archivos *.jks están ignorados por Git.
+storePassword=CAMBIAR
+keyPassword=CAMBIAR
+keyAlias=expresiones
+storeFile=C:/ruta/privada/expresiones-upload-key.jks

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/coordination_details.dart';
+import '../models/shalom_agency.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import 'shalom_agency_picker.dart';
 
 class CoordinationScreen extends StatefulWidget {
   const CoordinationScreen({
@@ -12,12 +14,14 @@ class CoordinationScreen extends StatefulWidget {
     required this.earliestDate,
     required this.productionPoints,
     required this.onSubmit,
+    this.isDateAvailable,
   });
 
   final CoordinationDetails initial;
   final DateTime earliestDate;
   final int productionPoints;
   final ValueChanged<CoordinationDetails> onSubmit;
+  final bool Function(DateTime date)? isDateAvailable;
 
   @override
   State<CoordinationScreen> createState() => _CoordinationScreenState();
@@ -27,10 +31,14 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
-  late final TextEditingController _destinationController;
   late final TextEditingController _noteController;
   late DeliveryMethod _deliveryMethod;
   DateTime? _desiredDate;
+  late String _agencyId;
+  late String _agencyName;
+  late String _agencyAddress;
+  late String _agencyLocality;
+  bool _agencyError = false;
 
   @override
   void initState() {
@@ -38,9 +46,12 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     final initial = widget.initial;
     _nameController = TextEditingController(text: initial.name);
     _phoneController = TextEditingController(text: initial.phone);
-    _destinationController = TextEditingController(text: initial.destination);
     _noteController = TextEditingController(text: initial.note);
     _deliveryMethod = initial.deliveryMethod;
+    _agencyId = initial.shalomAgencyId;
+    _agencyName = initial.shalomAgencyName;
+    _agencyAddress = initial.shalomAgencyAddress;
+    _agencyLocality = initial.shalomAgencyLocality;
     _desiredDate = initial.desiredDate == null
         ? null
         : _dateOnly(initial.desiredDate!);
@@ -50,7 +61,6 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
-    _destinationController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -61,17 +71,23 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     return earliest.isBefore(today) ? today : earliest;
   }
 
-  DateTime get _firstSelectableDate {
-    var date = _firstDate;
-    while (date.weekday == DateTime.sunday) {
-      date = date.add(const Duration(days: 1));
+  DateTime? get _firstSelectableDate {
+    final lastDate = _firstDate.add(const Duration(days: 365));
+    for (
+      var date = _firstDate;
+      !date.isAfter(lastDate);
+      date = date.add(const Duration(days: 1))
+    ) {
+      if (_isSelectable(date)) return date;
     }
-    return date;
+    return null;
   }
 
   bool _isSelectable(DateTime date) {
     final value = _dateOnly(date);
-    return !value.isBefore(_firstDate) && value.weekday != DateTime.sunday;
+    return !value.isBefore(_firstDate) &&
+        value.weekday != DateTime.sunday &&
+        (widget.isDateAvailable?.call(value) ?? true);
   }
 
   Future<void> _pickDate() async {
@@ -79,6 +95,18 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     final initialDate = current != null && _isSelectable(current)
         ? current
         : _firstSelectableDate;
+    if (initialDate == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No hay fechas disponibles en este momento. Escríbenos por WhatsApp para coordinar.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
     final selected = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -97,9 +125,29 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     }
   }
 
+  Future<void> _pickAgency() async {
+    final agency = await Navigator.of(context).push<ShalomAgency>(
+      MaterialPageRoute(
+        builder: (context) => ShalomAgencyPicker(selectedId: _agencyId),
+      ),
+    );
+    if (agency == null || !mounted) return;
+    setState(() {
+      _agencyId = agency.id;
+      _agencyName = agency.displayName;
+      _agencyAddress = agency.address;
+      _agencyLocality = agency.localityLabel;
+      _agencyError = false;
+    });
+  }
+
   void _submit() {
     FocusManager.instance.primaryFocus?.unfocus();
     if (!_formKey.currentState!.validate()) return;
+    if (_deliveryMethod == DeliveryMethod.shalom && _agencyId.isEmpty) {
+      setState(() => _agencyError = true);
+      return;
+    }
 
     widget.onSubmit(
       CoordinationDetails(
@@ -107,7 +155,19 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         phone: _phoneController.text.trim(),
         deliveryMethod: _deliveryMethod,
         destination: _deliveryMethod == DeliveryMethod.shalom
-            ? _destinationController.text.trim()
+            ? '$_agencyName · $_agencyLocality'
+            : '',
+        shalomAgencyId: _deliveryMethod == DeliveryMethod.shalom
+            ? _agencyId
+            : '',
+        shalomAgencyName: _deliveryMethod == DeliveryMethod.shalom
+            ? _agencyName
+            : '',
+        shalomAgencyAddress: _deliveryMethod == DeliveryMethod.shalom
+            ? _agencyAddress
+            : '',
+        shalomAgencyLocality: _deliveryMethod == DeliveryMethod.shalom
+            ? _agencyLocality
             : '',
         desiredDate: _desiredDate,
         note: _noteController.text.trim(),
@@ -180,8 +240,10 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                     subtitle: 'Coordinamos lugar y horario',
                     icon: Icons.storefront_outlined,
                     selected: _deliveryMethod == DeliveryMethod.pickup,
-                    onTap: () =>
-                        setState(() => _deliveryMethod = DeliveryMethod.pickup),
+                    onTap: () => setState(() {
+                      _deliveryMethod = DeliveryMethod.pickup;
+                      _agencyError = false;
+                    }),
                   );
                   final shipping = _DeliveryOption(
                     title: 'Envío por Shalom',
@@ -215,20 +277,63 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const _FieldLabel('Ciudad o agencia de destino'),
+                            const _FieldLabel('Agencia de destino'),
                             const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _destinationController,
-                              textCapitalization: TextCapitalization.words,
-                              textInputAction: TextInputAction.next,
-                              maxLength: 100,
-                              decoration: const InputDecoration(
-                                hintText:
-                                    'Ej. Lima, agencia San Juan de Lurigancho',
-                                prefixIcon: Icon(Icons.location_on_outlined),
-                                counterText: '',
+                            InkWell(
+                              onTap: _pickAgency,
+                              borderRadius: BorderRadius.circular(14),
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  prefixIcon: const Icon(
+                                    Icons.location_on_outlined,
+                                  ),
+                                  suffixIcon: const Icon(
+                                    Icons.chevron_right_rounded,
+                                  ),
+                                  errorText: _agencyError
+                                      ? 'Selecciona una agencia Shalom.'
+                                      : null,
+                                ),
+                                child: _agencyId.isEmpty
+                                    ? Text(
+                                        'Buscar agencia Shalom',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge
+                                            ?.copyWith(color: AppColors.muted),
+                                      )
+                                    : Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _agencyName,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelLarge,
+                                          ),
+                                          if (_agencyLocality.isNotEmpty)
+                                            Text(
+                                              _agencyLocality,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall,
+                                            ),
+                                          if (_agencyAddress.isNotEmpty)
+                                            Text(
+                                              _agencyAddress,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall,
+                                            ),
+                                        ],
+                                      ),
                               ),
-                              validator: _validateDestination,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'El costo de envío se confirmará por WhatsApp.',
+                              style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ],
                         ),
@@ -260,7 +365,9 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Primera fecha estimada: ${_formatDate(_firstSelectableDate)}. Los domingos no están disponibles.',
+                _firstSelectableDate == null
+                    ? 'No hay fechas disponibles dentro de los próximos 365 días.'
+                    : 'Primera fecha estimada: ${_formatDate(_firstSelectableDate!)}. Los domingos no están disponibles.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               if (widget.productionPoints > 0) ...[
@@ -325,14 +432,6 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     }
     if (digits.isEmpty) return 'Escribe tu número de teléfono.';
     if (digits.length != 9) return 'Ingresa un número peruano de 9 dígitos.';
-    return null;
-  }
-
-  String? _validateDestination(String? value) {
-    if (_deliveryMethod != DeliveryMethod.shalom) return null;
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return 'Indica la ciudad o agencia de destino.';
-    if (text.length < 3) return 'Escribe un destino válido.';
     return null;
   }
 }

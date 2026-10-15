@@ -46,6 +46,14 @@ abstract final class QuoteMessageBuilder {
       ..writeln('Teléfono: ${details.phone.trim()}')
       ..writeln('Entrega: ${details.deliveryLabel}');
 
+    if (details.deliveryMethod == DeliveryMethod.shalom &&
+        details.shalomAgencyId.isNotEmpty) {
+      buffer
+        ..writeln('Agencia Shalom: ${details.shalomAgencyName}')
+        ..writeln('Ubicación: ${details.shalomAgencyLocality}')
+        ..writeln('Dirección: ${details.shalomAgencyAddress}');
+    }
+
     if (details.desiredDate != null) {
       buffer.writeln(
         'Fecha deseada: ${DateFormat('dd/MM/yyyy').format(details.desiredDate!)}',

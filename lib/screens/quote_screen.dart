@@ -4,6 +4,7 @@ import '../models/quote_line.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/product_visual.dart';
+import '../widgets/quantity_input.dart';
 
 typedef QuantityChanged = void Function(QuoteLine line, int quantity);
 
@@ -40,7 +41,7 @@ class QuoteScreen extends StatelessWidget {
               EmptyState(
                 icon: Icons.shopping_bag_outlined,
                 title: 'Tu cotización está vacía',
-                message: 'Explora el catálogo y agrega los materiales o regalos que quieras consultar.',
+                message: 'Explora el catálogo y agrega los materiales que quieras consultar.',
                 action: FilledButton.icon(
                   onPressed: onBrowse,
                   icon: const Icon(Icons.grid_view_rounded),
@@ -205,6 +206,11 @@ class _QuoteLineCard extends StatelessWidget {
                   colorHex: variant?.colorHex,
                   categoryKey: product.category.key,
                   fit: productImageFit(product),
+                  cropBottomFraction: productImageCropBottom(
+                    product,
+                    variant: variant,
+                  ),
+                  alignment: productImageAlignment(product),
                 ),
               ),
             ),
@@ -265,7 +271,7 @@ class _QuoteLineCard extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           Text(
-                            'S/ ${resolved.unitPrice.toStringAsFixed(2)} c/u',
+                            'S/ ${resolved.unitPrice.toStringAsFixed(2)} por ${product.unitLabel}',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -273,6 +279,14 @@ class _QuoteLineCard extends StatelessWidget {
                       _QuantityControl(
                         value: line.quantity,
                         canIncrease: canIncrease,
+                        onQuantityEntered: (value) {
+                          if (product.canRequest(
+                            value,
+                            variantId: line.variantId,
+                          )) {
+                            onQuantityChanged(line, value);
+                          }
+                        },
                         onDecrease: () {
                           if (line.quantity > 1) {
                             onQuantityChanged(line, line.quantity - 1);
@@ -302,52 +316,25 @@ class _QuantityControl extends StatelessWidget {
     required this.canIncrease,
     required this.onDecrease,
     required this.onIncrease,
+    required this.onQuantityEntered,
   });
 
   final int value;
   final bool canIncrease;
   final VoidCallback onDecrease;
   final VoidCallback? onIncrease;
+  final ValueChanged<int> onQuantityEntered;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Cantidad: $value',
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-        decoration: BoxDecoration(
-          color: AppColors.canvas,
-          borderRadius: BorderRadius.circular(13),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
-              padding: EdgeInsets.zero,
-              tooltip: value == 1 ? 'Quitar producto' : 'Reducir cantidad',
-              onPressed: onDecrease,
-              icon: Icon(value == 1 ? Icons.delete_outline : Icons.remove),
-            ),
-            SizedBox(
-              width: 34,
-              child: Text(
-                '$value',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-            ),
-            IconButton(
-              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
-              padding: EdgeInsets.zero,
-              tooltip: canIncrease
-                  ? 'Aumentar cantidad'
-                  : 'Cantidad máxima disponible',
-              onPressed: onIncrease,
-              icon: const Icon(Icons.add),
-            ),
-          ],
-        ),
+    return SizedBox(
+      width: 150,
+      child: QuantityInput(
+        value: value,
+        onChanged: onQuantityEntered,
+        onDecrease: onDecrease,
+        onIncrease: canIncrease ? onIncrease : null,
+        backgroundColor: AppColors.canvas,
       ),
     );
   }

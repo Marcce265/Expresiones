@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html translate="no" lang="es">
+<head>
+  <meta charset="UTF-8">
+
+  <!-- 👇 Limpieza de service worker fantasma (quitar en ~1 mes) -->
+  <script>
+    (function () {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          var teniaSW = regs.length > 0;
+          Promise.all(regs.map(function (r) { return r.unregister(); }))
+                  .then(function () {
+                    if (window.caches) {
+                      return caches.keys().then(function (names) {
+                        return Promise.all(names.map(function (n) { return caches.delete(n); }));
+                      });
+                    }
+                  })
+                  .then(function () {
+                    if (teniaSW && !sessionStorage.getItem('sw_cleared')) {
+                      sessionStorage.setItem('sw_cleared', '1');
+                      window.location.reload(true);
+                    }
+                  })
+                  .catch(function (e) { console.warn('[SW cleanup]', e); });
+        });
+      }
+    })();
+  </script>
+  <!-- 👆 FIN limpieza service worker -->
+
+  <link rel="icon" href="/favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shalom Envíos a todo el Perú</title>
+  <meta name="description" content="Realizamos envíos de sobres, encomiendas, paquetería y carga a más de 250 destinos en todo el Perú y a más de 14 destinos aéreos ✈️ en agencias seleccionadas. Contamos con el servicio de última milla para estar más cerca de ti 🚚📦">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- reCAPTCHA v3 -->
+  <script src="https://www.google.com/recaptcha/api.js?render=6LeGp5EtAAAAADF5427odqjDKEoxPudnerojGTt2" async defer></script>
+  <script>
+    window.RECAPTCHA_SITE_KEY = '6LeGp5EtAAAAADF5427odqjDKEoxPudnerojGTt2';
+  </script>
+  <script type="module" crossorigin src="/assets/index-cde80afa.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/vue-vendor-c29c9ff3.js">
+  <link rel="modulepreload" crossorigin href="/assets/framework-vendor-a6892516.js">
+  <link rel="modulepreload" crossorigin href="/assets/other-vendor-52a35378.js">
+  <link rel="modulepreload" crossorigin href="/assets/ui-vendor-666fe1fc.js">
+  <link rel="modulepreload" crossorigin href="/assets/index-cde80afa.js">
+  <link rel="modulepreload" crossorigin href="/assets/utils-vendor-5cbde7fb.js">
+  <link rel="stylesheet" href="/assets/index-e7ce7488.css">
+  <link rel="stylesheet" href="/assets/ui-vendor-4d8e306f.css">
+</head>
+<body>
+<div id="app"></div>
+<script>
+  function loadScript(a){
+    var b=document.getElementsByTagName("head")[0],
+            c=document.createElement("script");
+    c.type="text/javascript";
+    c.src="https://tracker.metricool.com/resources/be.js";
+    c.onreadystatechange=a;
+    c.onload=a;
+    b.appendChild(c);
+  }
+  loadScript(function(){
+    beTracker.t({hash:"c59f4ee07ee9bc00105b6104389a5c70"});
+  });
+</script>
+<!-- Talkdesk Chat -->
+<script>
+  (function () {
+    let js = document.createElement('script');
+    js.type = 'text/javascript';
+    js.async = 1;
+    js.src = 'https://go.botmaker.com/rest/webchat/p/1IFWAU5FRR/init.js';
+    document.body.appendChild(js);
+  })()
+</script>
+<!-- Openpay / Izipay / Socket.io -->
+<script src="https://js.openpay.pe/openpay.v1.min.js"></script>
+<script src="https://js.openpay.pe/openpay-data.v1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+<script src="https://checkout.izipay.pe/payments/v1/js/index.js"></script>
+
+</body>
+</html>

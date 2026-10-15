@@ -40,6 +40,10 @@ dependencies:
   provider: ^6.1.5+1
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.2
+  firebase_auth: ^6.7.0
+  pdf: ^3.12.0
+  excel: ^4.0.6
+  file_saver: ^0.7.0
 
 dev_dependencies:
   flutter_test:
@@ -51,6 +55,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -64,9 +69,12 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/
-    - assets/images/canva_raw/
-    - assets/images/materials_enhanced/
+    - assets/data/
+    - assets/fonts/
+    - assets/images/catalog_hero.webp
+    - assets/images/catalog_hd/
+    - assets/images/limpiapipas_optimized/
+    - assets/images/satin_optimized/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -98,3 +106,17 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/logo.png"
+  web:
+    generate: true
+    image_path: "assets/images/logo.png"
+    background_color: "#f5ede8"
+    theme_color: "#c97b5a"
+  windows:
+    generate: false
+  macos:
+    generate: false

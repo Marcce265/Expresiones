@@ -6,6 +6,19 @@ import '../theme/app_theme.dart';
 BoxFit productImageFit(CatalogProduct product) =>
     product.id == 'limpiapipas-premium-8mm' ? BoxFit.contain : BoxFit.cover;
 
+double productImageCropBottom(
+  CatalogProduct product, {
+  ProductVariant? variant,
+}) {
+  if (product.id != 'cinta-satinada-100m') return 0;
+  return double.tryParse(variant?.attributes['cropBottom'] ?? '') ?? 0;
+}
+
+Alignment productImageAlignment(CatalogProduct product) =>
+    product.id == 'cinta-satinada-100m'
+    ? Alignment.topCenter
+    : Alignment.center;
+
 class ProductVisual extends StatelessWidget {
   const ProductVisual({
     super.key,
@@ -14,6 +27,8 @@ class ProductVisual extends StatelessWidget {
     this.colorHex,
     this.categoryKey = 'materials',
     this.fit = BoxFit.cover,
+    this.cropBottomFraction = 0,
+    this.alignment = Alignment.center,
   });
 
   final String label;
@@ -21,6 +36,8 @@ class ProductVisual extends StatelessWidget {
   final String? colorHex;
   final String categoryKey;
   final BoxFit fit;
+  final double cropBottomFraction;
+  final Alignment alignment;
 
   Color get accent {
     final normalized = colorHex?.replaceAll('#', '');
@@ -48,34 +65,50 @@ class ProductVisual extends StatelessWidget {
   Widget build(BuildContext context) {
     final asset = imageAsset;
     if (asset != null && asset.isNotEmpty) {
+      final Widget image;
       if (asset.startsWith('http://') || asset.startsWith('https://')) {
-        return Semantics(
-          image: true,
-          label: label,
-          child: Image.network(
-            asset,
-            fit: fit,
-            filterQuality: FilterQuality.high,
-            width: double.infinity,
-            height: double.infinity,
-            errorBuilder: (_, _, _) =>
-                _Fallback(accent: accent, icon: icon, label: label),
-          ),
-        );
-      }
-      return Semantics(
-        image: true,
-        label: label,
-        child: Image.asset(
+        image = Image.network(
           asset,
           fit: fit,
+          alignment: alignment,
           filterQuality: FilterQuality.high,
           width: double.infinity,
           height: double.infinity,
           errorBuilder: (_, _, _) =>
               _Fallback(accent: accent, icon: icon, label: label),
-        ),
-      );
+        );
+      } else {
+        image = Image.asset(
+          asset,
+          fit: fit,
+          alignment: alignment,
+          filterQuality: FilterQuality.high,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (_, _, _) =>
+              _Fallback(accent: accent, icon: icon, label: label),
+        );
+      }
+
+      final visual = cropBottomFraction > 0
+          ? LayoutBuilder(
+              builder: (context, constraints) {
+                final visibleFraction = 1 - cropBottomFraction;
+                return ClipRect(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: SizedBox(
+                      width: constraints.maxWidth,
+                      height: constraints.maxHeight / visibleFraction,
+                      child: image,
+                    ),
+                  ),
+                );
+              },
+            )
+          : image;
+
+      return Semantics(image: true, label: label, child: visual);
     }
     return _Fallback(accent: accent, icon: icon, label: label);
   }

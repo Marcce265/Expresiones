@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/catalog_models.dart';
@@ -13,6 +15,7 @@ class HomeScreen extends StatefulWidget {
     required this.onProduct,
     required this.onOpenQuote,
     required this.quoteQuantity,
+    this.onZeroResultSearch,
   });
 
   final List<CatalogProduct> products;
@@ -20,6 +23,7 @@ class HomeScreen extends StatefulWidget {
   final ProductSelected onProduct;
   final VoidCallback onOpenQuote;
   final int quoteQuantity;
+  final ValueChanged<String>? onZeroResultSearch;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -27,10 +31,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
+  final Set<String> _reportedEmptySearches = {};
+  Timer? _searchDebounce;
   String _query = '';
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -38,7 +45,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final products =
-        widget.products.where((product) => product.isActive).toList()
+        widget.products
+            .where(
+              (product) =>
+                  product.isActive &&
+                  product.category == ProductCategory.materials,
+            )
+            .toList()
           ..sort((a, b) {
             final featured = (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
             if (featured != 0) return featured;
@@ -76,17 +89,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 3),
             Text(
-              'Materiales y detalles hechos para expresar más.',
+              'Materiales para crear detalles que expresan más.',
               style: Theme.of(context).textTheme.bodyMedium
                   ?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _searchController,
-              onChanged: (value) => setState(() => _query = value),
+              onChanged: _onSearchChanged,
+              onSubmitted: _reportEmptySearch,
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: 'Buscar materiales o regalos',
+                hintText: 'Buscar materiales',
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _query.isEmpty
                     ? null
@@ -116,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 18),
               Text(
-                'Explora por categoría',
+                'Explora materiales',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 9),
@@ -162,6 +176,31 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() => _query = value);
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 800),
+      () => _reportEmptySearch(value),
+    );
+  }
+
+  void _reportEmptySearch(String rawQuery) {
+    if (!mounted || widget.onZeroResultSearch == null) return;
+    final query = rawQuery.trim().toLowerCase();
+    if (query.length < 2 || _reportedEmptySearches.contains(query)) return;
+    final products = widget.products.where(
+      (product) =>
+          product.isActive && product.category == ProductCategory.materials,
+    );
+    final hasResult = expandCatalogTiles(products).any(
+      (tile) => _matches(tile, query),
+    );
+    if (hasResult) return;
+    _reportedEmptySearches.add(query);
+    widget.onZeroResultSearch!(query);
   }
 }
 
@@ -214,14 +253,6 @@ class _CategoryChips extends StatelessWidget {
           label: 'Materiales',
           selected: true,
           onTap: () => onBrowse(ProductCategory.materials),
-        ),
-        _CategoryButton(
-          label: 'Ramos',
-          onTap: () => onBrowse(ProductCategory.bouquets),
-        ),
-        _CategoryButton(
-          label: 'Personalizados',
-          onTap: () => onBrowse(ProductCategory.personalizedGifts),
         ),
       ],
     );

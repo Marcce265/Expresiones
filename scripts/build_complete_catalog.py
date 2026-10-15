@@ -1,18 +1,20 @@
 """Build the complete local catalog from the 179 Canva asset references.
 
 The raw Canva files stay untouched. Pipe-cleaner cards use the cleaned PNGs,
-while every other material keeps the original Canva image and background.
+while every other material uses the highest-resolution Canva source recovered.
 """
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
+from satin_palette import SATIN_PALETTE
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED_JSON = ROOT / "scripts" / "catalog_seed.json"
 MANIFEST_JSON = ROOT / "assets" / "images" / "canva_raw" / "manifest.json"
+HD_MANIFEST_JSON = ROOT / "assets" / "images" / "catalog_hd" / "manifest.json"
 SEED_DART = ROOT / "lib" / "data" / "seed_catalog.dart"
 
 
@@ -89,7 +91,8 @@ def _product(
 
 
 def _raw_path(index: int, by_index: dict[int, dict]) -> str:
-    return f"assets/images/canva_raw/{by_index[index]['file']}"
+    item = by_index[index]
+    return item.get("displayPath") or f"assets/images/canva_raw/{item['file']}"
 
 
 def _named_raw_variants(
@@ -105,10 +108,38 @@ def _named_raw_variants(
 
 def build() -> tuple[list[dict], list[dict]]:
     previous = json.loads(SEED_JSON.read_text(encoding="utf-8"))
-    manifest = json.loads(MANIFEST_JSON.read_text(encoding="utf-8"))
-    by_index = {int(item["index"]): item for item in manifest}
-    if set(by_index) != set(range(1, 180)):
-        raise RuntimeError("The Canva manifest must contain indices 1 through 179")
+    if MANIFEST_JSON.exists():
+        manifest = json.loads(MANIFEST_JSON.read_text(encoding="utf-8"))
+        by_index = {int(item["index"]): item for item in manifest}
+    else:
+        # The optimized catalog intentionally removes the 179 raw exports.
+        # Rebuild the index from the last generated seed so this script remains
+        # reproducible after that cleanup.
+        by_index: dict[int, dict] = {}
+        for product in previous:
+            for variant in product.get("variants", []):
+                raw_index = variant.get("attributes", {}).get("catalogIndex")
+                if raw_index is None:
+                    continue
+                index = int(raw_index)
+                image_path = variant.get("imageUrl") or variant.get(
+                    "attributes", {}
+                ).get("sourceImage")
+                if image_path:
+                    by_index[index] = {
+                        "index": index,
+                        "file": Path(image_path).name,
+                        "displayPath": image_path,
+                    }
+
+    hd_manifest = json.loads(HD_MANIFEST_JSON.read_text(encoding="utf-8"))
+    for item in hd_manifest:
+        index = int(item["index"])
+        if index >= 18 and item.get("isHighResolution"):
+            by_index.setdefault(
+                index,
+                {"index": index, "file": Path(item["imagePath"]).name},
+            )["displayPath"] = item["imagePath"]
 
     previous_by_id = {item["id"]: item for item in previous}
     pipe = previous_by_id["limpiapipas-premium-8mm"]
@@ -124,81 +155,42 @@ def build() -> tuple[list[dict], list[dict]]:
             "catalogIndex": f"{index:03d}",
             "sourceImage": _raw_path(index, by_index),
         }
-    pipe_variants.append(
-        _variant(
-            pipe_indices[-1],
-            "Marrón · segunda referencia",
-            "assets/images/limpiapipas_marron_clean.png",
-            sku="XS-CAT-42",
-            color_hex="#4E332C",
-            source_image=_raw_path(pipe_indices[-1], by_index),
-        )
-    )
     pipe["variants"] = pipe_variants
     pipe["imageUrl"] = pipe_variants[0]["imageUrl"]
     pipe["sortOrder"] = 10
     pipe["attributes"] = {
         **pipe.get("attributes", {}),
         "catalogGroup": "Limpiapipas",
-        "assetCount": "35",
+        "assetCount": "34",
     }
 
-    satin_indices = [
-        *range(18, 25),
-        *range(43, 63),
-        64,
-        *range(66, 71),
-        73,
-    ]
-    satin_names = [
-        "Turquesa",
-        "Morado tono 51",
-        "Rosa bebé",
-        "Fucsia",
-        "Palo rosa claro",
-        "Palo rosa",
-        "Piel bebé",
-        "Turquesa · segunda referencia",
-        "Morado tono 51 · segunda referencia",
-        "Rosa bebé · segunda referencia",
-        "Fucsia · segunda referencia",
-        "Palo rosa claro · segunda referencia",
-        "Palo rosa · segunda referencia",
-        "Piel bebé · segunda referencia",
-        "Piel",
-        "Amarillo pastel tono 31C",
-        "Amarillo vivo",
-        "Coral · segunda referencia",
-        "Rosa pastel · segunda referencia",
-        "Fucsia intenso · segunda referencia",
-        "Coral",
-        "Rosa pastel",
-        "Fucsia intenso",
-        "Fucsia rosado",
-        "Rosa claro · segunda referencia",
-        "Rosa claro",
-        "Blanco",
-        "Champagne",
-        "Fucsia · tercera referencia",
-        "Blanco perlado",
-        "Marfil",
-        "Blanco tornasol",
-        "Amarillo tono 31C",
-        "Champagne uva",
-    ]
-    satin_variants = _named_raw_variants(satin_indices, satin_names, by_index)
-    # Four Canva exports are placeholder thumbnails. Keep their catalog slots,
-    # but show the matching color photo instead of a broken landscape icon.
-    satin_fallbacks = {53: 56, 54: 57, 55: 58, 60: 61}
-    for item in satin_variants:
-        index = int(item["attributes"]["catalogIndex"])
-        if index in satin_fallbacks:
-            item["imageUrl"] = _raw_path(satin_fallbacks[index], by_index)
+    # One saleable color per palette number. Every variant has its own clean
+    # optimized WebP product photo; the old mixed Canva ribbon photos are no
+    # longer exposed.
+    satin_variants = []
+    for number, (color_name, color_hex) in enumerate(SATIN_PALETTE, start=1):
+        photo = f"assets/images/satin_optimized/satin_{number:02d}.webp"
+        item = {
+            "id": f"satin-{number:02d}",
+            "name": f"N.º {number:02d} · {color_name}",
+            "sku": f"SAT-{number:02d}",
+            "imageUrl": photo,
+            "colorHex": color_hex,
+            "priceTiers": [],
+            "stockStatus": "check_availability",
+            "isActive": True,
+            "attributes": {
+                "paletteNumber": f"{number:02d}",
+                "imageSource": "generated_from_palette",
+                "sourceImage": photo,
+            },
+        }
+        satin_variants.append(item)
 
     satin = _product(
         product_id="cinta-satinada-100m",
         name="Cinta satinada 100 m",
-        description="Rollos de cinta satinada organizados por color y referencia del catálogo.",
+        description="Cinta satinada de 100 m por rollo. Elige el número de la carta de colores; el precio mostrado corresponde a un rollo.",
         group="Cintas satinadas",
         unit="rollo",
         price=29,
@@ -213,35 +205,37 @@ def build() -> tuple[list[dict], list[dict]]:
         featured=True,
     )
 
-    crowns = _product(
-        product_id="coronitas-decorativas",
-        name="Coronitas decorativas",
-        description="Coronas decorativas en acabados dorado, plateado y perlado.",
-        group="Accesorios",
-        unit="unidad",
-        price=4,
-        order=30,
-        variants=_named_raw_variants(
-            [63, 65, 71, 72, 74, 75, 76],
-            [
-                "Coronitas dorada y plateada",
-                "Corona perlada plateada",
-                "Coronita dorada",
-                "Coronitas dorada y plateada · referencia 2",
-                "Corona plateada 5 cm",
-                "Corona dorada perlada 5 cm",
-                "Corona dorada perlada 7 cm",
-            ],
-            by_index,
-        ),
-        tags=["corona", "coronita", "perlas", "dorado", "plateado"],
-        tiers=[
-            _price_tier(6, 3, "Desde 6"),
-            _price_tier(12, 2.5, "Desde 12"),
-        ],
-    )
+    crown_specs = [
+        ("coronitas-decorativas", "Coronita 3 cm · Dorado", 71,
+         "Coronita decorativa dorada de 3 cm. Precio por unidad; descuentos por media docena, docena y 100 unidades.", False),
+        ("corona-perlada-plateada", "Corona perlada · Plateado", 65,
+         "Corona decorativa plateada con perlas. Se vende por unidad; confirma medidas y precio final por WhatsApp.", True),
+        ("corona-dorada-perlada-5cm", "Corona perlada 5 cm · Dorado", 75,
+         "Corona decorativa dorada con perlas de 5 cm. Se vende por unidad; confirma precio final por WhatsApp.", True),
+        ("corona-dorada-perlada-7cm", "Corona perlada 7 cm · Dorado", 76,
+         "Corona decorativa dorada con perlas de 7 cm. Se vende por unidad; confirma precio final por WhatsApp.", True),
+    ]
+    crowns = []
+    for order, (product_id, name, index, description, estimate) in enumerate(crown_specs, start=30):
+        crowns.append(_product(
+            product_id=product_id,
+            name=name,
+            description=description,
+            group="Accesorios",
+            unit="unidad",
+            price=4,
+            order=order,
+            variants=_named_raw_variants([index], [name], by_index),
+            tags=["corona", "coronita", "perlas", "dorado", "plateado"],
+            tiers=[
+                _price_tier(6, 3, "Media docena"),
+                _price_tier(12, 2.5, "Docena"),
+                _price_tier(100, 2, "100 unidades"),
+            ] if product_id == "coronitas-decorativas" else [],
+            estimate=estimate,
+        ))
 
-    products = [pipe, satin, crowns]
+    products = [pipe, satin, *crowns]
 
     specifications = [
         (
@@ -626,8 +620,6 @@ def build() -> tuple[list[dict], list[dict]]:
                 variants=_named_raw_variants(indices, names, by_index),
                 tags=tags,
                 estimate=product_id in {
-                    "alambre-floral",
-                    "ganchos-para-foto",
                     "brochetas",
                     "luz-hada",
                     "barras-de-silicona",
@@ -670,15 +662,74 @@ def build() -> tuple[list[dict], list[dict]]:
         if product["id"] in tier_overrides:
             product["priceTiers"] = tier_overrides[product["id"]]
 
-    tail = [item for item in previous if item["category"] != "materials"]
-    all_products = products + tail
-    catalog_indices = [
-        int(variant["attributes"]["catalogIndex"])
-        for product in products
-        for variant in product["variants"]
+    # The printed catalog lists alambre floral as three presentations rather
+    # than a volume discount for one package: 50 units, 100 units and 1 kg.
+    alambre = next(product for product in products if product["id"] == "alambre-floral")
+    alambre_image = alambre["variants"][0]["imageUrl"]
+    alambre["unitLabel"] = "presentación"
+    alambre["variants"] = [
+        {
+            "id": "medio-ciento",
+            "name": "Medio ciento (50 varillas de 40 cm)",
+            "sku": "ALF-050",
+            "imageUrl": alambre_image,
+            "priceOverride": 13,
+            "priceTiers": [],
+            "stockStatus": "check_availability",
+            "isActive": True,
+            "attributes": {"contenido": "50 varillas", "largo": "40 cm"},
+        },
+        {
+            "id": "ciento",
+            "name": "Ciento (100 varillas de 40 cm)",
+            "sku": "ALF-100",
+            "imageUrl": alambre_image,
+            "priceOverride": 26,
+            "priceTiers": [],
+            "stockStatus": "check_availability",
+            "isActive": True,
+            "attributes": {"contenido": "100 varillas", "largo": "40 cm"},
+        },
+        {
+            "id": "kilo",
+            "name": "Paquete de 1 kg",
+            "sku": "ALF-1KG",
+            "imageUrl": alambre_image,
+            "priceOverride": 35,
+            "priceTiers": [],
+            "stockStatus": "check_availability",
+            "isActive": True,
+            "attributes": {"contenido": "1 kg", "largo": "40 cm"},
+        },
     ]
-    if sorted(catalog_indices) != list(range(1, 180)):
-        raise RuntimeError("Catalog variants must cover each Canva index exactly once")
+    alambre["attributes"].update(
+        {
+            "priceSource": "Catálogo Canva · página 14",
+            "priceVerifiedAt": "2026-10-15",
+        }
+    )
+
+    ganchos = next(product for product in products if product["id"] == "ganchos-para-foto")
+    ganchos["attributes"].update(
+        {
+            "priceSource": "Catálogo Canva · página 15",
+            "priceVerifiedAt": "2026-10-15",
+        }
+    )
+
+    # Ramos y regalos quedan preparados para una etapa posterior, pero el
+    # catálogo público actual es exclusivamente de materiales.
+    tail = [item for item in previous if item["category"] != "materials"]
+    for product in tail:
+        product["isActive"] = False
+        product["isFeatured"] = False
+    all_products = products + tail
+    for product in products:
+        variant_ids = [variant["id"] for variant in product["variants"]]
+        if len(variant_ids) != len(set(variant_ids)):
+            raise RuntimeError(f"Duplicate variants in {product['id']}")
+    if len(satin_variants) != 80:
+        raise RuntimeError("The numbered satin palette must contain 80 colors")
     return all_products, products
 
 
@@ -692,10 +743,10 @@ def write_outputs() -> None:
 
 import '../models/catalog_models.dart';
 
-/// Local fallback catalog generated from the 179 Canva image references.
+/// Local fallback catalog with deduplicated Canva products and 80 ribbon colors.
 ///
-/// Pipe-cleaner entries point to the cleaned PNGs. Every other material points
-/// to its original Canva asset so its background and product detail are kept.
+/// Pipe-cleaner entries point to cleaned PNGs. Every satin color points to its
+/// own high-resolution three-roll product photo.
 final List<CatalogProduct> seedCatalogProducts = List.unmodifiable(
   (jsonDecode(_seedCatalogJson) as List<dynamic>)
       .whereType<Map<String, dynamic>>()
@@ -708,7 +759,7 @@ const String _seedCatalogJson = r\'\'\'{compact_json}\'\'\';
 
     print(
         f"Wrote {len(products)} product families, "
-        f"{sum(len(p['variants']) for p in material_products)} material images"
+        f"{sum(len(p['variants']) for p in material_products)} material variants"
     )
 
 

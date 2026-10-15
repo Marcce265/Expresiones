@@ -4,6 +4,10 @@ Expresiones usa **Cloud Firestore** como catálogo remoto. La cotización, los
 datos del cliente y la selección actual permanecen en el dispositivo; solo se
 comparten cuando la persona pulsa el botón de WhatsApp.
 
+El panel web administrativo usa Firebase Authentication. Solo una cuenta cuyo
+token tenga el custom claim `admin: true` puede leer productos ocultos o
+crear, modificar y eliminar documentos del catálogo.
+
 ## `products/{productId}`
 
 Cada documento representa un producto y puede contener variantes de color o
@@ -77,3 +81,17 @@ node .\scripts\seed_firestore.js
 Este diseño evita cuentas de cliente, carritos remotos, pagos y escrituras por
 cada toque. Así reduce lecturas y mantiene el MVP dentro del plan gratuito
 Spark mientras el tráfico sea moderado.
+
+## Administración del catálogo real
+
+El punto de entrada `lib/admin_main.dart` carga el panel independiente. Las
+instrucciones para crear la cuenta, asignar el claim, importar el catálogo y
+compilar la web están en `docs/admin_portal.md`.
+
+Las reglas validan, además de la autorización, los tipos y rangos principales:
+
+- precio entre S/ 0 y S/ 1 000 000;
+- stock entero no negativo;
+- máximo 250 variantes por producto;
+- plazo de preparación entre 0 y 365 días;
+- identificadores de disponibilidad admitidos por Flutter.

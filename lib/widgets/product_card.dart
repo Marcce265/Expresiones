@@ -84,6 +84,11 @@ class ProductCard extends StatelessWidget {
                           colorHex: variant?.colorHex,
                           categoryKey: _visualCategory(product.category),
                           fit: imageFit,
+                          cropBottomFraction: productImageCropBottom(
+                            product,
+                            variant: variant,
+                          ),
+                          alignment: productImageAlignment(product),
                         ),
                       ),
                     ),
@@ -134,7 +139,9 @@ class ProductCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      sku == null ? product.unitLabel : 'Modelo $sku',
+                      sku == null
+                          ? 'Por ${product.unitLabel}'
+                          : 'Código $sku · por ${product.unitLabel}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall

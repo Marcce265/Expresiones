@@ -1,0 +1,922 @@
+{
+  "quality": 92,
+  "files": 114,
+  "sourceBytes": 269377666,
+  "outputBytes": 39289514,
+  "savedBytes": 230088152,
+  "reductionPercent": 85.41,
+  "items": [
+    {
+      "source": "assets/images/satin_palette/satin_01.png",
+      "output": "assets/images/satin_optimized/satin_01.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2449252,
+      "output_bytes": 246850
+    },
+    {
+      "source": "assets/images/satin_palette/satin_02.png",
+      "output": "assets/images/satin_optimized/satin_02.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2591467,
+      "output_bytes": 310448
+    },
+    {
+      "source": "assets/images/satin_palette/satin_03.png",
+      "output": "assets/images/satin_optimized/satin_03.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2638668,
+      "output_bytes": 324594
+    },
+    {
+      "source": "assets/images/satin_palette/satin_04.png",
+      "output": "assets/images/satin_optimized/satin_04.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2740610,
+      "output_bytes": 355960
+    },
+    {
+      "source": "assets/images/satin_palette/satin_05.png",
+      "output": "assets/images/satin_optimized/satin_05.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2860194,
+      "output_bytes": 387286
+    },
+    {
+      "source": "assets/images/satin_palette/satin_06.png",
+      "output": "assets/images/satin_optimized/satin_06.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2769591,
+      "output_bytes": 386398
+    },
+    {
+      "source": "assets/images/satin_palette/satin_07.png",
+      "output": "assets/images/satin_optimized/satin_07.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2868507,
+      "output_bytes": 385618
+    },
+    {
+      "source": "assets/images/satin_palette/satin_08.png",
+      "output": "assets/images/satin_optimized/satin_08.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2868841,
+      "output_bytes": 412388
+    },
+    {
+      "source": "assets/images/satin_palette/satin_09.png",
+      "output": "assets/images/satin_optimized/satin_09.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2857542,
+      "output_bytes": 404878
+    },
+    {
+      "source": "assets/images/satin_palette/satin_10.png",
+      "output": "assets/images/satin_optimized/satin_10.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2852306,
+      "output_bytes": 390136
+    },
+    {
+      "source": "assets/images/satin_palette/satin_11.png",
+      "output": "assets/images/satin_optimized/satin_11.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2747026,
+      "output_bytes": 363622
+    },
+    {
+      "source": "assets/images/satin_palette/satin_12.png",
+      "output": "assets/images/satin_optimized/satin_12.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2809749,
+      "output_bytes": 384634
+    },
+    {
+      "source": "assets/images/satin_palette/satin_13.png",
+      "output": "assets/images/satin_optimized/satin_13.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2800818,
+      "output_bytes": 400618
+    },
+    {
+      "source": "assets/images/satin_palette/satin_14.png",
+      "output": "assets/images/satin_optimized/satin_14.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2811686,
+      "output_bytes": 386308
+    },
+    {
+      "source": "assets/images/satin_palette/satin_15.png",
+      "output": "assets/images/satin_optimized/satin_15.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2850554,
+      "output_bytes": 398638
+    },
+    {
+      "source": "assets/images/satin_palette/satin_16.png",
+      "output": "assets/images/satin_optimized/satin_16.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2818896,
+      "output_bytes": 386704
+    },
+    {
+      "source": "assets/images/satin_palette/satin_17.png",
+      "output": "assets/images/satin_optimized/satin_17.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2719455,
+      "output_bytes": 390518
+    },
+    {
+      "source": "assets/images/satin_palette/satin_18.png",
+      "output": "assets/images/satin_optimized/satin_18.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2827279,
+      "output_bytes": 390630
+    },
+    {
+      "source": "assets/images/satin_palette/satin_19.png",
+      "output": "assets/images/satin_optimized/satin_19.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2882659,
+      "output_bytes": 380498
+    },
+    {
+      "source": "assets/images/satin_palette/satin_20.png",
+      "output": "assets/images/satin_optimized/satin_20.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2962584,
+      "output_bytes": 402800
+    },
+    {
+      "source": "assets/images/satin_palette/satin_21.png",
+      "output": "assets/images/satin_optimized/satin_21.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2902477,
+      "output_bytes": 384554
+    },
+    {
+      "source": "assets/images/satin_palette/satin_22.png",
+      "output": "assets/images/satin_optimized/satin_22.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2965105,
+      "output_bytes": 414360
+    },
+    {
+      "source": "assets/images/satin_palette/satin_23.png",
+      "output": "assets/images/satin_optimized/satin_23.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2910875,
+      "output_bytes": 384930
+    },
+    {
+      "source": "assets/images/satin_palette/satin_24.png",
+      "output": "assets/images/satin_optimized/satin_24.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2914061,
+      "output_bytes": 377566
+    },
+    {
+      "source": "assets/images/satin_palette/satin_25.png",
+      "output": "assets/images/satin_optimized/satin_25.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2876807,
+      "output_bytes": 378658
+    },
+    {
+      "source": "assets/images/satin_palette/satin_26.png",
+      "output": "assets/images/satin_optimized/satin_26.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2762039,
+      "output_bytes": 401832
+    },
+    {
+      "source": "assets/images/satin_palette/satin_27.png",
+      "output": "assets/images/satin_optimized/satin_27.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2725430,
+      "output_bytes": 378718
+    },
+    {
+      "source": "assets/images/satin_palette/satin_28.png",
+      "output": "assets/images/satin_optimized/satin_28.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2618719,
+      "output_bytes": 432306
+    },
+    {
+      "source": "assets/images/satin_palette/satin_29.png",
+      "output": "assets/images/satin_optimized/satin_29.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2653807,
+      "output_bytes": 417944
+    },
+    {
+      "source": "assets/images/satin_palette/satin_30.png",
+      "output": "assets/images/satin_optimized/satin_30.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2701027,
+      "output_bytes": 354062
+    },
+    {
+      "source": "assets/images/satin_palette/satin_31.png",
+      "output": "assets/images/satin_optimized/satin_31.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2642392,
+      "output_bytes": 383062
+    },
+    {
+      "source": "assets/images/satin_palette/satin_32.png",
+      "output": "assets/images/satin_optimized/satin_32.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2646251,
+      "output_bytes": 413790
+    },
+    {
+      "source": "assets/images/satin_palette/satin_33.png",
+      "output": "assets/images/satin_optimized/satin_33.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2619484,
+      "output_bytes": 375574
+    },
+    {
+      "source": "assets/images/satin_palette/satin_34.png",
+      "output": "assets/images/satin_optimized/satin_34.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2773543,
+      "output_bytes": 406012
+    },
+    {
+      "source": "assets/images/satin_palette/satin_35.png",
+      "output": "assets/images/satin_optimized/satin_35.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2400765,
+      "output_bytes": 372404
+    },
+    {
+      "source": "assets/images/satin_palette/satin_36.png",
+      "output": "assets/images/satin_optimized/satin_36.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2834814,
+      "output_bytes": 361120
+    },
+    {
+      "source": "assets/images/satin_palette/satin_37.png",
+      "output": "assets/images/satin_optimized/satin_37.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2657558,
+      "output_bytes": 335694
+    },
+    {
+      "source": "assets/images/satin_palette/satin_38.png",
+      "output": "assets/images/satin_optimized/satin_38.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2892227,
+      "output_bytes": 382998
+    },
+    {
+      "source": "assets/images/satin_palette/satin_39.png",
+      "output": "assets/images/satin_optimized/satin_39.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2947426,
+      "output_bytes": 414644
+    },
+    {
+      "source": "assets/images/satin_palette/satin_40.png",
+      "output": "assets/images/satin_optimized/satin_40.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2780478,
+      "output_bytes": 435556
+    },
+    {
+      "source": "assets/images/satin_palette/satin_41.png",
+      "output": "assets/images/satin_optimized/satin_41.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2875465,
+      "output_bytes": 393750
+    },
+    {
+      "source": "assets/images/satin_palette/satin_42.png",
+      "output": "assets/images/satin_optimized/satin_42.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2815643,
+      "output_bytes": 412056
+    },
+    {
+      "source": "assets/images/satin_palette/satin_43.png",
+      "output": "assets/images/satin_optimized/satin_43.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2950043,
+      "output_bytes": 426142
+    },
+    {
+      "source": "assets/images/satin_palette/satin_44.png",
+      "output": "assets/images/satin_optimized/satin_44.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2612745,
+      "output_bytes": 346034
+    },
+    {
+      "source": "assets/images/satin_palette/satin_45.png",
+      "output": "assets/images/satin_optimized/satin_45.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2893495,
+      "output_bytes": 390892
+    },
+    {
+      "source": "assets/images/satin_palette/satin_46.png",
+      "output": "assets/images/satin_optimized/satin_46.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2780363,
+      "output_bytes": 337582
+    },
+    {
+      "source": "assets/images/satin_palette/satin_47.png",
+      "output": "assets/images/satin_optimized/satin_47.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2908887,
+      "output_bytes": 377702
+    },
+    {
+      "source": "assets/images/satin_palette/satin_48.png",
+      "output": "assets/images/satin_optimized/satin_48.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2961637,
+      "output_bytes": 397858
+    },
+    {
+      "source": "assets/images/satin_palette/satin_49.png",
+      "output": "assets/images/satin_optimized/satin_49.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2753698,
+      "output_bytes": 353550
+    },
+    {
+      "source": "assets/images/satin_palette/satin_50.png",
+      "output": "assets/images/satin_optimized/satin_50.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2733372,
+      "output_bytes": 367162
+    },
+    {
+      "source": "assets/images/satin_palette/satin_51.png",
+      "output": "assets/images/satin_optimized/satin_51.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2845294,
+      "output_bytes": 357982
+    },
+    {
+      "source": "assets/images/satin_palette/satin_52.png",
+      "output": "assets/images/satin_optimized/satin_52.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2856863,
+      "output_bytes": 356450
+    },
+    {
+      "source": "assets/images/satin_palette/satin_53.png",
+      "output": "assets/images/satin_optimized/satin_53.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2916764,
+      "output_bytes": 383100
+    },
+    {
+      "source": "assets/images/satin_palette/satin_54.png",
+      "output": "assets/images/satin_optimized/satin_54.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2797762,
+      "output_bytes": 371128
+    },
+    {
+      "source": "assets/images/satin_palette/satin_55.png",
+      "output": "assets/images/satin_optimized/satin_55.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2620645,
+      "output_bytes": 310696
+    },
+    {
+      "source": "assets/images/satin_palette/satin_56.png",
+      "output": "assets/images/satin_optimized/satin_56.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2951557,
+      "output_bytes": 375934
+    },
+    {
+      "source": "assets/images/satin_palette/satin_57.png",
+      "output": "assets/images/satin_optimized/satin_57.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2779981,
+      "output_bytes": 400538
+    },
+    {
+      "source": "assets/images/satin_palette/satin_58.png",
+      "output": "assets/images/satin_optimized/satin_58.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2865635,
+      "output_bytes": 383052
+    },
+    {
+      "source": "assets/images/satin_palette/satin_59.png",
+      "output": "assets/images/satin_optimized/satin_59.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2894948,
+      "output_bytes": 382036
+    },
+    {
+      "source": "assets/images/satin_palette/satin_60.png",
+      "output": "assets/images/satin_optimized/satin_60.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2767050,
+      "output_bytes": 396364
+    },
+    {
+      "source": "assets/images/satin_palette/satin_61.png",
+      "output": "assets/images/satin_optimized/satin_61.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2909205,
+      "output_bytes": 376124
+    },
+    {
+      "source": "assets/images/satin_palette/satin_62.png",
+      "output": "assets/images/satin_optimized/satin_62.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2954350,
+      "output_bytes": 411454
+    },
+    {
+      "source": "assets/images/satin_palette/satin_63.png",
+      "output": "assets/images/satin_optimized/satin_63.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2931406,
+      "output_bytes": 375922
+    },
+    {
+      "source": "assets/images/satin_palette/satin_64.png",
+      "output": "assets/images/satin_optimized/satin_64.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 3046079,
+      "output_bytes": 414144
+    },
+    {
+      "source": "assets/images/satin_palette/satin_65.png",
+      "output": "assets/images/satin_optimized/satin_65.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2967383,
+      "output_bytes": 370248
+    },
+    {
+      "source": "assets/images/satin_palette/satin_66.png",
+      "output": "assets/images/satin_optimized/satin_66.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2678305,
+      "output_bytes": 344186
+    },
+    {
+      "source": "assets/images/satin_palette/satin_67.png",
+      "output": "assets/images/satin_optimized/satin_67.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2885055,
+      "output_bytes": 362000
+    },
+    {
+      "source": "assets/images/satin_palette/satin_68.png",
+      "output": "assets/images/satin_optimized/satin_68.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2913463,
+      "output_bytes": 370240
+    },
+    {
+      "source": "assets/images/satin_palette/satin_69.png",
+      "output": "assets/images/satin_optimized/satin_69.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2883751,
+      "output_bytes": 369062
+    },
+    {
+      "source": "assets/images/satin_palette/satin_70.png",
+      "output": "assets/images/satin_optimized/satin_70.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 3007047,
+      "output_bytes": 407548
+    },
+    {
+      "source": "assets/images/satin_palette/satin_71.png",
+      "output": "assets/images/satin_optimized/satin_71.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2922021,
+      "output_bytes": 434016
+    },
+    {
+      "source": "assets/images/satin_palette/satin_72.png",
+      "output": "assets/images/satin_optimized/satin_72.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2787686,
+      "output_bytes": 378578
+    },
+    {
+      "source": "assets/images/satin_palette/satin_73.png",
+      "output": "assets/images/satin_optimized/satin_73.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2881044,
+      "output_bytes": 376204
+    },
+    {
+      "source": "assets/images/satin_palette/satin_74.png",
+      "output": "assets/images/satin_optimized/satin_74.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2790813,
+      "output_bytes": 386500
+    },
+    {
+      "source": "assets/images/satin_palette/satin_75.png",
+      "output": "assets/images/satin_optimized/satin_75.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2811759,
+      "output_bytes": 390100
+    },
+    {
+      "source": "assets/images/satin_palette/satin_76.png",
+      "output": "assets/images/satin_optimized/satin_76.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2827197,
+      "output_bytes": 388922
+    },
+    {
+      "source": "assets/images/satin_palette/satin_77.png",
+      "output": "assets/images/satin_optimized/satin_77.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2719963,
+      "output_bytes": 336146
+    },
+    {
+      "source": "assets/images/satin_palette/satin_78.png",
+      "output": "assets/images/satin_optimized/satin_78.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2905007,
+      "output_bytes": 434462
+    },
+    {
+      "source": "assets/images/satin_palette/satin_79.png",
+      "output": "assets/images/satin_optimized/satin_79.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2762325,
+      "output_bytes": 433318
+    },
+    {
+      "source": "assets/images/satin_palette/satin_80.png",
+      "output": "assets/images/satin_optimized/satin_80.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 2768896,
+      "output_bytes": 426006
+    },
+    {
+      "source": "assets/images/limpiapipas_amarillo_beige_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_amarillo_beige_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1153635,
+      "output_bytes": 233974
+    },
+    {
+      "source": "assets/images/limpiapipas_amarillo_brazil_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_amarillo_brazil_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1084515,
+      "output_bytes": 216054
+    },
+    {
+      "source": "assets/images/limpiapipas_amarillo_mostaza_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_amarillo_mostaza_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1123999,
+      "output_bytes": 228030
+    },
+    {
+      "source": "assets/images/limpiapipas_azul_bebe_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_azul_bebe_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1133287,
+      "output_bytes": 249274
+    },
+    {
+      "source": "assets/images/limpiapipas_azul_electrico_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_azul_electrico_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1320040,
+      "output_bytes": 283454
+    },
+    {
+      "source": "assets/images/limpiapipas_beige_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_beige_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1397100,
+      "output_bytes": 273914
+    },
+    {
+      "source": "assets/images/limpiapipas_blanco_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_blanco_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1011950,
+      "output_bytes": 177132
+    },
+    {
+      "source": "assets/images/limpiapipas_celeste_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_celeste_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1210517,
+      "output_bytes": 256232
+    },
+    {
+      "source": "assets/images/limpiapipas_celeste_turquesa_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_celeste_turquesa_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1275852,
+      "output_bytes": 256004
+    },
+    {
+      "source": "assets/images/limpiapipas_fucsia_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_fucsia_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1308885,
+      "output_bytes": 270592
+    },
+    {
+      "source": "assets/images/limpiapipas_gris_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_gris_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1370818,
+      "output_bytes": 255176
+    },
+    {
+      "source": "assets/images/limpiapipas_lila_bebe_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_lila_bebe_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1295171,
+      "output_bytes": 256372
+    },
+    {
+      "source": "assets/images/limpiapipas_lila_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_lila_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1262115,
+      "output_bytes": 245340
+    },
+    {
+      "source": "assets/images/limpiapipas_lotso_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_lotso_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1287009,
+      "output_bytes": 265508
+    },
+    {
+      "source": "assets/images/limpiapipas_mango_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_mango_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1223654,
+      "output_bytes": 273572
+    },
+    {
+      "source": "assets/images/limpiapipas_marron_claro_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_marron_claro_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1149224,
+      "output_bytes": 242484
+    },
+    {
+      "source": "assets/images/limpiapipas_marron_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_marron_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1300372,
+      "output_bytes": 265318
+    },
+    {
+      "source": "assets/images/limpiapipas_morado_uva_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_morado_uva_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1352069,
+      "output_bytes": 272228
+    },
+    {
+      "source": "assets/images/limpiapipas_negro_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_negro_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1338420,
+      "output_bytes": 241398
+    },
+    {
+      "source": "assets/images/limpiapipas_palo_rosa_bebe_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_palo_rosa_bebe_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1245766,
+      "output_bytes": 224178
+    },
+    {
+      "source": "assets/images/limpiapipas_palo_rosa_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_palo_rosa_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1390791,
+      "output_bytes": 263590
+    },
+    {
+      "source": "assets/images/limpiapipas_perla_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_perla_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1043601,
+      "output_bytes": 191652
+    },
+    {
+      "source": "assets/images/limpiapipas_piel_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_piel_clean.webp",
+      "width": 1231,
+      "height": 1278,
+      "source_bytes": 2599815,
+      "output_bytes": 293816
+    },
+    {
+      "source": "assets/images/limpiapipas_rojo_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_rojo_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1345773,
+      "output_bytes": 283938
+    },
+    {
+      "source": "assets/images/limpiapipas_rojo_coral_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_rojo_coral_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1171115,
+      "output_bytes": 242952
+    },
+    {
+      "source": "assets/images/limpiapipas_rojo_sangre_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_rojo_sangre_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1266726,
+      "output_bytes": 279872
+    },
+    {
+      "source": "assets/images/limpiapipas_rosado_bebe_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_rosado_bebe_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1199887,
+      "output_bytes": 249164
+    },
+    {
+      "source": "assets/images/limpiapipas_rosado_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_rosado_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1375575,
+      "output_bytes": 290390
+    },
+    {
+      "source": "assets/images/limpiapipas_rust_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_rust_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1203936,
+      "output_bytes": 243488
+    },
+    {
+      "source": "assets/images/limpiapipas_verde_agua_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_verde_agua_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1311586,
+      "output_bytes": 237556
+    },
+    {
+      "source": "assets/images/limpiapipas_verde_militar_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_verde_militar_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1665059,
+      "output_bytes": 314544
+    },
+    {
+      "source": "assets/images/limpiapipas_verde_pasto_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_verde_pasto_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1454276,
+      "output_bytes": 272670
+    },
+    {
+      "source": "assets/images/limpiapipas_verde_turquesa_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_verde_turquesa_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1306672,
+      "output_bytes": 274452
+    },
+    {
+      "source": "assets/images/limpiapipas_vino_clean.png",
+      "output": "assets/images/limpiapipas_optimized/limpiapipas_vino_clean.webp",
+      "width": 1254,
+      "height": 1254,
+      "source_bytes": 1310885,
+      "output_bytes": 264698
+    }
+  ]
+}

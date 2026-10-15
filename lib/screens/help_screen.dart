@@ -4,9 +4,14 @@ import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 
 class HelpScreen extends StatelessWidget {
-  const HelpScreen({super.key, required this.onContact});
+  const HelpScreen({
+    super.key,
+    required this.onContact,
+    required this.onPrivacy,
+  });
 
   final VoidCallback onContact;
+  final VoidCallback onPrivacy;
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +91,15 @@ class HelpScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onPrivacy,
+                icon: const Icon(Icons.privacy_tip_outlined),
+                label: const Text('Privacidad y mis datos'),
+              ),
+            ),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(

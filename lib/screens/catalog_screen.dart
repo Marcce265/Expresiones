@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/catalog_models.dart';
@@ -13,6 +15,7 @@ class CatalogScreen extends StatefulWidget {
     required this.onBack,
     required this.onOpenQuote,
     this.initialCategory,
+    this.onZeroResultSearch,
   });
 
   final List<CatalogProduct> products;
@@ -20,6 +23,7 @@ class CatalogScreen extends StatefulWidget {
   final ProductSelected onProduct;
   final VoidCallback onBack;
   final VoidCallback onOpenQuote;
+  final ValueChanged<String>? onZeroResultSearch;
 
   @override
   State<CatalogScreen> createState() => _CatalogScreenState();
@@ -27,13 +31,15 @@ class CatalogScreen extends StatefulWidget {
 
 class _CatalogScreenState extends State<CatalogScreen> {
   final _searchController = TextEditingController();
-  late ProductCategory? _category = widget.initialCategory;
+  final Set<String> _reportedEmptySearches = {};
+  Timer? _searchDebounce;
   CatalogProduct? _selectedFamily;
   String _query = '';
   String _filter = 'Todos';
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -44,8 +50,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final family = _selectedFamily;
     final availableProducts = widget.products.where(
       (product) =>
-          product.isActive &&
-          (_category == null || product.category == _category),
+          product.isActive && product.category == ProductCategory.materials,
     );
     final baseTiles = family == null
         ? [
@@ -58,8 +63,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
     }).toList();
     final filters = family != null
         ? const <String>[]
-        : _category == ProductCategory.materials
-        ? const [
+        : const [
             'Todos',
             'Limpiapipas',
             'Cintas satinadas',
@@ -68,8 +72,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
             'Accesorios',
             'Herramientas',
             'Frases',
-          ]
-        : const ['Todos', 'Materiales', 'Ramos', 'Personalizados'];
+          ];
 
     return Column(
       children: [
@@ -93,7 +96,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              family?.name ?? _category?.label ?? 'Catálogo',
+                              family?.name ?? 'Materiales',
                               style: Theme.of(context).textTheme.headlineMedium,
                             ),
                           ),
@@ -106,7 +109,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       const SizedBox(height: 10),
                       TextField(
                         controller: _searchController,
-                        onChanged: (value) => setState(() => _query = value),
+                        onChanged: _onSearchChanged,
+                        onSubmitted: _reportEmptySearch,
                         decoration: InputDecoration(
                           hintText: 'Buscar por color o modelo',
                           prefixIcon: const Icon(Icons.search_rounded),
@@ -230,18 +234,40 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   void _selectFilter(String filter) {
     setState(() {
-      if (_category == ProductCategory.materials) {
-        _filter = filter;
-      } else {
-        _category = switch (filter) {
-          'Materiales' => ProductCategory.materials,
-          'Ramos' => ProductCategory.bouquets,
-          'Personalizados' => ProductCategory.personalizedGifts,
-          _ => null,
-        };
-        _filter = 'Todos';
-      }
+      _filter = filter;
     });
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() => _query = value);
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 800),
+      () => _reportEmptySearch(value),
+    );
+  }
+
+  void _reportEmptySearch(String rawQuery) {
+    if (!mounted || widget.onZeroResultSearch == null) return;
+    final query = rawQuery.trim().toLowerCase();
+    if (query.length < 2 || _reportedEmptySearches.contains(query)) return;
+    final availableProducts = widget.products.where(
+      (product) =>
+          product.isActive && product.category == ProductCategory.materials,
+    );
+    final family = _selectedFamily;
+    final baseTiles = family == null
+        ? [
+            for (final product in availableProducts)
+              (product: product, variant: null),
+          ]
+        : expandCatalogTiles([family]);
+    final hasResult = baseTiles.any(
+      (tile) => _matches(tile, query) && _matchesFilter(tile, _filter),
+    );
+    if (hasResult) return;
+    _reportedEmptySearches.add(query);
+    widget.onZeroResultSearch!(query);
   }
 
   void _openTile(CatalogTile tile) {

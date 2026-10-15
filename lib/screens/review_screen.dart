@@ -4,6 +4,7 @@ import '../models/coordination_details.dart';
 import '../models/quote_line.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/quote_export_buttons.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({
@@ -101,6 +102,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 final sendPanel = _SendPanel(
                   quoteId: widget.quoteId,
                   message: widget.message,
+                  lines: widget.lines,
+                  details: widget.details,
                   sending: _sending,
                   onSend: _send,
                   onCopy: _copy,
@@ -267,6 +270,15 @@ class _CoordinationCard extends StatelessWidget {
                   : Icons.local_shipping_outlined,
               label: details.deliveryLabel,
             ),
+            if (details.deliveryMethod == DeliveryMethod.shalom &&
+                details.shalomAgencyId.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _DetailRow(
+                icon: Icons.location_on_outlined,
+                label:
+                    '${details.shalomAgencyName} · ${details.shalomAgencyLocality}\n${details.shalomAgencyAddress}',
+              ),
+            ],
             const SizedBox(height: 12),
             _DetailRow(
               icon: Icons.calendar_today_outlined,
@@ -313,6 +325,8 @@ class _SendPanel extends StatelessWidget {
   const _SendPanel({
     required this.quoteId,
     required this.message,
+    required this.lines,
+    required this.details,
     required this.sending,
     required this.onSend,
     required this.onCopy,
@@ -321,6 +335,8 @@ class _SendPanel extends StatelessWidget {
 
   final String quoteId;
   final String message;
+  final List<ResolvedQuoteLine> lines;
+  final CoordinationDetails details;
   final bool sending;
   final VoidCallback onSend;
   final VoidCallback onCopy;
@@ -380,6 +396,11 @@ class _SendPanel extends StatelessWidget {
                 icon: const Icon(Icons.copy_rounded, size: 18),
                 label: const Text('Copiar mensaje'),
               ),
+            ),
+            QuoteExportButtons(
+              quoteId: quoteId,
+              lines: lines,
+              details: details,
             ),
             const SizedBox(height: 12),
             SizedBox(

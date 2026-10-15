@@ -21,7 +21,7 @@ void main() {
     expect(product.totalFor(12, variantId: 'morado-uva'), 54);
   });
 
-  test('incluye las 34 variantes verificadas del catálogo de limpiapipas', () {
+  test('incluye las 34 variantes únicas de limpiapipas', () {
     final product = seedCatalogProducts.first;
 
     expect(product.variants, hasLength(34));
@@ -44,6 +44,28 @@ void main() {
 
     expect(productImageFit(limpiapipas), BoxFit.contain);
     expect(productImageFit(cinta), BoxFit.cover);
+  });
+
+  test('incluye solo los 80 tonos numerados de cinta satinada', () {
+    final cinta = seedCatalogProducts.firstWhere(
+      (product) => product.id == 'cinta-satinada-100m',
+    );
+
+    expect(cinta.variants, hasLength(80));
+    expect(cinta.variants.first.name, 'N.º 01 · Blanco perla');
+    expect(cinta.variants.last.name, 'N.º 80 · Verde neón');
+    expect(
+      cinta.variants.map((variant) => variant.imageUrl).toSet(),
+      hasLength(80),
+    );
+    expect(
+      cinta.variants.every(
+        (variant) =>
+            variant.imageUrl ==
+            'assets/images/satin_optimized/satin_${variant.attributes['paletteNumber']}.webp',
+      ),
+      isTrue,
+    );
   });
 
   test('genera el mensaje final de WhatsApp con datos y total', () {

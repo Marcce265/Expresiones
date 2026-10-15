@@ -4,6 +4,7 @@ import '../models/catalog_models.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/product_visual.dart';
+import '../widgets/quantity_input.dart';
 
 typedef AddProductCallback = void Function({
   required int quantity,
@@ -92,6 +93,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       colorHex: variant?.colorHex,
                       categoryKey: product.category.key,
                       fit: imageFit,
+                      cropBottomFraction: productImageCropBottom(
+                        product,
+                        variant: variant,
+                      ),
+                      alignment: productImageAlignment(product),
                     ),
                   );
                   final information = _ProductInformation(
@@ -110,6 +116,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     onDecrease: _quantity == 1
                         ? null
                         : () => setState(() => _quantity--),
+                    onQuantityEntered: (value) {
+                      if (product.canRequest(value, variantId: _variantId)) {
+                        setState(() => _quantity = value);
+                      }
+                    },
                     onIncrease:
                         product.canRequest(_quantity + 1, variantId: _variantId)
                         ? () => setState(() => _quantity++)
@@ -172,6 +183,7 @@ class _ProductInformation extends StatelessWidget {
     required this.onVariant,
     required this.onDecrease,
     required this.onIncrease,
+    required this.onQuantityEntered,
   });
 
   final CatalogProduct product;
@@ -185,6 +197,7 @@ class _ProductInformation extends StatelessWidget {
   final ValueChanged<String> onVariant;
   final VoidCallback? onDecrease;
   final VoidCallback? onIncrease;
+  final ValueChanged<int> onQuantityEntered;
 
   @override
   Widget build(BuildContext context) {
@@ -193,22 +206,32 @@ class _ProductInformation extends StatelessWidget {
       children: [
         Eyebrow('${product.category.label} · ${product.name}'),
         const SizedBox(height: 7),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.headlineLarge,
+        if (title.length > 18)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.headlineLarge),
+              const SizedBox(height: 3),
+              PriceText(unitPrice, prefix: product.startingAt ? 'Desde' : ''),
+            ],
+          )
+        else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.headlineLarge,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            PriceText(unitPrice, prefix: product.startingAt ? 'Desde' : ''),
-          ],
-        ),
+              const SizedBox(width: 12),
+              PriceText(unitPrice, prefix: product.startingAt ? 'Desde' : ''),
+            ],
+          ),
         const SizedBox(height: 5),
         Text(
-          [if (sku != null) 'Modelo $sku', product.description].join(' · '),
+          [if (sku != null) 'Código $sku', product.description].join(' · '),
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 20),
@@ -225,6 +248,7 @@ class _ProductInformation extends StatelessWidget {
                     value: quantity,
                     onDecrease: onDecrease,
                     onIncrease: onIncrease,
+                    onQuantityEntered: onQuantityEntered,
                   ),
                 ],
               ),
@@ -246,7 +270,7 @@ class _ProductInformation extends StatelessWidget {
                       border: Border.all(color: AppColors.border),
                     ),
                     child: Text(
-                      'Por unidad · S/ ${unitPrice.toStringAsFixed(2)}',
+                      'Por ${product.unitLabel} · S/ ${unitPrice.toStringAsFixed(2)}',
                       style: Theme.of(context).textTheme.bodySmall
                           ?.copyWith(color: AppColors.ink),
                     ),
@@ -277,8 +301,8 @@ class _ProductInformation extends StatelessWidget {
                   tiers
                       .map(
                         (tier) =>
-                            '${tier.minQuantity} unidades: '
-                            'S/ ${tier.unitPrice.toStringAsFixed(2)} c/u',
+                            '${tier.minQuantity} ${product.unitLabel}${product.unitLabel == 'unidad' ? 'es' : 's'}: '
+                            'S/ ${tier.unitPrice.toStringAsFixed(2)} por ${product.unitLabel}',
                       )
                       .join(' · '),
                   style: Theme.of(context).textTheme.bodySmall,
@@ -331,37 +355,22 @@ class _QuantitySelector extends StatelessWidget {
     required this.value,
     required this.onDecrease,
     required this.onIncrease,
+    required this.onQuantityEntered,
   });
 
   final int value;
   final VoidCallback? onDecrease;
   final VoidCallback? onIncrease;
+  final ValueChanged<int> onQuantityEntered;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            onPressed: onDecrease,
-            icon: const Icon(Icons.remove, size: 19),
-          ),
-          Text('$value', style: Theme.of(context).textTheme.labelLarge),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            onPressed: onIncrease,
-            icon: const Icon(Icons.add, size: 19),
-          ),
-        ],
-      ),
+    return QuantityInput(
+      value: value,
+      onChanged: onQuantityEntered,
+      onDecrease: onDecrease,
+      onIncrease: onIncrease,
+      backgroundColor: AppColors.surface,
     );
   }
 }

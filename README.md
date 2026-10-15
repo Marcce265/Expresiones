@@ -10,10 +10,18 @@ precios por volumen y generación de cotizaciones para WhatsApp.
 - Variantes, cantidades, precios por volumen y subtotal automático.
 - Carrito guardado localmente, sin registro de usuario.
 - Recojo en Huancayo o envío nacional por Shalom.
+- Selector de agencias Shalom con búsqueda, dirección y horarios, cargado sin conexión.
 - Fecha solicitada, carga de producción y datos de coordinación.
 - Revisión final, copia del mensaje y envío a WhatsApp `+51 956 744 914`.
-- Cloud Firestore de solo lectura con catálogo local de respaldo.
-- Reglas, índices, esquema y datos para el emulador de Firestore.
+- Capacidad real por día, carga reservada, cierres y fechas especiales.
+- Catálogo Firestore en tiempo real con catálogo local de respaldo.
+- Panel web `/admin/` protegido con Firebase Auth y permiso `admin` para
+  editar productos, precios, stock, capacidad y revisar analítica.
+- Métricas anónimas de búsquedas sin resultado, vistas, productos agregados,
+  aperturas de WhatsApp y cotizaciones abandonadas.
+- Exportación local de la cotización a PDF y Excel.
+- Política de privacidad dentro de la app y en `/privacy.html`.
+- Reglas, índices, scripts de importación y datos para Firestore.
 
 ## Ejecutar en el celular virtual
 
@@ -68,3 +76,11 @@ C:\src\flutter\bin\flutter.bat build apk --debug
 
 La estructura de datos está explicada en
 [`docs/firestore_schema.md`](docs/firestore_schema.md).
+
+La publicación web, el panel y Play Store están documentados en
+[`docs/web_release.md`](docs/web_release.md),
+[`docs/admin_portal.md`](docs/admin_portal.md) y
+[`docs/play_store_release.md`](docs/play_store_release.md).
+
+El listado de agencias Shalom y cómo actualizarlo están documentados en
+[`docs/shalom_agencies_report.md`](docs/shalom_agencies_report.md).

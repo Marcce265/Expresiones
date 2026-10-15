@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +8,9 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'data/catalog_repository.dart';
+import 'data/firestore_telemetry_sink.dart';
+import 'data/production_capacity_repository.dart';
+import 'data/telemetry_local_store.dart';
 import 'models/catalog_models.dart';
 import 'models/coordination_details.dart';
 import 'screens/catalog_screen.dart';
@@ -14,9 +18,11 @@ import 'screens/coordination_screen.dart';
 import 'screens/help_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/product_detail_screen.dart';
+import 'screens/privacy_screen.dart';
 import 'screens/quote_screen.dart';
 import 'screens/review_screen.dart';
 import 'services/firebase_bootstrap.dart';
+import 'services/commerce_telemetry_service.dart';
 import 'services/quote_message.dart';
 import 'state/app_store.dart';
 import 'theme/app_theme.dart';
@@ -25,10 +31,26 @@ const _whatsappNumber = '51956744914';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await FirebaseBootstrap.initialize();
+  final firebase = await FirebaseBootstrap.initialize();
+
+  const telemetryEnabled = bool.fromEnvironment(
+    'ENABLE_TELEMETRY',
+    defaultValue: false,
+  );
+  final telemetry = CommerceTelemetryService(
+    localStore: const SharedPreferencesTelemetryStore(),
+    sink: firebase.connected && telemetryEnabled
+        ? FirestoreCommerceTelemetrySink(FirebaseFirestore.instance)
+        : null,
+  );
 
   final repository = CatalogRepository();
-  final store = AppStore(repository.loadProducts);
+  final store = AppStore(
+    repository.loadProducts,
+    catalogStreamLoader: repository.watchProducts,
+    capacityRepository: FirestoreCapacityRepository(),
+    telemetry: telemetry,
+  );
 
   runApp(
     ChangeNotifierProvider.value(value: store, child: const ExpresionesApp()),
@@ -57,9 +79,28 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   int _index = 0;
   ProductCategory? _catalogCategory;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(context.read<AppStore>().detectAbandonedQuote());
+    }
+  }
 
   void _showCatalog([ProductCategory? category]) {
     setState(() {
@@ -70,7 +111,20 @@ class _AppShellState extends State<AppShell> {
 
   void _showQuote() => setState(() => _index = 2);
 
+  void _openPrivacy() {
+    final store = context.read<AppStore>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (privacyContext) => PrivacyScreen(
+          onBack: () => Navigator.of(privacyContext).pop(),
+          onClearLocalData: store.clearLocalData,
+        ),
+      ),
+    );
+  }
+
   void _openProduct(CatalogProduct product, String? variantId) {
+    context.read<AppStore>().recordProductView(product, variantId);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (routeContext) => Scaffold(
@@ -118,6 +172,7 @@ class _AppShellState extends State<AppShell> {
               initial: store.details,
               earliestDate: store.earliestDesiredDate,
               productionPoints: store.productionPoints,
+              isDateAvailable: store.isDesiredDateAvailable,
               onSubmit: (details) {
                 store.updateDetails(details);
                 _openReview(coordinationContext, details);
@@ -151,7 +206,10 @@ class _AppShellState extends State<AppShell> {
               details: details,
               quoteId: quoteId,
               message: message,
-              onSendWhatsapp: () => _openWhatsapp(message),
+              onSendWhatsapp: () => _openWhatsapp(
+                message,
+                recordQuoteSent: true,
+              ),
               onCopyMessage: () {
                 Clipboard.setData(ClipboardData(text: message));
               },
@@ -166,7 +224,10 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  Future<void> _openWhatsapp(String message) async {
+  Future<void> _openWhatsapp(
+    String message, {
+    bool recordQuoteSent = false,
+  }) async {
     final uri = Uri.parse(
       'https://wa.me/$_whatsappNumber?text=${Uri.encodeComponent(message)}',
     );
@@ -177,6 +238,9 @@ class _AppShellState extends State<AppShell> {
           : LaunchMode.externalApplication,
     );
     if (!opened) throw StateError('No se pudo abrir WhatsApp.');
+    if (recordQuoteSent && mounted) {
+      await context.read<AppStore>().recordQuoteSent();
+    }
   }
 
   @override
@@ -194,6 +258,7 @@ class _AppShellState extends State<AppShell> {
         onProduct: _openProduct,
         onOpenQuote: _showQuote,
         quoteQuantity: store.cartQuantity,
+        onZeroResultSearch: store.recordZeroResultSearch,
       ),
       1 => CatalogScreen(
         key: ValueKey(_catalogCategory),
@@ -202,6 +267,7 @@ class _AppShellState extends State<AppShell> {
         onProduct: _openProduct,
         onBack: () => setState(() => _index = 0),
         onOpenQuote: _showQuote,
+        onZeroResultSearch: store.recordZeroResultSearch,
       ),
       2 => QuoteScreen(
         lines: store.resolvedLines,
@@ -214,6 +280,7 @@ class _AppShellState extends State<AppShell> {
       _ => HelpScreen(
         onContact: () =>
             _openWhatsapp('Hola, Expresiones. Quisiera hacer una consulta.'),
+        onPrivacy: _openPrivacy,
       ),
     };
 

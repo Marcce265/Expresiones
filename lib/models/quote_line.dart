@@ -73,6 +73,6 @@ class ResolvedQuoteLine {
       if (tier.appliesTo(line.quantity)) selected = tier;
     }
     return selected?.label ??
-        (line.quantity == 1 ? 'Por unidad' : 'Precio aplicado');
+        (line.quantity == 1 ? 'Por ${product.unitLabel}' : 'Precio aplicado');
   }
 }
