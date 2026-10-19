@@ -23,27 +23,52 @@ precios por volumen y generación de cotizaciones para WhatsApp.
 - Política de privacidad dentro de la app y en `/privacy.html`.
 - Reglas, índices, scripts de importación y datos para Firestore.
 
-## Ejecutar en el celular virtual
+## Ejecutar en Fedora
 
-El proyecto ya incluye las extensiones de Dart y Flutter para VS Code y apunta
-al SDK ubicado en `C:\src\flutter`.
+Abre en VS Code la carpeta de este repositorio, no su carpeta padre:
 
-1. Abre `D:\Expresiones` en VS Code.
-2. Mantén abierto el Pixel virtual de Android Studio.
-3. Ve a **Ejecutar y depurar**.
-4. Elige **Expresiones Android** y presiona **F5**.
+```text
+/home/marcee/Expresiones/Expresiones
+```
 
-También puedes usar la terminal:
+La configuración de VS Code localiza Flutter desde `PATH`, por lo que también
+sigue siendo portable a Windows. Para iniciar el teléfono virtual:
 
-```powershell
-C:\src\flutter\bin\flutter.bat run -d emulator-5554
+```bash
+flutter pub get
+flutter emulators --launch Expresiones_API_36
+flutter run -d emulator-5554 --dart-define-from-file=firebase_config.json
 ```
 
 Para la versión web, elige **Expresiones Web** en VS Code o ejecuta:
 
-```powershell
-C:\src\flutter\bin\flutter.bat run -d edge
+```bash
+flutter run -d chrome --dart-define-from-file=firebase_config.json
 ```
+
+## Firestore local en Fedora
+
+`firebase_config.json` no se publica en Git. La copia local preparada para
+Fedora conecta Android y web con Firestore Emulator sin alterar el catálogo ni
+los flujos de la aplicación.
+
+Inicia Firestore desde la raíz de este repositorio:
+
+```bash
+firebase emulators:start --only firestore --project expresiones-local
+```
+
+En otra terminal carga el catálogo completo y verifica las reglas:
+
+```bash
+export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
+export GCLOUD_PROJECT=expresiones-local
+node scripts/seed_firestore.js
+node scripts/verify_firestore_rules.js
+```
+
+La interfaz local queda disponible en `http://127.0.0.1:4000`. En Android el
+bootstrap usa automáticamente `10.0.2.2`; en web usa `127.0.0.1`.
 
 ## Conectar un proyecto real de Firestore
 
@@ -57,8 +82,8 @@ Cloud Firestore:
 4. Despliega las reglas y el índice con `firebase deploy --only firestore`.
 5. Ejecuta Flutter con el archivo de configuración:
 
-```powershell
-C:\src\flutter\bin\flutter.bat run -d emulator-5554 --dart-define-from-file=firebase_config.json
+```bash
+flutter run -d emulator-5554 --dart-define-from-file=firebase_config.json
 ```
 
 Si Firestore no está configurado, está vacío o no responde, el catálogo local
@@ -67,11 +92,11 @@ en Firestore.
 
 ## Verificación
 
-```powershell
-C:\src\flutter\bin\flutter.bat analyze
-C:\src\flutter\bin\flutter.bat test
-C:\src\flutter\bin\flutter.bat build web
-C:\src\flutter\bin\flutter.bat build apk --debug
+```bash
+flutter analyze
+flutter test
+flutter build web
+flutter build apk --debug
 ```
 
 La estructura de datos está explicada en

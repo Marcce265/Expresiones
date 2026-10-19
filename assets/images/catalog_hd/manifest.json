@@ -1,101 +1,5 @@
 [
   {
-    "index": 18,
-    "rawFile": "canva_raw_018.webp",
-    "sourceName": "width_150.webp",
-    "page": 6,
-    "uri": "e6258a8e-7fe2-43bb-a0de-55e1748886f3",
-    "file": "source_e6258a8e-7fe2-43bb-a0de-55e1748886f3.webp",
-    "imagePath": "assets/images/catalog_hd/source_e6258a8e-7fe2-43bb-a0de-55e1748886f3.webp",
-    "isHighResolution": true,
-    "width": 799,
-    "height": 764
-  },
-  {
-    "index": 19,
-    "rawFile": "canva_raw_019.webp",
-    "sourceName": "width_140.webp",
-    "page": 6,
-    "uri": "2f6ee696-875c-49b3-abfa-433d1ffff22f",
-    "file": "source_2f6ee696-875c-49b3-abfa-433d1ffff22f.webp",
-    "imagePath": "assets/images/catalog_hd/source_2f6ee696-875c-49b3-abfa-433d1ffff22f.webp",
-    "isHighResolution": true,
-    "width": 750,
-    "height": 799
-  },
-  {
-    "index": 20,
-    "rawFile": "canva_raw_020.webp",
-    "sourceName": "width_140 (1).webp",
-    "page": 6,
-    "uri": "e3a8b5ec-2fa6-4b56-9da0-b6c9fad1e5d3",
-    "file": "source_e3a8b5ec-2fa6-4b56-9da0-b6c9fad1e5d3.webp",
-    "imagePath": "assets/images/catalog_hd/source_e3a8b5ec-2fa6-4b56-9da0-b6c9fad1e5d3.webp",
-    "isHighResolution": true,
-    "width": 750,
-    "height": 799
-  },
-  {
-    "index": 21,
-    "rawFile": "canva_raw_021.webp",
-    "sourceName": "width_150 (1).webp",
-    "page": 6,
-    "uri": "a4a1d133-a4ed-4a13-a5b1-bb4153989955",
-    "file": "source_a4a1d133-a4ed-4a13-a5b1-bb4153989955.webp",
-    "imagePath": "assets/images/catalog_hd/source_a4a1d133-a4ed-4a13-a5b1-bb4153989955.webp",
-    "isHighResolution": true,
-    "width": 799,
-    "height": 764
-  },
-  {
-    "index": 22,
-    "rawFile": "canva_raw_022.webp",
-    "sourceName": "width_140 (2).webp",
-    "page": 6,
-    "uri": "65d59b2c-447e-4ff6-b231-258885544050",
-    "file": "source_65d59b2c-447e-4ff6-b231-258885544050.webp",
-    "imagePath": "assets/images/catalog_hd/source_65d59b2c-447e-4ff6-b231-258885544050.webp",
-    "isHighResolution": true,
-    "width": 750,
-    "height": 799
-  },
-  {
-    "index": 23,
-    "rawFile": "canva_raw_023.webp",
-    "sourceName": "width_140 (3).webp",
-    "page": 6,
-    "uri": "218c2d49-73fd-4c27-ac57-26baa28a0b04",
-    "file": "source_218c2d49-73fd-4c27-ac57-26baa28a0b04.webp",
-    "imagePath": "assets/images/catalog_hd/source_218c2d49-73fd-4c27-ac57-26baa28a0b04.webp",
-    "isHighResolution": true,
-    "width": 750,
-    "height": 799
-  },
-  {
-    "index": 24,
-    "rawFile": "canva_raw_024.webp",
-    "sourceName": "width_112 (17).webp",
-    "page": 6,
-    "uri": "36929a07-b1a5-4792-9f35-46fdf3be7ad7",
-    "file": "source_36929a07-b1a5-4792-9f35-46fdf3be7ad7.webp",
-    "imagePath": "assets/images/catalog_hd/source_36929a07-b1a5-4792-9f35-46fdf3be7ad7.webp",
-    "isHighResolution": true,
-    "width": 576,
-    "height": 1024
-  },
-  {
-    "index": 25,
-    "rawFile": "canva_raw_025.webp",
-    "sourceName": "width_112 (18).webp",
-    "page": 7,
-    "uri": "d1f67e68-9f6a-42bd-bf30-48865c18d606",
-    "file": "source_d1f67e68-9f6a-42bd-bf30-48865c18d606.webp",
-    "imagePath": "assets/images/catalog_hd/source_d1f67e68-9f6a-42bd-bf30-48865c18d606.webp",
-    "isHighResolution": false,
-    "width": 37,
-    "height": 49
-  },
-  {
     "index": 26,
     "rawFile": "canva_raw_026.webp",
     "sourceName": "width_112 (19).webp",
@@ -288,282 +192,6 @@
     "height": 800
   },
   {
-    "index": 42,
-    "rawFile": "canva_raw_042.webp",
-    "sourceName": "width_112 (35).webp",
-    "page": 9,
-    "uri": "8babe310-6e41-4bff-8c8d-efd63b617c78",
-    "file": "source_8babe310-6e41-4bff-8c8d-efd63b617c78.webp",
-    "imagePath": "assets/images/catalog_hd/source_8babe310-6e41-4bff-8c8d-efd63b617c78.webp",
-    "isHighResolution": false,
-    "width": 37,
-    "height": 49
-  },
-  {
-    "index": 43,
-    "rawFile": "canva_raw_043.webp",
-    "sourceName": "width_150 (2).webp",
-    "page": 9,
-    "uri": "e6258a8e-7fe2-43bb-a0de-55e1748886f3",
-    "file": "source_e6258a8e-7fe2-43bb-a0de-55e1748886f3.webp",
-    "imagePath": "assets/images/catalog_hd/source_e6258a8e-7fe2-43bb-a0de-55e1748886f3.webp",
-    "isHighResolution": true,
-    "width": 799,
-    "height": 764
-  },
-  {
-    "index": 44,
-    "rawFile": "canva_raw_044.webp",
-    "sourceName": "width_140 (4).webp",
-    "page": 9,
-    "uri": "2f6ee696-875c-49b3-abfa-433d1ffff22f",
-    "file": "source_2f6ee696-875c-49b3-abfa-433d1ffff22f.webp",
-    "imagePath": "assets/images/catalog_hd/source_2f6ee696-875c-49b3-abfa-433d1ffff22f.webp",
-    "isHighResolution": true,
-    "width": 750,
-    "height": 799
-  },
-  {
-    "index": 45,
-    "rawFile": "canva_raw_045.webp",
-    "sourceName": "width_140 (5).webp",
-    "page": 9,
-    "uri": "e3a8b5ec-2fa6-4b56-9da0-b6c9fad1e5d3",
-    "file": "source_e3a8b5ec-2fa6-4b56-9da0-b6c9fad1e5d3.webp",
-    "imagePath": "assets/images/catalog_hd/source_e3a8b5ec-2fa6-4b56-9da0-b6c9fad1e5d3.webp",
-    "isHighResolution": true,
-    "width": 750,
-    "height": 799
-  },
-  {
-    "index": 46,
-    "rawFile": "canva_raw_046.webp",
-    "sourceName": "width_150 (3).webp",
-    "page": 9,
-    "uri": "a4a1d133-a4ed-4a13-a5b1-bb4153989955",
-    "file": "source_a4a1d133-a4ed-4a13-a5b1-bb4153989955.webp",
-    "imagePath": "assets/images/catalog_hd/source_a4a1d133-a4ed-4a13-a5b1-bb4153989955.webp",
-    "isHighResolution": true,
-    "width": 799,
-    "height": 764
-  },
-  {
-    "index": 47,
-    "rawFile": "canva_raw_047.webp",
-    "sourceName": "width_140 (6).webp",
-    "page": 9,
-    "uri": "65d59b2c-447e-4ff6-b231-258885544050",
-    "file": "source_65d59b2c-447e-4ff6-b231-258885544050.webp",
-    "imagePath": "assets/images/catalog_hd/source_65d59b2c-447e-4ff6-b231-258885544050.webp",
-    "isHighResolution": true,
-    "width": 750,
-    "height": 799
-  },
-  {
-    "index": 48,
-    "rawFile": "canva_raw_048.webp",
-    "sourceName": "width_140 (7).webp",
-    "page": 10,
-    "uri": "218c2d49-73fd-4c27-ac57-26baa28a0b04",
-    "file": "source_218c2d49-73fd-4c27-ac57-26baa28a0b04.webp",
-    "imagePath": "assets/images/catalog_hd/source_218c2d49-73fd-4c27-ac57-26baa28a0b04.webp",
-    "isHighResolution": true,
-    "width": 750,
-    "height": 799
-  },
-  {
-    "index": 49,
-    "rawFile": "canva_raw_049.webp",
-    "sourceName": "width_112 (36).webp",
-    "page": 10,
-    "uri": "36929a07-b1a5-4792-9f35-46fdf3be7ad7",
-    "file": "source_36929a07-b1a5-4792-9f35-46fdf3be7ad7.webp",
-    "imagePath": "assets/images/catalog_hd/source_36929a07-b1a5-4792-9f35-46fdf3be7ad7.webp",
-    "isHighResolution": true,
-    "width": 576,
-    "height": 1024
-  },
-  {
-    "index": 50,
-    "rawFile": "canva_raw_050.webp",
-    "sourceName": "width_112 (37).webp",
-    "page": 10,
-    "uri": "80e064ff-a27b-4f8f-a6f4-266f034e06a5",
-    "file": "source_80e064ff-a27b-4f8f-a6f4-266f034e06a5.webp",
-    "imagePath": "assets/images/catalog_hd/source_80e064ff-a27b-4f8f-a6f4-266f034e06a5.webp",
-    "isHighResolution": true,
-    "width": 576,
-    "height": 1024
-  },
-  {
-    "index": 51,
-    "rawFile": "canva_raw_051.webp",
-    "sourceName": "width_112 (38).webp",
-    "page": 10,
-    "uri": "d2af824c-903e-4d9b-8130-3fd7d0ad9ae0",
-    "file": "source_d2af824c-903e-4d9b-8130-3fd7d0ad9ae0.webp",
-    "imagePath": "assets/images/catalog_hd/source_d2af824c-903e-4d9b-8130-3fd7d0ad9ae0.webp",
-    "isHighResolution": true,
-    "width": 576,
-    "height": 1024
-  },
-  {
-    "index": 52,
-    "rawFile": "canva_raw_052.webp",
-    "sourceName": "width_150 (4).webp",
-    "page": 10,
-    "uri": "011c2d89-7154-4797-9a5f-06f721e1cfe6",
-    "file": "source_011c2d89-7154-4797-9a5f-06f721e1cfe6.webp",
-    "imagePath": "assets/images/catalog_hd/source_011c2d89-7154-4797-9a5f-06f721e1cfe6.webp",
-    "isHighResolution": true,
-    "width": 800,
-    "height": 800
-  },
-  {
-    "index": 53,
-    "rawFile": "canva_raw_053.jpg",
-    "sourceName": "87e22a62965f141aa08e93699b0b3527.jpg",
-    "page": 10,
-    "uri": null,
-    "file": "canva_raw_053.jpg",
-    "imagePath": "assets/images/canva_raw/canva_raw_053.jpg",
-    "isHighResolution": true,
-    "width": 1438,
-    "height": 560
-  },
-  {
-    "index": 54,
-    "rawFile": "canva_raw_054.jpg",
-    "sourceName": "87e22a62965f141aa08e93699b0b3527 (1).jpg",
-    "page": 10,
-    "uri": null,
-    "file": "canva_raw_054.jpg",
-    "imagePath": "assets/images/canva_raw/canva_raw_054.jpg",
-    "isHighResolution": true,
-    "width": 1438,
-    "height": 560
-  },
-  {
-    "index": 55,
-    "rawFile": "canva_raw_055.jpg",
-    "sourceName": "87e22a62965f141aa08e93699b0b3527 (2).jpg",
-    "page": 10,
-    "uri": null,
-    "file": "canva_raw_055.jpg",
-    "imagePath": "assets/images/canva_raw/canva_raw_055.jpg",
-    "isHighResolution": true,
-    "width": 1438,
-    "height": 560
-  },
-  {
-    "index": 56,
-    "rawFile": "canva_raw_056.webp",
-    "sourceName": "width_140 (8).webp",
-    "page": 10,
-    "uri": "e52301b7-20a6-4fcd-bc7e-9606f092fea2",
-    "file": "source_e52301b7-20a6-4fcd-bc7e-9606f092fea2.webp",
-    "imagePath": "assets/images/catalog_hd/source_e52301b7-20a6-4fcd-bc7e-9606f092fea2.webp",
-    "isHighResolution": true,
-    "width": 750,
-    "height": 799
-  },
-  {
-    "index": 57,
-    "rawFile": "canva_raw_057.webp",
-    "sourceName": "width_150 (5).webp",
-    "page": 10,
-    "uri": "5a8ca681-fe07-4ee5-b27a-155c4cdfef59",
-    "file": "source_5a8ca681-fe07-4ee5-b27a-155c4cdfef59.webp",
-    "imagePath": "assets/images/catalog_hd/source_5a8ca681-fe07-4ee5-b27a-155c4cdfef59.webp",
-    "isHighResolution": true,
-    "width": 800,
-    "height": 800
-  },
-  {
-    "index": 58,
-    "rawFile": "canva_raw_058.webp",
-    "sourceName": "width_150 (6).webp",
-    "page": 10,
-    "uri": "b1ff01c7-a41d-4725-912a-ecdb40640ed5",
-    "file": "source_b1ff01c7-a41d-4725-912a-ecdb40640ed5.webp",
-    "imagePath": "assets/images/catalog_hd/source_b1ff01c7-a41d-4725-912a-ecdb40640ed5.webp",
-    "isHighResolution": true,
-    "width": 799,
-    "height": 764
-  },
-  {
-    "index": 59,
-    "rawFile": "canva_raw_059.webp",
-    "sourceName": "width_150 (7).webp",
-    "page": 10,
-    "uri": "b76d38e0-6c8e-466b-bad7-3dd1d2902b37",
-    "file": "source_b76d38e0-6c8e-466b-bad7-3dd1d2902b37.webp",
-    "imagePath": "assets/images/catalog_hd/source_b76d38e0-6c8e-466b-bad7-3dd1d2902b37.webp",
-    "isHighResolution": true,
-    "width": 800,
-    "height": 800
-  },
-  {
-    "index": 60,
-    "rawFile": "canva_raw_060.jpg",
-    "sourceName": "87e22a62965f141aa08e93699b0b3527 (3).jpg",
-    "page": 10,
-    "uri": null,
-    "file": "canva_raw_060.jpg",
-    "imagePath": "assets/images/canva_raw/canva_raw_060.jpg",
-    "isHighResolution": true,
-    "width": 1438,
-    "height": 560
-  },
-  {
-    "index": 61,
-    "rawFile": "canva_raw_061.webp",
-    "sourceName": "width_150 (8).webp",
-    "page": 10,
-    "uri": "5a8ca681-fe07-4ee5-b27a-155c4cdfef59",
-    "file": "source_5a8ca681-fe07-4ee5-b27a-155c4cdfef59.webp",
-    "imagePath": "assets/images/catalog_hd/source_5a8ca681-fe07-4ee5-b27a-155c4cdfef59.webp",
-    "isHighResolution": true,
-    "width": 800,
-    "height": 800
-  },
-  {
-    "index": 62,
-    "rawFile": "canva_raw_062.webp",
-    "sourceName": "width_150 (9).webp",
-    "page": 10,
-    "uri": "de1c9d46-bc5f-416e-b9ca-6a56fddb97de",
-    "file": "source_de1c9d46-bc5f-416e-b9ca-6a56fddb97de.webp",
-    "imagePath": "assets/images/catalog_hd/source_de1c9d46-bc5f-416e-b9ca-6a56fddb97de.webp",
-    "isHighResolution": true,
-    "width": 800,
-    "height": 775
-  },
-  {
-    "index": 63,
-    "rawFile": "canva_raw_063.webp",
-    "sourceName": "width_150 (10).webp",
-    "page": 10,
-    "uri": "4d627ec1-2ecc-45e4-8af2-d0f3ea0f59e8",
-    "file": "source_4d627ec1-2ecc-45e4-8af2-d0f3ea0f59e8.webp",
-    "imagePath": "assets/images/catalog_hd/source_4d627ec1-2ecc-45e4-8af2-d0f3ea0f59e8.webp",
-    "isHighResolution": true,
-    "width": 472,
-    "height": 413
-  },
-  {
-    "index": 64,
-    "rawFile": "canva_raw_064.webp",
-    "sourceName": "width_131.webp",
-    "page": 10,
-    "uri": "e6288df7-c745-48f0-9eb7-b0fab5f68e79",
-    "file": "source_e6288df7-c745-48f0-9eb7-b0fab5f68e79.webp",
-    "imagePath": "assets/images/catalog_hd/source_e6288df7-c745-48f0-9eb7-b0fab5f68e79.webp",
-    "isHighResolution": true,
-    "width": 702,
-    "height": 800
-  },
-  {
     "index": 65,
     "rawFile": "canva_raw_065.webp",
     "sourceName": "width_200.webp",
@@ -576,66 +204,6 @@
     "height": 880
   },
   {
-    "index": 66,
-    "rawFile": "canva_raw_066.webp",
-    "sourceName": "width_150 (11).webp",
-    "page": 10,
-    "uri": "b76d38e0-6c8e-466b-bad7-3dd1d2902b37",
-    "file": "source_b76d38e0-6c8e-466b-bad7-3dd1d2902b37.webp",
-    "imagePath": "assets/images/catalog_hd/source_b76d38e0-6c8e-466b-bad7-3dd1d2902b37.webp",
-    "isHighResolution": true,
-    "width": 800,
-    "height": 800
-  },
-  {
-    "index": 67,
-    "rawFile": "canva_raw_067.webp",
-    "sourceName": "width_150 (12).webp",
-    "page": 11,
-    "uri": "de1c9d46-bc5f-416e-b9ca-6a56fddb97de",
-    "file": "source_de1c9d46-bc5f-416e-b9ca-6a56fddb97de.webp",
-    "imagePath": "assets/images/catalog_hd/source_de1c9d46-bc5f-416e-b9ca-6a56fddb97de.webp",
-    "isHighResolution": true,
-    "width": 800,
-    "height": 775
-  },
-  {
-    "index": 68,
-    "rawFile": "canva_raw_068.webp",
-    "sourceName": "width_150 (13).webp",
-    "page": 11,
-    "uri": "26ff28c3-319d-46e3-b245-fd2668a70721",
-    "file": "source_26ff28c3-319d-46e3-b245-fd2668a70721.webp",
-    "imagePath": "assets/images/catalog_hd/source_26ff28c3-319d-46e3-b245-fd2668a70721.webp",
-    "isHighResolution": true,
-    "width": 799,
-    "height": 774
-  },
-  {
-    "index": 69,
-    "rawFile": "canva_raw_069.webp",
-    "sourceName": "width_150 (14).webp",
-    "page": 11,
-    "uri": "a515a7ab-1141-4433-9d78-374792fba916",
-    "file": "source_a515a7ab-1141-4433-9d78-374792fba916.webp",
-    "imagePath": "assets/images/catalog_hd/source_a515a7ab-1141-4433-9d78-374792fba916.webp",
-    "isHighResolution": true,
-    "width": 800,
-    "height": 774
-  },
-  {
-    "index": 70,
-    "rawFile": "canva_raw_070.webp",
-    "sourceName": "width_112 (39).webp",
-    "page": 11,
-    "uri": "48720346-5fed-418d-81dc-3b8443f5731c",
-    "file": "source_48720346-5fed-418d-81dc-3b8443f5731c.webp",
-    "imagePath": "assets/images/catalog_hd/source_48720346-5fed-418d-81dc-3b8443f5731c.webp",
-    "isHighResolution": true,
-    "width": 576,
-    "height": 1024
-  },
-  {
     "index": 71,
     "rawFile": "canva_raw_071.webp",
     "sourceName": "width_187.webp",
@@ -644,32 +212,8 @@
     "file": "source_fd553a94-6061-4bad-bd26-6a5649346281.webp",
     "imagePath": "assets/images/catalog_hd/source_fd553a94-6061-4bad-bd26-6a5649346281.webp",
     "isHighResolution": true,
-    "width": 412,
-    "height": 440
-  },
-  {
-    "index": 72,
-    "rawFile": "canva_raw_072.webp",
-    "sourceName": "width_150 (15).webp",
-    "page": 11,
-    "uri": "4d627ec1-2ecc-45e4-8af2-d0f3ea0f59e8",
-    "file": "source_4d627ec1-2ecc-45e4-8af2-d0f3ea0f59e8.webp",
-    "imagePath": "assets/images/catalog_hd/source_4d627ec1-2ecc-45e4-8af2-d0f3ea0f59e8.webp",
-    "isHighResolution": true,
-    "width": 472,
-    "height": 413
-  },
-  {
-    "index": 73,
-    "rawFile": "canva_raw_073.webp",
-    "sourceName": "width_131 (1).webp",
-    "page": 11,
-    "uri": "e6288df7-c745-48f0-9eb7-b0fab5f68e79",
-    "file": "source_e6288df7-c745-48f0-9eb7-b0fab5f68e79.webp",
-    "imagePath": "assets/images/catalog_hd/source_e6288df7-c745-48f0-9eb7-b0fab5f68e79.webp",
-    "isHighResolution": true,
-    "width": 702,
-    "height": 800
+    "width": 1254,
+    "height": 1254
   },
   {
     "index": 74,
@@ -812,8 +356,8 @@
     "file": "source_df54978b-7d02-4935-931b-f8f948e819d4.webp",
     "imagePath": "assets/images/catalog_hd/source_df54978b-7d02-4935-931b-f8f948e819d4.webp",
     "isHighResolution": true,
-    "width": 554,
-    "height": 554
+    "width": 1254,
+    "height": 1254
   },
   {
     "index": 86,
@@ -824,8 +368,8 @@
     "file": "source_804a2255-9753-45fc-b696-2c7f0c2fb727.webp",
     "imagePath": "assets/images/catalog_hd/source_804a2255-9753-45fc-b696-2c7f0c2fb727.webp",
     "isHighResolution": true,
-    "width": 500,
-    "height": 500
+    "width": 1254,
+    "height": 1254
   },
   {
     "index": 87,
@@ -1364,8 +908,8 @@
     "file": "source_6b24875c-bd40-45f6-9a0c-eff38e0cafef.webp",
     "imagePath": "assets/images/catalog_hd/source_6b24875c-bd40-45f6-9a0c-eff38e0cafef.webp",
     "isHighResolution": true,
-    "width": 500,
-    "height": 477
+    "width": 1254,
+    "height": 1254
   },
   {
     "index": 132,
@@ -1544,8 +1088,8 @@
     "file": "source_b5e70119-f2a0-4012-b5c8-412c1fad350a.webp",
     "imagePath": "assets/images/catalog_hd/source_b5e70119-f2a0-4012-b5c8-412c1fad350a.webp",
     "isHighResolution": true,
-    "width": 799,
-    "height": 655
+    "width": 1254,
+    "height": 1254
   },
   {
     "index": 147,
@@ -1940,7 +1484,7 @@
     "file": "source_fbfa7d39-41e3-4ffb-b950-53a6e64a3718.webp",
     "imagePath": "assets/images/catalog_hd/source_fbfa7d39-41e3-4ffb-b950-53a6e64a3718.webp",
     "isHighResolution": true,
-    "width": 447,
-    "height": 447
+    "width": 1254,
+    "height": 1254
   }
 ]

@@ -3,8 +3,25 @@ import 'package:flutter/material.dart';
 import '../models/catalog_models.dart';
 import '../theme/app_theme.dart';
 
-BoxFit productImageFit(CatalogProduct product) =>
-    product.id == 'limpiapipas-premium-8mm' ? BoxFit.contain : BoxFit.cover;
+BoxFit productImageFit(CatalogProduct product, {ProductVariant? variant}) {
+  if (product.id == 'limpiapipas-premium-8mm' || product.id == 'brochetas') {
+    return BoxFit.contain;
+  }
+
+  if (product.id == 'floratape' && variant?.id == 'catalogo-134') {
+    return BoxFit.contain;
+  }
+
+  final catalogIndex = int.tryParse(variant?.attributes['catalogIndex'] ?? '');
+  if (product.id == 'frases-en-vinil' &&
+      catalogIndex != null &&
+      catalogIndex >= 157 &&
+      catalogIndex <= 170) {
+    return BoxFit.contain;
+  }
+
+  return BoxFit.cover;
+}
 
 double productImageCropBottom(
   CatalogProduct product, {

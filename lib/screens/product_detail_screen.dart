@@ -51,7 +51,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final sku = variant?.sku ?? product.sku;
     final total = product.totalFor(_quantity, variantId: _variantId);
     final canAdd = product.canRequest(_quantity, variantId: _variantId);
-    final imageFit = productImageFit(product);
+    final imageFit = productImageFit(product, variant: variant);
 
     return Column(
       children: [
@@ -84,7 +84,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(18),
                     ),
-                    padding: imageFit == BoxFit.contain
+                    padding: product.id == 'limpiapipas-premium-8mm'
                         ? EdgeInsets.all(mobile ? 24 : 36)
                         : EdgeInsets.zero,
                     child: ProductVisual(

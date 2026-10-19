@@ -50,7 +50,7 @@ class ProductCard extends StatelessWidget {
     final image = variant?.imageUrl ?? product.imageUrl;
     final price = product.unitPriceFor(1, variantId: variantId);
     final pricePrefix = product.startingAt ? 'Desde ' : '';
-    final imageFit = productImageFit(product);
+    final imageFit = productImageFit(product, variant: variant);
 
     return Semantics(
       button: true,
@@ -75,7 +75,7 @@ class ProductCard extends StatelessWidget {
                     ColoredBox(
                       color: Colors.white,
                       child: Padding(
-                        padding: imageFit == BoxFit.contain
+                        padding: product.id == 'limpiapipas-premium-8mm'
                             ? EdgeInsets.all(compact ? 9 : 14)
                             : EdgeInsets.zero,
                         child: ProductVisual(

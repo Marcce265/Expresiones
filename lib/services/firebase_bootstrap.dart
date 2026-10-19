@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 
 class FirebaseBootstrapResult {
   const FirebaseBootstrapResult({required this.connected, this.message});
@@ -10,6 +12,7 @@ class FirebaseBootstrapResult {
 abstract final class FirebaseBootstrap {
   static Future<FirebaseBootstrapResult> initialize() async {
     if (Firebase.apps.isNotEmpty) {
+      _connectFirestoreEmulatorIfRequested();
       return const FirebaseBootstrapResult(connected: true);
     }
 
@@ -36,6 +39,7 @@ abstract final class FirebaseBootstrap {
           storageBucket: String.fromEnvironment('FIREBASE_STORAGE_BUCKET'),
         ),
       );
+      _connectFirestoreEmulatorIfRequested();
       return const FirebaseBootstrapResult(connected: true);
     } catch (error) {
       return FirebaseBootstrapResult(
@@ -44,5 +48,23 @@ abstract final class FirebaseBootstrap {
             'No se pudo conectar con Firestore. Se usa el catálogo local: $error',
       );
     }
+  }
+
+  static void _connectFirestoreEmulatorIfRequested() {
+    const useEmulator = bool.fromEnvironment('USE_FIRESTORE_EMULATOR');
+    if (!useEmulator) return;
+
+    const configuredHost = String.fromEnvironment('FIRESTORE_EMULATOR_HOST');
+    const port = int.fromEnvironment(
+      'FIRESTORE_EMULATOR_PORT',
+      defaultValue: 8080,
+    );
+    final host = configuredHost.isNotEmpty
+        ? configuredHost
+        : !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+        ? '10.0.2.2'
+        : '127.0.0.1';
+
+    FirebaseFirestore.instance.useFirestoreEmulator(host, port);
   }
 }

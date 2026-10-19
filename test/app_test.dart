@@ -36,14 +36,52 @@ void main() {
     );
   });
 
-  test('llena la casilla con las fotos de materiales', () {
+  test('ajusta las fotos al formato de cada material', () {
     final limpiapipas = seedCatalogProducts.first;
     final cinta = seedCatalogProducts.firstWhere(
       (product) => product.id == 'cinta-satinada-100m',
     );
+    final floratape = seedCatalogProducts.firstWhere(
+      (product) => product.id == 'floratape',
+    );
+    final brochetas = seedCatalogProducts.firstWhere(
+      (product) => product.id == 'brochetas',
+    );
+    final frases = seedCatalogProducts.firstWhere(
+      (product) => product.id == 'frases-en-vinil',
+    );
 
     expect(productImageFit(limpiapipas), BoxFit.contain);
     expect(productImageFit(cinta), BoxFit.cover);
+    expect(
+      productImageFit(
+        floratape,
+        variant: floratape.variantById('catalogo-134'),
+      ),
+      BoxFit.contain,
+    );
+    expect(
+      productImageFit(
+        floratape,
+        variant: floratape.variantById('catalogo-132'),
+      ),
+      BoxFit.cover,
+    );
+    expect(
+      productImageFit(
+        brochetas,
+        variant: brochetas.variantById('catalogo-137'),
+      ),
+      BoxFit.contain,
+    );
+    expect(
+      productImageFit(frases, variant: frases.variantById('catalogo-157')),
+      BoxFit.contain,
+    );
+    expect(
+      productImageFit(frases, variant: frases.variantById('catalogo-171')),
+      BoxFit.cover,
+    );
   });
 
   test('incluye solo los 80 tonos numerados de cinta satinada', () {

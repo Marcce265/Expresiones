@@ -205,7 +205,7 @@ class _QuoteLineCard extends StatelessWidget {
                   imageAsset: image,
                   colorHex: variant?.colorHex,
                   categoryKey: product.category.key,
-                  fit: productImageFit(product),
+                  fit: productImageFit(product, variant: variant),
                   cropBottomFraction: productImageCropBottom(
                     product,
                     variant: variant,

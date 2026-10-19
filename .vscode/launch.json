@@ -6,14 +6,20 @@
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
-      "deviceId": "emulator-5554"
+      "deviceId": "emulator-5554",
+      "toolArgs": [
+        "--dart-define-from-file=firebase_config.json"
+      ]
     },
     {
       "name": "Expresiones Web",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
-      "deviceId": "edge"
+      "deviceId": "chrome",
+      "toolArgs": [
+        "--dart-define-from-file=firebase_config.json"
+      ]
     }
   ]
 }
