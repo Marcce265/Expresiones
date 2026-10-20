@@ -123,7 +123,7 @@ unset SUPABASE_SERVICE_ROLE_KEY
 ```
 
 `--upload-images` usa ImageMagick para producir WebP de 400 px (calidad 75) y
-800 px (calidad 80), los sube al bucket `catalog` y enlaza las rutas. Los
+1200 px (calidad 80), los sube al bucket `catalog` y enlaza las rutas. Los
 archivos se deduplican por SHA-256. Sin ese indicador, el seed conserva las
 rutas de assets locales y no se deben retirar todavía del paquete Flutter.
 

@@ -1,7 +1,8 @@
 """Build the complete local catalog from the 179 Canva asset references.
 
-The raw Canva files stay untouched. Pipe-cleaner cards use the cleaned PNGs,
-while every other material uses the highest-resolution Canva source recovered.
+The raw Canva files stay untouched. Pipe-cleaner cards use square WebP photos
+with the product, hand, and store background, while every other material uses
+the highest-resolution Canva source recovered.
 """
 
 from __future__ import annotations
@@ -752,8 +753,8 @@ import '../models/catalog_models.dart';
 
 /// Local fallback catalog with deduplicated Canva products and 80 ribbon colors.
 ///
-/// Pipe-cleaner entries point to cleaned PNGs. Every satin color points to its
-/// own high-resolution three-roll product photo.
+/// Pipe-cleaner entries point to square product photos with a real background.
+/// Every satin color points to its own high-resolution three-roll product photo.
 final List<CatalogProduct> seedCatalogProducts = List.unmodifiable(
   (jsonDecode(_seedCatalogJson) as List<dynamic>)
       .whereType<Map<String, dynamic>>()

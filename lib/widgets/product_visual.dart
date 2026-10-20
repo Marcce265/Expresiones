@@ -10,8 +10,11 @@ String? productFamilyHeroAsset(CatalogProduct product) => switch (product.id) {
 };
 
 BoxFit productImageFit(CatalogProduct product, {ProductVariant? variant}) {
-  if ((product.id == 'limpiapipas-premium-8mm' && variant != null) ||
-      product.id == 'brochetas') {
+  if (product.id == 'limpiapipas-premium-8mm' && variant != null) {
+    return BoxFit.cover;
+  }
+
+  if (product.id == 'brochetas') {
     return BoxFit.contain;
   }
 

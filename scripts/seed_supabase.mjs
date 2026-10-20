@@ -350,7 +350,7 @@ async function optimizeAndUploadImages(config, imagePaths) {
           source,
           '-auto-orient',
           '-thumbnail',
-          '800x800>',
+          '1200x1200>',
           '-strip',
           '-quality',
           '80',

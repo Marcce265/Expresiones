@@ -4,8 +4,8 @@ import '../models/catalog_models.dart';
 
 /// Local fallback catalog with deduplicated Canva products and 80 ribbon colors.
 ///
-/// Pipe-cleaner entries point to cleaned PNGs. Every satin color points to its
-/// own high-resolution three-roll product photo.
+/// Pipe-cleaner entries point to square product photos with a real background.
+/// Every satin color points to its own high-resolution three-roll product photo.
 final List<CatalogProduct> seedCatalogProducts = List.unmodifiable(
   (jsonDecode(_seedCatalogJson) as List<dynamic>)
       .whereType<Map<String, dynamic>>()

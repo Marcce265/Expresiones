@@ -55,7 +55,7 @@ void main() {
     expect(productImageFit(limpiapipas), BoxFit.cover);
     expect(
       productImageFit(limpiapipas, variant: limpiapipas.variants.first),
-      BoxFit.contain,
+      BoxFit.cover,
     );
     expect(productImageFit(cinta), BoxFit.cover);
     expect(

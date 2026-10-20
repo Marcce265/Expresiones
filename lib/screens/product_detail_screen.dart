@@ -78,15 +78,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final mobile = constraints.maxWidth < 720;
+                  final squareVisual = product.id == 'limpiapipas-premium-8mm';
                   final visual = Container(
                     clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(18),
                     ),
-                    padding: product.id == 'limpiapipas-premium-8mm'
-                        ? EdgeInsets.all(mobile ? 24 : 36)
-                        : EdgeInsets.zero,
                     child: ProductVisual(
                       label: title,
                       imageAsset: image,
@@ -130,7 +128,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   if (mobile) {
                     return Column(
                       children: [
-                        AspectRatio(aspectRatio: 1.18, child: visual),
+                        AspectRatio(
+                          aspectRatio: squareVisual ? 1 : 1.18,
+                          child: visual,
+                        ),
                         const SizedBox(height: 20),
                         information,
                       ],
@@ -139,7 +140,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: SizedBox(height: 520, child: visual)),
+                      Expanded(
+                        child: squareVisual
+                            ? AspectRatio(aspectRatio: 1, child: visual)
+                            : SizedBox(height: 520, child: visual),
+                      ),
                       const SizedBox(width: 38),
                       Expanded(child: information),
                     ],

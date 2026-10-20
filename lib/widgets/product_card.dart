@@ -87,24 +87,17 @@ class ProductCard extends StatelessWidget {
                   children: [
                     ColoredBox(
                       color: Colors.white,
-                      child: Padding(
-                        padding:
-                            product.id == 'limpiapipas-premium-8mm' &&
-                                variant != null
-                            ? EdgeInsets.all(compact ? 9 : 14)
-                            : EdgeInsets.zero,
-                        child: ProductVisual(
-                          label: title,
-                          imageAsset: image,
-                          colorHex: variant?.colorHex,
-                          categoryKey: _visualCategory(product.category),
-                          fit: imageFit,
-                          cropBottomFraction: productImageCropBottom(
-                            product,
-                            variant: variant,
-                          ),
-                          alignment: productImageAlignment(product),
+                      child: ProductVisual(
+                        label: title,
+                        imageAsset: image,
+                        colorHex: variant?.colorHex,
+                        categoryKey: _visualCategory(product.category),
+                        fit: imageFit,
+                        cropBottomFraction: productImageCropBottom(
+                          product,
+                          variant: variant,
                         ),
+                        alignment: productImageAlignment(product),
                       ),
                     ),
                     if (unavailable)
