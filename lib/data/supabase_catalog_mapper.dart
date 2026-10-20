@@ -123,7 +123,7 @@ class SupabaseCatalogMapper {
   }
 
   Map<String, dynamic> _tierMap(Map<String, dynamic> tier) => {
-    'minQuantity': tier['min_quantity'],
+    'minQuantity': tier['min_qty'],
     'unitPrice': tier['unit_price'],
     'label': tier['label'],
   };

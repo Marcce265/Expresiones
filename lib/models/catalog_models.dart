@@ -16,7 +16,10 @@ enum ProductCategory {
       'personalizedgift' ||
       'personalizedgifts' ||
       'regalopersonalizado' ||
-      'regalospersonalizados' => personalizedGifts,
+      'regalospersonalizados' ||
+      'gift' ||
+      'gifts' =>
+        personalizedGifts,
       _ => materials,
     };
   }
