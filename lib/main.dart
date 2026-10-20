@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,9 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'data/catalog_repository.dart';
-import 'data/firestore_telemetry_sink.dart';
 import 'data/production_capacity_repository.dart';
-import 'data/telemetry_local_store.dart';
 import 'models/catalog_models.dart';
 import 'models/coordination_details.dart';
 import 'screens/catalog_screen.dart';
@@ -21,9 +18,8 @@ import 'screens/product_detail_screen.dart';
 import 'screens/privacy_screen.dart';
 import 'screens/quote_screen.dart';
 import 'screens/review_screen.dart';
-import 'services/firebase_bootstrap.dart';
-import 'services/commerce_telemetry_service.dart';
 import 'services/quote_message.dart';
+import 'services/supabase_bootstrap.dart';
 import 'state/app_store.dart';
 import 'theme/app_theme.dart';
 
@@ -31,25 +27,15 @@ const _whatsappNumber = '51956744914';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final firebase = await FirebaseBootstrap.initialize();
+  final supabase = await SupabaseBootstrap.initialize();
 
-  const telemetryEnabled = bool.fromEnvironment(
-    'ENABLE_TELEMETRY',
-    defaultValue: false,
-  );
-  final telemetry = CommerceTelemetryService(
-    localStore: const SharedPreferencesTelemetryStore(),
-    sink: firebase.connected && telemetryEnabled
-        ? FirestoreCommerceTelemetrySink(FirebaseFirestore.instance)
-        : null,
-  );
-
-  final repository = CatalogRepository();
+  final repository = CatalogRepository(client: supabase.client);
   final store = AppStore(
     repository.loadProducts,
     catalogStreamLoader: repository.watchProducts,
-    capacityRepository: FirestoreCapacityRepository(),
-    telemetry: telemetry,
+    capacityRepository: SupabaseCapacityRepository(client: supabase.client),
+    // Analytics stays disabled until the planned Phase 9.
+    telemetry: null,
   );
 
   runApp(

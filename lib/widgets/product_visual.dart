@@ -3,8 +3,15 @@ import 'package:flutter/material.dart';
 import '../models/catalog_models.dart';
 import '../theme/app_theme.dart';
 
+String? productFamilyHeroAsset(CatalogProduct product) => switch (product.id) {
+  'limpiapipas-premium-8mm' => 'assets/images/family_heroes/limpiapipas.webp',
+  'cinta-satinada-100m' => 'assets/images/family_heroes/cinta_satinada.webp',
+  _ => null,
+};
+
 BoxFit productImageFit(CatalogProduct product, {ProductVariant? variant}) {
-  if (product.id == 'limpiapipas-premium-8mm' || product.id == 'brochetas') {
+  if ((product.id == 'limpiapipas-premium-8mm' && variant != null) ||
+      product.id == 'brochetas') {
     return BoxFit.contain;
   }
 

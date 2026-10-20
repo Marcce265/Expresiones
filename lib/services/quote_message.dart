@@ -39,7 +39,7 @@ abstract final class QuoteMessageBuilder {
 
     final subtotal = lines.fold<double>(0, (sum, item) => sum + item.total);
     buffer
-      ..writeln('Subtotal referencial: S/ ${subtotal.toStringAsFixed(2)}')
+      ..writeln('Subtotal de productos: S/ ${subtotal.toStringAsFixed(2)}')
       ..writeln('Envío: por confirmar')
       ..writeln()
       ..writeln('Nombre: ${details.name.trim()}')

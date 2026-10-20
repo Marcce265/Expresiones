@@ -34,13 +34,13 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  firebase_core: ^4.15.0
-  cloud_firestore: ^6.10.0
   intl: ^0.20.2
   provider: ^6.1.5+1
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.2
-  firebase_auth: ^6.7.0
+  supabase_flutter: ^2.18.3
+  file_selector: ^1.1.0
+  qr_flutter: ^4.1.0
   pdf: ^3.12.0
   excel: ^4.0.6
   file_saver: ^0.7.0
@@ -73,6 +73,7 @@ flutter:
     - assets/fonts/
     - assets/images/catalog_hero.webp
     - assets/images/catalog_hd/
+    - assets/images/family_heroes/
     - assets/images/limpiapipas_optimized/
     - assets/images/satin_optimized/
 
@@ -114,7 +115,7 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: "assets/images/logo.png"
-    background_color: "#f5ede8"
+    background_color: "#fbf8f2"
     theme_color: "#c97b5a"
   windows:
     generate: false

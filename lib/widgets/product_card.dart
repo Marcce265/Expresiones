@@ -30,15 +30,19 @@ class ProductCard extends StatelessWidget {
     required this.product,
     required this.onTap,
     this.variant,
+    this.imageAsset,
     this.compact = false,
     this.showCategory = false,
+    this.showPrice = true,
   });
 
   final CatalogProduct product;
   final ProductVariant? variant;
+  final String? imageAsset;
   final VoidCallback onTap;
   final bool compact;
   final bool showCategory;
+  final bool showPrice;
 
   @override
   Widget build(BuildContext context) {
@@ -47,14 +51,23 @@ class ProductCard extends StatelessWidget {
     final unavailable = !product.isActive || status == StockStatus.outOfStock;
     final title = variant?.name ?? product.name;
     final sku = variant?.sku ?? product.sku;
-    final image = variant?.imageUrl ?? product.imageUrl;
+    final image =
+        imageAsset ??
+        variant?.imageUrl ??
+        productFamilyHeroAsset(product) ??
+        product.imageUrl;
     final price = product.unitPriceFor(1, variantId: variantId);
     final pricePrefix = product.startingAt ? 'Desde ' : '';
     final imageFit = productImageFit(product, variant: variant);
 
     return Semantics(
       button: true,
-      label: '$title, ${_priceLabel(price)}',
+      enabled: !unavailable,
+      label: [
+        title,
+        if (showPrice) _priceLabel(price),
+        if (unavailable) 'Agotado',
+      ].join(', '),
       child: Card(
         clipBehavior: Clip.antiAlias,
         elevation: 1.2,
@@ -75,7 +88,9 @@ class ProductCard extends StatelessWidget {
                     ColoredBox(
                       color: Colors.white,
                       child: Padding(
-                        padding: product.id == 'limpiapipas-premium-8mm'
+                        padding:
+                            product.id == 'limpiapipas-premium-8mm' &&
+                                variant != null
                             ? EdgeInsets.all(compact ? 9 : 14)
                             : EdgeInsets.zero,
                         child: ProductVisual(
@@ -147,14 +162,16 @@ class ProductCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall
                           ?.copyWith(fontSize: compact ? 10 : 11),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$pricePrefix${_priceLabel(price)}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium
-                          ?.copyWith(fontSize: compact ? 16 : 17),
-                    ),
+                    if (showPrice) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        '$pricePrefix${_priceLabel(price)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontSize: compact ? 16 : 17),
+                      ),
+                    ],
                   ],
                 ),
               ),

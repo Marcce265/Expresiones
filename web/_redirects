@@ -1,0 +1,4 @@
+# Cloudflare Pages sirve /admin/ desde el segundo build de Flutter.
+# No se agrega un comodín /*: Pages ya trata el sitio raíz como SPA y un
+# comodín interceptaría también main.dart.js, assets y canvaskit.
+/admin /admin/ 301

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 import 'admin/admin_portal.dart';
-import 'services/firebase_bootstrap.dart';
+import 'services/supabase_bootstrap.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final firebase = await FirebaseBootstrap.initialize();
+  final supabase = await SupabaseBootstrap.initialize();
   runApp(
-    firebase.connected
-        ? const AdminPortalApp()
-        : _AdminConfigurationApp(message: firebase.message),
+    supabase.connected && supabase.client != null
+        ? AdminPortalApp(client: supabase.client!)
+        : _AdminConfigurationApp(message: supabase.message),
   );
 }
 
@@ -39,14 +39,14 @@ class _AdminConfigurationApp extends StatelessWidget {
                       const Icon(Icons.cloud_off_outlined, size: 54),
                       const SizedBox(height: 16),
                       Text(
-                        'Falta conectar Firebase',
+                        'Falta conectar Supabase',
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 10),
                       Text(
                         message ??
                             'Inicia el panel con las variables del proyecto '
-                                'Firebase de Expresiones.',
+                                'Supabase de Expresiones.',
                         textAlign: TextAlign.center,
                       ),
                     ],

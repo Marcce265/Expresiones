@@ -1,29 +1,27 @@
 # Expresiones
 
-Aplicación Flutter para Android y web con catálogo, cálculo automático de
+Aplicación Flutter para Android y web con catálogo de materiales, cálculo de
 precios por volumen y generación de cotizaciones para WhatsApp.
 
-## Funciones implementadas
+## Funciones principales
 
-- Inicio y catálogo responsive con materiales, ramos y regalos personalizados.
+- Inicio y catálogo adaptable a celular y computadora.
 - Búsqueda por nombre, color, código y etiquetas.
 - Variantes, cantidades, precios por volumen y subtotal automático.
-- Carrito guardado localmente, sin registro de usuario.
+- Carrito guardado localmente, sin cuenta para el público.
 - Recojo en Huancayo o envío nacional por Shalom.
-- Selector de agencias Shalom con búsqueda, dirección y horarios, cargado sin conexión.
-- Fecha solicitada, carga de producción y datos de coordinación.
-- Revisión final, copia del mensaje y envío a WhatsApp `+51 956 744 914`.
-- Capacidad real por día, carga reservada, cierres y fechas especiales.
-- Catálogo Firestore en tiempo real con catálogo local de respaldo.
-- Panel web `/admin/` protegido con Firebase Auth y permiso `admin` para
-  editar productos, precios, stock, capacidad y revisar analítica.
-- Métricas anónimas de búsquedas sin resultado, vistas, productos agregados,
-  aperturas de WhatsApp y cotizaciones abandonadas.
-- Exportación local de la cotización a PDF y Excel.
+- Directorio de agencias disponible sin conexión.
+- Revisión final, exportación a PDF o Excel y envío voluntario a WhatsApp.
+- Catálogo y capacidad pública desde Supabase, con respaldo local cuando no hay
+  conexión.
+- Panel web `/admin/` separado del APK, protegido por correo, contraseña, TOTP
+  y políticas RLS de Supabase.
 - Política de privacidad dentro de la app y en `/privacy.html`.
-- Reglas, índices, scripts de importación y datos para Firestore.
 
-## Ejecutar en Fedora
+La analítica comercial no forma parte del MVP. Se mantiene desactivada hasta la
+fase 9 y no debe habilitarse sin revisar primero la política de privacidad.
+
+## Configuración local
 
 Abre en VS Code la carpeta de este repositorio, no su carpeta padre:
 
@@ -31,81 +29,87 @@ Abre en VS Code la carpeta de este repositorio, no su carpeta padre:
 /home/marcee/Expresiones/Expresiones
 ```
 
-La configuración de VS Code localiza Flutter desde `PATH`, por lo que también
-sigue siendo portable a Windows. Para iniciar el teléfono virtual:
+Crea la configuración local a partir del ejemplo:
+
+```bash
+cp supabase_config.example.json supabase_config.json
+```
+
+Completa únicamente `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` con los valores
+públicos de **Project Settings > API** en Supabase. `supabase_config.json` está
+ignorado por Git. Nunca coloques `service_role`, contraseñas ni secretos dentro
+de este archivo o de la aplicación Flutter.
+
+## Ejecutar en Fedora
 
 ```bash
 flutter pub get
 flutter emulators --launch Expresiones_API_36
-flutter run -d emulator-5554 --dart-define-from-file=firebase_config.json
+flutter run -d emulator-5554 \
+  --dart-define-from-file=supabase_config.json
 ```
 
-Para la versión web, elige **Expresiones Web** en VS Code o ejecuta:
+Para la versión web pública:
 
 ```bash
-flutter run -d chrome --dart-define-from-file=firebase_config.json
+flutter run -d chrome \
+  --dart-define-from-file=supabase_config.json
 ```
 
-## Firestore local en Fedora
-
-`firebase_config.json` no se publica en Git. La copia local preparada para
-Fedora conecta Android y web con Firestore Emulator sin alterar el catálogo ni
-los flujos de la aplicación.
-
-Inicia Firestore desde la raíz de este repositorio:
+Para el panel administrativo:
 
 ```bash
-firebase emulators:start --only firestore --project expresiones-local
+flutter run -d chrome \
+  -t lib/admin_main.dart \
+  --dart-define-from-file=supabase_config.json
 ```
 
-En otra terminal carga el catálogo completo y verifica las reglas:
+Sin configuración remota, el catálogo público puede usar el respaldo local; el
+panel administrativo requiere una conexión válida con Supabase.
 
-```bash
-export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
-export GCLOUD_PROJECT=expresiones-local
-node scripts/seed_firestore.js
-node scripts/verify_firestore_rules.js
-```
+## Supabase
 
-La interfaz local queda disponible en `http://127.0.0.1:4000`. En Android el
-bootstrap usa automáticamente `10.0.2.2`; en web usa `127.0.0.1`.
+La base usa Postgres, Auth, Storage y Row Level Security. El público solo puede
+leer el catálogo activo. Las dos cuentas administrativas se crean manualmente y
+toda escritura exige una sesión administradora con segundo factor TOTP
+(`aal2`). SMS no se usa porque agrega costo y dependencia de un proveedor.
 
-## Conectar un proyecto real de Firestore
-
-La app funciona ahora con el catálogo local. Para leer desde tu proyecto de
-Cloud Firestore:
-
-1. Ejecuta `firebase login` con la cuenta propietaria.
-2. Crea un proyecto en Firebase con el plan Spark y habilita Cloud Firestore.
-3. Copia `firebase_config.example.json` como `firebase_config.json` y coloca los
-   identificadores de la aplicación Android o web.
-4. Despliega las reglas y el índice con `firebase deploy --only firestore`.
-5. Ejecuta Flutter con el archivo de configuración:
-
-```bash
-flutter run -d emulator-5554 --dart-define-from-file=firebase_config.json
-```
-
-Si Firestore no está configurado, está vacío o no responde, el catálogo local
-se usa automáticamente. Las cotizaciones y los datos personales no se escriben
-en Firestore.
+Las migraciones, la carga inicial y la creación segura de administradores están
+documentadas en [`docs/SUPABASE.md`](docs/SUPABASE.md). El modelo anterior de
+Firestore se conserva únicamente como referencia histórica; no es parte del
+flujo nuevo.
 
 ## Verificación
 
 ```bash
 flutter analyze
 flutter test
-flutter build web
-flutter build apk --debug
+flutter build apk --debug \
+  --dart-define-from-file=supabase_config.json
+bash scripts/build_web_release.sh
 ```
 
-La estructura de datos está explicada en
-[`docs/firestore_schema.md`](docs/firestore_schema.md).
+El APK se usa para la entrega académica. La versión de producción se publica
+como web estática en Cloudflare Pages, sin dominio propio, usando la dirección
+gratuita `*.pages.dev`.
 
-La publicación web, el panel y Play Store están documentados en
-[`docs/web_release.md`](docs/web_release.md),
-[`docs/admin_portal.md`](docs/admin_portal.md) y
-[`docs/play_store_release.md`](docs/play_store_release.md).
+## Documentación
 
-El listado de agencias Shalom y cómo actualizarlo están documentados en
-[`docs/shalom_agencies_report.md`](docs/shalom_agencies_report.md).
+- [`docs/SUPABASE.md`](docs/SUPABASE.md): base, seguridad, Storage y carga
+  inicial.
+- [`docs/web_release.md`](docs/web_release.md): build público + administrador y
+  publicación en Cloudflare Pages.
+- [`docs/admin_portal.md`](docs/admin_portal.md): cuentas administrativas y
+  operación del panel.
+- [`docs/play_store_release.md`](docs/play_store_release.md): referencia de
+  empaquetado Android; el alcance actual solo requiere APK.
+- [`docs/shalom_agencies_report.md`](docs/shalom_agencies_report.md): fuente y
+  actualización del directorio de Shalom.
+
+## Archivos heredados de Firebase
+
+`firebase.json`, las reglas de Firestore y los scripts con nombres
+`*_firestore*` se mantienen temporalmente para conservar la historia técnica y
+comparar la migración. No deben ejecutarse ni desplegarse en el flujo de
+producción Supabase + Cloudflare. Consulta
+[`docs/legacy_firebase.md`](docs/legacy_firebase.md).

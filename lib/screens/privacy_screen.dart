@@ -107,9 +107,9 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                 const _PrivacySection(
                   title: 'Catálogo y capacidad',
                   body:
-                      'Cloud Firestore se utiliza para descargar productos, precios, '
+                      'La base de datos en la nube (Supabase) se utiliza para consultar productos, precios, '
                       'stock y disponibilidad agregada. Los nombres, teléfonos, notas '
-                      'y cotizaciones no se guardan en el catálogo de Firestore.',
+                      'y cotizaciones no se guardan en la base de datos remota.',
                 ),
                 const _PrivacySection(
                   title: 'Medición anónima',

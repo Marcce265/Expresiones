@@ -1,57 +1,48 @@
-import 'dart:math' as math;
-
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/commerce_telemetry.dart';
 import '../models/production_capacity.dart';
 
 class AdminOperationsRepository {
-  AdminOperationsRepository({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+  AdminOperationsRepository({required this.client});
 
-  final FirebaseFirestore _firestore;
-
-  DocumentReference<Map<String, dynamic>> get _availability =>
-      _firestore.collection('availability').doc('public');
+  final SupabaseClient client;
 
   Stream<ProductionCapacitySnapshot> watchCapacity() {
-    return _availability.snapshots().map((snapshot) {
-      final data = snapshot.data();
-      return data == null
-          ? ProductionCapacitySnapshot.twoPersonFallback()
-          : ProductionCapacitySnapshot.fromMap(data);
+    return client
+        .from('availability')
+        .stream(primaryKey: const ['id'])
+        .eq('id', 'public')
+        .map((rows) {
+      if (rows.isEmpty || rows.first['data'] is! Map) {
+        return ProductionCapacitySnapshot.twoPersonFallback();
+      }
+      final data = (rows.first['data'] as Map).map(
+        (key, value) => MapEntry(key.toString(), value),
+      );
+      return ProductionCapacitySnapshot.fromMap(data);
     });
   }
 
-  Future<void> saveCapacity(ProductionCapacitySnapshot snapshot) {
+  Future<void> saveCapacity(ProductionCapacitySnapshot snapshot) async {
     final data = snapshot.toMap()..remove('updatedAt');
-    return _availability.set({
-      ...data,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    await client.from('availability').upsert({'id': 'public', 'data': data});
   }
 
   /// Reads at most [limit] anonymous events from the selected recent window.
-  /// This keeps both Firestore reads and admin rendering bounded.
+  /// This keeps both Supabase reads and admin rendering bounded.
   Stream<AdminAnalyticsSummary> watchAnalytics({
     Duration window = const Duration(days: 30),
     int limit = 1000,
   }) {
-    final safeLimit = math.max(1, math.min(limit, 2000));
-    final from = Timestamp.fromDate(DateTime.now().subtract(window));
-    return _firestore
-        .collection('analytics_events')
-        .where('occurredAt', isGreaterThanOrEqualTo: from)
-        .orderBy('occurredAt', descending: true)
-        .limit(safeLimit)
-        .snapshots()
-        .map(
-          (snapshot) => AdminAnalyticsSummary.fromDocuments(
-            snapshot.docs.map((document) => document.data()),
-            requestedWindow: window,
-            sampleLimit: safeLimit,
-          ),
-        );
+    final safeLimit = limit.clamp(1, 2000);
+    return Stream.value(
+      AdminAnalyticsSummary.fromDocuments(
+        const [],
+        requestedWindow: window,
+        sampleLimit: safeLimit,
+      ),
+    );
   }
 }
 

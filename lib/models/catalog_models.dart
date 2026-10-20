@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 /// Sections shown in the public catalog.
 enum ProductCategory {
   materials('materials', 'Materiales'),
@@ -207,7 +205,7 @@ class ProductVariant {
   };
 }
 
-/// Firestore-ready catalog entity used by the UI and quote calculator.
+/// Backend-neutral catalog entity used by the UI and quote calculator.
 class CatalogProduct {
   const CatalogProduct({
     required this.id,
@@ -410,8 +408,8 @@ class CatalogProduct {
     );
   }
 
-  /// Map ready to be used as Firestore document data.
-  Map<String, dynamic> toFirestore() => {
+  /// Serializable shape used by the local cache and admin save RPC.
+  Map<String, dynamic> toDataMap() => {
     'name': name,
     'category': category.key,
     'description': description,
@@ -432,15 +430,17 @@ class CatalogProduct {
     if (imageUrl != null) 'imageUrl': imageUrl,
     'tags': tags,
     if (attributes.isNotEmpty) 'attributes': attributes,
-    if (createdAt != null) 'createdAt': Timestamp.fromDate(createdAt!),
-    if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+    if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
   };
+
+  /// Compatibility alias for old callers while the Firebase migration lands.
+  @Deprecated('Use toDataMap instead.')
+  Map<String, dynamic> toFirestore() => toDataMap();
 
   Map<String, dynamic> toMap() => {
     'id': id,
-    ...toFirestore(),
-    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
-    if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
+    ...toDataMap(),
   };
 }
 
@@ -522,7 +522,6 @@ bool _asBool(Object? value, {bool fallback = false}) {
 }
 
 DateTime? _asDateTime(Object? value) {
-  if (value is Timestamp) return value.toDate();
   if (value is DateTime) return value;
   if (value is num) {
     final milliseconds = value.abs() < 100000000000 ? value * 1000 : value;

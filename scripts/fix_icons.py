@@ -1,13 +1,13 @@
-from PIL import Image, ImageChops
 import os, shutil
+from PIL import Image
 
-BASE = r"D:\Expresiones"
-LOGO_SRC = os.path.join(BASE, "assets", "images", "logo.png")
-ICON_OUT  = os.path.join(BASE, "assets", "images", "logo.png")
-SPLASH_OUT     = os.path.join(BASE, "android", "app", "src", "main", "res", "drawable", "splash_logo.png")
-SPLASH_V21_OUT = os.path.join(BASE, "android", "app", "src", "main", "res", "drawable-v21", "splash_logo.png")
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+LOGO_SRC = os.path.join(PROJECT_ROOT, "assets", "images", "logo.png")
+ICON_OUT = os.path.join(PROJECT_ROOT, "assets", "images", "logo.png")
+SPLASH_OUT = os.path.join(PROJECT_ROOT, "android", "app", "src", "main", "res", "drawable", "splash_logo.png")
+SPLASH_V21_OUT = os.path.join(PROJECT_ROOT, "android", "app", "src", "main", "res", "drawable-v21", "splash_logo.png")
 
-BG_COLOR = (245, 237, 232)  # crema
+BG_COLOR = (251, 248, 242)  # marfil / fondo natural del logo (#fbf8f2)
 
 def trim_cream(img):
     """Recorta bordes crema/blancos del logo."""

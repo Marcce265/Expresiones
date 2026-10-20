@@ -171,7 +171,7 @@ class _RequestCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Subtotal referencial',
+                    'Subtotal de productos',
                     style: Theme.of(context).textTheme.bodyMedium
                         ?.copyWith(color: AppColors.muted),
                   ),

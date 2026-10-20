@@ -1839,7 +1839,7 @@
     "unitLabel": "unidad",
     "basePrice": 4,
     "startingAt": false,
-    "priceIsEstimate": true,
+    "priceIsEstimate": false,
     "priceTiers": [],
     "variants": [
       {
@@ -1883,7 +1883,7 @@
     "unitLabel": "unidad",
     "basePrice": 4,
     "startingAt": false,
-    "priceIsEstimate": true,
+    "priceIsEstimate": false,
     "priceTiers": [],
     "variants": [
       {
@@ -1927,7 +1927,7 @@
     "unitLabel": "unidad",
     "basePrice": 4,
     "startingAt": false,
-    "priceIsEstimate": true,
+    "priceIsEstimate": false,
     "priceTiers": [],
     "variants": [
       {
@@ -2434,7 +2434,7 @@
     "unitLabel": "rollo",
     "basePrice": 11,
     "startingAt": false,
-    "priceIsEstimate": true,
+    "priceIsEstimate": false,
     "priceTiers": [],
     "variants": [
       {
@@ -3376,7 +3376,7 @@
     "unitLabel": "paquete",
     "basePrice": 4,
     "startingAt": false,
-    "priceIsEstimate": true,
+    "priceIsEstimate": false,
     "priceTiers": [],
     "variants": [
       {
@@ -3444,7 +3444,7 @@
     "unitLabel": "unidad",
     "basePrice": 10,
     "startingAt": false,
-    "priceIsEstimate": true,
+    "priceIsEstimate": false,
     "priceTiers": [],
     "variants": [
       {
@@ -3754,7 +3754,7 @@
     "unitLabel": "paquete",
     "basePrice": 1,
     "startingAt": false,
-    "priceIsEstimate": true,
+    "priceIsEstimate": false,
     "priceTiers": [],
     "variants": [
       {

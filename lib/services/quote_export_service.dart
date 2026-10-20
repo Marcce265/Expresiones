@@ -30,7 +30,7 @@ abstract final class QuoteExportService {
     final document = pw.Document(
       title: 'Cotización $quoteId',
       author: 'Expresiones',
-      subject: 'Cotización referencial de materiales',
+      subject: 'Cotización de productos',
       creator: 'Aplicación Expresiones',
     );
 
@@ -93,7 +93,7 @@ abstract final class QuoteExportService {
           ),
           pw.SizedBox(height: 24),
           pw.Text(
-            'Cotización referencial',
+            'Cotización de productos',
             style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 10),
@@ -241,7 +241,7 @@ abstract final class QuoteExportService {
     );
 
     _setText(sheet, 0, 0, 'EXPRESIONES', style: titleStyle);
-    _setText(sheet, 0, 1, 'Cotización referencial');
+    _setText(sheet, 0, 1, 'Cotización de productos');
     _setText(sheet, 3, 0, 'Código', style: labelStyle);
     _setText(sheet, 4, 0, quoteId);
     _setText(sheet, 3, 1, 'Generada', style: labelStyle);

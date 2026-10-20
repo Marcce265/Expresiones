@@ -1,6 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/catalog_models.dart';
 import '../theme/app_theme.dart';
@@ -10,7 +11,9 @@ import 'admin_capacity_screen.dart';
 import 'admin_operations_repository.dart';
 
 class AdminPortalApp extends StatelessWidget {
-  const AdminPortalApp({super.key});
+  const AdminPortalApp({super.key, required this.client});
+
+  final SupabaseClient client;
 
   @override
   Widget build(BuildContext context) {
@@ -18,85 +21,152 @@ class AdminPortalApp extends StatelessWidget {
       title: 'Expresiones · Administración',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const AdminPortal(),
+      home: AdminPortal(client: client),
     );
   }
 }
 
-/// Authenticates staff and verifies the `admin: true` Firebase custom claim.
+/// Authenticates staff and requires both an admin allowlist entry and TOTP.
 class AdminPortal extends StatelessWidget {
-  const AdminPortal({super.key});
+  const AdminPortal({super.key, required this.client});
+
+  final SupabaseClient client;
 
   @override
   Widget build(BuildContext context) {
-    final auth = FirebaseAuth.instance;
-    return StreamBuilder<User?>(
-      stream: auth.authStateChanges(),
+    return StreamBuilder<AuthState>(
+      stream: client.auth.onAuthStateChange,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.hasError) {
+          return _AdminError(
+            title: 'No se pudo comprobar la sesión',
+            message: '${snapshot.error}',
+          );
+        }
+        final user = snapshot.data?.session?.user ?? client.auth.currentUser;
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            user == null) {
           return const _AdminLoading();
         }
-        final user = snapshot.data;
-        if (user == null) return AdminLoginScreen(auth: auth);
-        return _ClaimGate(user: user, auth: auth);
+        if (user == null) return AdminLoginScreen(client: client);
+        return _AdminSecurityGate(client: client, user: user);
       },
     );
   }
 }
 
-class _ClaimGate extends StatefulWidget {
-  const _ClaimGate({required this.user, required this.auth});
+class _AdminSecurityGate extends StatefulWidget {
+  const _AdminSecurityGate({required this.client, required this.user});
 
+  final SupabaseClient client;
   final User user;
-  final FirebaseAuth auth;
 
   @override
-  State<_ClaimGate> createState() => _ClaimGateState();
+  State<_AdminSecurityGate> createState() => _AdminSecurityGateState();
 }
 
-class _ClaimGateState extends State<_ClaimGate> {
-  late Future<bool> _allowed;
+class _AdminSecurityGateState extends State<_AdminSecurityGate> {
+  late Future<_AdminAccessState> _access;
 
   @override
   void initState() {
     super.initState();
-    _allowed = _checkClaim();
+    _access = _checkAccess();
   }
 
-  Future<bool> _checkClaim() async {
-    final result = await widget.user.getIdTokenResult(true);
-    return result.claims?['admin'] == true;
+  Future<_AdminAccessState> _checkAccess() async {
+    final allowed = await widget.client.rpc('is_current_admin');
+    if (allowed != true) return const _AdminAccessState.denied();
+
+    final assurance = widget.client.auth.mfa
+        .getAuthenticatorAssuranceLevel();
+    if (assurance.currentLevel == AuthenticatorAssuranceLevels.aal2) {
+      return const _AdminAccessState.allowed();
+    }
+
+    final factors = await widget.client.auth.mfa.listFactors();
+    if (factors.totp.isNotEmpty) {
+      return _AdminAccessState.challenge(factors.totp.first.id);
+    }
+    return const _AdminAccessState.enroll();
+  }
+
+  void _retry() => setState(() => _access = _checkAccess());
+
+  Future<void> _signOut() => widget.client.auth.signOut();
+
+  @override
+  void didUpdateWidget(covariant _AdminSecurityGate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user.id != widget.user.id) _retry();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: _allowed,
+    return FutureBuilder<_AdminAccessState>(
+      future: _access,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const _AdminLoading();
         }
-        if (snapshot.hasError || snapshot.data != true) {
-          return _AccessDenied(
-            email: widget.user.email ?? '',
-            onRetry: () => setState(() => _allowed = _checkClaim()),
-            onSignOut: widget.auth.signOut,
+        if (snapshot.hasError) {
+          return _AdminError(
+            title: 'No se pudo comprobar el acceso',
+            message: '${snapshot.error}',
           );
         }
-        return AdminDashboardScreen(
-          repository: AdminCatalogRepository(),
-          userEmail: widget.user.email ?? '',
-          onSignOut: widget.auth.signOut,
-        );
+        final access = snapshot.data;
+        if (access == null || access.mode == _AdminAccessMode.denied) {
+          return _AccessDenied(
+            email: widget.user.email ?? '',
+            onRetry: _retry,
+            onSignOut: _signOut,
+          );
+        }
+        return switch (access.mode) {
+          _AdminAccessMode.enroll => _TotpEnrollmentScreen(
+            client: widget.client,
+            onVerified: _retry,
+            onSignOut: _signOut,
+          ),
+          _AdminAccessMode.challenge => _TotpChallengeScreen(
+            client: widget.client,
+            factorId: access.factorId!,
+            onVerified: _retry,
+            onSignOut: _signOut,
+          ),
+          _AdminAccessMode.allowed => AdminDashboardScreen(
+            repository: AdminCatalogRepository(client: widget.client),
+            operations: AdminOperationsRepository(client: widget.client),
+            userEmail: widget.user.email ?? '',
+            onSignOut: _signOut,
+          ),
+          _AdminAccessMode.denied => const _AdminLoading(),
+        };
       },
     );
   }
 }
 
-class AdminLoginScreen extends StatefulWidget {
-  const AdminLoginScreen({super.key, required this.auth});
+enum _AdminAccessMode { denied, enroll, challenge, allowed }
 
-  final FirebaseAuth auth;
+class _AdminAccessState {
+  const _AdminAccessState._(this.mode, [this.factorId]);
+
+  const _AdminAccessState.denied() : this._(_AdminAccessMode.denied);
+  const _AdminAccessState.enroll() : this._(_AdminAccessMode.enroll);
+  const _AdminAccessState.challenge(String factorId)
+    : this._(_AdminAccessMode.challenge, factorId);
+  const _AdminAccessState.allowed() : this._(_AdminAccessMode.allowed);
+
+  final _AdminAccessMode mode;
+  final String? factorId;
+}
+
+class AdminLoginScreen extends StatefulWidget {
+  const AdminLoginScreen({super.key, required this.client});
+
+  final SupabaseClient client;
 
   @override
   State<AdminLoginScreen> createState() => _AdminLoginScreenState();
@@ -124,20 +194,16 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       _error = null;
     });
     try {
-      await widget.auth.signInWithEmailAndPassword(
+      await widget.client.auth.signInWithPassword(
         email: _email.text.trim(),
         password: _password.text,
       );
-    } on FirebaseAuthException catch (error) {
+    } on AuthException catch (error) {
       setState(() {
-        _error = switch (error.code) {
-          'invalid-credential' ||
-          'wrong-password' ||
-          'user-not-found' => 'Correo o contraseña incorrectos.',
-          'too-many-requests' =>
-            'Demasiados intentos. Espera unos minutos y vuelve a intentar.',
-          _ => 'No se pudo iniciar sesión (${error.code}).',
-        };
+        final message = error.message.toLowerCase();
+        _error = message.contains('invalid login')
+            ? 'Correo o contraseña incorrectos.'
+            : 'No se pudo iniciar sesión. ${error.message}';
       });
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -192,6 +258,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                           labelText: 'Contraseña',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
+                            tooltip: _obscure
+                                ? 'Mostrar contraseña'
+                                : 'Ocultar contraseña',
                             onPressed: () =>
                                 setState(() => _obscure = !_obscure),
                             icon: Icon(
@@ -232,7 +301,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                       const SizedBox(height: 12),
                       Text(
                         'El acceso requiere una cuenta con el permiso '
-                        'administrador asignado en Firebase.',
+                        'administrador asignado en Supabase y un código de '
+                        'verificación de tu aplicación autenticadora.',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
@@ -252,11 +322,13 @@ class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({
     super.key,
     required this.repository,
+    required this.operations,
     required this.userEmail,
     required this.onSignOut,
   });
 
   final AdminCatalogRepository repository;
+  final AdminOperationsRepository operations;
   final String userEmail;
   final Future<void> Function() onSignOut;
 
@@ -266,7 +338,6 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final _search = TextEditingController();
-  final _operations = AdminOperationsRepository();
   String _query = '';
   bool _onlyEstimated = false;
 
@@ -307,7 +378,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute<void>(
-                builder: (_) => AdminCapacityScreen(repository: _operations),
+                builder: (_) => AdminCapacityScreen(
+                  repository: widget.operations,
+                ),
               ),
             ),
             icon: const Icon(Icons.calendar_month_outlined),
@@ -317,7 +390,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute<void>(
-                builder: (_) => AdminAnalyticsScreen(repository: _operations),
+                builder: (_) => AdminAnalyticsScreen(
+                  repository: widget.operations,
+                ),
               ),
             ),
             icon: const Icon(Icons.query_stats_outlined),
@@ -683,12 +758,11 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       if (stock != null) {
         data['stock'] = stock;
       } else if (widget.product != null) {
-        data['stock'] = FieldValue.delete();
+        data['stock'] = null;
       }
 
       final product = widget.product;
       if (product == null) {
-        data.removeWhere((key, value) => value is FieldValue);
         await widget.repository.createProduct(
           documentId: _sku.text.trim().isEmpty ? _name.text : _sku.text,
           data: data,
@@ -1182,6 +1256,459 @@ class _AccessDenied extends StatelessWidget {
                       ],
                     ),
                   ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TotpEnrollmentScreen extends StatefulWidget {
+  const _TotpEnrollmentScreen({
+    required this.client,
+    required this.onVerified,
+    required this.onSignOut,
+  });
+
+  final SupabaseClient client;
+  final VoidCallback onVerified;
+  final Future<void> Function() onSignOut;
+
+  @override
+  State<_TotpEnrollmentScreen> createState() => _TotpEnrollmentScreenState();
+}
+
+class _TotpEnrollmentScreenState extends State<_TotpEnrollmentScreen> {
+  final _codeController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  bool _loading = true;
+  bool _verifying = false;
+  String? _error;
+  String? _factorId;
+  String? _secret;
+  String? _totpUri;
+
+  @override
+  void initState() {
+    super.initState();
+    _startEnrollment();
+  }
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startEnrollment() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final response = await widget.client.auth.mfa.enroll(
+        factorType: FactorType.totp,
+        issuer: 'Expresiones',
+      );
+      setState(() {
+        _factorId = response.id;
+        _secret = response.totp?.secret;
+        _totpUri = response.totp?.uri;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'No se pudo iniciar la vinculación MFA: $e';
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _verify() async {
+    if (!_formKey.currentState!.validate() || _verifying) return;
+    final factorId = _factorId;
+    if (factorId == null) return;
+    setState(() {
+      _verifying = true;
+      _error = null;
+    });
+    try {
+      await widget.client.auth.mfa.challengeAndVerify(
+        factorId: factorId,
+        code: _codeController.text.trim(),
+      );
+      widget.onVerified();
+    } on AuthException catch (_) {
+      setState(() {
+        _error = 'Código de verificación incorrecto o expirado.';
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Error de verificación: $e';
+      });
+    } finally {
+      if (mounted) setState(() => _verifying = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.security_rounded, size: 54),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Configurar verificación en dos pasos',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Escanea este código con tu aplicación autenticadora (Google Authenticator, Microsoft Authenticator o Bitwarden).',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 20),
+                    if (_loading)
+                      const Padding(
+                        padding: EdgeInsets.all(32),
+                        child: CircularProgressIndicator(),
+                      )
+                    else if (_error != null && _factorId == null) ...[
+                      Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 12,
+                        children: [
+                          OutlinedButton(
+                            onPressed: widget.onSignOut,
+                            child: const Text('Cerrar sesión'),
+                          ),
+                          FilledButton(
+                            onPressed: _startEnrollment,
+                            child: const Text('Reintentar'),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      if (_totpUri != null && _totpUri!.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Theme.of(context).dividerColor,
+                            ),
+                          ),
+                          child: QrImageView(
+                            data: _totpUri!,
+                            version: QrVersions.auto,
+                            size: 190.0,
+                            backgroundColor: Colors.white,
+                          ),
+                        ),
+                      if (_secret != null) ...[
+                        const SizedBox(height: 14),
+                        Text(
+                          'O escribe esta clave secreta en tu aplicación:',
+                          style: Theme.of(context).textTheme.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: SelectableText(
+                                  _secret!,
+                                  style: const TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: const Icon(Icons.copy_rounded, size: 18),
+                                tooltip: 'Copiar clave',
+                                onPressed: () {
+                                  Clipboard.setData(
+                                    ClipboardData(text: _secret!),
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Clave secreta copiada.'),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: _codeController,
+                              keyboardType: TextInputType.number,
+                              maxLength: 6,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                letterSpacing: 6,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: 'Código de 6 dígitos',
+                                hintText: '000000',
+                                counterText: '',
+                                prefixIcon: Icon(Icons.pin_outlined),
+                              ),
+                              validator: (v) {
+                                final code = v?.trim() ?? '';
+                                if (code.length != 6 ||
+                                    int.tryParse(code) == null) {
+                                  return 'Ingresa el código de 6 dígitos.';
+                                }
+                                return null;
+                              },
+                              onFieldSubmitted: (_) => _verify(),
+                            ),
+                            if (_error != null) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                _error!,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: widget.onSignOut,
+                                    child: const Text('Cerrar sesión'),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: FilledButton(
+                                    onPressed: _verifying ? null : _verify,
+                                    child: _verifying
+                                        ? const SizedBox.square(
+                                            dimension: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Text('Activar y entrar'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TotpChallengeScreen extends StatefulWidget {
+  const _TotpChallengeScreen({
+    required this.client,
+    required this.factorId,
+    required this.onVerified,
+    required this.onSignOut,
+  });
+
+  final SupabaseClient client;
+  final String factorId;
+  final VoidCallback onVerified;
+  final Future<void> Function() onSignOut;
+
+  @override
+  State<_TotpChallengeScreen> createState() => _TotpChallengeScreenState();
+}
+
+class _TotpChallengeScreenState extends State<_TotpChallengeScreen> {
+  final _codeController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  bool _verifying = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _verify() async {
+    if (!_formKey.currentState!.validate() || _verifying) return;
+    setState(() {
+      _verifying = true;
+      _error = null;
+    });
+
+    try {
+      await widget.client.auth.mfa.challengeAndVerify(
+        factorId: widget.factorId,
+        code: _codeController.text.trim(),
+      );
+      widget.onVerified();
+    } on AuthException catch (_) {
+      setState(() {
+        _error = 'Código de verificación incorrecto o expirado.';
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Error de autenticación: $e';
+      });
+    } finally {
+      if (mounted) setState(() => _verifying = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.shield_outlined, size: 54),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Verificación en dos pasos',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Ingresa el código de 6 dígitos que muestra tu app autenticadora.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 24),
+                      TextFormField(
+                        controller: _codeController,
+                        autofocus: true,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 26,
+                          letterSpacing: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Código TOTP',
+                          hintText: '000000',
+                          counterText: '',
+                          prefixIcon: Icon(Icons.pin_outlined),
+                        ),
+                        validator: (v) {
+                          final code = v?.trim() ?? '';
+                          if (code.length != 6 || int.tryParse(code) == null) {
+                            return 'Ingresa los 6 dígitos del autenticador.';
+                          }
+                          return null;
+                        },
+                        onFieldSubmitted: (_) => _verify(),
+                      ),
+                      if (_error != null) ...[
+                        const SizedBox(height: 14),
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: widget.onSignOut,
+                              child: const Text('Cerrar sesión'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: _verifying ? null : _verify,
+                              child: _verifying
+                                  ? const SizedBox.square(
+                                      dimension: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text('Ingresar'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

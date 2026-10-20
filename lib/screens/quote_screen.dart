@@ -376,7 +376,7 @@ class _QuoteSummary extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Subtotal referencial',
+                    'Subtotal de productos',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),

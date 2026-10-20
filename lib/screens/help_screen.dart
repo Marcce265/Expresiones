@@ -19,7 +19,7 @@ class HelpScreen extends StatelessWidget {
       (
         icon: Icons.receipt_long_outlined,
         title: '¿Cómo funciona la cotización?',
-        body: 'Elige productos y cantidades. La app calcula un subtotal referencial y prepara el mensaje para WhatsApp. No necesitas crear una cuenta.',
+        body: 'Elige productos y cantidades. La app calcula un subtotal de productos y prepara el mensaje para WhatsApp. No necesitas crear una cuenta.',
       ),
       (
         icon: Icons.inventory_2_outlined,

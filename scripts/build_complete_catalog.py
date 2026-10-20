@@ -481,15 +481,15 @@ def build() -> tuple[list[dict], list[dict]]:
             210,
             list(range(140, 147)),
             [
-                "Amarillo",
-                "Blanco",
-                "Azul",
-                "Rosada",
-                "Multicolor",
-                "Diamante",
-                "Roja",
+                "Infinito cálida",
+                "Infinito blanca",
+                "Infinito azul",
+                "Infinito rosada",
+                "Infinito multicolor",
+                "Tipo diamante",
+                "Infinito roja",
             ],
-            ["luz", "hada", "LED", "diamante"],
+            ["luz", "hada", "LED", "infinito", "diamante"],
         ),
         (
             "mariposas-decorativas",
@@ -719,10 +719,17 @@ def build() -> tuple[list[dict], list[dict]]:
 
     # Ramos y regalos quedan preparados para una etapa posterior, pero el
     # catálogo público actual es exclusivamente de materiales.
+    # Los precios de las 31 familias publicadas ya fueron confirmados por el
+    # negocio. Las seis familias futuras conservan el indicador de precio por
+    # revisar hasta que vayan a activarse.
+    for product in products:
+        product["priceIsEstimate"] = False
+
     tail = [item for item in previous if item["category"] != "materials"]
     for product in tail:
         product["isActive"] = False
         product["isFeatured"] = False
+        product["priceIsEstimate"] = True
     all_products = products + tail
     for product in products:
         variant_ids = [variant["id"] for variant in product["variants"]]

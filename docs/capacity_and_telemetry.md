@@ -2,9 +2,9 @@
 
 ## Capacidad real
 
-El documento público `availability/public` contiene únicamente cifras
-agregadas. No debe guardar nombres, teléfonos, códigos de cotización ni datos
-de entrega.
+La fila pública `availability` con `id = 'public'` contiene únicamente cifras
+agregadas en su campo `data` de Supabase. No debe guardar nombres, teléfonos,
+códigos de cotización ni datos de entrega.
 
 ```json
 {
@@ -44,9 +44,13 @@ tiempo conjunto del taller. Antes de prometer fechas automáticamente se deben
 medir varios pedidos reales y ajustar tanto estos límites como los puntos de
 cada producto.
 
-## Telemetría privada por diseño
+## Telemetría prevista para la fase 9
 
-`CommerceTelemetryService` registra solo:
+La recolección remota está desactivada en el MVP. No se compila la web con
+`ENABLE_TELEMETRY=true`, no existe una tabla pública de eventos y el panel no
+muestra analítica. La política de privacidad publicada describe este estado.
+
+Si la fase 9 se aprueba, `CommerceTelemetryService` podrá registrar solo:
 
 - búsquedas sin resultados que pasan el filtro de privacidad;
 - identificador técnico del producto visto;
@@ -59,11 +63,13 @@ dirección, agencia, texto de personalización, identificador de instalación ni
 identificador de sesión. Las cantidades y montos se convierten en rangos.
 
 Las búsquedas que parecen contener correo, teléfono, dirección, DNI, RUC o URL
-se descartan. Los eventos se encolan localmente y el envío remoto es opcional.
+se descartarían. Antes de activar un envío remoto se debe definir retención,
+RLS, aviso al usuario, actualización de la política de privacidad y una nueva
+revisión de la declaración de datos del APK.
 
-## Puntos de integración
+## Puntos de integración futuros
 
-1. Crear `CommerceTelemetryService` después de inicializar Firebase.
+1. Crear `CommerceTelemetryService` después de inicializar Supabase.
 2. En Inicio y Catálogo, llamar `recordZeroResultSearch(query)` únicamente
    cuando una búsqueda confirmada o con pausa no tenga resultados.
 3. Al abrir un producto, llamar `recordProductView`.
@@ -76,23 +82,17 @@ se descartan. Los eventos se encolan localmente y el envío remoto es opcional.
    `ProductionCapacityService.earliestPlan` y validar la fecha elegida con
    `planByDate`.
 
-## Reglas de Firestore
+## Seguridad en Supabase
 
-El administrador puede leer `analytics_events` mediante Admin SDK o un usuario
-con el custom claim `admin: true`. El cliente público solo puede crear eventos
-que cumplen el esquema exacto de su tipo. Las reglas restringen identificadores,
-términos de búsqueda y rangos permitidos; además exigen una marca de tiempo del
-servidor. El público no puede leer, modificar ni borrar los eventos.
+La fila de capacidad puede leerse públicamente porque solo contiene cifras
+agregadas. Las políticas RLS permiten modificarla únicamente a cuentas presentes
+en `admins` cuya sesión haya alcanzado `aal2` mediante TOTP.
 
-La validación local de estas fronteras se ejecuta con:
+La configuración y las pruebas de seguridad están descritas en:
 
-```powershell
-$env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
-$env:Path = "$env:JAVA_HOME\bin;$env:Path"
-firebase emulators:exec 'node scripts/verify_firestore_rules.js' `
-  --only firestore --project expresiones-local
-```
+- [`SUPABASE.md`](SUPABASE.md)
+- [`admin_portal.md`](admin_portal.md)
 
-En producción se debe activar Firebase App Check para reducir escrituras
-automatizadas ajenas a la aplicación. La recolección remota se habilita solo
-cuando el aviso de privacidad esté publicado.
+Una fase futura de analítica debe crear una migración y políticas específicas;
+no se debe reutilizar una tabla sin restricciones ni aceptar metadatos libres
+desde el cliente.

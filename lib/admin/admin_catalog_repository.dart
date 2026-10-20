@@ -1,37 +1,26 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:typed_data';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
 
-/// Firestore write access used exclusively by the authenticated admin portal.
+/// Supabase catalog access used exclusively by the authenticated admin portal.
 ///
-/// Security is enforced again in `firestore.rules`; hiding the portal URL is
-/// never considered authorization.
+/// RLS requires both an administrator account and an AAL2 (TOTP) session for
+/// every mutation; hiding the portal URL is never considered authorization.
 class AdminCatalogRepository {
-  AdminCatalogRepository({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+  AdminCatalogRepository({required SupabaseClient client})
+    : _client = client,
+      _reader = CatalogRepository(client: client);
 
-  final FirebaseFirestore _firestore;
+  final SupabaseClient _client;
+  final CatalogRepository _reader;
 
-  CollectionReference<Map<String, dynamic>> get _products =>
-      _firestore.collection('products');
+  SupabaseClient get client => _client;
 
-  Stream<List<CatalogProduct>> watchProducts() {
-    return _products.orderBy('sortOrder').snapshots().map((snapshot) {
-      final products = snapshot.docs
-          .map(
-            (document) =>
-                CatalogProduct.fromFirestore(document.data(), id: document.id),
-          )
-          .toList();
-      products.sort((a, b) {
-        final order = a.sortOrder.compareTo(b.sortOrder);
-        return order != 0
-            ? order
-            : a.name.toLowerCase().compareTo(b.name.toLowerCase());
-      });
-      return List.unmodifiable(products);
-    });
-  }
+  Stream<List<CatalogProduct>> watchProducts() =>
+      _reader.watchProducts(includeInactive: true);
 
   Future<void> createProduct({
     required String documentId,
@@ -41,30 +30,79 @@ class AdminCatalogRepository {
     if (id.isEmpty) {
       throw const FormatException('El producto necesita un identificador.');
     }
-    final reference = _products.doc(id);
-    if ((await reference.get()).exists) {
+    final existing = await _client
+        .from('families')
+        .select('id')
+        .eq('slug', id)
+        .maybeSingle();
+    if (existing != null) {
       throw StateError('Ya existe un producto con el código $id.');
     }
-    await reference.set({
-      ...data,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    await _saveFamily({'id': id, ...data});
   }
 
-  Future<void> updateProduct(String productId, Map<String, dynamic> patch) {
-    return _products.doc(productId).update({
-      ...patch,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+  Future<void> updateProduct(
+    String productId,
+    Map<String, dynamic> completeProduct,
+  ) {
+    return _saveFamily({'id': productId, ...completeProduct});
   }
 
   Future<void> setProductActive(String productId, bool active) {
-    return updateProduct(productId, {'isActive': active});
+    return _client
+        .from('families')
+        .update({'active': active})
+        .eq('slug', productId);
   }
 
-  Future<void> deleteProduct(String productId) {
-    return _products.doc(productId).delete();
+  Future<void> deleteProduct(String productId) async {
+    await _client.rpc(
+      'admin_delete_catalog_family',
+      params: {'family_slug': productId},
+    );
+  }
+
+  Future<void> _saveFamily(Map<String, dynamic> payload) async {
+    await _client.rpc(
+      'admin_save_catalog_family',
+      params: {'payload': payload},
+    );
+  }
+
+  /// Uploads a unique catalog asset and returns its bucket-relative path.
+  Future<String> uploadCatalogImage({
+    required Uint8List bytes,
+    required String fileName,
+    required String contentType,
+    String folder = 'uploads',
+  }) async {
+    if (bytes.isEmpty) throw const FormatException('La imagen está vacía.');
+    const maximumBytes = 8 * 1024 * 1024;
+    if (bytes.length > maximumBytes) {
+      throw const FormatException('La imagen no puede superar 8 MB.');
+    }
+    const allowedTypes = {'image/jpeg', 'image/png', 'image/webp'};
+    if (!allowedTypes.contains(contentType)) {
+      throw const FormatException('Usa una imagen JPG, PNG o WebP.');
+    }
+
+    final safeFolder = normalizedDocumentId(folder);
+    final safeBase = normalizedDocumentId(
+      fileName.replaceFirst(RegExp(r'\.[^.]+$'), ''),
+    );
+    final extension = switch (contentType) {
+      'image/png' => 'png',
+      'image/webp' => 'webp',
+      _ => 'jpg',
+    };
+    final path = '$safeFolder/${DateTime.now().microsecondsSinceEpoch}-'
+        '${safeBase.isEmpty ? 'imagen' : safeBase}.$extension';
+    await _client.storage.from('catalog').uploadBinary(
+      path,
+      bytes,
+      fileOptions: FileOptions(contentType: contentType, upsert: false),
+    );
+    return path;
   }
 
   static String normalizedDocumentId(String value) {

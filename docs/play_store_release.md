@@ -1,5 +1,9 @@
 # Preparación de Android y Play Store
 
+> Alcance actual: se entregará un APK directo para el proyecto universitario y
+> la versión de producción será la web en Cloudflare Pages. Este documento se
+> conserva como referencia por si más adelante se decide publicar en Play Store.
+
 El identificador Android de la aplicación es `pe.expresiones.expresiones`.
 La versión se controla desde `pubspec.yaml` con el formato `version: nombre+código`.
 Cada publicación en Play Store debe aumentar el código situado después de `+`.
@@ -41,7 +45,8 @@ firma publicable.
 flutter pub get
 flutter analyze
 flutter test
-flutter build appbundle --release
+flutter build appbundle --release `
+  --dart-define-from-file=supabase_config.json
 ```
 
 El AAB firmado ya fue generado y verificado en:
@@ -68,7 +73,7 @@ Catálogo de materiales y cotizador para enviar tu pedido por WhatsApp.
 
 ```text
 Encuentra materiales para rosas eternas y manualidades en el catálogo de
-Expresiones. Revisa colores, presentaciones, precios referenciales y
+Expresiones. Revisa colores, presentaciones, precios y
 disponibilidad desde tu celular.
 
 Agrega los productos y cantidades que necesitas, elige recojo en Huancayo o
@@ -87,7 +92,7 @@ propietario, la gráfica destacada de 1024 × 500 y las capturas finales.
 La URL de privacidad será:
 
 ```text
-https://<dominio-de-hosting>/privacy.html
+https://<proyecto>.pages.dev/privacy.html
 ```
 
 Google exige que la URL esté activa y que la política también sea accesible
@@ -100,11 +105,11 @@ SDK o cambia la telemetría antes de enviarlo a Google Play.
 
 | Tema | Declaración preparada |
 | --- | --- |
-| Datos de contacto y coordinación | Se procesan localmente. La aplicación no los sube a Firestore. El usuario decide si los transfiere a WhatsApp. |
-| Actividad en la aplicación | Con `ENABLE_TELEMETRY=true` se envían a Firestore interacciones, búsquedas sin resultado y estado de la cotización. Declarar `Interacciones con la aplicación` e `Historial de búsquedas en la aplicación`, recopilados para analítica. |
-| Vinculación con identidad | Los eventos no incluyen nombre, teléfono, dirección, texto libre ni identificador de usuario. |
-| Datos compartidos | Firestore actúa como proveedor del servicio. Confirmar en el formulario el tratamiento de la transferencia iniciada por el usuario hacia WhatsApp. |
-| Cifrado | Firestore y Hosting usan HTTPS durante la transferencia. |
+| Datos de contacto y coordinación | Se procesan localmente. La aplicación no los sube a Supabase. El usuario decide si los transfiere a WhatsApp. |
+| Actividad en la aplicación | La analítica está desactivada en el MVP. No se envían búsquedas, vistas, productos agregados ni cotizaciones abandonadas. Revisar de nuevo este punto antes de la fase 9. |
+| Vinculación con identidad | No existe cuenta pública ni identificador de usuario para clientes. |
+| Datos compartidos | Supabase aloja el catálogo y Cloudflare distribuye la web. Confirmar en el formulario el tratamiento de la transferencia iniciada por el usuario hacia WhatsApp. |
+| Cifrado | Supabase y Cloudflare Pages usan HTTPS durante la transferencia. |
 | Pagos, ubicación y contactos del dispositivo | No se recopilan. La aplicación no procesa pagos ni solicita GPS o libreta de contactos. |
 | Eliminación | El usuario puede borrar cotización y datos locales desde la aplicación. No se crean cuentas públicas. |
 

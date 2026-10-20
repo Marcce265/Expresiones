@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [string]$FirebaseConfig = ""
+  [string]$SupabaseConfig = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -9,33 +9,26 @@ $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $flutter = if ($env:FLUTTER_ROOT) {
   Join-Path $env:FLUTTER_ROOT "bin\flutter.bat"
 } else {
-  "C:\src\flutter\bin\flutter.bat"
+  (Get-Command flutter -ErrorAction Stop).Source
 }
 
-if (-not (Test-Path -LiteralPath $flutter)) {
-  $flutter = (Get-Command flutter -ErrorAction Stop).Source
+if (-not $SupabaseConfig) {
+  $SupabaseConfig = Join-Path $projectRoot "supabase_config.json"
+} elseif (-not [IO.Path]::IsPathRooted($SupabaseConfig)) {
+  $SupabaseConfig = Join-Path $projectRoot $SupabaseConfig
 }
 
-if (-not $FirebaseConfig) {
-  $defaultConfig = Join-Path $projectRoot "firebase_config.json"
-  if (Test-Path -LiteralPath $defaultConfig) {
-    $FirebaseConfig = $defaultConfig
-  }
-} elseif (-not [IO.Path]::IsPathRooted($FirebaseConfig)) {
-  $FirebaseConfig = Join-Path $projectRoot $FirebaseConfig
+$SupabaseConfig = [IO.Path]::GetFullPath($SupabaseConfig)
+if (-not (Test-Path -LiteralPath $SupabaseConfig -PathType Leaf)) {
+  throw "No existe $SupabaseConfig. Copia supabase_config.example.json como supabase_config.json y completa solo la URL y la clave pública."
 }
 
-$defineArgs = @("--dart-define=ENABLE_TELEMETRY=true")
-if ($FirebaseConfig) {
-  $FirebaseConfig = [IO.Path]::GetFullPath($FirebaseConfig)
-  if (-not (Test-Path -LiteralPath $FirebaseConfig)) {
-    throw "No existe el archivo de configuración: $FirebaseConfig"
-  }
-  $defineArgs += "--dart-define-from-file=$FirebaseConfig"
-} else {
-  Write-Warning "No existe firebase_config.json. El build usará el catálogo local y el panel mostrará la pantalla de configuración."
+$config = Get-Content -LiteralPath $SupabaseConfig -Raw | ConvertFrom-Json
+if (-not $config.SUPABASE_URL -or -not $config.SUPABASE_PUBLISHABLE_KEY) {
+  throw "La configuración debe incluir SUPABASE_URL y SUPABASE_PUBLISHABLE_KEY."
 }
 
+$defineArgs = @("--dart-define-from-file=$SupabaseConfig")
 $publicOutput = Join-Path $projectRoot "build\web"
 $adminOutput = Join-Path $projectRoot "build\admin-web"
 $adminDestination = Join-Path $publicOutput "admin"
@@ -51,16 +44,20 @@ try {
   & $flutter build web --release --no-pub --target lib/admin_main.dart --base-href /admin/ --output $adminOutput @defineArgs
   if ($LASTEXITCODE -ne 0) { throw "Falló el build administrativo." }
 
-  if (Test-Path -LiteralPath $adminDestination) {
-    $resolvedDestination = [IO.Path]::GetFullPath($adminDestination)
-    if (-not $resolvedDestination.StartsWith("$projectRoot\", [StringComparison]::OrdinalIgnoreCase)) {
-      throw "Ruta de salida no válida: $resolvedDestination"
-    }
+  $resolvedDestination = [IO.Path]::GetFullPath($adminDestination)
+  $expectedDestination = [IO.Path]::GetFullPath((Join-Path $projectRoot "build\web\admin"))
+  if ($resolvedDestination -ne $expectedDestination) {
+    throw "Ruta de salida no válida: $resolvedDestination"
+  }
+  if (Test-Path -LiteralPath $resolvedDestination) {
     Remove-Item -LiteralPath $resolvedDestination -Recurse -Force
   }
+  Copy-Item -LiteralPath $adminOutput -Destination $resolvedDestination -Recurse
 
-  Copy-Item -LiteralPath $adminOutput -Destination $adminDestination -Recurse
-  Write-Host "Build listo: $publicOutput"
+  Copy-Item -LiteralPath (Join-Path $projectRoot "web\_redirects") -Destination (Join-Path $publicOutput "_redirects") -Force
+  Copy-Item -LiteralPath (Join-Path $projectRoot "web\_headers") -Destination (Join-Path $publicOutput "_headers") -Force
+
+  Write-Host "Build para Cloudflare Pages listo: $publicOutput"
   Write-Host "Catálogo: /"
   Write-Host "Administración: /admin/"
   Write-Host "Privacidad: /privacy.html"

@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/production_capacity.dart';
 
@@ -10,31 +9,32 @@ abstract interface class CapacityRepository {
   Stream<ProductionCapacitySnapshot> watch();
 }
 
-/// Reads the single aggregate `availability/public` document.
+/// Reads the public aggregate capacity row from Supabase.
 ///
-/// There are no customer records in that document. When Firestore is not
-/// configured or temporarily fails, the app continues with [fallback].
-class FirestoreCapacityRepository implements CapacityRepository {
-  FirestoreCapacityRepository({
-    FirebaseFirestore? firestore,
+/// The row contains no customer or order data. If Supabase has not been
+/// configured, or is temporarily unavailable, the conservative local fallback
+/// keeps the quote flow usable.
+class SupabaseCapacityRepository implements CapacityRepository {
+  SupabaseCapacityRepository({
+    this.client,
     ProductionCapacitySnapshot? fallback,
-  }) : _injectedFirestore = firestore,
-       fallback = fallback ?? ProductionCapacitySnapshot.twoPersonFallback();
+  }) : fallback = fallback ?? ProductionCapacitySnapshot.twoPersonFallback();
 
-  final FirebaseFirestore? _injectedFirestore;
+  final SupabaseClient? client;
   final ProductionCapacitySnapshot fallback;
 
   @override
   Future<ProductionCapacitySnapshot> load() async {
-    final firestore = _resolveFirestore();
-    if (firestore == null) return fallback;
+    final activeClient = client;
+    if (activeClient == null) return fallback;
+
     try {
-      final snapshot = await firestore
-          .collection('availability')
-          .doc('public')
-          .get();
-      final data = snapshot.data();
-      return data == null ? fallback : ProductionCapacitySnapshot.fromMap(data);
+      final row = await activeClient
+          .from('availability')
+          .select('data')
+          .eq('id', 'public')
+          .maybeSingle();
+      return _snapshotFromRow(row);
     } catch (_) {
       return fallback;
     }
@@ -42,37 +42,35 @@ class FirestoreCapacityRepository implements CapacityRepository {
 
   @override
   Stream<ProductionCapacitySnapshot> watch() async* {
-    final firestore = _resolveFirestore();
-    if (firestore == null) {
+    final activeClient = client;
+    if (activeClient == null) {
       yield fallback;
       return;
     }
-    yield* firestore
-        .collection('availability')
-        .doc('public')
-        .snapshots()
-        .transform(
-          StreamTransformer.fromHandlers(
-            handleData: (document, sink) {
-              final data = document.data();
-              sink.add(
-                data == null
-                    ? fallback
-                    : ProductionCapacitySnapshot.fromMap(data),
-              );
-            },
-            handleError: (_, _, sink) => sink.add(fallback),
-          ),
-        );
+
+    try {
+      await for (final rows in activeClient
+          .from('availability')
+          .stream(primaryKey: const ['id'])
+          .eq('id', 'public')) {
+        if (rows.isEmpty) {
+          yield fallback;
+        } else {
+          yield _snapshotFromRow(rows.first);
+        }
+      }
+    } catch (_) {
+      yield fallback;
+    }
   }
 
-  FirebaseFirestore? _resolveFirestore() {
-    if (_injectedFirestore != null) return _injectedFirestore;
-    if (Firebase.apps.isEmpty) return null;
-    try {
-      return FirebaseFirestore.instanceFor(app: Firebase.app());
-    } catch (_) {
-      return null;
+  ProductionCapacitySnapshot _snapshotFromRow(Map<String, dynamic>? row) {
+    final rawData = row?['data'];
+    if (rawData is Map) {
+      return ProductionCapacitySnapshot.fromMap(
+        rawData.map((key, value) => MapEntry(key.toString(), value)),
+      );
     }
+    return fallback;
   }
 }

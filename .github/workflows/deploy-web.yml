@@ -1,0 +1,62 @@
+name: Despliegue Web a Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Preparar configuración de Supabase
+        run: |
+          if [ -n "${{ secrets.SUPABASE_URL }}" ] && [ -n "${{ secrets.SUPABASE_PUBLISHABLE_KEY }}" ]; then
+            echo "Generando supabase_config.json desde GitHub Secrets..."
+            cat <<EOF > supabase_config.json
+          {
+            "SUPABASE_URL": "${{ secrets.SUPABASE_URL }}",
+            "SUPABASE_PUBLISHABLE_KEY": "${{ secrets.SUPABASE_PUBLISHABLE_KEY }}"
+          }
+          EOF
+          elif [ ! -f supabase_config.json ]; then
+            echo "Usando configuración semilla por defecto (fallback local)..."
+            cp supabase_config.example.json supabase_config.json
+          fi
+
+      - name: Instalar dependencias de Flutter
+        run: flutter pub get
+
+      - name: Verificar calidad de código y pruebas
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: Compilar versión Web de producción
+        run: bash scripts/build_web_release.sh
+
+      - name: Desplegar a Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy build/web --project-name=expresiones

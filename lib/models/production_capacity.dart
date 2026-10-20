@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 /// Public, aggregate production availability.
 ///
-/// It deliberately contains no customer, quote or order identifiers. Firestore
-/// can therefore expose `availability/public` without exposing private data.
+/// It deliberately contains no customer, quote or order identifiers. Supabase
+/// can therefore expose the public `availability` row safely through RLS.
 class ProductionCapacitySnapshot {
   const ProductionCapacitySnapshot({
     required this.weeklyCapacityPoints,
@@ -26,7 +26,7 @@ class ProductionCapacitySnapshot {
   final String timezone;
   final DateTime? updatedAt;
 
-  /// Conservative local fallback until the owner configures Firestore.
+  /// Conservative local fallback until the owner configures Supabase.
   ///
   /// One point should represent roughly 30 minutes of combined workshop time.
   /// These values must be calibrated from real work before publishing dates as
@@ -225,12 +225,5 @@ String? _nonEmptyString(Object? value) {
 
 DateTime? _dateTime(Object? value) {
   if (value is DateTime) return value;
-  try {
-    final dynamic candidate = value;
-    final converted = candidate?.toDate();
-    if (converted is DateTime) return converted;
-  } catch (_) {
-    // Firestore Timestamp is optional; ISO strings remain supported.
-  }
   return DateTime.tryParse(value?.toString() ?? '');
 }
