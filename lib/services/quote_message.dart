@@ -52,6 +52,12 @@ abstract final class QuoteMessageBuilder {
         ..writeln('Agencia Shalom: ${details.shalomAgencyName}')
         ..writeln('Ubicación: ${details.shalomAgencyLocality}')
         ..writeln('Dirección: ${details.shalomAgencyAddress}');
+      if (details.shalomAgencyLatitude != null &&
+          details.shalomAgencyLongitude != null) {
+        buffer.writeln(
+          'Mapa: https://www.google.com/maps/search/?api=1&query=${details.shalomAgencyLatitude},${details.shalomAgencyLongitude}',
+        );
+      }
     }
 
     if (details.desiredDate != null) {

@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../data/shalom_agency_repository.dart';
 import '../models/shalom_agency.dart';
+import '../services/map_launcher_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 
@@ -186,8 +187,23 @@ class _AgencyCard extends StatelessWidget {
   final bool selected;
   final VoidCallback? onTap;
 
+  /// Abre Google Maps con las coordenadas de la agencia.
+  /// En Android usa el URI geo: para abrir la app nativa; en web usa maps.google.com.
+  Future<void> _openInMaps() async {
+    final lat = agency.latitude;
+    final lon = agency.longitude;
+    if (lat == null || lon == null) return;
+    await MapLauncherService.openCoordinates(
+      latitude: lat,
+      longitude: lon,
+      label: agency.displayName,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final hasCoords = agency.latitude != null && agency.longitude != null;
+
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
@@ -244,6 +260,26 @@ class _AgencyCard extends StatelessWidget {
                         'Este local no figura como destino de envíos.',
                         style: Theme.of(context).textTheme.bodySmall
                             ?.copyWith(color: AppColors.error),
+                      ),
+                    ],
+                    // Botón "Ver en mapa" — solo si la agencia tiene coordenadas.
+                    if (hasCoords) ...[
+                      const SizedBox(height: 10),
+                      OutlinedButton.icon(
+                        onPressed: _openInMaps,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          side: const BorderSide(color: AppColors.border),
+                          foregroundColor: AppColors.ink,
+                          textStyle: const TextStyle(fontSize: 13),
+                        ),
+                        icon: const Icon(Icons.map_outlined, size: 16),
+                        label: const Text('Ver en mapa'),
                       ),
                     ],
                   ],

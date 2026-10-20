@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../models/coordination_details.dart';
 import '../models/shalom_agency.dart';
+import '../services/map_launcher_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import 'shalom_agency_picker.dart';
@@ -38,6 +39,8 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   late String _agencyName;
   late String _agencyAddress;
   late String _agencyLocality;
+  double? _agencyLatitude;
+  double? _agencyLongitude;
   bool _agencyError = false;
 
   @override
@@ -52,6 +55,8 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     _agencyName = initial.shalomAgencyName;
     _agencyAddress = initial.shalomAgencyAddress;
     _agencyLocality = initial.shalomAgencyLocality;
+    _agencyLatitude = initial.shalomAgencyLatitude;
+    _agencyLongitude = initial.shalomAgencyLongitude;
     _desiredDate = initial.desiredDate == null
         ? null
         : _dateOnly(initial.desiredDate!);
@@ -137,6 +142,8 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
       _agencyName = agency.displayName;
       _agencyAddress = agency.address;
       _agencyLocality = agency.localityLabel;
+      _agencyLatitude = agency.latitude;
+      _agencyLongitude = agency.longitude;
       _agencyError = false;
     });
   }
@@ -169,6 +176,12 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         shalomAgencyLocality: _deliveryMethod == DeliveryMethod.shalom
             ? _agencyLocality
             : '',
+        shalomAgencyLatitude: _deliveryMethod == DeliveryMethod.shalom
+            ? _agencyLatitude
+            : null,
+        shalomAgencyLongitude: _deliveryMethod == DeliveryMethod.shalom
+            ? _agencyLongitude
+            : null,
         desiredDate: _desiredDate,
         note: _noteController.text.trim(),
       ),
@@ -330,6 +343,34 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                                       ),
                               ),
                             ),
+                            if (_agencyId.isNotEmpty &&
+                                _agencyLatitude != null &&
+                                _agencyLongitude != null) ...[
+                              const SizedBox(height: 6),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton.icon(
+                                  onPressed: () =>
+                                      MapLauncherService.openCoordinates(
+                                    latitude: _agencyLatitude!,
+                                    longitude: _agencyLongitude!,
+                                    label: _agencyName,
+                                  ),
+                                  icon: const Icon(Icons.map_outlined, size: 16),
+                                  label: const Text('Ver agencia en Google Maps'),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: AppColors.ink,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 2,
+                                    ),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 6),
                             Text(
                               'El costo de envío se confirmará por WhatsApp.',

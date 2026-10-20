@@ -175,6 +175,12 @@ abstract final class QuoteExportService {
             _pdfDetail('Agencia', details.shalomAgencyName),
             _pdfDetail('Ubicación', details.shalomAgencyLocality),
             _pdfDetail('Dirección', details.shalomAgencyAddress),
+            if (details.shalomAgencyLatitude != null &&
+                details.shalomAgencyLongitude != null)
+              _pdfDetail(
+                'Geolocalización',
+                '${details.shalomAgencyLatitude}, ${details.shalomAgencyLongitude}',
+              ),
           ],
           _pdfDetail(
             'Fecha deseada',
@@ -283,6 +289,12 @@ abstract final class QuoteExportService {
         ('Agencia Shalom', details.shalomAgencyName),
         ('Ubicación', details.shalomAgencyLocality),
         ('Dirección', details.shalomAgencyAddress),
+        if (details.shalomAgencyLatitude != null &&
+            details.shalomAgencyLongitude != null)
+          (
+            'Geolocalización',
+            'https://www.google.com/maps/search/?api=1&query=${details.shalomAgencyLatitude},${details.shalomAgencyLongitude}',
+          ),
       ],
       (
         'Fecha deseada',

@@ -471,6 +471,7 @@ revoke all on function public.is_aal2() from public;
 revoke all on function public.can_admin_write() from public;
 revoke all on function public.is_family_public(uuid) from public;
 revoke all on function public.is_variant_public(uuid) from public;
+revoke all on function public.bump_catalog_version() from public, anon, authenticated;
 grant execute on function public.is_current_admin() to anon, authenticated;
 grant execute on function public.is_aal2() to authenticated;
 grant execute on function public.can_admin_write() to authenticated;
@@ -712,8 +713,10 @@ begin
 end;
 $$;
 
-revoke all on function public.admin_save_catalog_family(jsonb) from public;
-revoke all on function public.admin_delete_catalog_family(text) from public;
+revoke all on function public.admin_save_catalog_family(jsonb)
+  from public, anon, authenticated;
+revoke all on function public.admin_delete_catalog_family(text)
+  from public, anon, authenticated;
 grant execute on function public.admin_save_catalog_family(jsonb) to authenticated;
 grant execute on function public.admin_delete_catalog_family(text) to authenticated;
 

@@ -10,6 +10,8 @@ class CoordinationDetails {
     this.shalomAgencyName = '',
     this.shalomAgencyAddress = '',
     this.shalomAgencyLocality = '',
+    this.shalomAgencyLatitude,
+    this.shalomAgencyLongitude,
     this.desiredDate,
     this.note = '',
   });
@@ -22,6 +24,10 @@ class CoordinationDetails {
   final String shalomAgencyName;
   final String shalomAgencyAddress;
   final String shalomAgencyLocality;
+  /// Coordenadas de la agencia Shalom seleccionada (pueden ser nulas si
+  /// la agencia no tiene datos de geolocalización registrados).
+  final double? shalomAgencyLatitude;
+  final double? shalomAgencyLongitude;
   final DateTime? desiredDate;
   final String note;
 
@@ -40,6 +46,9 @@ class CoordinationDetails {
     String? shalomAgencyName,
     String? shalomAgencyAddress,
     String? shalomAgencyLocality,
+    double? shalomAgencyLatitude,
+    double? shalomAgencyLongitude,
+    bool clearAgencyCoords = false,
     DateTime? desiredDate,
     bool clearDesiredDate = false,
     String? note,
@@ -53,6 +62,10 @@ class CoordinationDetails {
       shalomAgencyName: shalomAgencyName ?? this.shalomAgencyName,
       shalomAgencyAddress: shalomAgencyAddress ?? this.shalomAgencyAddress,
       shalomAgencyLocality: shalomAgencyLocality ?? this.shalomAgencyLocality,
+      shalomAgencyLatitude:
+          clearAgencyCoords ? null : shalomAgencyLatitude ?? this.shalomAgencyLatitude,
+      shalomAgencyLongitude:
+          clearAgencyCoords ? null : shalomAgencyLongitude ?? this.shalomAgencyLongitude,
       desiredDate: clearDesiredDate ? null : desiredDate ?? this.desiredDate,
       note: note ?? this.note,
     );
@@ -67,6 +80,8 @@ class CoordinationDetails {
     'shalomAgencyName': shalomAgencyName,
     'shalomAgencyAddress': shalomAgencyAddress,
     'shalomAgencyLocality': shalomAgencyLocality,
+    'shalomAgencyLatitude': shalomAgencyLatitude,
+    'shalomAgencyLongitude': shalomAgencyLongitude,
     'desiredDate': desiredDate?.toIso8601String(),
     'note': note,
   };
@@ -85,6 +100,8 @@ class CoordinationDetails {
       shalomAgencyName: json['shalomAgencyName'] as String? ?? '',
       shalomAgencyAddress: json['shalomAgencyAddress'] as String? ?? '',
       shalomAgencyLocality: json['shalomAgencyLocality'] as String? ?? '',
+      shalomAgencyLatitude: (json['shalomAgencyLatitude'] as num?)?.toDouble(),
+      shalomAgencyLongitude: (json['shalomAgencyLongitude'] as num?)?.toDouble(),
       desiredDate: DateTime.tryParse(json['desiredDate'] as String? ?? ''),
       note: json['note'] as String? ?? '',
     );

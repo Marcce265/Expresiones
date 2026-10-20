@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/coordination_details.dart';
 import '../models/quote_line.dart';
+import '../services/map_launcher_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/quote_export_buttons.dart';
@@ -278,6 +279,36 @@ class _CoordinationCard extends StatelessWidget {
                 label:
                     '${details.shalomAgencyName} · ${details.shalomAgencyLocality}\n${details.shalomAgencyAddress}',
               ),
+              if (details.shalomAgencyLatitude != null &&
+                  details.shalomAgencyLongitude != null) ...[
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 36),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: () => MapLauncherService.openCoordinates(
+                        latitude: details.shalomAgencyLatitude!,
+                        longitude: details.shalomAgencyLongitude!,
+                        label: details.shalomAgencyName,
+                      ),
+                      icon: const Icon(Icons.map_outlined, size: 16),
+                      label: const Text('Ver agencia en Google Maps'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        side: const BorderSide(color: AppColors.border),
+                        foregroundColor: AppColors.ink,
+                        textStyle: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
             const SizedBox(height: 12),
             _DetailRow(

@@ -72,6 +72,9 @@ flutter:
     - assets/data/
     - assets/fonts/
     - assets/images/catalog_hero.webp
+    # Dos portadas editoriales pequeñas forman parte de la interfaz; las 221
+    # fotos dinámicas del catálogo se sirven desde Supabase Storage.
+    - assets/images/family_heroes/
     # Las fotos de productos ya se sirven directamente desde Supabase Storage:
     # https://wxoaedvqeuynzinzazsj.supabase.co/storage/v1/object/public/catalog/images/
 
