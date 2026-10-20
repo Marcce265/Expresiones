@@ -72,10 +72,8 @@ flutter:
     - assets/data/
     - assets/fonts/
     - assets/images/catalog_hero.webp
-    - assets/images/catalog_hd/
-    - assets/images/family_heroes/
-    - assets/images/limpiapipas_optimized/
-    - assets/images/satin_optimized/
+    # Las fotos de productos ya se sirven directamente desde Supabase Storage:
+    # https://wxoaedvqeuynzinzazsj.supabase.co/storage/v1/object/public/catalog/images/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
