@@ -80,6 +80,11 @@ class SupabaseCatalogMapper {
                 family['cover_path'] ??
                 family['cover_thumb_path'],
           ),
+          'thumbnailUrl': resolveImage(
+            family['cover_thumb_path'] ??
+                family['cover_path'] ??
+                family['cover_detail_path'],
+          ),
           'tags': family['tags'],
           'attributes': family['attributes'],
           'createdAt': family['created_at'],
@@ -110,6 +115,11 @@ class SupabaseCatalogMapper {
         variant['detail_path'] ??
             variant['image_path'] ??
             variant['thumb_path'],
+      ),
+      'thumbnailUrl': resolveImage(
+        variant['thumb_path'] ??
+            variant['image_path'] ??
+            variant['detail_path'],
       ),
       'priceOverride': variant['base_price'],
       'priceTiers': [for (final tier in tiers) _tierMap(tier)],

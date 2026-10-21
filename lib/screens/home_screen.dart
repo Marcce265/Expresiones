@@ -66,7 +66,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final featured = expandCatalogTiles(products)
         .where(
           (tile) =>
-              tile.variant?.imageUrl != null || tile.product.imageUrl != null,
+              tile.variant?.previewImageUrl != null ||
+              tile.product.previewImageUrl != null,
         )
         .take(6)
         .toList();
@@ -195,9 +196,8 @@ class _HomeScreenState extends State<HomeScreen> {
       (product) =>
           product.isActive && product.category == ProductCategory.materials,
     );
-    final hasResult = expandCatalogTiles(products).any(
-      (tile) => _matches(tile, query),
-    );
+    final hasResult = expandCatalogTiles(products)
+        .any((tile) => _matches(tile, query));
     if (hasResult) return;
     _reportedEmptySearches.add(query);
     widget.onZeroResultSearch!(query);

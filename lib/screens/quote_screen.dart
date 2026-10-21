@@ -187,7 +187,7 @@ class _QuoteLineCard extends StatelessWidget {
       line.quantity + 1,
       variantId: line.variantId,
     );
-    final image = variant?.imageUrl ?? product.imageUrl;
+    final image = variant?.previewImageUrl ?? product.previewImageUrl;
 
     return Card(
       child: Padding(

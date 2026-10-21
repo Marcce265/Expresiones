@@ -4,9 +4,9 @@ Generada desde `scripts/catalog_seed.json`.
 
 ## Resultado
 
-- Familias revisadas: **37**.
-- Familias con precio validado: **24**.
-- Materiales visibles pendientes de confirmación: **7**.
+- Familias revisadas: **36**.
+- Familias con precio validado: **30**.
+- Materiales visibles pendientes de confirmación: **0**.
 - Familias futuras ocultas pendientes de confirmación: **6**.
 - Errores matemáticos detectados: **0**.
 
@@ -16,13 +16,6 @@ Los precios marcados como pendientes no deben considerarse definitivos hasta que
 
 | Producto | Precio provisional | Presentación | Motivo |
 | --- | ---: | --- | --- |
-| Corona perlada · Plateado | S/ 4.00 | unidad | No aparece un precio legible o inequívoco en la referencia disponible |
-| Corona perlada 5 cm · Dorado | S/ 4.00 | unidad | No aparece un precio legible o inequívoco en la referencia disponible |
-| Corona perlada 7 cm · Dorado | S/ 4.00 | unidad | No aparece un precio legible o inequívoco en la referencia disponible |
-| Cinta tornasol 4 cm × 7 m | S/ 11.00 | rollo | No aparece un precio legible o inequívoco en la referencia disponible |
-| Brochetas | S/ 4.00 | paquete | No aparece un precio legible o inequívoco en la referencia disponible |
-| Luz hada | S/ 10.00 | unidad | No aparece un precio legible o inequívoco en la referencia disponible |
-| Barras de silicona | S/ 1.00 | paquete | No aparece un precio legible o inequívoco en la referencia disponible |
 
 ## Productos futuros pendientes
 

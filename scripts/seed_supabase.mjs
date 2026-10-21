@@ -223,8 +223,8 @@ async function loadAndValidateCatalog() {
     referencePricesNormalized,
   };
   const expected = {
-    families: 37,
-    activeFamilies: 31,
+    families: 36,
+    activeFamilies: 30,
     variants: 238,
     visibleVariants: 223,
     familyTiers: 29,

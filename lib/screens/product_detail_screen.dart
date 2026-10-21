@@ -46,7 +46,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final image = variant?.imageUrl ?? product.imageUrl;
+    final image =
+        variant?.imageUrl ??
+        variant?.thumbnailUrl ??
+        product.imageUrl ??
+        product.thumbnailUrl;
     final title = variant?.name ?? product.name;
     final sku = variant?.sku ?? product.sku;
     final total = product.totalFor(_quantity, variantId: _variantId);

@@ -78,8 +78,7 @@ class _AdminSecurityGateState extends State<_AdminSecurityGate> {
     final allowed = await widget.client.rpc('is_current_admin');
     if (allowed != true) return const _AdminAccessState.denied();
 
-    final assurance = widget.client.auth.mfa
-        .getAuthenticatorAssuranceLevel();
+    final assurance = widget.client.auth.mfa.getAuthenticatorAssuranceLevel();
     if (assurance.currentLevel == AuthenticatorAssuranceLevels.aal2) {
       return const _AdminAccessState.allowed();
     }
@@ -136,6 +135,7 @@ class _AdminSecurityGateState extends State<_AdminSecurityGate> {
             onSignOut: _signOut,
           ),
           _AdminAccessMode.allowed => AdminDashboardScreen(
+            client: widget.client,
             repository: AdminCatalogRepository(client: widget.client),
             operations: AdminOperationsRepository(client: widget.client),
             userEmail: widget.user.email ?? '',
@@ -321,12 +321,14 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({
     super.key,
+    required this.client,
     required this.repository,
     required this.operations,
     required this.userEmail,
     required this.onSignOut,
   });
 
+  final SupabaseClient client;
   final AdminCatalogRepository repository;
   final AdminOperationsRepository operations;
   final String userEmail;
@@ -367,6 +369,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 
+  Future<void> _changePassword() async {
+    final changed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _ChangePasswordDialog(client: widget.client),
+    );
+    if (changed == true && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Contraseña actualizada.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -378,9 +393,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute<void>(
-                builder: (_) => AdminCapacityScreen(
-                  repository: widget.operations,
-                ),
+                builder: (_) =>
+                    AdminCapacityScreen(repository: widget.operations),
               ),
             ),
             icon: const Icon(Icons.calendar_month_outlined),
@@ -390,9 +404,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute<void>(
-                builder: (_) => AdminAnalyticsScreen(
-                  repository: widget.operations,
-                ),
+                builder: (_) =>
+                    AdminAnalyticsScreen(repository: widget.operations),
               ),
             ),
             icon: const Icon(Icons.query_stats_outlined),
@@ -402,6 +415,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Center(child: Text(widget.userEmail)),
             ),
+          IconButton(
+            tooltip: 'Crear o cambiar contraseña',
+            onPressed: _changePassword,
+            icon: const Icon(Icons.password_rounded),
+          ),
           IconButton(
             tooltip: 'Cerrar sesión',
             onPressed: widget.onSignOut,
@@ -425,7 +443,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             );
           }
           if (!snapshot.hasData) return const _AdminLoading();
-          final allProducts = snapshot.data!;
+          final allProducts = snapshot.data!
+              .where((product) => !product.attributes.containsKey('mergedInto'))
+              .toList(growable: false);
           final products = allProducts.where((product) {
             if (_onlyEstimated && !product.priceIsEstimate) return false;
             if (_query.isEmpty) return true;
@@ -549,6 +569,132 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+class _ChangePasswordDialog extends StatefulWidget {
+  const _ChangePasswordDialog({required this.client});
+
+  final SupabaseClient client;
+
+  @override
+  State<_ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _password = TextEditingController();
+  final _confirmation = TextEditingController();
+  bool _busy = false;
+  bool _obscure = true;
+  String? _error;
+
+  @override
+  void dispose() {
+    _password.dispose();
+    _confirmation.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate() || _busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.client.auth.updateUser(
+        UserAttributes(password: _password.text),
+      );
+      if (mounted) Navigator.pop(context, true);
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      setState(() => _error = 'No se pudo actualizar. ${error.message}');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Crear o cambiar contraseña'),
+      content: SizedBox(
+        width: 420,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Usa al menos 12 caracteres. También podrás seguir entrando '
+                'con el enlace seguro enviado a tu correo.',
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _password,
+                obscureText: _obscure,
+                autofillHints: const [AutofillHints.newPassword],
+                decoration: InputDecoration(
+                  labelText: 'Nueva contraseña',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    tooltip: _obscure
+                        ? 'Mostrar contraseña'
+                        : 'Ocultar contraseña',
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                    icon: Icon(
+                      _obscure
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                  ),
+                ),
+                validator: (value) => (value?.length ?? 0) >= 12
+                    ? null
+                    : 'Usa al menos 12 caracteres.',
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _confirmation,
+                obscureText: _obscure,
+                autofillHints: const [AutofillHints.newPassword],
+                decoration: const InputDecoration(
+                  labelText: 'Repite la contraseña',
+                  prefixIcon: Icon(Icons.lock_reset_rounded),
+                ),
+                validator: (value) => value == _password.text
+                    ? null
+                    : 'Las contraseñas no coinciden.',
+                onFieldSubmitted: (_) => _save(),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.pop(context, false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _busy ? null : _save,
+          child: _busy
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar contraseña'),
+        ),
+      ],
     );
   }
 }

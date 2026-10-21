@@ -8,6 +8,7 @@ en el APK académico.
 ## Funciones del panel
 
 - Inicio y cierre de sesión con correo y contraseña.
+- Creación o cambio de contraseña desde una sesión protegida con TOTP.
 - Inscripción y verificación del segundo factor TOTP.
 - Listado y búsqueda de familias y variantes.
 - Creación y edición de nombres, descripciones, categorías, códigos, orden,
@@ -72,6 +73,8 @@ capturas del QR dentro del repositorio.
 4. Introduce el código temporal de seis dígitos.
 5. Supabase eleva la sesión a `aal2`; recién entonces las políticas permiten
    escribir.
+6. En el panel, el botón con icono de llave permite crear o cambiar la
+   contraseña. La aplicación exige un mínimo de 12 caracteres.
 
 Guarda la cuenta TOTP en un autenticador con copia de seguridad cifrada. Si una
 persona pierde el segundo factor, la otra cuenta conserva acceso al negocio,

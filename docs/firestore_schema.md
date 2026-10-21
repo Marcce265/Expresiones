@@ -60,7 +60,7 @@ WhatsApp.
 
 ## Catálogo inicial
 
-`scripts/catalog_seed.json` contiene los mismos 31 productos que usa el modo
+`scripts/catalog_seed.json` contiene los mismos 30 productos que usa el modo
 local de Flutter. `scripts/seed_firestore.js` carga ese archivo solamente en el
 emulador local y se niega a escribir en hosts remotos.
 

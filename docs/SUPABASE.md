@@ -12,15 +12,15 @@ estos valores antes de permitir una escritura:
 
 | Dato | Cantidad |
 | --- | ---: |
-| Familias totales | 37 |
-| Familias públicas | 31 |
+| Familias totales | 36 |
+| Familias públicas | 30 |
 | Variantes totales | 238 |
 | Variantes de familias públicas | 223 |
 | Tramos de familia | 29 |
 | Tramos de variante | 0 |
 | Imágenes distintas referenciadas | 221 |
 
-Las 31 familias públicas corresponden a materiales. Las seis familias
+Las 30 familias públicas corresponden a materiales. Las seis familias
 inactivas son ramos y regalos que se podrán publicar después. Las 221 que antes
 se contaron como “variantes” son en realidad imágenes distintas; el número
 correcto de variantes públicas es 223.
@@ -217,7 +217,7 @@ RLS exige admin + AAL2 y el trigger asigna `updated_at`/`updated_by`.
 
 Antes de publicar, comprobar con la clave `anon`:
 
-- SELECT devuelve 31 familias y 223 variantes visibles.
+- SELECT devuelve 30 familias y 223 variantes visibles.
 - No devuelve las seis familias inactivas ni sus 15 variantes.
 - No permite insertar, actualizar ni borrar.
 - Los tramos de productos inactivos tampoco son públicos.

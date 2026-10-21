@@ -53,9 +53,9 @@ class ProductCard extends StatelessWidget {
     final sku = variant?.sku ?? product.sku;
     final image =
         imageAsset ??
-        variant?.imageUrl ??
+        variant?.previewImageUrl ??
         productFamilyHeroAsset(product) ??
-        product.imageUrl;
+        product.previewImageUrl;
     final price = product.unitPriceFor(1, variantId: variantId);
     final pricePrefix = product.startingAt ? 'Desde ' : '';
     final imageFit = productImageFit(product, variant: variant);

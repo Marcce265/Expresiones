@@ -2428,14 +2428,25 @@
   },
   {
     "id": "cinta-tornasol-4cm-7m",
-    "name": "Cinta tornasol 4 cm × 7 m",
+    "name": "Cinta organza tornasol 4 cm × 7 m",
     "category": "materials",
-    "description": "Cinta tornasol de 4 cm de ancho y 7 m de largo.",
+    "description": "Cinta de organza tornasol de 4 cm de ancho y 7 m de largo, disponible en varios colores.",
     "unitLabel": "rollo",
-    "basePrice": 11,
+    "basePrice": 8,
     "startingAt": false,
     "priceIsEstimate": false,
-    "priceTiers": [],
+    "priceTiers": [
+      {
+        "minQuantity": 6,
+        "unitPrice": 7.5,
+        "label": "Media docena"
+      },
+      {
+        "minQuantity": 12,
+        "unitPrice": 7,
+        "label": "Docena"
+      }
+    ],
     "variants": [
       {
         "id": "catalogo-096",
@@ -2514,49 +2525,7 @@
           "catalogIndex": "101",
           "sourceImage": "assets/images/catalog_hd/source_bad6a373-c021-49a9-a038-47243d60bd9b.webp"
         }
-      }
-    ],
-    "stockStatus": "check_availability",
-    "leadDays": 0,
-    "productionPoints": 0,
-    "isActive": true,
-    "isFeatured": false,
-    "sortOrder": 90,
-    "tags": [
-      "cinta",
-      "tornasol",
-      "4 cm",
-      "7 m",
-      "colores"
-    ],
-    "imageUrl": "assets/images/catalog_hd/source_b9e05f12-abbe-4893-b2bc-22e32f9b398c.webp",
-    "attributes": {
-      "catalogGroup": "Cintas especiales",
-      "assetCount": "6"
-    }
-  },
-  {
-    "id": "cinta-organza-tornasol",
-    "name": "Cinta organza tornasol",
-    "category": "materials",
-    "description": "Cinta de organza tornasol de 7 m para lazos y detalles.",
-    "unitLabel": "rollo",
-    "basePrice": 8,
-    "startingAt": false,
-    "priceIsEstimate": false,
-    "priceTiers": [
-      {
-        "minQuantity": 6,
-        "unitPrice": 7.5,
-        "label": "Media docena"
       },
-      {
-        "minQuantity": 12,
-        "unitPrice": 7,
-        "label": "Docena"
-      }
-    ],
-    "variants": [
       {
         "id": "catalogo-102",
         "name": "Turquesa",
@@ -2602,17 +2571,19 @@
     "productionPoints": 0,
     "isActive": true,
     "isFeatured": false,
-    "sortOrder": 100,
+    "sortOrder": 90,
     "tags": [
       "cinta",
       "organza",
       "tornasol",
-      "7 m"
+      "4 cm",
+      "7 m",
+      "colores"
     ],
-    "imageUrl": "assets/images/catalog_hd/source_f9f80600-6422-4bc3-aff1-35c8067453c0.webp",
+    "imageUrl": "assets/images/catalog_hd/source_b9e05f12-abbe-4893-b2bc-22e32f9b398c.webp",
     "attributes": {
       "catalogGroup": "Cintas especiales",
-      "assetCount": "3"
+      "assetCount": "9"
     }
   },
   {

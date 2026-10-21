@@ -15,13 +15,13 @@ void main() {
       .toList(growable: false);
 
   test('conserva el inventario completo y el catálogo público esperado', () {
-    expect(products, hasLength(37));
+    expect(products, hasLength(36));
     expect(
       products.fold<int>(0, (total, item) => total + item.variants.length),
       238,
     );
 
-    expect(published, hasLength(31));
+    expect(published, hasLength(30));
     expect(
       published.fold<int>(0, (total, item) => total + item.variants.length),
       223,
@@ -29,6 +29,35 @@ void main() {
 
     expect(future, hasLength(6));
     expect(future.every((product) => !product.isActive), isTrue);
+  });
+
+  test('publica la cinta organza tornasol como una sola familia', () {
+    final ribbon = products.singleWhere(
+      (product) => product.id == 'cinta-tornasol-4cm-7m',
+    );
+
+    expect(
+      products.any((product) => product.id == 'cinta-organza-tornasol'),
+      isFalse,
+    );
+    expect(ribbon.name, 'Cinta organza tornasol 4 cm × 7 m');
+    expect(ribbon.basePrice, 8);
+    expect(ribbon.variants, hasLength(9));
+    expect(ribbon.variants.map((variant) => variant.name), [
+      'Perla',
+      'Melón',
+      'Rosa bebé',
+      'Blanco',
+      'Amarillo tornasol',
+      'Rojo coral',
+      'Turquesa',
+      'Celeste',
+      'Lila',
+    ]);
+    expect(
+      ribbon.priceTiers.map((tier) => (tier.minQuantity, tier.unitPrice)),
+      [(6, 7.5), (12, 7)],
+    );
   });
 
   test('mantiene slugs y SKU sin duplicados', () {

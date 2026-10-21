@@ -18,8 +18,7 @@ enum ProductCategory {
       'regalopersonalizado' ||
       'regalospersonalizados' ||
       'gift' ||
-      'gifts' =>
-        personalizedGifts,
+      'gifts' => personalizedGifts,
       _ => materials,
     };
   }
@@ -102,6 +101,7 @@ class ProductVariant {
     this.sku,
     this.colorHex,
     this.imageUrl,
+    this.thumbnailUrl,
     this.priceOverride,
     this.priceTiers = const [],
     this.stock,
@@ -117,6 +117,9 @@ class ProductVariant {
   final String? sku;
   final String? colorHex;
   final String? imageUrl;
+  final String? thumbnailUrl;
+
+  String? get previewImageUrl => thumbnailUrl ?? imageUrl;
 
   /// Overrides the product base price when this presentation is selected.
   final double? priceOverride;
@@ -158,6 +161,14 @@ class ProductVariant {
       imageUrl: _asNullableString(
         _first(map, const ['imageUrl', 'image_url', 'image', 'imagen']),
       ),
+      thumbnailUrl: _asNullableString(
+        _first(map, const [
+          'thumbnailUrl',
+          'thumbnail_url',
+          'thumbUrl',
+          'thumb_url',
+        ]),
+      ),
       priceOverride: _asNullableDouble(
         _first(map, const [
           'priceOverride',
@@ -197,6 +208,7 @@ class ProductVariant {
     if (sku != null) 'sku': sku,
     if (colorHex != null) 'colorHex': colorHex,
     if (imageUrl != null) 'imageUrl': imageUrl,
+    if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
     if (priceOverride != null) 'priceOverride': priceOverride,
     'priceTiers': priceTiers.map((tier) => tier.toMap()).toList(),
     if (stock != null) 'stock': stock,
@@ -230,6 +242,7 @@ class CatalogProduct {
     this.isFeatured = false,
     this.sortOrder = 0,
     this.imageUrl,
+    this.thumbnailUrl,
     this.tags = const [],
     this.attributes = const {},
     this.createdAt,
@@ -259,6 +272,9 @@ class CatalogProduct {
   final bool isFeatured;
   final int sortOrder;
   final String? imageUrl;
+  final String? thumbnailUrl;
+
+  String? get previewImageUrl => thumbnailUrl ?? imageUrl;
   final List<String> tags;
   final Map<String, String> attributes;
   final DateTime? createdAt;
@@ -404,6 +420,14 @@ class CatalogProduct {
       imageUrl: _asNullableString(
         _first(map, const ['imageUrl', 'image_url', 'image', 'imagen']),
       ),
+      thumbnailUrl: _asNullableString(
+        _first(map, const [
+          'thumbnailUrl',
+          'thumbnail_url',
+          'thumbUrl',
+          'thumb_url',
+        ]),
+      ),
       tags: _stringList(map['tags'] ?? map['etiquetas']),
       attributes: _stringMap(map['attributes'] ?? map['atributos']),
       createdAt: _asDateTime(map['createdAt'] ?? map['created_at']),
@@ -431,6 +455,7 @@ class CatalogProduct {
     'isFeatured': isFeatured,
     'sortOrder': sortOrder,
     if (imageUrl != null) 'imageUrl': imageUrl,
+    if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
     'tags': tags,
     if (attributes.isNotEmpty) 'attributes': attributes,
     if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
@@ -441,10 +466,7 @@ class CatalogProduct {
   @Deprecated('Use toDataMap instead.')
   Map<String, dynamic> toFirestore() => toDataMap();
 
-  Map<String, dynamic> toMap() => {
-    'id': id,
-    ...toDataMap(),
-  };
+  Map<String, dynamic> toMap() => {'id': id, ...toDataMap()};
 }
 
 Object? _first(Map<String, dynamic> map, List<String> keys) {

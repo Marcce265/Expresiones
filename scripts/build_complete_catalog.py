@@ -311,13 +311,13 @@ def build() -> tuple[list[dict], list[dict]]:
         ),
         (
             "cinta-tornasol-4cm-7m",
-            "Cinta tornasol 4 cm × 7 m",
-            "Cinta tornasol de 4 cm de ancho y 7 m de largo.",
+            "Cinta organza tornasol 4 cm × 7 m",
+            "Cinta de organza tornasol de 4 cm de ancho y 7 m de largo, disponible en varios colores.",
             "Cintas especiales",
             "rollo",
-            11,
+            8,
             90,
-            list(range(96, 102)),
+            list(range(96, 105)),
             [
                 "Perla",
                 "Melón",
@@ -325,20 +325,11 @@ def build() -> tuple[list[dict], list[dict]]:
                 "Blanco",
                 "Amarillo tornasol",
                 "Rojo coral",
+                "Turquesa",
+                "Celeste",
+                "Lila",
             ],
-            ["cinta", "tornasol", "4 cm", "7 m", "colores"],
-        ),
-        (
-            "cinta-organza-tornasol",
-            "Cinta organza tornasol",
-            "Cinta de organza tornasol de 7 m para lazos y detalles.",
-            "Cintas especiales",
-            "rollo",
-            8,
-            100,
-            list(range(102, 105)),
-            ["Turquesa", "Celeste", "Lila"],
-            ["cinta", "organza", "tornasol", "7 m"],
+            ["cinta", "organza", "tornasol", "4 cm", "7 m", "colores"],
         ),
         (
             "cinta-organza-con-perlas",
@@ -624,7 +615,6 @@ def build() -> tuple[list[dict], list[dict]]:
                     "brochetas",
                     "luz-hada",
                     "barras-de-silicona",
-                    "cinta-tornasol-4cm-7m",
                 },
             )
         )
@@ -640,7 +630,7 @@ def build() -> tuple[list[dict], list[dict]]:
             _price_tier(12, 8, "Docena"),
         ],
         "papel-leche-cortado": [_price_tier(3, 6.5, "Desde 3")],
-        "cinta-organza-tornasol": [
+        "cinta-tornasol-4cm-7m": [
             _price_tier(6, 7.5, "Media docena"),
             _price_tier(12, 7, "Docena"),
         ],
@@ -720,7 +710,7 @@ def build() -> tuple[list[dict], list[dict]]:
 
     # Ramos y regalos quedan preparados para una etapa posterior, pero el
     # catálogo público actual es exclusivamente de materiales.
-    # Los precios de las 31 familias publicadas ya fueron confirmados por el
+    # Los precios de las 30 familias publicadas ya fueron confirmados por el
     # negocio. Las seis familias futuras conservan el indicador de precio por
     # revisar hasta que vayan a activarse.
     for product in products:

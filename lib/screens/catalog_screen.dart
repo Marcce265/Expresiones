@@ -438,14 +438,14 @@ class _FamilyCover extends StatelessWidget {
     final heroAsset = productFamilyHeroAsset(product);
     final images = <String>[];
     for (final variant in product.variants.where((item) => item.isActive)) {
-      final image = variant.imageUrl;
+      final image = variant.previewImageUrl;
       if (image != null && image.isNotEmpty && !images.contains(image)) {
         images.add(image);
       }
       if (images.length == 4) break;
     }
     if (images.isEmpty) {
-      final image = product.imageUrl;
+      final image = product.previewImageUrl;
       if (image != null && image.isNotEmpty) images.add(image);
     }
 
@@ -491,7 +491,7 @@ class _FamilyMosaic extends StatelessWidget {
     );
 
     return switch (images.length) {
-      0 => tile(product.imageUrl),
+      0 => tile(product.previewImageUrl),
       1 => tile(images.first),
       2 => Row(
         children: [
