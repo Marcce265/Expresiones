@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../models/coordination_details.dart';
 import '../models/quote_line.dart';
-import '../services/map_launcher_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
 import '../widgets/quote_export_buttons.dart';
+import '../widgets/shalom_embedded_map.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({
@@ -71,7 +71,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: ResponsivePage(
-        maxWidth: 1120,
+        maxWidth: 1380,
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 48),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -91,12 +92,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 7),
+            Padding(
+              padding: const EdgeInsets.only(left: 52),
+              child: Text(
+                'Comprueba los productos, tus datos y la agencia antes de abrir WhatsApp.',
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: AppColors.muted),
+              ),
+            ),
             const SizedBox(height: 18),
             const StepProgress(current: 3),
             const SizedBox(height: 24),
             LayoutBuilder(
               builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 860;
+                final wide = constraints.maxWidth >= 980;
                 final overview = Column(
                   children: [
                     _RequestCard(lines: widget.lines, subtotal: _subtotal),
@@ -124,9 +134,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(flex: 5, child: overview),
-                    const SizedBox(width: 22),
-                    Expanded(flex: 4, child: sendPanel),
+                    Expanded(flex: 7, child: overview),
+                    const SizedBox(width: 28),
+                    Expanded(flex: 5, child: sendPanel),
                   ],
                 );
               },
@@ -148,12 +158,43 @@ class _RequestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Eyebrow('Tu solicitud'),
-            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: AppColors.pinkSoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.inventory_2_outlined, size: 21),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Productos y subtotal',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Text(
+                        '${lines.length} ${lines.length == 1 ? 'producto seleccionado' : 'productos seleccionados'}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 18),
+              child: Divider(),
+            ),
             if (lines.isEmpty)
               Text(
                 'No hay productos en la cotización.',
@@ -259,12 +300,43 @@ class _CoordinationCard extends StatelessWidget {
     final desiredDate = details.desiredDate;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Eyebrow('Coordinación'),
-            const SizedBox(height: 16),
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: AppColors.pinkSoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.person_pin_circle_outlined, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Datos de coordinación',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Text(
+                        'Contacto, entrega y fecha elegida',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 18),
+              child: Divider(),
+            ),
             _DetailRow(icon: Icons.person_outline_rounded, label: details.name),
             const SizedBox(height: 12),
             _DetailRow(icon: Icons.phone_outlined, label: details.phone),
@@ -285,32 +357,15 @@ class _CoordinationCard extends StatelessWidget {
               ),
               if (details.shalomAgencyLatitude != null &&
                   details.shalomAgencyLongitude != null) ...[
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.only(left: 36),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: OutlinedButton.icon(
-                      onPressed: () => MapLauncherService.openCoordinates(
-                        latitude: details.shalomAgencyLatitude!,
-                        longitude: details.shalomAgencyLongitude!,
-                        label: details.shalomAgencyName,
-                      ),
-                      icon: const Icon(Icons.map_outlined, size: 16),
-                      label: const Text('Ver agencia en Google Maps'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        side: const BorderSide(color: AppColors.border),
-                        foregroundColor: AppColors.ink,
-                        textStyle: const TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ),
+                const SizedBox(height: 16),
+                ShalomEmbeddedMap(
+                  selectedAgencyId: details.shalomAgencyId,
+                  selectedAgencyName: details.shalomAgencyName,
+                  selectedAgencyLocality: details.shalomAgencyLocality,
+                  latitude: details.shalomAgencyLatitude,
+                  longitude: details.shalomAgencyLongitude,
+                  showOtherAgencies: false,
+                  height: 250,
                 ),
               ],
             ],
@@ -381,13 +436,27 @@ class _SendPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Expanded(child: Eyebrow('Así llegará a WhatsApp')),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mensaje listo para enviar',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Text(
+                        'Puedes revisarlo antes de abrir WhatsApp',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
                 if (quoteId.trim().isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(

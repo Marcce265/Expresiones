@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/coordination_details.dart';
 import '../models/shalom_agency.dart';
-import '../services/map_launcher_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
+import '../widgets/shalom_embedded_map.dart';
 import 'shalom_agency_picker.dart';
 
 class CoordinationScreen extends StatefulWidget {
@@ -192,7 +191,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: ResponsivePage(
-        maxWidth: 1120,
+        maxWidth: 1480,
         child: Form(
           key: _formKey,
           autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -201,150 +200,191 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
             children: [
               _Heading(onBack: () => Navigator.maybePop(context)),
               const SizedBox(height: 18),
-              const StepProgress(current: 2),
-              const SizedBox(height: 24),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(22),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Eyebrow('Datos de coordinación'),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Solo pedimos lo necesario para preparar el mensaje y revisar la fecha contigo.',
-                        style: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(color: AppColors.muted),
-                      ),
-                      const SizedBox(height: 24),
-                      _ContactFields(
-                        nameController: _nameController,
-                        phoneController: _phoneController,
-                        validateName: _validateName,
-                        validatePhone: _validatePhone,
-                      ),
-                      const SizedBox(height: 22),
-                      const Divider(),
-                      const SizedBox(height: 22),
-                      const _FieldLabel('¿Cómo lo recibirás?'),
-                      const SizedBox(height: 10),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final horizontal = constraints.maxWidth >= 560;
-                          final pickup = _DeliveryOption(
-                            title: 'Recojo en Huancayo',
-                            subtitle: 'Coordinamos lugar y horario',
-                            icon: Icons.storefront_outlined,
-                            selected: _deliveryMethod == DeliveryMethod.pickup,
-                            onTap: () => setState(() {
-                              _deliveryMethod = DeliveryMethod.pickup;
-                              _agencyError = false;
-                            }),
-                          );
-                          final shipping = _DeliveryOption(
-                            title: 'Envío por Shalom',
-                            subtitle: 'La tarifa se confirma después',
-                            icon: Icons.local_shipping_outlined,
-                            selected: _deliveryMethod == DeliveryMethod.shalom,
-                            onTap: () => setState(
-                              () => _deliveryMethod = DeliveryMethod.shalom,
-                            ),
-                          );
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 920),
+                  child: const StepProgress(current: 2),
+                ),
+              ),
+              const SizedBox(height: 26),
+              _FormSectionCard(
+                number: '1',
+                icon: Icons.person_outline_rounded,
+                title: 'Tus datos de contacto',
+                description: 'Los usaremos únicamente para coordinar esta cotización contigo.',
+                child: _ContactFields(
+                  nameController: _nameController,
+                  phoneController: _phoneController,
+                  validateName: _validateName,
+                  validatePhone: _validatePhone,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _FormSectionCard(
+                number: '2',
+                icon: Icons.local_shipping_outlined,
+                title: 'Entrega del pedido',
+                description:
+                    'Elige recojo en Huancayo o una agencia Shalom de destino.',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final horizontal = constraints.maxWidth >= 620;
+                        final pickup = _DeliveryOption(
+                          title: 'Recojo en Huancayo',
+                          subtitle: 'Coordinamos lugar y horario',
+                          icon: Icons.storefront_outlined,
+                          selected: _deliveryMethod == DeliveryMethod.pickup,
+                          onTap: () => setState(() {
+                            _deliveryMethod = DeliveryMethod.pickup;
+                            _agencyError = false;
+                          }),
+                        );
+                        final shipping = _DeliveryOption(
+                          title: 'Envío por Shalom',
+                          subtitle: 'Elige una agencia en cualquier ciudad',
+                          icon: Icons.local_shipping_outlined,
+                          selected: _deliveryMethod == DeliveryMethod.shalom,
+                          onTap: () => setState(
+                            () => _deliveryMethod = DeliveryMethod.shalom,
+                          ),
+                        );
 
-                          if (horizontal) {
-                            return Row(
-                              children: [
-                                Expanded(child: pickup),
-                                const SizedBox(width: 12),
-                                Expanded(child: shipping),
-                              ],
-                            );
-                          }
-                          return Column(
+                        if (horizontal) {
+                          return Row(
                             children: [
-                              pickup,
-                              const SizedBox(height: 10),
-                              shipping,
+                              Expanded(child: pickup),
+                              const SizedBox(width: 14),
+                              Expanded(child: shipping),
                             ],
                           );
-                        },
-                      ),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 180),
-                        child: _deliveryMethod == DeliveryMethod.shalom
-                            ? _ShalomDestinationSection(
-                                key: const ValueKey('destination'),
-                                agencyId: _agencyId,
-                                agencyName: _agencyName,
-                                agencyAddress: _agencyAddress,
-                                agencyLocality: _agencyLocality,
-                                latitude: _agencyLatitude,
-                                longitude: _agencyLongitude,
-                                showError: _agencyError,
-                                onChooseAgency: _pickAgency,
-                              )
-                            : const SizedBox.shrink(key: ValueKey('pickup')),
-                      ),
-                      const SizedBox(height: 22),
-                      const _FieldLabel('Fecha deseada'),
-                      const SizedBox(height: 8),
-                      InkWell(
-                        onTap: _pickDate,
-                        borderRadius: BorderRadius.circular(14),
-                        child: InputDecorator(
-                          decoration: const InputDecoration(
-                            prefixIcon: Icon(Icons.calendar_today_outlined),
-                            suffixIcon: Icon(Icons.expand_more_rounded),
-                          ),
-                          child: Text(
-                            _desiredDate == null
-                                ? 'Selecciona una fecha (opcional)'
-                                : _formatDate(_desiredDate!),
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  color: _desiredDate == null
-                                      ? AppColors.muted
-                                      : AppColors.ink,
-                                ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _firstSelectableDate == null
-                            ? 'No hay fechas disponibles dentro de los próximos 365 días.'
-                            : 'Primera fecha estimada: ${_formatDate(_firstSelectableDate!)}. Los domingos no están disponibles.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      if (widget.productionPoints > 0) ...[
-                        const SizedBox(height: 16),
-                        InfoBanner(
-                          title: 'Revisaremos la capacidad de producción',
-                          message:
-                              'Tu selección requiere ${widget.productionPoints} ${widget.productionPoints == 1 ? 'punto' : 'puntos'} de producción. La fecha queda confirmada por WhatsApp.',
-                          icon: Icons.schedule_outlined,
-                          color: AppColors.canvas,
-                        ),
-                      ],
-                      const SizedBox(height: 22),
-                      const _FieldLabel('Nota para Expresiones'),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _noteController,
-                        minLines: 3,
-                        maxLines: 6,
-                        maxLength: 500,
-                        textCapitalization: TextCapitalization.sentences,
-                        decoration: const InputDecoration(
-                          hintText: 'Color, referencia, dedicatoria o detalle adicional…',
-                          alignLabelWithHint: true,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _SubmitArea(onPressed: _submit),
-                    ],
-                  ),
+                        }
+                        return Column(
+                          children: [
+                            pickup,
+                            const SizedBox(height: 10),
+                            shipping,
+                          ],
+                        );
+                      },
+                    ),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: _deliveryMethod == DeliveryMethod.shalom
+                          ? _ShalomDestinationSection(
+                              key: const ValueKey('destination'),
+                              agencyId: _agencyId,
+                              agencyName: _agencyName,
+                              agencyAddress: _agencyAddress,
+                              agencyLocality: _agencyLocality,
+                              latitude: _agencyLatitude,
+                              longitude: _agencyLongitude,
+                              showError: _agencyError,
+                              onChooseAgency: _pickAgency,
+                            )
+                          : const SizedBox.shrink(key: ValueKey('pickup')),
+                    ),
+                  ],
                 ),
+              ),
+              const SizedBox(height: 18),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final dateSection = _FormSectionCard(
+                    number: '3',
+                    icon: Icons.calendar_month_outlined,
+                    title: 'Fecha deseada',
+                    description: 'Consulta la primera fecha estimada y elige el día que prefieres.',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        InkWell(
+                          onTap: _pickDate,
+                          borderRadius: BorderRadius.circular(14),
+                          child: InputDecorator(
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.calendar_today_outlined),
+                              suffixIcon: Icon(Icons.expand_more_rounded),
+                            ),
+                            child: Text(
+                              _desiredDate == null
+                                  ? 'Selecciona una fecha (opcional)'
+                                  : _formatDate(_desiredDate!),
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
+                                    color: _desiredDate == null
+                                        ? AppColors.muted
+                                        : AppColors.ink,
+                                  ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          _firstSelectableDate == null
+                              ? 'No hay fechas disponibles dentro de los próximos 365 días.'
+                              : 'Primera fecha estimada: ${_formatDate(_firstSelectableDate!)}. Los domingos no están disponibles.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        if (widget.productionPoints > 0) ...[
+                          const SizedBox(height: 16),
+                          InfoBanner(
+                            title: 'Capacidad de producción',
+                            message:
+                                'Tu selección requiere ${widget.productionPoints} ${widget.productionPoints == 1 ? 'punto' : 'puntos'} de trabajo. Confirmaremos la fecha por WhatsApp.',
+                            icon: Icons.schedule_outlined,
+                            color: AppColors.pinkSoft,
+                          ),
+                        ],
+                      ],
+                    ),
+                  );
+                  final noteSection = _FormSectionCard(
+                    number: '4',
+                    icon: Icons.notes_rounded,
+                    title: 'Detalles finales',
+                    description: 'Añade colores, referencias, dedicatorias o indicaciones especiales.',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextFormField(
+                          controller: _noteController,
+                          minLines: 4,
+                          maxLines: 7,
+                          maxLength: 500,
+                          textCapitalization: TextCapitalization.sentences,
+                          decoration: const InputDecoration(
+                            hintText:
+                                'Escribe aquí cualquier detalle adicional…',
+                            alignLabelWithHint: true,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        _SubmitArea(onPressed: _submit),
+                      ],
+                    ),
+                  );
+
+                  if (constraints.maxWidth < 900) {
+                    return Column(
+                      children: [
+                        dateSection,
+                        const SizedBox(height: 18),
+                        noteSection,
+                      ],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 5, child: dateSection),
+                      const SizedBox(width: 18),
+                      Expanded(flex: 6, child: noteSection),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -372,6 +412,99 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   }
 }
 
+class _FormSectionCard extends StatelessWidget {
+  const _FormSectionCard({
+    required this.number,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.child,
+  });
+
+  final String number;
+  final IconData icon;
+  final String title;
+  final String description;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: EdgeInsets.all(
+          MediaQuery.sizeOf(context).width < 600 ? 18 : 24,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.pinkSoft,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(icon, size: 22),
+                      Positioned(
+                        right: -9,
+                        bottom: -9,
+                        child: Container(
+                          width: 19,
+                          height: 19,
+                          alignment: Alignment.center,
+                          decoration: const BoxDecoration(
+                            color: AppColors.ink,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            number,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 22),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ShalomDestinationSection extends StatelessWidget {
   const _ShalomDestinationSection({
     super.key,
@@ -395,30 +528,6 @@ class _ShalomDestinationSection extends StatelessWidget {
   final VoidCallback onChooseAgency;
 
   bool get hasAgency => agencyId.isNotEmpty;
-  bool get hasCoordinates => latitude != null && longitude != null;
-
-  Future<void> _openOfficialDirectory(BuildContext context) async {
-    final opened = await launchUrl(
-      Uri.parse('https://shalom.com.pe/agencias'),
-      mode: LaunchMode.externalApplication,
-    );
-    if (!opened && context.mounted) {
-      showAppNotice(
-        context,
-        'No pudimos abrir el mapa de Shalom.',
-        tone: AppNoticeTone.error,
-      );
-    }
-  }
-
-  Future<void> _openSelectedAgency() async {
-    if (!hasCoordinates) return;
-    await MapLauncherService.openCoordinates(
-      latitude: latitude!,
-      longitude: longitude!,
-      label: agencyName,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -430,13 +539,13 @@ class _ShalomDestinationSection extends StatelessWidget {
       showError: showError,
       onTap: onChooseAgency,
     );
-    final map = _ShalomMapCard(
-      hasAgency: hasAgency,
-      agencyName: agencyName,
-      agencyLocality: agencyLocality,
-      hasCoordinates: hasCoordinates,
-      onOpenDirectory: () => _openOfficialDirectory(context),
-      onOpenAgency: _openSelectedAgency,
+    final map = ShalomEmbeddedMap(
+      selectedAgencyId: agencyId,
+      selectedAgencyName: agencyName,
+      selectedAgencyLocality: agencyLocality,
+      latitude: latitude,
+      longitude: longitude,
+      height: 330,
     );
 
     return Padding(
@@ -448,7 +557,7 @@ class _ShalomDestinationSection extends StatelessWidget {
           const SizedBox(height: 10),
           LayoutBuilder(
             builder: (context, constraints) {
-              if (constraints.maxWidth < 760) {
+              if (constraints.maxWidth < 880) {
                 return Column(
                   children: [selector, const SizedBox(height: 12), map],
                 );
@@ -456,9 +565,9 @@ class _ShalomDestinationSection extends StatelessWidget {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(flex: 6, child: selector),
-                  const SizedBox(width: 14),
-                  Expanded(flex: 4, child: map),
+                  Expanded(flex: 5, child: selector),
+                  const SizedBox(width: 18),
+                  Expanded(flex: 7, child: map),
                 ],
               );
             },
@@ -507,7 +616,7 @@ class _AgencySelectionCard extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             width: double.infinity,
-            constraints: const BoxConstraints(minHeight: 218),
+            constraints: const BoxConstraints(minHeight: 330),
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
@@ -624,105 +733,6 @@ class _AgencySelectionCard extends StatelessWidget {
                   ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ShalomMapCard extends StatelessWidget {
-  const _ShalomMapCard({
-    required this.hasAgency,
-    required this.agencyName,
-    required this.agencyLocality,
-    required this.hasCoordinates,
-    required this.onOpenDirectory,
-    required this.onOpenAgency,
-  });
-
-  final bool hasAgency;
-  final String agencyName;
-  final String agencyLocality;
-  final bool hasCoordinates;
-  final VoidCallback onOpenDirectory;
-  final VoidCallback onOpenAgency;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 218),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.pinkSoft, AppColors.canvas],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .86),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: const Icon(Icons.map_outlined),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Mapa oficial de Shalom',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Text(
-                      'Agencias y cobertura en todo el Perú',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            hasAgency
-                ? '$agencyName${agencyLocality.isEmpty ? '' : ' · $agencyLocality'}'
-                : 'Consulta el mapa de Shalom mientras eliges tu agencia de destino.',
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: onOpenDirectory,
-              icon: const Icon(Icons.open_in_new_rounded, size: 18),
-              label: const Text('Abrir mapa de Shalom'),
-            ),
-          ),
-          if (hasCoordinates) ...[
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton.icon(
-                onPressed: onOpenAgency,
-                icon: const Icon(Icons.near_me_outlined, size: 18),
-                label: const Text('Ver agencia elegida'),
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }

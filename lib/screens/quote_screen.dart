@@ -33,7 +33,7 @@ class QuoteScreen extends StatelessWidget {
     if (lines.isEmpty) {
       return SingleChildScrollView(
         child: ResponsivePage(
-          maxWidth: 720,
+          maxWidth: 900,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -56,24 +56,25 @@ class QuoteScreen extends StatelessWidget {
 
     return SingleChildScrollView(
       child: ResponsivePage(
-        maxWidth: 1040,
+        maxWidth: 1380,
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 48),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _PageHeading(itemCount: lines.length, onBack: onBack),
             const SizedBox(height: 18),
             const StepProgress(current: 1),
-            const SizedBox(height: 22),
+            const SizedBox(height: 24),
             const InfoBanner(
               title: 'Aún no es un pedido',
               message: 'Expresiones confirmará disponibilidad, precio final, fecha y envío por WhatsApp.',
               icon: Icons.info_outline_rounded,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             LayoutBuilder(
               builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 780;
-                final items = _LineList(
+                final wide = constraints.maxWidth >= 940;
+                final items = _QuoteItemsSection(
                   lines: lines,
                   onQuantityChanged: onQuantityChanged,
                   onRemove: onRemove,
@@ -93,12 +94,92 @@ class QuoteScreen extends StatelessWidget {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(flex: 3, child: items),
-                    const SizedBox(width: 24),
-                    Expanded(flex: 2, child: summary),
+                    Expanded(flex: 7, child: items),
+                    const SizedBox(width: 28),
+                    Expanded(flex: 3, child: summary),
                   ],
                 );
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuoteItemsSection extends StatelessWidget {
+  const _QuoteItemsSection({
+    required this.lines,
+    required this.onQuantityChanged,
+    required this.onRemove,
+  });
+
+  final List<ResolvedQuoteLine> lines;
+  final QuantityChanged onQuantityChanged;
+  final ValueChanged<QuoteLine> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: AppColors.pinkSoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.inventory_2_outlined, size: 21),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Productos seleccionados',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Revisa cantidades, variantes y precios referenciales.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.canvas,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    '${lines.length}',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 18),
+              child: Divider(),
+            ),
+            _LineList(
+              lines: lines,
+              onQuantityChanged: onQuantityChanged,
+              onRemove: onRemove,
             ),
           ],
         ),
@@ -425,12 +506,43 @@ class _QuoteSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Eyebrow('Resumen'),
-            const SizedBox(height: 18),
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: AppColors.pinkSoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.receipt_long_outlined, size: 21),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Resumen de cotización',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Text(
+                        'Subtotal antes de coordinar',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 18),
+              child: Divider(),
+            ),
             _SummaryRow(
               label: 'Productos',
               value: 'S/ ${subtotal.toStringAsFixed(2)}',
