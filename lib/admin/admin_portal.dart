@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/catalog_models.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_components.dart';
+import '../widgets/product_card.dart';
+import '../widgets/product_visual.dart';
 import 'admin_analytics_screen.dart';
 import 'admin_catalog_repository.dart';
 import 'admin_capacity_screen.dart';
@@ -341,7 +345,18 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final _search = TextEditingController();
   String _query = '';
-  bool _onlyEstimated = false;
+  String _catalogGroup = 'Todos';
+
+  static const _catalogGroups = [
+    'Todos',
+    'Limpiapipas',
+    'Cintas satinadas',
+    'Cintas especiales',
+    'Envolturas',
+    'Accesorios',
+    'Herramientas',
+    'Frases',
+  ];
 
   @override
   void dispose() {
@@ -447,7 +462,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               .where((product) => !product.attributes.containsKey('mergedInto'))
               .toList(growable: false);
           final products = allProducts.where((product) {
-            if (_onlyEstimated && !product.priceIsEstimate) return false;
+            if (_catalogGroup != 'Todos' &&
+                product.attributes['catalogGroup'] != _catalogGroup) {
+              return false;
+            }
             if (_query.isEmpty) return true;
             final haystack = [
               product.name,
@@ -459,113 +477,112 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             return haystack.contains(_query);
           }).toList();
 
-          final active = allProducts.where((item) => item.isActive).length;
-          final estimates = allProducts
-              .where((item) => item.priceIsEstimate)
-              .length;
-          final lowStock = allProducts.where((item) {
-            return item.stockStatus == StockStatus.lowStock ||
-                item.stockStatus == StockStatus.outOfStock ||
-                item.variants.any(
-                  (variant) =>
-                      variant.stockStatus == StockStatus.lowStock ||
-                      variant.stockStatus == StockStatus.outOfStock,
-                );
-          }).length;
-
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
-            children: [
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _MetricCard(
-                    label: 'Productos',
-                    value: '${allProducts.length}',
-                    icon: Icons.inventory_2_outlined,
-                  ),
-                  _MetricCard(
-                    label: 'Publicados',
-                    value: '$active',
-                    icon: Icons.public_rounded,
-                  ),
-                  _MetricCard(
-                    label: 'Precio por revisar',
-                    value: '$estimates',
-                    icon: Icons.price_check_outlined,
-                  ),
-                  _MetricCard(
-                    label: 'Stock bajo o agotado',
-                    value: '$lowStock',
-                    icon: Icons.warning_amber_rounded,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 420,
-                        child: TextField(
-                          controller: _search,
-                          decoration: const InputDecoration(
-                            labelText: 'Buscar nombre, código o variante',
-                            prefixIcon: Icon(Icons.search_rounded),
-                          ),
-                          onChanged: (value) => setState(
-                            () => _query = value.trim().toLowerCase(),
-                          ),
-                        ),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 600;
+              return CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: ResponsivePage(
+                      padding: EdgeInsets.fromLTRB(
+                        compact ? 16 : 28,
+                        compact ? 16 : 26,
+                        compact ? 16 : 28,
+                        14,
                       ),
-                      FilterChip(
-                        selected: _onlyEstimated,
-                        label: const Text('Solo precios por revisar'),
-                        onSelected: (value) =>
-                            setState(() => _onlyEstimated = value),
-                      ),
-                      Text('${products.length} resultados'),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (products.isEmpty)
-                const _AdminError(
-                  title: 'No hay resultados',
-                  message: 'Prueba con otra búsqueda o quita los filtros.',
-                )
-              else
-                for (final product in products) ...[
-                  _ProductAdminCard(
-                    product: product,
-                    onEdit: () => _openEditor(product),
-                    onActiveChanged: (active) async {
-                      try {
-                        await widget.repository.setProductActive(
-                          product.id,
-                          active,
-                        );
-                      } catch (error) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('No se pudo guardar: $error'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Eyebrow('Modo administrador'),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Edita el mismo catálogo que ven tus clientes',
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Cada tarjeta corresponde a un producto del catálogo público.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 16),
+                          const InfoBanner(
+                            icon: Icons.edit_outlined,
+                            title: 'Cómo editar',
+                            message: 'Pulsa el lápiz de la esquina superior derecha para cambiar la foto, el nombre, la descripción, el precio, el stock o sus variantes.',
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _search,
+                            decoration: const InputDecoration(
+                              hintText: 'Buscar material, color o código',
+                              prefixIcon: Icon(Icons.search_rounded),
                             ),
-                          );
-                        }
-                      }
-                    },
+                            onChanged: (value) => setState(
+                              () => _query = value.trim().toLowerCase(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                for (final group in _catalogGroups) ...[
+                                  ChoiceChip(
+                                    label: Text(group),
+                                    selected: _catalogGroup == group,
+                                    onSelected: (_) =>
+                                        setState(() => _catalogGroup = group),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            '${products.length} productos',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 10),
+                  if (products.isEmpty)
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _AdminError(
+                        title: 'No hay resultados',
+                        message: 'Prueba con otra búsqueda o categoría.',
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        compact ? 16 : 28,
+                        4,
+                        compact ? 16 : 28,
+                        110,
+                      ),
+                      sliver: SliverGrid(
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: compact ? 210 : 260,
+                          mainAxisExtent: compact ? 250 : 304,
+                          crossAxisSpacing: compact ? 12 : 16,
+                          mainAxisSpacing: compact ? 12 : 16,
+                        ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final product = products[index];
+                          return _EditableProductCard(
+                            product: product,
+                            compact: compact,
+                            onEdit: () => _openEditor(product),
+                          );
+                        }, childCount: products.length),
+                      ),
+                    ),
                 ],
-            ],
+              );
+            },
           );
         },
       ),
@@ -699,88 +716,45 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
   }
 }
 
-class _ProductAdminCard extends StatelessWidget {
-  const _ProductAdminCard({
+class _EditableProductCard extends StatelessWidget {
+  const _EditableProductCard({
     required this.product,
+    required this.compact,
     required this.onEdit,
-    required this.onActiveChanged,
   });
 
   final CatalogProduct product;
+  final bool compact;
   final VoidCallback onEdit;
-  final ValueChanged<bool> onActiveChanged;
 
   @override
   Widget build(BuildContext context) {
-    final stockLabel = product.stock == null
-        ? product.stockStatus.label
-        : '${product.stock} ${product.unitLabel}';
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: product.isActive ? AppColors.pinkSoft : AppColors.border,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                product.isActive
-                    ? Icons.inventory_2_outlined
-                    : Icons.visibility_off_outlined,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${product.sku ?? product.id} · ${product.category.label} · '
-                    '${product.variants.length} variantes',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            if (product.priceIsEstimate)
-              const Chip(label: Text('Precio por revisar')),
-            const SizedBox(width: 12),
-            SizedBox(
-              width: 150,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'S/ ${product.basePrice.toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  Text(
-                    stockLabel,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            Switch(value: product.isActive, onChanged: onActiveChanged),
-            IconButton(
-              tooltip: 'Editar',
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined),
-            ),
-          ],
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: ProductCard(
+            product: product,
+            compact: compact,
+            showCategory: true,
+            onTap: onEdit,
+          ),
         ),
-      ),
+        Positioned(
+          top: 10,
+          right: 10,
+          child: Material(
+            color: AppColors.ink,
+            shape: const CircleBorder(),
+            elevation: 3,
+            child: IconButton(
+              key: ValueKey('edit-${product.id}'),
+              tooltip: 'Editar ${product.name}',
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_rounded, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -805,6 +779,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
   late final TextEditingController _name;
   late final TextEditingController _sku;
   late final TextEditingController _description;
+  late final TextEditingController _imageUrl;
   late final TextEditingController _unitLabel;
   late final TextEditingController _basePrice;
   late final TextEditingController _stock;
@@ -818,6 +793,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
   late bool _isFeatured;
   late bool _priceIsEstimate;
   bool _saving = false;
+  bool _uploadingImage = false;
   String? _error;
 
   @override
@@ -827,6 +803,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     _name = TextEditingController(text: product?.name ?? '');
     _sku = TextEditingController(text: product?.sku ?? '');
     _description = TextEditingController(text: product?.description ?? '');
+    _imageUrl = TextEditingController(text: product?.imageUrl ?? '');
     _unitLabel = TextEditingController(text: product?.unitLabel ?? 'unidad');
     _basePrice = TextEditingController(
       text: product == null ? '' : product.basePrice.toStringAsFixed(2),
@@ -844,7 +821,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     _priceIsEstimate = product?.priceIsEstimate ?? false;
     _variants = [
       for (final variant in product?.variants ?? const <ProductVariant>[])
-        _VariantDraft(variant),
+        if (variant.isActive) _VariantDraft(variant),
     ];
   }
 
@@ -854,6 +831,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       _name,
       _sku,
       _description,
+      _imageUrl,
       _unitLabel,
       _basePrice,
       _stock,
@@ -870,7 +848,9 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate() || _saving) return;
+    if (!_formKey.currentState!.validate() || _saving || _uploadingImage) {
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -897,7 +877,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
         'isActive': _isActive,
         'isFeatured': _isFeatured,
         'sortOrder': int.parse(_sortOrder.text.trim()),
-        'imageUrl': widget.product?.imageUrl ?? '',
+        'imageUrl': _imageUrl.text.trim(),
         'tags': widget.product?.tags ?? const <String>[],
         'attributes': widget.product?.attributes ?? const <String, String>{},
       };
@@ -922,6 +902,137 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  void _addVariant() {
+    final draft = _VariantDraft.create(
+      id: 'variante-${DateTime.now().microsecondsSinceEpoch}',
+    );
+    setState(() => _variants.add(draft));
+  }
+
+  Future<void> _removeVariant(_VariantDraft draft) async {
+    final remove = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Quitar variante'),
+        content: Text(
+          '¿Quieres quitar “${draft.name.text}” de este producto? '
+          'El cambio se aplicará cuando guardes.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Quitar variante'),
+          ),
+        ],
+      ),
+    );
+    if (remove != true || !mounted) return;
+    setState(() => _variants.remove(draft));
+    draft.dispose();
+  }
+
+  Future<void> _deleteProduct() async {
+    final product = widget.product;
+    if (product == null || _saving) return;
+    final remove = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar producto'),
+        content: Text(
+          '¿Quieres eliminar “${product.name}” del catálogo? '
+          'Esta acción también quitará sus variantes.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (remove != true || !mounted) return;
+    setState(() => _saving = true);
+    try {
+      await widget.repository.deleteProduct(product.id);
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = 'No se pudo eliminar el producto: $error';
+        });
+      }
+    }
+  }
+
+  Future<void> _pickImage({_VariantDraft? variant}) async {
+    const imageTypes = XTypeGroup(
+      label: 'Imágenes',
+      extensions: ['jpg', 'jpeg', 'png', 'webp'],
+    );
+    final file = await openFile(acceptedTypeGroups: const [imageTypes]);
+    if (file == null || _uploadingImage) return;
+    setState(() {
+      _uploadingImage = true;
+      _error = null;
+    });
+    try {
+      final extension = file.name.split('.').last.toLowerCase();
+      final contentType = switch (extension) {
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        _ => 'image/jpeg',
+      };
+      final folderId =
+          widget.product?.id ??
+          AdminCatalogRepository.normalizedDocumentId(_name.text);
+      final path = await widget.repository.uploadCatalogImage(
+        bytes: await file.readAsBytes(),
+        fileName: file.name,
+        contentType: contentType,
+        folder: variant == null
+            ? 'products/$folderId'
+            : 'products/$folderId/variants',
+      );
+      if (!mounted) return;
+      setState(() {
+        if (variant == null) {
+          _imageUrl.text = path;
+        } else {
+          variant.imageUrl.text = path;
+        }
+      });
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = 'No se pudo subir la imagen: $error');
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingImage = false);
+    }
+  }
+
+  String? _previewUrl(String value) {
+    final path = value.trim();
+    if (path.isEmpty) return null;
+    if (path.startsWith('http://') ||
+        path.startsWith('https://') ||
+        path.startsWith('assets/')) {
+      return path;
+    }
+    return widget.repository.client.storage.from('catalog').getPublicUrl(path);
   }
 
   @override
@@ -958,6 +1069,15 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                 child: ListView(
                   padding: const EdgeInsets.all(24),
                   children: [
+                    _ImageEditor(
+                      label: _name.text.trim().isEmpty
+                          ? 'Imagen del producto'
+                          : _name.text.trim(),
+                      imageUrl: _previewUrl(_imageUrl.text),
+                      uploading: _uploadingImage,
+                      onPick: _pickImage,
+                    ),
+                    const SizedBox(height: 18),
                     _formRow([
                       TextFormField(
                         controller: _name,
@@ -1101,25 +1221,45 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                         ),
                       ],
                     ),
-                    if (_variants.isNotEmpty) ...[
-                      const SizedBox(height: 18),
-                      Text(
-                        'Variantes (${_variants.length})',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Puedes corregir precio, stock y disponibilidad sin '
-                        'cambiar las imágenes ni los códigos.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 10),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Variantes (${_variants.length})',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        FilledButton.tonalIcon(
+                          onPressed: _addVariant,
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Agregar variante'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Abre cada variante para editar su nombre, código, color, '
+                      'imagen, precio, stock y disponibilidad.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 10),
+                    if (_variants.isEmpty)
+                      const InfoBanner(
+                        icon: Icons.layers_outlined,
+                        title: 'Este producto aún no tiene variantes',
+                        message: 'Agrégalas cuando el material se venda en distintos colores, tamaños o modelos.',
+                      )
+                    else
                       for (final variant in _variants)
                         _VariantEditorTile(
                           draft: variant,
+                          imageUrl: _previewUrl(variant.imageUrl.text),
+                          uploading: _uploadingImage,
+                          onPickImage: () => _pickImage(variant: variant),
+                          onDelete: () => _removeVariant(variant),
                           onChanged: () => setState(() {}),
                         ),
-                    ],
                     if (_error != null) ...[
                       const SizedBox(height: 16),
                       Text(
@@ -1137,16 +1277,25 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  if (widget.product != null)
+                    TextButton.icon(
+                      onPressed: _saving ? null : _deleteProduct,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      label: const Text('Eliminar producto'),
+                    ),
+                  const Spacer(),
                   TextButton(
                     onPressed: _saving ? null : () => Navigator.pop(context),
                     child: const Text('Cancelar'),
                   ),
                   const SizedBox(width: 10),
                   FilledButton.icon(
-                    onPressed: _saving ? null : _save,
-                    icon: _saving
+                    onPressed: _saving || _uploadingImage ? null : _save,
+                    icon: _saving || _uploadingImage
                         ? const SizedBox.square(
                             dimension: 18,
                             child: CircularProgressIndicator(
@@ -1155,7 +1304,9 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                             ),
                           )
                         : const Icon(Icons.save_outlined),
-                    label: const Text('Guardar cambios'),
+                    label: Text(
+                      _uploadingImage ? 'Subiendo imagen…' : 'Guardar cambios',
+                    ),
                   ),
                 ],
               ),
@@ -1195,14 +1346,30 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
 
 class _VariantDraft {
   _VariantDraft(this.variant)
-    : price = TextEditingController(
+    : name = TextEditingController(text: variant.name),
+      sku = TextEditingController(text: variant.sku ?? ''),
+      colorHex = TextEditingController(text: variant.colorHex ?? ''),
+      imageUrl = TextEditingController(text: variant.imageUrl ?? ''),
+      price = TextEditingController(
         text: variant.priceOverride?.toStringAsFixed(2) ?? '',
       ),
       stock = TextEditingController(text: variant.stock?.toString() ?? ''),
       status = variant.stockStatus,
       active = variant.isActive;
 
+  factory _VariantDraft.create({required String id}) => _VariantDraft(
+    ProductVariant(
+      id: id,
+      name: 'Nueva variante',
+      stockStatus: StockStatus.inStock,
+    ),
+  );
+
   final ProductVariant variant;
+  final TextEditingController name;
+  final TextEditingController sku;
+  final TextEditingController colorHex;
+  final TextEditingController imageUrl;
   final TextEditingController price;
   final TextEditingController stock;
   StockStatus status;
@@ -1210,6 +1377,16 @@ class _VariantDraft {
 
   Map<String, dynamic> toMap() {
     final data = Map<String, dynamic>.from(variant.toMap());
+    data['name'] = name.text.trim();
+    data['sku'] = sku.text.trim();
+    final normalizedColor = _normalizedHex(colorHex.text);
+    if (normalizedColor == null) {
+      data.remove('colorHex');
+    } else {
+      data['colorHex'] = normalizedColor;
+    }
+    data['imageUrl'] = imageUrl.text.trim();
+    data.remove('thumbnailUrl');
     final parsedPrice = _optionalDecimal(price.text);
     final parsedStock = _optionalInt(stock.text);
     if (parsedPrice == null) {
@@ -1228,15 +1405,30 @@ class _VariantDraft {
   }
 
   void dispose() {
+    name.dispose();
+    sku.dispose();
+    colorHex.dispose();
+    imageUrl.dispose();
     price.dispose();
     stock.dispose();
   }
 }
 
 class _VariantEditorTile extends StatelessWidget {
-  const _VariantEditorTile({required this.draft, required this.onChanged});
+  const _VariantEditorTile({
+    required this.draft,
+    required this.imageUrl,
+    required this.uploading,
+    required this.onPickImage,
+    required this.onDelete,
+    required this.onChanged,
+  });
 
   final _VariantDraft draft;
+  final String? imageUrl;
+  final bool uploading;
+  final VoidCallback onPickImage;
+  final VoidCallback onDelete;
   final VoidCallback onChanged;
 
   @override
@@ -1244,22 +1436,79 @@ class _VariantEditorTile extends StatelessWidget {
     return Card(
       color: AppColors.canvas,
       child: ExpansionTile(
-        title: Text(draft.variant.name),
-        subtitle: Text(draft.variant.sku ?? draft.variant.id),
-        trailing: Switch(
-          value: draft.active,
-          onChanged: (value) {
-            draft.active = value;
-            onChanged();
-          },
+        leading: _ColorSwatch(value: draft.colorHex.text),
+        title: Text(draft.name.text),
+        subtitle: Text(
+          draft.sku.text.trim().isEmpty ? draft.variant.id : draft.sku.text,
         ),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: TextFormField(
+          _ImageEditor(
+            label: draft.name.text,
+            imageUrl: imageUrl,
+            colorHex: draft.colorHex.text,
+            uploading: uploading,
+            onPick: onPickImage,
+            compact: true,
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final fields = <Widget>[
+                TextFormField(
+                  controller: draft.name,
+                  decoration: const InputDecoration(labelText: 'Nombre *'),
+                  validator: _required,
+                  onChanged: (_) => onChanged(),
+                ),
+                TextFormField(
+                  controller: draft.sku,
+                  decoration: const InputDecoration(labelText: 'Código / SKU'),
+                  onChanged: (_) => onChanged(),
+                ),
+                TextFormField(
+                  controller: draft.colorHex,
+                  decoration: InputDecoration(
+                    labelText: 'Color (HEX)',
+                    hintText: '#E7A2B4',
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: _ColorSwatch(value: draft.colorHex.text),
+                    ),
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[#0-9a-fA-F]')),
+                    LengthLimitingTextInputFormatter(7),
+                  ],
+                  validator: _optionalHexColor,
+                  onChanged: (_) => onChanged(),
+                ),
+              ];
+              if (constraints.maxWidth < 700) {
+                return Column(
+                  children: [
+                    for (var index = 0; index < fields.length; index++) ...[
+                      fields[index],
+                      if (index < fields.length - 1) const SizedBox(height: 12),
+                    ],
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  for (var index = 0; index < fields.length; index++) ...[
+                    Expanded(child: fields[index]),
+                    if (index < fields.length - 1) const SizedBox(width: 12),
+                  ],
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final fields = <Widget>[
+                TextFormField(
                   controller: draft.price,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
@@ -1270,19 +1519,13 @@ class _VariantEditorTile extends StatelessWidget {
                   ),
                   validator: _optionalNonNegativeDecimal,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
+                TextFormField(
                   controller: draft.stock,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(labelText: 'Stock exacto'),
                   validator: _optionalNonNegativeInt,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<StockStatus>(
+                DropdownButtonFormField<StockStatus>(
                   initialValue: draft.status,
                   decoration: const InputDecoration(
                     labelText: 'Disponibilidad',
@@ -1301,8 +1544,49 @@ class _VariantEditorTile extends StatelessWidget {
                     }
                   },
                 ),
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                  title: const Text('Publicada'),
+                  subtitle: const Text('Visible en el catálogo'),
+                  value: draft.active,
+                  onChanged: (value) {
+                    draft.active = value;
+                    onChanged();
+                  },
+                ),
+              ];
+              if (constraints.maxWidth < 700) {
+                return Column(
+                  children: [
+                    for (var index = 0; index < fields.length; index++) ...[
+                      fields[index],
+                      if (index < fields.length - 1) const SizedBox(height: 12),
+                    ],
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var index = 0; index < fields.length; index++) ...[
+                    Expanded(child: fields[index]),
+                    if (index < fields.length - 1) const SizedBox(width: 12),
+                  ],
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: onDelete,
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
               ),
-            ],
+              icon: const Icon(Icons.delete_outline_rounded),
+              label: const Text('Quitar esta variante'),
+            ),
           ),
         ],
       ),
@@ -1310,41 +1594,96 @@ class _VariantEditorTile extends StatelessWidget {
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({
+class _ImageEditor extends StatelessWidget {
+  const _ImageEditor({
     required this.label,
-    required this.value,
-    required this.icon,
+    required this.imageUrl,
+    required this.uploading,
+    required this.onPick,
+    this.colorHex,
+    this.compact = false,
   });
 
   final String label;
-  final String value;
-  final IconData icon;
+  final String? imageUrl;
+  final String? colorHex;
+  final bool uploading;
+  final VoidCallback onPick;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 210,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
+    final size = compact ? 108.0 : 150.0;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: size,
+          height: size,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: ProductVisual(
+            label: label,
+            imageAsset: imageUrl,
+            colorHex: colorHex,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 28),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(value, style: Theme.of(context).textTheme.titleLarge),
-                    Text(label, style: Theme.of(context).textTheme.bodySmall),
-                  ],
-                ),
+              Text(
+                compact ? 'Imagen de esta variante' : 'Imagen principal',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                'JPG, PNG o WebP. Máximo 8 MB.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: uploading ? null : onPick,
+                icon: uploading
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.image_outlined),
+                label: Text(uploading ? 'Subiendo…' : 'Cambiar imagen'),
               ),
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _ColorSwatch extends StatelessWidget {
+  const _ColorSwatch({required this.value});
+
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _colorFromHex(value);
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        color: color ?? Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.border),
       ),
+      child: color == null
+          ? const Icon(Icons.palette_outlined, size: 15)
+          : null,
     );
   }
 }
@@ -1953,4 +2292,22 @@ String? _optionalNonNegativeInt(String? value) {
   if (value == null || value.trim().isEmpty) return null;
   final parsed = int.tryParse(value.trim());
   return parsed == null || parsed < 0 ? 'Ingresa un número válido.' : null;
+}
+
+String? _normalizedHex(String? value) {
+  final text = value?.trim().replaceFirst('#', '').toUpperCase() ?? '';
+  return RegExp(r'^[0-9A-F]{6}$').hasMatch(text) ? '#$text' : null;
+}
+
+String? _optionalHexColor(String? value) {
+  if (value == null || value.trim().isEmpty) return null;
+  return _normalizedHex(value) == null
+      ? 'Usa un color HEX como #E7A2B4.'
+      : null;
+}
+
+Color? _colorFromHex(String? value) {
+  final normalized = _normalizedHex(value);
+  if (normalized == null) return null;
+  return Color(0xFF000000 | int.parse(normalized.substring(1), radix: 16));
 }
