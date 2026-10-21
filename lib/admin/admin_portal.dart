@@ -344,6 +344,7 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final _search = TextEditingController();
+  final Set<String> _hiddenProductIds = {};
   String _query = '';
   String _catalogGroup = 'Todos';
 
@@ -365,7 +366,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Future<void> _openEditor([CatalogProduct? product]) async {
-    final saved = await showDialog<bool>(
+    final result = await showDialog<_ProductEditorResult>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AdminProductEditorDialog(
@@ -373,15 +374,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         product: product,
       ),
     );
-    if (saved == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            product == null ? 'Producto creado.' : 'Producto actualizado.',
-          ),
-        ),
-      );
+    if (result == null || !mounted) return;
+    if (result == _ProductEditorResult.deleted && product != null) {
+      _hiddenProductIds.add(product.id);
     }
+    setState(() {});
+    final message = switch (result) {
+      _ProductEditorResult.created => 'Producto creado.',
+      _ProductEditorResult.updated => 'Producto actualizado.',
+      _ProductEditorResult.deleted => 'Producto eliminado.',
+    };
+    _showNotice(message);
+  }
+
+  void _showNotice(String message) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+        showCloseIcon: false,
+      ),
+    );
   }
 
   Future<void> _changePassword() async {
@@ -391,9 +406,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       builder: (context) => _ChangePasswordDialog(client: widget.client),
     );
     if (changed == true && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Contraseña actualizada.')));
+      _showNotice('Contraseña actualizada.');
     }
   }
 
@@ -459,7 +472,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           }
           if (!snapshot.hasData) return const _AdminLoading();
           final allProducts = snapshot.data!
-              .where((product) => !product.attributes.containsKey('mergedInto'))
+              .where(
+                (product) =>
+                    !product.attributes.containsKey('mergedInto') &&
+                    !_hiddenProductIds.contains(product.id),
+              )
               .toList(growable: false);
           final products = allProducts.where((product) {
             if (_catalogGroup != 'Todos' &&
@@ -759,6 +776,8 @@ class _EditableProductCard extends StatelessWidget {
   }
 }
 
+enum _ProductEditorResult { created, updated, deleted }
+
 class AdminProductEditorDialog extends StatefulWidget {
   const AdminProductEditorDialog({
     super.key,
@@ -896,7 +915,14 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       } else {
         await widget.repository.updateProduct(product.id, data);
       }
-      if (mounted) Navigator.pop(context, true);
+      if (mounted) {
+        Navigator.pop(
+          context,
+          product == null
+              ? _ProductEditorResult.created
+              : _ProductEditorResult.updated,
+        );
+      }
     } catch (error) {
       if (mounted) setState(() => _error = '$error');
     } finally {
@@ -967,7 +993,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     setState(() => _saving = true);
     try {
       await widget.repository.deleteProduct(product.id);
-      if (mounted) Navigator.pop(context, true);
+      if (mounted) Navigator.pop(context, _ProductEditorResult.deleted);
     } catch (error) {
       if (mounted) {
         setState(() {
