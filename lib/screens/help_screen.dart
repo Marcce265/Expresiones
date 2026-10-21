@@ -8,10 +8,12 @@ class HelpScreen extends StatelessWidget {
     super.key,
     required this.onContact,
     required this.onPrivacy,
+    required this.onAdminLogin,
   });
 
   final VoidCallback onContact;
   final VoidCallback onPrivacy;
+  final VoidCallback onAdminLogin;
 
   @override
   Widget build(BuildContext context) {
@@ -113,6 +115,7 @@ class HelpScreen extends StatelessWidget {
                 horizontal: constraints.maxWidth >= 620,
                 onPrivacy: onPrivacy,
                 onContact: onContact,
+                onAdminLogin: onAdminLogin,
               ),
             ),
           ],
@@ -165,11 +168,13 @@ class _HelpActions extends StatelessWidget {
     required this.horizontal,
     required this.onPrivacy,
     required this.onContact,
+    required this.onAdminLogin,
   });
 
   final bool horizontal;
   final VoidCallback onPrivacy;
   final VoidCallback onContact;
+  final VoidCallback onAdminLogin;
 
   @override
   Widget build(BuildContext context) {
@@ -184,18 +189,41 @@ class _HelpActions extends StatelessWidget {
       icon: const Icon(Icons.chat_outlined),
       label: const Text('Hablar con Expresiones'),
     );
-    if (horizontal) {
-      return Row(
-        children: [
-          Expanded(child: privacy),
-          const SizedBox(width: 12),
-          Expanded(child: contact),
-        ],
-      );
-    }
+    final primaryActions = horizontal
+        ? Row(
+            children: [
+              Expanded(child: privacy),
+              const SizedBox(width: 12),
+              Expanded(child: contact),
+            ],
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [privacy, const SizedBox(height: 10), contact],
+          );
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [privacy, const SizedBox(height: 10), contact],
+      crossAxisAlignment: horizontal
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.stretch,
+      children: [
+        primaryActions,
+        const SizedBox(height: 12),
+        Semantics(
+          button: true,
+          label: 'Acceso exclusivo para la administración de Expresiones',
+          child: TextButton.icon(
+            key: const ValueKey('admin-login-button'),
+            onPressed: onAdminLogin,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.muted,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            ),
+            icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
+            label: const Text('Iniciar sesión administrativa'),
+          ),
+        ),
+      ],
     );
   }
 }

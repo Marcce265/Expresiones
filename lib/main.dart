@@ -277,6 +277,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onContact: () =>
             _openWhatsapp('Hola, Expresiones. Quisiera hacer una consulta.'),
         onPrivacy: _openPrivacy,
+        onAdminLogin: () => unawaited(_openAdminPortal()),
       ),
     };
 
