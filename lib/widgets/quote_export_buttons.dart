@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/coordination_details.dart';
 import '../models/quote_line.dart';
 import '../services/quote_export_service.dart';
+import 'app_notice.dart';
 
 /// Reusable export actions for the review screen and future admin views.
 class QuoteExportButtons extends StatefulWidget {
@@ -42,14 +43,14 @@ class _QuoteExportButtonsState extends State<QuoteExportButtons> {
         );
       }
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Cotización $format guardada.')));
+        showAppNotice(context, 'Cotización $format guardada.');
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudo exportar $format: $error')),
+        showAppNotice(
+          context,
+          'No se pudo exportar $format.',
+          tone: AppNoticeTone.error,
         );
       }
     } finally {

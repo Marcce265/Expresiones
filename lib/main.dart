@@ -22,6 +22,7 @@ import 'services/quote_message.dart';
 import 'services/supabase_bootstrap.dart';
 import 'state/app_store.dart';
 import 'theme/app_theme.dart';
+import 'widgets/app_notice.dart';
 
 const _whatsappNumber = '51956744914';
 
@@ -127,17 +128,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                   customization: customization,
                 );
                 Navigator.of(routeContext).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      '$quantity × ${product.name} agregado a tu cotización.',
-                    ),
-                    action: SnackBarAction(
-                      label: 'Ver',
-                      textColor: Colors.white,
-                      onPressed: _showQuote,
-                    ),
-                  ),
+                showAppNotice(
+                  context,
+                  '$quantity × ${product.name} agregado a tu cotización.',
+                  actionLabel: 'Ver',
+                  onAction: _showQuote,
                 );
               },
             ),

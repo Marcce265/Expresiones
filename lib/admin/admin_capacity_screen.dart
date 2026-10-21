@@ -3,7 +3,10 @@ import 'package:intl/intl.dart';
 
 import '../models/production_capacity.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_components.dart';
+import '../widgets/app_notice.dart';
 import 'admin_operations_repository.dart';
+import 'admin_ui.dart';
 
 class AdminCapacityScreen extends StatelessWidget {
   const AdminCapacityScreen({super.key, required this.repository});
@@ -13,7 +16,15 @@ class AdminCapacityScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Capacidad de producción')),
+      appBar: AppBar(
+        title: const Text('Capacidad de producción'),
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        shape: const Border(
+          bottom: BorderSide(color: AppColors.border, width: .8),
+        ),
+      ),
       body: StreamBuilder<ProductionCapacitySnapshot>(
         stream: repository.watchCapacity(),
         builder: (context, snapshot) {
@@ -159,47 +170,71 @@ class _CapacityEditorState extends State<_CapacityEditor> {
   }
 
   void _show(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    showAppNotice(
+      context,
+      message,
+      tone: message.startsWith('Capacidad')
+          ? AppNoticeTone.success
+          : AppNoticeTone.error,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final dateKeys = {..._reserved.keys, ..._overrides.keys}.toList()..sort();
     return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
+      padding: EdgeInsets.zero,
       children: [
-        const _CapacityInfo(),
-        const SizedBox(height: 18),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final columns = constraints.maxWidth >= 900 ? 2 : 1;
-            final width = (constraints.maxWidth - (columns - 1) * 18) / columns;
-            return Wrap(
-              spacing: 18,
-              runSpacing: 18,
-              children: [
-                SizedBox(width: width, child: _weeklyCard(context)),
-                SizedBox(width: width, child: _datesCard(context, dateKeys)),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 20),
-        Align(
-          alignment: Alignment.centerRight,
-          child: FilledButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.cloud_upload_outlined),
-            label: const Text('Guardar capacidad'),
+        ResponsivePage(
+          maxWidth: 1280,
+          padding: const EdgeInsets.fromLTRB(24, 26, 24, 96),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const AdminSectionIntro(
+                eyebrow: 'Organización del taller',
+                title: 'Capacidad de producción',
+                description: 'Define cuánto trabajo puede asumir el equipo por día y bloquea fechas cuando el taller no esté disponible.',
+              ),
+              const SizedBox(height: 18),
+              const _CapacityInfo(),
+              const SizedBox(height: 18),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final columns = constraints.maxWidth >= 900 ? 2 : 1;
+                  final width =
+                      (constraints.maxWidth - (columns - 1) * 18) / columns;
+                  return Wrap(
+                    spacing: 18,
+                    runSpacing: 18,
+                    children: [
+                      SizedBox(width: width, child: _weeklyCard(context)),
+                      SizedBox(
+                        width: width,
+                        child: _datesCard(context, dateKeys),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton.icon(
+                  onPressed: _saving ? null : _save,
+                  icon: _saving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.cloud_upload_outlined),
+                  label: const Text('Guardar capacidad'),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -414,8 +449,10 @@ class _DayEditorDialogState extends State<_DayEditorDialog> {
     if (reserved == null ||
         reserved < 0 ||
         (capacityText.isNotEmpty && (capacity == null || capacity < 0))) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ingresa cantidades válidas.')),
+      showAppNotice(
+        context,
+        'Ingresa cantidades válidas.',
+        tone: AppNoticeTone.error,
       );
       return;
     }

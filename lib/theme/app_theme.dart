@@ -35,7 +35,7 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.canvas,
-      fontFamily: 'Arial',
+      fontFamily: 'Roboto',
       visualDensity: VisualDensity.standard,
       dividerColor: AppColors.border,
       focusColor: AppColors.pinkSoft,
@@ -45,22 +45,22 @@ abstract final class AppTheme {
     return base.copyWith(
       textTheme: base.textTheme.copyWith(
         displaySmall: const TextStyle(
-          fontFamily: 'serif',
-          fontSize: 32,
+          fontFamily: 'PlayfairDisplay',
+          fontSize: 34,
           height: 1.08,
           fontWeight: FontWeight.w700,
           color: AppColors.ink,
         ),
         headlineLarge: const TextStyle(
-          fontFamily: 'serif',
-          fontSize: 28,
+          fontFamily: 'PlayfairDisplay',
+          fontSize: 30,
           height: 1.12,
           fontWeight: FontWeight.w700,
           color: AppColors.ink,
         ),
         headlineMedium: const TextStyle(
-          fontFamily: 'serif',
-          fontSize: 24,
+          fontFamily: 'PlayfairDisplay',
+          fontSize: 25,
           height: 1.18,
           fontWeight: FontWeight.w700,
           color: AppColors.ink,
@@ -113,6 +113,13 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
+        titleTextStyle: TextStyle(
+          fontFamily: 'PlayfairDisplay',
+          fontSize: 22,
+          height: 1.15,
+          fontWeight: FontWeight.w700,
+          color: AppColors.ink,
+        ),
       ),
       cardTheme: const CardThemeData(
         color: AppColors.surface,
@@ -121,6 +128,15 @@ abstract final class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(18)),
+          side: BorderSide(color: AppColors.border),
+        ),
+      ),
+      dialogTheme: const DialogThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 12,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(24)),
           side: BorderSide(color: AppColors.border),
         ),
       ),
@@ -238,6 +254,25 @@ abstract final class AppTheme {
                 : FontWeight.w500,
           );
         }),
+      ),
+      navigationRailTheme: const NavigationRailThemeData(
+        backgroundColor: AppColors.surface,
+        indicatorColor: AppColors.pinkSoft,
+        selectedIconTheme: IconThemeData(color: AppColors.ink),
+        unselectedIconTheme: IconThemeData(color: AppColors.muted),
+        selectedLabelTextStyle: TextStyle(
+          color: AppColors.ink,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelTextStyle: TextStyle(color: AppColors.muted),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColors.ink,
+        foregroundColor: Colors.white,
+        elevation: 5,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(18)),
+        ),
       ),
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(

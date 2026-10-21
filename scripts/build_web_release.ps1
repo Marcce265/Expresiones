@@ -41,8 +41,40 @@ try {
   & $flutter build web --release --no-pub @defineArgs
   if ($LASTEXITCODE -ne 0) { throw "Falló el build público." }
 
-  & $flutter build web --release --no-pub --target lib/admin_main.dart --base-href /admin/ --output $adminOutput @defineArgs
+  & $flutter build web --release --no-pub --no-tree-shake-icons --target lib/admin_main.dart --base-href /admin/ --output $adminOutput @defineArgs
   if ($LASTEXITCODE -ne 0) { throw "Falló el build administrativo." }
+
+  # Flutter puede reutilizar la caché del primer build y omitir en la segunda
+  # salida archivos compartidos que no cambiaron. El panel usa las mismas
+  # fuentes, iconos y recursos declarados en pubspec, así que completamos su
+  # salida con los archivos ya generados y verificados del build público.
+  $adminAssets = Join-Path $adminOutput "assets"
+  $adminMaterialFont = Join-Path $adminAssets "fonts\MaterialIcons-Regular.otf"
+  $adminMaterialBackup = Join-Path $adminOutput ".admin-material-icons.otf"
+  if (Test-Path -LiteralPath $adminMaterialFont) {
+    Copy-Item -LiteralPath $adminMaterialFont -Destination $adminMaterialBackup -Force
+  }
+  New-Item -ItemType Directory -Force -Path $adminAssets | Out-Null
+  Copy-Item -Path (Join-Path $publicOutput "assets\*") -Destination $adminAssets -Recurse -Force
+  if (Test-Path -LiteralPath $adminMaterialBackup) {
+    New-Item -ItemType Directory -Force -Path (Split-Path $adminMaterialFont) | Out-Null
+    Copy-Item -LiteralPath $adminMaterialBackup -Destination $adminMaterialFont -Force
+    Remove-Item -LiteralPath $adminMaterialBackup -Force
+  }
+  foreach ($shellFile in @("manifest.json", "favicon.png")) {
+    $source = Join-Path $publicOutput $shellFile
+    if (Test-Path -LiteralPath $source) {
+      Copy-Item -LiteralPath $source -Destination (Join-Path $adminOutput $shellFile) -Force
+    }
+  }
+  $publicIcons = Join-Path $publicOutput "icons"
+  $adminIcons = Join-Path $adminOutput "icons"
+  if (Test-Path -LiteralPath $publicIcons) {
+    if (Test-Path -LiteralPath $adminIcons) {
+      Remove-Item -LiteralPath $adminIcons -Recurse -Force
+    }
+    Copy-Item -LiteralPath $publicIcons -Destination $adminIcons -Recurse
+  }
 
   $resolvedDestination = [IO.Path]::GetFullPath($adminDestination)
   $expectedDestination = [IO.Path]::GetFullPath((Join-Path $projectRoot "build\web\admin"))

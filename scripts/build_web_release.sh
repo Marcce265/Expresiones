@@ -40,10 +40,37 @@ cd "$project_root"
 "$flutter_bin" build web --release --no-pub \
   --dart-define-from-file="$config_path"
 "$flutter_bin" build web --release --no-pub \
+  --no-tree-shake-icons \
   --target lib/admin_main.dart \
   --base-href /admin/ \
   --output "$admin_output" \
   --dart-define-from-file="$config_path"
+
+# Flutter puede reutilizar la caché del primer build y omitir recursos comunes
+# en la segunda salida. Ambos sitios comparten las fuentes, iconos y assets
+# declarados en pubspec, por lo que completamos el build administrativo con la
+# salida pública ya generada.
+admin_material_font="$admin_output/assets/fonts/MaterialIcons-Regular.otf"
+admin_material_backup="$admin_output/.admin-material-icons.otf"
+if [[ -f "$admin_material_font" ]]; then
+  cp -- "$admin_material_font" "$admin_material_backup"
+fi
+mkdir -p -- "$admin_output/assets"
+cp -R -- "$public_output/assets/." "$admin_output/assets/"
+if [[ -f "$admin_material_backup" ]]; then
+  mkdir -p -- "$(dirname -- "$admin_material_font")"
+  cp -- "$admin_material_backup" "$admin_material_font"
+  rm -- "$admin_material_backup"
+fi
+for shell_file in manifest.json favicon.png; do
+  if [[ -f "$public_output/$shell_file" ]]; then
+    cp -- "$public_output/$shell_file" "$admin_output/$shell_file"
+  fi
+done
+if [[ -d "$public_output/icons" ]]; then
+  rm -rf -- "$admin_output/icons"
+  cp -R -- "$public_output/icons" "$admin_output/icons"
+fi
 
 rm -rf -- "$admin_destination"
 cp -R -- "$admin_output" "$admin_destination"

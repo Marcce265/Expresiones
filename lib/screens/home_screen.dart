@@ -326,44 +326,31 @@ class _FeaturedProducts extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 700) {
-          return SizedBox(
-            height: 220,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(bottom: 4),
-              itemCount: products.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                final tile = products[index];
-                return SizedBox(
-                  width: 156,
-                  child: ProductCard(
-                    product: tile.product,
-                    variant: tile.variant,
-                    compact: true,
-                    onTap: () => onProduct(tile.product, tile.variant?.id),
-                  ),
-                );
-              },
-            ),
-          );
-        }
+        final compact = constraints.maxWidth < 700;
+        final targetColumns = constraints.maxWidth >= 1040
+            ? 6
+            : constraints.maxWidth >= 700
+            ? 3
+            : 2;
+        final columns = products.length < targetColumns
+            ? products.length
+            : targetColumns;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: products.length,
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 245,
-            mainAxisExtent: 292,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns == 0 ? 1 : columns,
+            mainAxisExtent: compact ? 250 : 292,
+            crossAxisSpacing: compact ? 12 : 16,
+            mainAxisSpacing: compact ? 12 : 16,
           ),
           itemBuilder: (context, index) {
             final tile = products[index];
             return ProductCard(
               product: tile.product,
               variant: tile.variant,
+              compact: compact,
               onTap: () => onProduct(tile.product, tile.variant?.id),
             );
           },

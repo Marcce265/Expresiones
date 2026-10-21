@@ -200,7 +200,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         : null,
                     icon: const Icon(Icons.add_shopping_cart_rounded, size: 19),
                     label: Text(
-                      'Agregar a mi cotización · S/ ${total.toStringAsFixed(2)}',
+                      canAdd
+                          ? 'Agregar a mi cotización · S/ ${total.toStringAsFixed(2)}'
+                          : 'No disponible por ahora',
                     ),
                   ),
                 ),
@@ -286,6 +288,12 @@ class _ProductInformation extends StatelessWidget {
         Text(
           [if (sku != null) 'Código $sku', product.description].join(' · '),
           style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 12),
+        _AvailabilityPill(
+          status: product.stockStatusFor(variantId),
+          stock: variant?.stock ?? product.stock,
+          unitLabel: product.unitLabel,
         ),
         const SizedBox(height: 20),
         LayoutBuilder(
@@ -381,7 +389,10 @@ class _ProductInformation extends StatelessWidget {
         ],
         if (product.variants.length > 1) ...[
           const SizedBox(height: 17),
-          Text('Otros modelos', style: Theme.of(context).textTheme.labelLarge),
+          Text(
+            'Otros colores y modelos',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
           const SizedBox(height: 8),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -451,6 +462,60 @@ class _QuantitySelector extends StatelessWidget {
       onDecrease: onDecrease,
       onIncrease: onIncrease,
       backgroundColor: AppColors.surface,
+    );
+  }
+}
+
+class _AvailabilityPill extends StatelessWidget {
+  const _AvailabilityPill({
+    required this.status,
+    required this.stock,
+    required this.unitLabel,
+  });
+
+  final StockStatus status;
+  final int? stock;
+  final String unitLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final units = stock == 1
+        ? unitLabel
+        : unitLabel == 'unidad'
+        ? 'unidades'
+        : '${unitLabel}s';
+    final label = stock != null && status != StockStatus.outOfStock
+        ? '${status.label} · $stock $units'
+        : status.label;
+    final emphasized = status == StockStatus.lowStock;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: emphasized ? AppColors.pinkSoft : AppColors.canvas,
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              status == StockStatus.outOfStock
+                  ? Icons.block_rounded
+                  : Icons.check_circle_outline_rounded,
+              size: 16,
+            ),
+            const SizedBox(width: 7),
+            Flexible(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

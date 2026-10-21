@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/coordination_details.dart';
 import '../models/shalom_agency.dart';
 import '../services/map_launcher_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/app_notice.dart';
 import 'shalom_agency_picker.dart';
 
 class CoordinationScreen extends StatefulWidget {
@@ -102,12 +104,10 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         : _firstSelectableDate;
     if (initialDate == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'No hay fechas disponibles en este momento. Escríbenos por WhatsApp para coordinar.',
-            ),
-          ),
+        showAppNotice(
+          context,
+          'No hay fechas disponibles. Escríbenos por WhatsApp para coordinar.',
+          tone: AppNoticeTone.info,
         );
       }
       return;
@@ -192,7 +192,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: ResponsivePage(
-        maxWidth: 960,
+        maxWidth: 1120,
         child: Form(
           key: _formKey,
           autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -272,110 +272,16 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 180),
                         child: _deliveryMethod == DeliveryMethod.shalom
-                            ? Padding(
+                            ? _ShalomDestinationSection(
                                 key: const ValueKey('destination'),
-                                padding: const EdgeInsets.only(top: 18),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const _FieldLabel('Agencia de destino'),
-                                    const SizedBox(height: 8),
-                                    InkWell(
-                                      onTap: _pickAgency,
-                                      borderRadius: BorderRadius.circular(14),
-                                      child: InputDecorator(
-                                        decoration: InputDecoration(
-                                          prefixIcon: const Icon(
-                                            Icons.location_on_outlined,
-                                          ),
-                                          suffixIcon: const Icon(
-                                            Icons.chevron_right_rounded,
-                                          ),
-                                          errorText: _agencyError
-                                              ? 'Selecciona una agencia Shalom.'
-                                              : null,
-                                        ),
-                                        child: _agencyId.isEmpty
-                                            ? Text(
-                                                'Buscar agencia Shalom',
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyLarge
-                                                    ?.copyWith(
-                                                      color: AppColors.muted,
-                                                    ),
-                                              )
-                                            : Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    _agencyName,
-                                                    style: Theme.of(context)
-                                                        .textTheme
-                                                        .labelLarge,
-                                                  ),
-                                                  if (_agencyLocality
-                                                      .isNotEmpty)
-                                                    Text(
-                                                      _agencyLocality,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodySmall,
-                                                    ),
-                                                  if (_agencyAddress.isNotEmpty)
-                                                    Text(
-                                                      _agencyAddress,
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodySmall,
-                                                    ),
-                                                ],
-                                              ),
-                                      ),
-                                    ),
-                                    if (_agencyId.isNotEmpty &&
-                                        _agencyLatitude != null &&
-                                        _agencyLongitude != null) ...[
-                                      const SizedBox(height: 6),
-                                      Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: TextButton.icon(
-                                          onPressed: () =>
-                                              MapLauncherService.openCoordinates(
-                                                latitude: _agencyLatitude!,
-                                                longitude: _agencyLongitude!,
-                                                label: _agencyName,
-                                              ),
-                                          icon: const Icon(
-                                            Icons.map_outlined,
-                                            size: 16,
-                                          ),
-                                          label: const Text(
-                                            'Ver agencia en Google Maps',
-                                          ),
-                                          style: TextButton.styleFrom(
-                                            foregroundColor: AppColors.ink,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 4,
-                                              vertical: 2,
-                                            ),
-                                            minimumSize: Size.zero,
-                                            tapTargetSize: MaterialTapTargetSize
-                                                .shrinkWrap,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      'El costo de envío se confirmará por WhatsApp.',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall,
-                                    ),
-                                  ],
-                                ),
+                                agencyId: _agencyId,
+                                agencyName: _agencyName,
+                                agencyAddress: _agencyAddress,
+                                agencyLocality: _agencyLocality,
+                                latitude: _agencyLatitude,
+                                longitude: _agencyLongitude,
+                                showError: _agencyError,
+                                onChooseAgency: _pickAgency,
                               )
                             : const SizedBox.shrink(key: ValueKey('pickup')),
                       ),
@@ -463,6 +369,388 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     if (digits.isEmpty) return 'Escribe tu número de teléfono.';
     if (digits.length != 9) return 'Ingresa un número peruano de 9 dígitos.';
     return null;
+  }
+}
+
+class _ShalomDestinationSection extends StatelessWidget {
+  const _ShalomDestinationSection({
+    super.key,
+    required this.agencyId,
+    required this.agencyName,
+    required this.agencyAddress,
+    required this.agencyLocality,
+    required this.latitude,
+    required this.longitude,
+    required this.showError,
+    required this.onChooseAgency,
+  });
+
+  final String agencyId;
+  final String agencyName;
+  final String agencyAddress;
+  final String agencyLocality;
+  final double? latitude;
+  final double? longitude;
+  final bool showError;
+  final VoidCallback onChooseAgency;
+
+  bool get hasAgency => agencyId.isNotEmpty;
+  bool get hasCoordinates => latitude != null && longitude != null;
+
+  Future<void> _openOfficialDirectory(BuildContext context) async {
+    final opened = await launchUrl(
+      Uri.parse('https://shalom.com.pe/agencias'),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && context.mounted) {
+      showAppNotice(
+        context,
+        'No pudimos abrir el mapa de Shalom.',
+        tone: AppNoticeTone.error,
+      );
+    }
+  }
+
+  Future<void> _openSelectedAgency() async {
+    if (!hasCoordinates) return;
+    await MapLauncherService.openCoordinates(
+      latitude: latitude!,
+      longitude: longitude!,
+      label: agencyName,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selector = _AgencySelectionCard(
+      hasAgency: hasAgency,
+      agencyName: agencyName,
+      agencyAddress: agencyAddress,
+      agencyLocality: agencyLocality,
+      showError: showError,
+      onTap: onChooseAgency,
+    );
+    final map = _ShalomMapCard(
+      hasAgency: hasAgency,
+      agencyName: agencyName,
+      agencyLocality: agencyLocality,
+      hasCoordinates: hasCoordinates,
+      onOpenDirectory: () => _openOfficialDirectory(context),
+      onOpenAgency: _openSelectedAgency,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _FieldLabel('Agencia de destino'),
+          const SizedBox(height: 10),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 760) {
+                return Column(
+                  children: [selector, const SizedBox(height: 12), map],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 6, child: selector),
+                  const SizedBox(width: 14),
+                  Expanded(flex: 4, child: map),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 9),
+          Text(
+            'El envío y la disponibilidad se confirman contigo por WhatsApp.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AgencySelectionCard extends StatelessWidget {
+  const _AgencySelectionCard({
+    required this.hasAgency,
+    required this.agencyName,
+    required this.agencyAddress,
+    required this.agencyLocality,
+    required this.showError,
+    required this.onTap,
+  });
+
+  final bool hasAgency;
+  final String agencyName;
+  final String agencyAddress;
+  final String agencyLocality;
+  final bool showError;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: hasAgency
+          ? 'Cambiar agencia Shalom. $agencyName, $agencyLocality'
+          : 'Elegir agencia Shalom',
+      child: Material(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 218),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: showError ? AppColors.error : AppColors.border,
+                width: showError ? 1.5 : 1,
+              ),
+            ),
+            child: hasAgency
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: const BoxDecoration(
+                              color: AppColors.pinkSoft,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.location_on_outlined),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Agencia elegida',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                Text(
+                                  agencyName,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: AppColors.ink,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      if (agencyLocality.isNotEmpty)
+                        _AgencyDetail(
+                          icon: Icons.place_outlined,
+                          text: agencyLocality,
+                        ),
+                      if (agencyAddress.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        _AgencyDetail(
+                          icon: Icons.signpost_outlined,
+                          text: agencyAddress,
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: onTap,
+                          icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                          label: const Text('Cambiar agencia'),
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 58,
+                        height: 58,
+                        decoration: const BoxDecoration(
+                          color: AppColors.pinkSoft,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.add_location_alt_outlined),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Elige la agencia donde recogerás tu pedido',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Puedes buscar por ciudad, distrito o dirección.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 12),
+                      FilledButton.tonalIcon(
+                        onPressed: onTap,
+                        icon: const Icon(Icons.search_rounded, size: 18),
+                        label: const Text('Buscar agencia'),
+                      ),
+                      if (showError) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Selecciona una agencia para continuar.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppColors.error),
+                        ),
+                      ],
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShalomMapCard extends StatelessWidget {
+  const _ShalomMapCard({
+    required this.hasAgency,
+    required this.agencyName,
+    required this.agencyLocality,
+    required this.hasCoordinates,
+    required this.onOpenDirectory,
+    required this.onOpenAgency,
+  });
+
+  final bool hasAgency;
+  final String agencyName;
+  final String agencyLocality;
+  final bool hasCoordinates;
+  final VoidCallback onOpenDirectory;
+  final VoidCallback onOpenAgency;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 218),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.pinkSoft, AppColors.canvas],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .86),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(Icons.map_outlined),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Mapa oficial de Shalom',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      'Agencias y cobertura en todo el Perú',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            hasAgency
+                ? '$agencyName${agencyLocality.isEmpty ? '' : ' · $agencyLocality'}'
+                : 'Consulta el mapa de Shalom mientras eliges tu agencia de destino.',
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onOpenDirectory,
+              icon: const Icon(Icons.open_in_new_rounded, size: 18),
+              label: const Text('Abrir mapa de Shalom'),
+            ),
+          ),
+          if (hasCoordinates) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton.icon(
+                onPressed: onOpenAgency,
+                icon: const Icon(Icons.near_me_outlined, size: 18),
+                label: const Text('Ver agencia elegida'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AgencyDetail extends StatelessWidget {
+  const _AgencyDetail({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 17, color: AppColors.muted),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+      ],
+    );
   }
 }
 

@@ -34,6 +34,7 @@ class ProductCard extends StatefulWidget {
     this.compact = false,
     this.showCategory = false,
     this.showPrice = true,
+    this.showUnavailableOverlay = true,
   });
 
   final CatalogProduct product;
@@ -43,6 +44,7 @@ class ProductCard extends StatefulWidget {
   final bool compact;
   final bool showCategory;
   final bool showPrice;
+  final bool showUnavailableOverlay;
 
   @override
   State<ProductCard> createState() => _ProductCardState();
@@ -67,6 +69,9 @@ class _ProductCardState extends State<ProductCard> {
     final price = widget.product.unitPriceFor(1, variantId: variantId);
     final pricePrefix = widget.product.startingAt ? 'Desde ' : '';
     final imageFit = productImageFit(widget.product, variant: widget.variant);
+    final optionCount = widget.variant == null
+        ? widget.product.variants.where((item) => item.isActive).length
+        : 0;
 
     return Semantics(
       button: true,
@@ -134,11 +139,20 @@ class _ProductCardState extends State<ProductCard> {
                               alignment: productImageAlignment(widget.product),
                             ),
                           ),
-                          if (unavailable)
+                          if (unavailable && widget.showUnavailableOverlay)
                             Positioned.fill(
                               child: ColoredBox(
                                 color: Colors.white.withValues(alpha: .78),
                                 child: const Center(child: _UnavailableBadge()),
+                              ),
+                            ),
+                          if (!unavailable && optionCount > 1)
+                            Positioned(
+                              top: 10,
+                              left: 10,
+                              child: _OptionCountBadge(
+                                count: optionCount,
+                                label: _optionLabel(widget.product),
                               ),
                             ),
                         ],
@@ -268,6 +282,39 @@ class _UnavailableBadge extends StatelessWidget {
   }
 }
 
+class _OptionCountBadge extends StatelessWidget {
+  const _OptionCountBadge({required this.count, required this.label});
+
+  final int count;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: .94),
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: AppColors.border),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Text(
+          '$count $label',
+          style: Theme.of(context).textTheme.labelSmall
+              ?.copyWith(color: AppColors.ink, fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+}
+
 String _visualCategory(ProductCategory category) => switch (category) {
   ProductCategory.bouquets => 'bouquets',
   ProductCategory.personalizedGifts => 'gifts',
@@ -275,3 +322,8 @@ String _visualCategory(ProductCategory category) => switch (category) {
 };
 
 String _priceLabel(double value) => 'S/ ${value.toStringAsFixed(2)}';
+
+String _optionLabel(CatalogProduct product) => switch (product.id) {
+  'limpiapipas-premium-8mm' || 'cinta-satinada-100m' => 'colores',
+  _ => 'opciones',
+};

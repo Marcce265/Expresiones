@@ -5,6 +5,7 @@ import '../models/quote_line.dart';
 import '../services/map_launcher_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/app_notice.dart';
 import '../widgets/quote_export_buttons.dart';
 
 class ReviewScreen extends StatefulWidget {
@@ -44,12 +45,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
       await widget.onSendWhatsapp();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'No pudimos abrir WhatsApp. Copia el mensaje e inténtalo nuevamente.',
-            ),
-          ),
+        _showNotice(
+          'No pudimos abrir WhatsApp. Copia el mensaje e inténtalo nuevamente.',
+          tone: AppNoticeTone.error,
         );
       }
     } finally {
@@ -59,8 +57,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   void _copy() {
     widget.onCopyMessage();
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Mensaje copiado.')));
+    _showNotice('Mensaje copiado.');
+  }
+
+  void _showNotice(
+    String message, {
+    AppNoticeTone tone = AppNoticeTone.success,
+  }) {
+    showAppNotice(context, message, tone: tone);
   }
 
   @override

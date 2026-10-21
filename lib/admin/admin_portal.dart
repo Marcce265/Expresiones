@@ -7,12 +7,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/catalog_models.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/app_notice.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_visual.dart';
 import 'admin_analytics_screen.dart';
 import 'admin_catalog_repository.dart';
 import 'admin_capacity_screen.dart';
 import 'admin_operations_repository.dart';
+import 'admin_ui.dart';
 
 class AdminPortalApp extends StatelessWidget {
   const AdminPortalApp({super.key, required this.client});
@@ -388,15 +390,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   void _showNotice(String message) {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.clearSnackBars();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-        showCloseIcon: false,
-      ),
-    );
+    showAppNotice(context, message);
   }
 
   Future<void> _changePassword() async {
@@ -413,48 +407,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Expresiones · Catálogo'),
-        actions: [
-          IconButton(
-            tooltip: 'Capacidad de producción',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) =>
-                    AdminCapacityScreen(repository: widget.operations),
-              ),
-            ),
-            icon: const Icon(Icons.calendar_month_outlined),
+      appBar: _AdminAppBar(
+        email: widget.userEmail,
+        onCapacity: () => Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => AdminCapacityScreen(repository: widget.operations),
           ),
-          IconButton(
-            tooltip: 'Actividad y búsquedas',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) =>
-                    AdminAnalyticsScreen(repository: widget.operations),
-              ),
-            ),
-            icon: const Icon(Icons.query_stats_outlined),
+        ),
+        onAnalytics: () => Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => AdminAnalyticsScreen(repository: widget.operations),
           ),
-          if (widget.userEmail.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Center(child: Text(widget.userEmail)),
-            ),
-          IconButton(
-            tooltip: 'Crear o cambiar contraseña',
-            onPressed: _changePassword,
-            icon: const Icon(Icons.password_rounded),
-          ),
-          IconButton(
-            tooltip: 'Cerrar sesión',
-            onPressed: widget.onSignOut,
-            icon: const Icon(Icons.logout_rounded),
-          ),
-          const SizedBox(width: 8),
-        ],
+        ),
+        onPassword: _changePassword,
+        onSignOut: widget.onSignOut,
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openEditor,
@@ -510,33 +478,69 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Eyebrow('Modo administrador'),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Edita el mismo catálogo que ven tus clientes',
-                            style: Theme.of(context).textTheme.headlineMedium,
+                          const AdminSectionIntro(
+                            eyebrow: 'Catálogo administrativo',
+                            title:
+                                'Edita la tienda tal como la ven tus clientes',
+                            description: 'Busca un material o entra por categoría. Cada tarjeta conserva la misma foto, información y estilo del catálogo público.',
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Cada tarjeta corresponde a un producto del catálogo público.',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: compact ? 14 : 18),
                           const InfoBanner(
                             icon: Icons.edit_outlined,
-                            title: 'Cómo editar',
-                            message: 'Pulsa el lápiz de la esquina superior derecha para cambiar la foto, el nombre, la descripción, el precio, el stock o sus variantes.',
+                            title: 'Editar es sencillo',
+                            message: 'Pulsa el lápiz de una tarjeta para cambiar su foto, textos, precio, stock, colores y variantes.',
                           ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _search,
-                            decoration: const InputDecoration(
-                              hintText: 'Buscar material, color o código',
-                              prefixIcon: Icon(Icons.search_rounded),
-                            ),
-                            onChanged: (value) => setState(
-                              () => _query = value.trim().toLowerCase(),
-                            ),
+                          SizedBox(height: compact ? 14 : 18),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _search,
+                                  decoration: InputDecoration(
+                                    hintText: 'Buscar material, color o código',
+                                    prefixIcon: const Icon(
+                                      Icons.search_rounded,
+                                    ),
+                                    suffixIcon: _query.isEmpty
+                                        ? null
+                                        : IconButton(
+                                            tooltip: 'Limpiar búsqueda',
+                                            onPressed: () {
+                                              _search.clear();
+                                              setState(() => _query = '');
+                                            },
+                                            icon: const Icon(
+                                              Icons.close_rounded,
+                                            ),
+                                          ),
+                                  ),
+                                  onChanged: (value) => setState(
+                                    () => _query = value.trim().toLowerCase(),
+                                  ),
+                                ),
+                              ),
+                              if (!compact) ...[
+                                const SizedBox(width: 12),
+                                Container(
+                                  height: 56,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 18,
+                                  ),
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    border: Border.all(color: AppColors.border),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(
+                                    '${products.length} productos',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 12),
                           SingleChildScrollView(
@@ -555,11 +559,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '${products.length} productos',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
+                          if (compact) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              '${products.length} productos',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -602,6 +608,164 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             },
           );
         },
+      ),
+    );
+  }
+}
+
+class _AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _AdminAppBar({
+    required this.email,
+    required this.onCapacity,
+    required this.onAnalytics,
+    required this.onPassword,
+    required this.onSignOut,
+  });
+
+  final String email;
+  final VoidCallback onCapacity;
+  final VoidCallback onAnalytics;
+  final VoidCallback onPassword;
+  final Future<void> Function() onSignOut;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(72);
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 700;
+    return AppBar(
+      toolbarHeight: 72,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: AppColors.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: const Border(
+        bottom: BorderSide(color: AppColors.border, width: .8),
+      ),
+      titleSpacing: compact ? 16 : 24,
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Expresiones',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (!compact) ...[
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.pinkSoft,
+                borderRadius: BorderRadius.circular(99),
+              ),
+              child: Text(
+                'ADMINISTRACIÓN',
+                style: Theme.of(context).textTheme.labelSmall
+                    ?.copyWith(fontSize: 9, letterSpacing: .9),
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        _AdminTopAction(
+          tooltip: 'Capacidad de producción',
+          icon: Icons.calendar_month_outlined,
+          onPressed: onCapacity,
+        ),
+        _AdminTopAction(
+          tooltip: 'Actividad del catálogo',
+          icon: Icons.query_stats_outlined,
+          onPressed: onAnalytics,
+        ),
+        const SizedBox(width: 4),
+        PopupMenuButton<String>(
+          tooltip: 'Cuenta administrativa',
+          offset: const Offset(0, 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          onSelected: (value) {
+            if (value == 'password') onPassword();
+            if (value == 'logout') onSignOut();
+          },
+          itemBuilder: (context) => [
+            if (email.isNotEmpty)
+              PopupMenuItem<String>(
+                enabled: false,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 240),
+                  child: Text(
+                    email,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ),
+            const PopupMenuDivider(),
+            const PopupMenuItem(
+              value: 'password',
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.password_rounded),
+                title: Text('Cambiar contraseña'),
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'logout',
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.logout_rounded),
+                title: Text('Cerrar sesión'),
+              ),
+            ),
+          ],
+          child: Container(
+            width: 42,
+            height: 42,
+            margin: const EdgeInsets.only(right: 16),
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: AppColors.ink,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              email.trim().isEmpty ? 'A' : email.trim()[0].toUpperCase(),
+              style: Theme.of(context).textTheme.labelLarge
+                  ?.copyWith(color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AdminTopAction extends StatelessWidget {
+  const _AdminTopAction({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: IconButton.filledTonal(
+        tooltip: tooltip,
+        onPressed: onPressed,
+        icon: Icon(icon, size: 20),
+        style: IconButton.styleFrom(backgroundColor: AppColors.pinkSoft),
       ),
     );
   }
@@ -753,6 +917,7 @@ class _EditableProductCard extends StatelessWidget {
             product: product,
             compact: compact,
             showCategory: true,
+            showUnavailableOverlay: false,
             onTap: onEdit,
           ),
         ),
@@ -1063,10 +1228,15 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final compactDialog = MediaQuery.sizeOf(context).width < 600;
     return Dialog(
-      insetPadding: const EdgeInsets.all(20),
+      insetPadding: EdgeInsets.all(compactDialog ? 8 : 20),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 820, maxHeight: 820),
+        constraints: BoxConstraints(
+          maxWidth: 860,
+          maxHeight:
+              MediaQuery.sizeOf(context).height - (compactDialog ? 16 : 40),
+        ),
         child: Column(
           children: [
             Padding(
@@ -1074,11 +1244,29 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      widget.product == null
-                          ? 'Nuevo producto'
-                          : 'Editar producto',
-                      style: Theme.of(context).textTheme.headlineMedium,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.product == null
+                              ? 'CREAR EN EL CATÁLOGO'
+                              : 'EDITAR EN EL CATÁLOGO',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: AppColors.muted,
+                                letterSpacing: 1.05,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.product == null
+                              ? 'Nuevo producto'
+                              : widget.product!.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ],
                     ),
                   ),
                   IconButton(
@@ -1301,25 +1489,10 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
             ),
             const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  if (widget.product != null)
-                    TextButton.icon(
-                      onPressed: _saving ? null : _deleteProduct,
-                      style: TextButton.styleFrom(
-                        foregroundColor: Theme.of(context).colorScheme.error,
-                      ),
-                      icon: const Icon(Icons.delete_outline_rounded),
-                      label: const Text('Eliminar producto'),
-                    ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: _saving ? null : () => Navigator.pop(context),
-                    child: const Text('Cancelar'),
-                  ),
-                  const SizedBox(width: 10),
-                  FilledButton.icon(
+              padding: EdgeInsets.all(compactDialog ? 12 : 16),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final saveButton = FilledButton.icon(
                     onPressed: _saving || _uploadingImage ? null : _save,
                     icon: _saving || _uploadingImage
                         ? const SizedBox.square(
@@ -1333,8 +1506,43 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                     label: Text(
                       _uploadingImage ? 'Subiendo imagen…' : 'Guardar cambios',
                     ),
-                  ),
-                ],
+                  );
+                  final cancelButton = TextButton(
+                    onPressed: _saving ? null : () => Navigator.pop(context),
+                    child: const Text('Cancelar'),
+                  );
+                  final deleteButton = TextButton.icon(
+                    onPressed: _saving ? null : _deleteProduct,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    label: const Text('Eliminar producto'),
+                  );
+                  if (constraints.maxWidth < 560) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        saveButton,
+                        const SizedBox(height: 4),
+                        cancelButton,
+                        if (widget.product != null) ...[
+                          const SizedBox(height: 2),
+                          deleteButton,
+                        ],
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      if (widget.product != null) deleteButton,
+                      const Spacer(),
+                      cancelButton,
+                      const SizedBox(width: 10),
+                      saveButton,
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -1995,10 +2203,9 @@ class _TotpEnrollmentScreenState extends State<_TotpEnrollmentScreen> {
                                   Clipboard.setData(
                                     ClipboardData(text: _secret!),
                                   );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Clave secreta copiada.'),
-                                    ),
+                                  showAppNotice(
+                                    context,
+                                    'Clave secreta copiada.',
                                   );
                                 },
                               ),

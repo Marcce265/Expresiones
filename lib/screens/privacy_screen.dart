@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/app_notice.dart';
 
 class PrivacyScreen extends StatefulWidget {
   const PrivacyScreen({
@@ -48,9 +49,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     await widget.onClearLocalData();
     if (!mounted) return;
     setState(() => _clearing = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Los datos locales fueron eliminados.')),
-    );
+    showAppNotice(context, 'Los datos locales fueron eliminados.');
   }
 
   @override

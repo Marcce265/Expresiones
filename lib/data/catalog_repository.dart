@@ -156,7 +156,9 @@ class CatalogRepository {
     required bool includeInactive,
   }) async {
     final activeClient = client;
-    if (activeClient == null) return _useFallback(includeInactive: includeInactive);
+    if (activeClient == null) {
+      return _useFallback(includeInactive: includeInactive);
+    }
 
     final rows = await Future.wait([
       _readRows(activeClient, 'families'),

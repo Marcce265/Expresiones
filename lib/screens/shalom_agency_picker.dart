@@ -79,7 +79,7 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
                 });
 
           return ResponsivePage(
-            maxWidth: 760,
+            maxWidth: 1180,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -92,6 +92,12 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
                   'Busca por agencia, ciudad, distrito o dirección.',
                   style: Theme.of(context).textTheme.bodyMedium
                       ?.copyWith(color: AppColors.muted),
+                ),
+                const SizedBox(height: 14),
+                const InfoBanner(
+                  icon: Icons.local_shipping_outlined,
+                  title: 'Elige un punto que reciba envíos',
+                  message: 'Mostramos el directorio disponible de Shalom. Toca una tarjeta para usarla en tu cotización.',
                 ),
                 const SizedBox(height: 18),
                 TextField(
@@ -148,21 +154,42 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
                           message:
                               'Prueba con otra ciudad, agencia o dirección.',
                         )
-                      : ListView.separated(
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.onDrag,
-                          itemCount: filtered.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            final agency = filtered[index];
-                            final selectable = agency.canReceive;
-                            return _AgencyCard(
-                              agency: agency,
-                              selected: agency.id == widget.selectedId,
-                              onTap: selectable
-                                  ? () => Navigator.of(context).pop(agency)
-                                  : null,
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            Widget cardAt(int index) {
+                              final agency = filtered[index];
+                              return _AgencyCard(
+                                agency: agency,
+                                selected: agency.id == widget.selectedId,
+                                onTap: agency.canReceive
+                                    ? () => Navigator.of(context).pop(agency)
+                                    : null,
+                              );
+                            }
+
+                            if (constraints.maxWidth < 820) {
+                              return ListView.separated(
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
+                                itemCount: filtered.length,
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(height: 10),
+                                itemBuilder: (context, index) => cardAt(index),
+                              );
+                            }
+
+                            return GridView.builder(
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
+                              gridDelegate:
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: 540,
+                                    mainAxisExtent: 244,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                  ),
+                              itemCount: filtered.length,
+                              itemBuilder: (context, index) => cardAt(index),
                             );
                           },
                         ),
@@ -233,17 +260,23 @@ class _AgencyCard extends StatelessWidget {
                   children: [
                     Text(
                       agency.displayName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 3),
                     Text(
                       '${agency.typeLabel} · ${agency.localityLabel}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     if (agency.address.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
                         agency.address,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -251,6 +284,8 @@ class _AgencyCard extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(
                         'Horario: ${agency.openingHours}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
