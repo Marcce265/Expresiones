@@ -1455,9 +1455,20 @@ class _TotpEnrollmentScreenState extends State<_TotpEnrollmentScreen> {
       _error = null;
     });
     try {
+      final factors = await widget.client.auth.mfa.listFactors();
+      final pendingTotpFactors = factors.all.where(
+        (factor) =>
+            factor.factorType == FactorType.totp &&
+            factor.status == FactorStatus.unverified,
+      );
+      for (final factor in pendingTotpFactors) {
+        await widget.client.auth.mfa.unenroll(factor.id);
+      }
+
       final response = await widget.client.auth.mfa.enroll(
         factorType: FactorType.totp,
         issuer: 'Expresiones',
+        friendlyName: 'Expresiones',
       );
       setState(() {
         _factorId = response.id;
@@ -1465,9 +1476,15 @@ class _TotpEnrollmentScreenState extends State<_TotpEnrollmentScreen> {
         _totpUri = response.totp?.uri;
         _loading = false;
       });
-    } catch (e) {
+    } on AuthException catch (_) {
       setState(() {
-        _error = 'No se pudo iniciar la vinculación MFA: $e';
+        _error =
+            'No se pudo preparar el autenticador. Reintenta en unos segundos.';
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() {
+        _error = 'No se pudo preparar el autenticador. Revisa tu conexión y vuelve a intentarlo.';
         _loading = false;
       });
     }
