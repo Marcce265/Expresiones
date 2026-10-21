@@ -74,8 +74,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return SingleChildScrollView(
       child: ResponsivePage(
-        maxWidth: 920,
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+        maxWidth: 1180,
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 36),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -83,66 +83,44 @@ class _HomeScreenState extends State<HomeScreen> {
               quoteQuantity: widget.quoteQuantity,
               onOpenQuote: widget.onOpenQuote,
             ),
-            const SizedBox(height: 20),
-            Text(
-              'Encuentra lo que necesitas',
-              style: Theme.of(context).textTheme.headlineLarge,
+            const SizedBox(height: 28),
+            _HomeIntro(
+              searchController: _searchController,
+              query: _query,
+              onSearchChanged: _onSearchChanged,
+              onSearchSubmitted: _reportEmptySearch,
+              onClearSearch: () {
+                _searchController.clear();
+                setState(() => _query = '');
+              },
+              onBrowse: () => widget.onBrowse(ProductCategory.materials),
+              showHero: query.isEmpty,
             ),
-            const SizedBox(height: 3),
-            Text(
-              'Materiales para crear detalles que expresan más.',
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.muted),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              onSubmitted: _reportEmptySearch,
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                hintText: 'Buscar materiales',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _query.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: 'Limpiar búsqueda',
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _query = '');
-                        },
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            if (query.isNotEmpty)
-              _SearchResults(results: results, onProduct: widget.onProduct)
-            else ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: AspectRatio(
-                  aspectRatio: 1.9,
-                  child: Image.asset(
-                    'assets/images/catalog_hero.webp',
-                    fit: BoxFit.cover,
+            const SizedBox(height: 30),
+            if (query.isNotEmpty) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Resultados',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
-                ),
+                  Text(
+                    '${results.length} ${results.length == 1 ? 'producto' : 'productos'}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ),
-              const SizedBox(height: 18),
-              Text(
-                'Explora materiales',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 9),
-              _CategoryChips(onBrowse: widget.onBrowse),
-              const SizedBox(height: 18),
+              const SizedBox(height: 12),
+              _SearchResults(results: results, onProduct: widget.onProduct),
+            ] else ...[
               SectionHeader(
                 title: 'Más consultados',
                 actionLabel: 'Ver todo',
                 onAction: () => widget.onBrowse(ProductCategory.materials),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               if (featured.isEmpty)
                 const EmptyState(
                   icon: Icons.inventory_2_outlined,
@@ -151,26 +129,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Los productos aparecerán aquí cuando estén disponibles.',
                 )
               else
-                SizedBox(
-                  height: 202,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: featured.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) {
-                      final tile = featured[index];
-                      return SizedBox(
-                        width: 148,
-                        child: ProductCard(
-                          product: tile.product,
-                          variant: tile.variant,
-                          compact: true,
-                          onTap: () =>
-                              widget.onProduct(tile.product, tile.variant?.id),
-                        ),
-                      );
-                    },
-                  ),
+                _FeaturedProducts(
+                  products: featured,
+                  onProduct: widget.onProduct,
                 ),
             ],
           ],
@@ -212,28 +173,202 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final usesDesktopNavigation = MediaQuery.sizeOf(context).width >= 1024;
+    return LayoutBuilder(
+      builder: (context, constraints) => Row(
+        children: [
+          if (!usesDesktopNavigation)
+            Expanded(
+              child: Text(
+                'Expresiones',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            )
+          else
+            const Spacer(),
+          Badge.count(
+            count: quoteQuantity,
+            isLabelVisible: quoteQuantity > 0,
+            backgroundColor: AppColors.pinkStrong,
+            child: constraints.maxWidth >= 560
+                ? OutlinedButton.icon(
+                    onPressed: onOpenQuote,
+                    icon: const Icon(Icons.shopping_bag_outlined, size: 19),
+                    label: const Text('Mi cotización'),
+                  )
+                : IconButton.outlined(
+                    onPressed: onOpenQuote,
+                    tooltip: 'Mi cotización',
+                    icon: const Icon(Icons.shopping_bag_outlined, size: 20),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeIntro extends StatelessWidget {
+  const _HomeIntro({
+    required this.searchController,
+    required this.query,
+    required this.onSearchChanged,
+    required this.onSearchSubmitted,
+    required this.onClearSearch,
+    required this.onBrowse,
+    required this.showHero,
+  });
+
+  final TextEditingController searchController;
+  final String query;
+  final ValueChanged<String> onSearchChanged;
+  final ValueChanged<String> onSearchSubmitted;
+  final VoidCallback onClearSearch;
+  final VoidCallback onBrowse;
+  final bool showHero;
+
+  @override
+  Widget build(BuildContext context) {
+    final copy = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Expanded(
-          child: Text(
-            'Expresiones',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontStyle: FontStyle.italic,
-              fontWeight: FontWeight.w500,
-            ),
+        const Eyebrow('Catálogo de materiales'),
+        const SizedBox(height: 10),
+        Text(
+          'Encuentra lo que necesitas',
+          style: Theme.of(context).textTheme.displaySmall,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Materiales, colores y acabados para crear detalles que expresan más.',
+          style: Theme.of(context).textTheme.bodyLarge
+              ?.copyWith(color: AppColors.muted),
+        ),
+        const SizedBox(height: 22),
+        TextField(
+          controller: searchController,
+          onChanged: onSearchChanged,
+          onSubmitted: onSearchSubmitted,
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            hintText: 'Buscar por material, color o código',
+            prefixIcon: const Icon(Icons.search_rounded),
+            suffixIcon: query.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Limpiar búsqueda',
+                    onPressed: onClearSearch,
+                    icon: const Icon(Icons.close_rounded),
+                  ),
           ),
         ),
-        Badge.count(
-          count: quoteQuantity,
-          isLabelVisible: quoteQuantity > 0,
-          backgroundColor: AppColors.pinkStrong,
-          child: IconButton.outlined(
-            onPressed: onOpenQuote,
-            tooltip: 'Mi cotización',
-            icon: const Icon(Icons.shopping_bag_outlined, size: 20),
-          ),
-        ),
+        const SizedBox(height: 18),
+        _CategoryChips(onBrowse: (_) => onBrowse()),
       ],
+    );
+
+    if (!showHero) return copy;
+
+    final hero = ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: AspectRatio(
+        aspectRatio: 1.48,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset('assets/images/catalog_hero.webp', fit: BoxFit.cover),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0x33000000)],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 760) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [copy, const SizedBox(height: 22), hero],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(flex: 5, child: copy),
+            const SizedBox(width: 36),
+            Expanded(flex: 6, child: hero),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _FeaturedProducts extends StatelessWidget {
+  const _FeaturedProducts({required this.products, required this.onProduct});
+
+  final List<CatalogTile> products;
+  final ProductSelected onProduct;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 700) {
+          return SizedBox(
+            height: 220,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(bottom: 4),
+              itemCount: products.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final tile = products[index];
+                return SizedBox(
+                  width: 156,
+                  child: ProductCard(
+                    product: tile.product,
+                    variant: tile.variant,
+                    compact: true,
+                    onTap: () => onProduct(tile.product, tile.variant?.id),
+                  ),
+                );
+              },
+            ),
+          );
+        }
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: products.length,
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 245,
+            mainAxisExtent: 292,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+          ),
+          itemBuilder: (context, index) {
+            final tile = products[index];
+            return ProductCard(
+              product: tile.product,
+              variant: tile.variant,
+              onTap: () => onProduct(tile.product, tile.variant?.id),
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -272,28 +407,17 @@ class _CategoryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 39,
-      child: selected
-          ? FilledButton(
-              onPressed: onTap,
-              style: FilledButton.styleFrom(
-                minimumSize: Size.zero,
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                shape: const StadiumBorder(),
-              ),
-              child: Text(label),
-            )
-          : OutlinedButton(
-              onPressed: onTap,
-              style: OutlinedButton.styleFrom(
-                minimumSize: Size.zero,
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                shape: const StadiumBorder(),
-              ),
-              child: Text(label),
-            ),
+    final child = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label),
+        const SizedBox(width: 8),
+        const Icon(Icons.arrow_forward_rounded, size: 17),
+      ],
     );
+    return selected
+        ? FilledButton(onPressed: onTap, child: child)
+        : OutlinedButton(onPressed: onTap, child: child);
   }
 }
 
@@ -312,25 +436,27 @@ class _SearchResults extends StatelessWidget {
         message: 'Prueba con un color, código o nombre de producto.',
       );
     }
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: results.length,
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 220,
-        mainAxisExtent: 244,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+    return LayoutBuilder(
+      builder: (context, constraints) => GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: results.length,
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: constraints.maxWidth < 600 ? 210 : 250,
+          mainAxisExtent: constraints.maxWidth < 600 ? 248 : 292,
+          crossAxisSpacing: constraints.maxWidth < 600 ? 12 : 16,
+          mainAxisSpacing: constraints.maxWidth < 600 ? 12 : 16,
+        ),
+        itemBuilder: (context, index) {
+          final tile = results[index];
+          return ProductCard(
+            product: tile.product,
+            variant: tile.variant,
+            compact: constraints.maxWidth < 600,
+            onTap: () => onProduct(tile.product, tile.variant?.id),
+          );
+        },
       ),
-      itemBuilder: (context, index) {
-        final tile = results[index];
-        return ProductCard(
-          product: tile.product,
-          variant: tile.variant,
-          compact: true,
-          onTap: () => onProduct(tile.product, tile.variant?.id),
-        );
-      },
     );
   }
 }

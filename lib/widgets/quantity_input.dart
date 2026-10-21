@@ -72,11 +72,15 @@ class _QuantityInputState extends State<QuantityInput> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
+          _QuantityButton(
             tooltip: 'Reducir cantidad',
-            visualDensity: VisualDensity.compact,
-            onPressed: widget.onDecrease,
-            icon: const Icon(Icons.remove, size: 19),
+            icon: Icons.remove,
+            onTap: widget.onDecrease,
+            onLongPress: widget.onDecrease == null
+                ? null
+                : () => widget.onChanged(
+                    widget.value > 10 ? widget.value - 10 : 1,
+                  ),
           ),
           Expanded(
             child: TextField(
@@ -88,6 +92,7 @@ class _QuantityInputState extends State<QuantityInput> {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.labelLarge,
               decoration: const InputDecoration(
+                filled: false,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -97,13 +102,58 @@ class _QuantityInputState extends State<QuantityInput> {
               onSubmitted: (_) => _focus.unfocus(),
             ),
           ),
-          IconButton(
+          _QuantityButton(
             tooltip: 'Aumentar cantidad',
-            visualDensity: VisualDensity.compact,
-            onPressed: widget.onIncrease,
-            icon: const Icon(Icons.add, size: 19),
+            icon: Icons.add,
+            onTap: widget.onIncrease,
+            onLongPress: widget.onIncrease == null
+                ? null
+                : () => widget.onChanged(widget.value + 10),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _QuantityButton extends StatelessWidget {
+  const _QuantityButton({
+    required this.tooltip,
+    required this.icon,
+    this.onTap,
+    this.onLongPress,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return Tooltip(
+      message: '$tooltip. Mantén presionado para cambiar de 10 en 10.',
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        label: tooltip,
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          borderRadius: BorderRadius.circular(13),
+          child: SizedBox(
+            width: 44,
+            height: 46,
+            child: Icon(
+              icon,
+              size: 19,
+              color: enabled
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Theme.of(context).disabledColor,
+            ),
+          ),
+        ),
       ),
     );
   }

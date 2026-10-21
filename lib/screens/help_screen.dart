@@ -50,7 +50,7 @@ class HelpScreen extends StatelessWidget {
 
     return SingleChildScrollView(
       child: ResponsivePage(
-        maxWidth: 820,
+        maxWidth: 1040,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -66,54 +66,136 @@ class HelpScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyLarge
                   ?.copyWith(color: AppColors.muted),
             ),
-            const SizedBox(height: 24),
-            ...items.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Card(
-                  child: ExpansionTile(
-                    leading: Icon(item.icon),
-                    title: Text(
-                      item.title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
-                    shape: const Border(),
-                    collapsedShape: const Border(),
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(item.body),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            const SizedBox(height: 20),
+            const InfoBanner(
+              title: 'La cotización es libre y sin registro',
+              message: 'Puedes revisar productos, calcular cantidades y preparar tu solicitud sin crear una cuenta.',
+              icon: Icons.lock_open_rounded,
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onPrivacy,
-                icon: const Icon(Icons.privacy_tip_outlined),
-                label: const Text('Privacidad y mis datos'),
-              ),
+            const SizedBox(height: 24),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 760) {
+                  return Column(
+                    children: [for (final item in items) _FaqCard(item: item)],
+                  );
+                }
+                final left = <({IconData icon, String title, String body})>[];
+                final right = <({IconData icon, String title, String body})>[];
+                for (var index = 0; index < items.length; index++) {
+                  (index.isEven ? left : right).add(items[index]);
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          for (final item in left) _FaqCard(item: item),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          for (final item in right) _FaqCard(item: item),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: onContact,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.whatsapp,
-                ),
-                icon: const Icon(Icons.chat_outlined),
-                label: const Text('Hablar con Expresiones'),
+            LayoutBuilder(
+              builder: (context, constraints) => _HelpActions(
+                horizontal: constraints.maxWidth >= 620,
+                onPrivacy: onPrivacy,
+                onContact: onContact,
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _FaqCard extends StatelessWidget {
+  const _FaqCard({required this.item});
+
+  final ({IconData icon, String title, String body}) item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+          leading: Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: AppColors.pinkSoft,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(item.icon, size: 21),
+          ),
+          title: Text(
+            item.title,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          shape: const Border(),
+          collapsedShape: const Border(),
+          children: [
+            Align(alignment: Alignment.centerLeft, child: Text(item.body)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HelpActions extends StatelessWidget {
+  const _HelpActions({
+    required this.horizontal,
+    required this.onPrivacy,
+    required this.onContact,
+  });
+
+  final bool horizontal;
+  final VoidCallback onPrivacy;
+  final VoidCallback onContact;
+
+  @override
+  Widget build(BuildContext context) {
+    final privacy = OutlinedButton.icon(
+      onPressed: onPrivacy,
+      icon: const Icon(Icons.privacy_tip_outlined),
+      label: const Text('Privacidad y mis datos'),
+    );
+    final contact = FilledButton.icon(
+      onPressed: onContact,
+      style: FilledButton.styleFrom(backgroundColor: AppColors.whatsapp),
+      icon: const Icon(Icons.chat_outlined),
+      label: const Text('Hablar con Expresiones'),
+    );
+    if (horizontal) {
+      return Row(
+        children: [
+          Expanded(child: privacy),
+          const SizedBox(width: 12),
+          Expanded(child: contact),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [privacy, const SizedBox(height: 10), contact],
     );
   }
 }

@@ -60,34 +60,42 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     return Column(
       children: [
         ResponsivePage(
-          maxWidth: 980,
-          padding: const EdgeInsets.fromLTRB(10, 6, 20, 4),
-          child: Row(
-            children: [
-              IconButton.outlined(
-                onPressed: () => Navigator.maybePop(context),
-                tooltip: 'Volver',
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(child: Eyebrow('Detalle del producto')),
-            ],
+          maxWidth: 1180,
+          padding: const EdgeInsets.fromLTRB(14, 12, 20, 4),
+          child: LayoutBuilder(
+            builder: (context, constraints) => Row(
+              children: [
+                IconButton.outlined(
+                  onPressed: () => Navigator.maybePop(context),
+                  tooltip: 'Volver',
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(child: Eyebrow('Detalle del producto')),
+                if (constraints.maxWidth >= 600)
+                  TextButton.icon(
+                    onPressed: () => Navigator.maybePop(context),
+                    icon: const Icon(Icons.grid_view_rounded, size: 17),
+                    label: const Text('Volver al catálogo'),
+                  ),
+              ],
+            ),
           ),
         ),
         Expanded(
           child: SingleChildScrollView(
             child: ResponsivePage(
-              maxWidth: 980,
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+              maxWidth: 1180,
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final mobile = constraints.maxWidth < 720;
+                  final mobile = constraints.maxWidth < 760;
                   final squareVisual = product.id == 'limpiapipas-premium-8mm';
                   final visual = Container(
                     clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     child: ProductVisual(
                       label: title,
@@ -102,31 +110,42 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       alignment: productImageAlignment(product),
                     ),
                   );
-                  final information = _ProductInformation(
-                    product: product,
-                    variant: variant,
-                    title: title,
-                    sku: sku,
-                    quantity: _quantity,
-                    unitPrice: unitPrice,
-                    tiers: tiers,
-                    variantId: _variantId,
-                    onVariant: (id) => setState(() {
-                      _variantId = id;
-                      _quantity = 1;
-                    }),
-                    onDecrease: _quantity == 1
-                        ? null
-                        : () => setState(() => _quantity--),
-                    onQuantityEntered: (value) {
-                      if (product.canRequest(value, variantId: _variantId)) {
-                        setState(() => _quantity = value);
-                      }
-                    },
-                    onIncrease:
-                        product.canRequest(_quantity + 1, variantId: _variantId)
-                        ? () => setState(() => _quantity++)
-                        : null,
+                  final information = Container(
+                    padding: EdgeInsets.all(mobile ? 20 : 28),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: _ProductInformation(
+                      product: product,
+                      variant: variant,
+                      title: title,
+                      sku: sku,
+                      quantity: _quantity,
+                      unitPrice: unitPrice,
+                      tiers: tiers,
+                      variantId: _variantId,
+                      onVariant: (id) => setState(() {
+                        _variantId = id;
+                        _quantity = 1;
+                      }),
+                      onDecrease: _quantity == 1
+                          ? null
+                          : () => setState(() => _quantity--),
+                      onQuantityEntered: (value) {
+                        if (product.canRequest(value, variantId: _variantId)) {
+                          setState(() => _quantity = value);
+                        }
+                      },
+                      onIncrease:
+                          product.canRequest(
+                            _quantity + 1,
+                            variantId: _variantId,
+                          )
+                          ? () => setState(() => _quantity++)
+                          : null,
+                    ),
                   );
 
                   if (mobile) {
@@ -145,12 +164,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
+                        flex: 6,
                         child: squareVisual
                             ? AspectRatio(aspectRatio: 1, child: visual)
-                            : SizedBox(height: 520, child: visual),
+                            : SizedBox(height: 560, child: visual),
                       ),
-                      const SizedBox(width: 38),
-                      Expanded(child: information),
+                      const SizedBox(width: 32),
+                      Expanded(flex: 5, child: information),
                     ],
                   );
                 },
@@ -158,19 +178,33 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
           ),
         ),
-        ResponsivePage(
-          maxWidth: 980,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-          child: FilledButton(
-            onPressed: canAdd
-                ? () => widget.onAdd(
-                    quantity: _quantity,
-                    variantId: _variantId,
-                    customization: '',
-                  )
-                : null,
-            child: Text(
-              'Agregar a mi cotización · S/ ${total.toStringAsFixed(2)}',
+        SafeArea(
+          top: false,
+          child: ResponsivePage(
+            maxWidth: 1180,
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+            child: LayoutBuilder(
+              builder: (context, constraints) => Align(
+                alignment: constraints.maxWidth >= 760
+                    ? Alignment.centerRight
+                    : Alignment.center,
+                child: SizedBox(
+                  width: constraints.maxWidth >= 760 ? 480 : double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: canAdd
+                        ? () => widget.onAdd(
+                            quantity: _quantity,
+                            variantId: _variantId,
+                            customization: '',
+                          )
+                        : null,
+                    icon: const Icon(Icons.add_shopping_cart_rounded, size: 19),
+                    label: Text(
+                      'Agregar a mi cotización · S/ ${total.toStringAsFixed(2)}',
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -215,79 +249,104 @@ class _ProductInformation extends StatelessWidget {
       children: [
         Eyebrow('${product.category.label} · ${product.name}'),
         const SizedBox(height: 7),
-        if (title.length > 18)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.headlineLarge),
-              const SizedBox(height: 3),
-              PriceText(unitPrice, prefix: product.startingAt ? 'Desde' : ''),
-            ],
-          )
-        else
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.headlineLarge,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final stacked =
+                constraints.maxWidth < 420 ||
+                MediaQuery.textScalerOf(context).scale(16) >= 21;
+            if (stacked) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.headlineLarge),
+                  const SizedBox(height: 5),
+                  PriceText(
+                    unitPrice,
+                    prefix: product.startingAt ? 'Desde' : '',
+                  ),
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.headlineLarge,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              PriceText(unitPrice, prefix: product.startingAt ? 'Desde' : ''),
-            ],
-          ),
+                const SizedBox(width: 12),
+                PriceText(unitPrice, prefix: product.startingAt ? 'Desde' : ''),
+              ],
+            );
+          },
+        ),
         const SizedBox(height: 5),
         Text(
           [if (sku != null) 'Código $sku', product.description].join(' · '),
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 20),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Eyebrow('Cantidad'),
-                  const SizedBox(height: 8),
-                  _QuantitySelector(
-                    value: quantity,
-                    onDecrease: onDecrease,
-                    onIncrease: onIncrease,
-                    onQuantityEntered: onQuantityEntered,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final quantityPanel = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Eyebrow('Cantidad'),
+                const SizedBox(height: 8),
+                _QuantitySelector(
+                  value: quantity,
+                  onDecrease: onDecrease,
+                  onIncrease: onIncrease,
+                  onQuantityEntered: onQuantityEntered,
+                ),
+              ],
+            );
+            final pricePanel = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Eyebrow('Precio'),
+                const SizedBox(height: 8),
+                Container(
+                  height: 48,
+                  width: double.infinity,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.canvas,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.border),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Eyebrow('Precio'),
-                  const SizedBox(height: 8),
-                  Container(
-                    height: 48,
-                    width: double.infinity,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Text(
-                      'Por ${product.unitLabel} · S/ ${unitPrice.toStringAsFixed(2)}',
-                      style: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(color: AppColors.ink),
-                    ),
+                  child: Text(
+                    'Por ${product.unitLabel} · S/ ${unitPrice.toStringAsFixed(2)}',
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: AppColors.ink),
                   ),
+                ),
+              ],
+            );
+            final stacked =
+                constraints.maxWidth < 390 ||
+                MediaQuery.textScalerOf(context).scale(16) >= 21;
+            if (stacked) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  quantityPanel,
+                  const SizedBox(height: 14),
+                  pricePanel,
                 ],
-              ),
-            ),
-          ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: quantityPanel),
+                const SizedBox(width: 12),
+                Expanded(child: pricePanel),
+              ],
+            );
+          },
         ),
         if (tiers.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -324,13 +383,12 @@ class _ProductInformation extends StatelessWidget {
           const SizedBox(height: 17),
           Text('Otros modelos', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final options = [
                 for (final option in product.variants.where(
                   (item) => item.isActive,
-                )) ...[
+                ))
                   ChoiceChip(
                     avatar: option.colorHex == null
                         ? null
@@ -341,10 +399,23 @@ class _ProductInformation extends StatelessWidget {
                     selected: variantId == option.id,
                     onSelected: (_) => onVariant(option.id),
                   ),
-                  const SizedBox(width: 8),
-                ],
-              ],
-            ),
+              ];
+              if (constraints.maxWidth >= 520) {
+                return Wrap(spacing: 8, runSpacing: 8, children: options);
+              }
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  children: [
+                    for (var index = 0; index < options.length; index++) ...[
+                      options[index],
+                      if (index != options.length - 1) const SizedBox(width: 8),
+                    ],
+                  ],
+                ),
+              );
+            },
           ),
         ],
         if (product.priceIsEstimate) ...[

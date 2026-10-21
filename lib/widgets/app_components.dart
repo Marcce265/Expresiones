@@ -7,24 +7,37 @@ class ResponsivePage extends StatelessWidget {
     super.key,
     required this.child,
     this.maxWidth = 1180,
-    this.padding = const EdgeInsets.fromLTRB(20, 12, 20, 32),
+    this.padding,
   });
 
   final Widget child;
   final double maxWidth;
-  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? padding;
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: SizedBox(
-          width: double.infinity,
-          child: Padding(padding: padding, child: child),
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final resolvedPadding =
+            padding ??
+            EdgeInsets.fromLTRB(
+              width < 600 ? 16 : (width < 1024 ? 24 : 36),
+              width < 600 ? 12 : 20,
+              width < 600 ? 16 : (width < 1024 ? 24 : 36),
+              width < 600 ? 28 : 40,
+            );
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: SizedBox(
+              width: double.infinity,
+              child: Padding(padding: resolvedPadding, child: child),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -193,46 +206,71 @@ class StepProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     const labels = ['Cotización', 'Datos', 'Revisión'];
     return Row(
-      children: List.generate(labels.length * 2 - 1, (index) {
-        if (index.isOdd) {
-          final completed = index ~/ 2 + 1 < current;
-          return Expanded(
-            child: Container(
-              height: 1.5,
-              color: completed ? AppColors.ink : AppColors.border,
-            ),
-          );
-        }
-        final step = index ~/ 2 + 1;
+      children: List.generate(labels.length, (index) {
+        final step = index + 1;
         final active = step <= current;
-        return Column(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: active ? AppColors.ink : AppColors.surface,
-                border: Border.all(
-                  color: active ? AppColors.ink : AppColors.border,
+        return Expanded(
+          child: Column(
+            children: [
+              SizedBox(
+                height: 28,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 1.5,
+                        color: index == 0
+                            ? Colors.transparent
+                            : step <= current
+                            ? AppColors.ink
+                            : AppColors.border,
+                      ),
+                    ),
+                    Container(
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: active ? AppColors.ink : AppColors.surface,
+                        border: Border.all(
+                          color: active ? AppColors.ink : AppColors.border,
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '$step',
+                        style: TextStyle(
+                          color: active ? Colors.white : AppColors.ink,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Container(
+                        height: 1.5,
+                        color: index == labels.length - 1
+                            ? Colors.transparent
+                            : step < current
+                            ? AppColors.ink
+                            : AppColors.border,
+                      ),
+                    ),
+                  ],
                 ),
-                shape: BoxShape.circle,
               ),
-              child: Text(
-                '$step',
-                style: TextStyle(
-                  color: active ? Colors.white : AppColors.ink,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(height: 5),
+              Text(
+                labels[index],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: active ? AppColors.ink : AppColors.muted,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w400,
                 ),
               ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              labels[step - 1],
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
+            ],
+          ),
         );
       }),
     );

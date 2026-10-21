@@ -94,8 +94,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
             slivers: [
               SliverToBoxAdapter(
                 child: ResponsivePage(
-                  maxWidth: 980,
-                  padding: const EdgeInsets.fromLTRB(14, 7, 20, 12),
+                  maxWidth: 1180,
+                  padding: const EdgeInsets.fromLTRB(14, 12, 20, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -115,9 +115,21 @@ class _CatalogScreenState extends State<CatalogScreen> {
                               style: Theme.of(context).textTheme.headlineMedium,
                             ),
                           ),
-                          Text(
-                            '${tiles.length} ${_itemLabel(family)}',
-                            style: Theme.of(context).textTheme.bodySmall,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(99),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Text(
+                              '${tiles.length} ${_itemLabel(family)}',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: AppColors.ink),
+                            ),
                           ),
                         ],
                       ),
@@ -153,20 +165,10 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       ),
                       if (filters.isNotEmpty) ...[
                         const SizedBox(height: 10),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              for (final filter in filters) ...[
-                                ChoiceChip(
-                                  label: Text(filter),
-                                  selected: _filter == filter,
-                                  onSelected: (_) => _selectFilter(filter),
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                            ],
-                          ),
+                        _CatalogFilters(
+                          filters: filters,
+                          selected: _filter,
+                          onSelected: _selectFilter,
                         ),
                       ],
                     ],
@@ -184,31 +186,48 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 )
               else ...[
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                  padding: EdgeInsets.zero,
                   sliver: SliverLayoutBuilder(
                     builder: (context, constraints) {
-                      final compact = constraints.crossAxisExtent < 600;
-                      return SliverGrid(
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: compact ? 220 : 280,
-                          mainAxisExtent: compact ? 238 : 290,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
+                      final viewportWidth = constraints.crossAxisExtent;
+                      final compact = viewportWidth < 640;
+                      final horizontalPadding = viewportWidth > 1180
+                          ? (viewportWidth - 1180) / 2 + 20
+                          : 20.0;
+                      return SliverPadding(
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          0,
+                          horizontalPadding,
+                          14,
                         ),
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final tile = tiles[index];
-                          return ProductCard(
-                            product: tile.product,
-                            variant: tile.variant,
-                            compact: compact,
-                            showCategory:
-                                family == null &&
-                                tile.product.category ==
-                                    ProductCategory.materials,
-                            showPrice: !sharedPricing,
-                            onTap: () => _openTile(tile),
-                          );
-                        }, childCount: tiles.length),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: compact ? 210 : 260,
+                                mainAxisExtent: compact ? 250 : 304,
+                                crossAxisSpacing: compact ? 12 : 16,
+                                mainAxisSpacing: compact ? 12 : 16,
+                              ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final tile = tiles[index];
+                              return ProductCard(
+                                product: tile.product,
+                                variant: tile.variant,
+                                compact: compact,
+                                showCategory:
+                                    family == null &&
+                                    tile.product.category ==
+                                        ProductCategory.materials,
+                                showPrice: !sharedPricing,
+                                onTap: () => _openTile(tile),
+                              );
+                            },
+                            childCount: tiles.length,
+                            addRepaintBoundaries: true,
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -216,7 +235,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 if (family == null)
                   SliverToBoxAdapter(
                     child: ResponsivePage(
-                      maxWidth: 980,
+                      maxWidth: 1180,
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -249,11 +268,22 @@ class _CatalogScreenState extends State<CatalogScreen> {
           ),
         ),
         ResponsivePage(
-          maxWidth: 980,
+          maxWidth: 1180,
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-          child: FilledButton(
-            onPressed: widget.onOpenQuote,
-            child: const Text('Ver mi cotización'),
+          child: LayoutBuilder(
+            builder: (context, constraints) => Align(
+              alignment: constraints.maxWidth >= 720
+                  ? Alignment.centerRight
+                  : Alignment.center,
+              child: SizedBox(
+                width: constraints.maxWidth >= 720 ? 360 : double.infinity,
+                child: FilledButton.icon(
+                  onPressed: widget.onOpenQuote,
+                  icon: const Icon(Icons.shopping_bag_outlined, size: 19),
+                  label: const Text('Ver mi cotización'),
+                ),
+              ),
+            ),
           ),
         ),
       ],
@@ -338,6 +368,49 @@ class _CatalogScreenState extends State<CatalogScreen> {
       _query = '';
       _filter = 'Todos';
     });
+  }
+}
+
+class _CatalogFilters extends StatelessWidget {
+  const _CatalogFilters({
+    required this.filters,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final List<String> filters;
+  final String selected;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final chips = [
+      for (final filter in filters)
+        ChoiceChip(
+          label: Text(filter),
+          selected: selected == filter,
+          onSelected: (_) => onSelected(filter),
+        ),
+    ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 820) {
+          return Wrap(spacing: 8, runSpacing: 8, children: chips);
+        }
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.only(bottom: 2),
+          child: Row(
+            children: [
+              for (var index = 0; index < chips.length; index++) ...[
+                chips[index],
+                if (index != chips.length - 1) const SizedBox(width: 8),
+              ],
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

@@ -37,6 +37,9 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: AppColors.canvas,
       fontFamily: 'Arial',
       visualDensity: VisualDensity.standard,
+      dividerColor: AppColors.border,
+      focusColor: AppColors.pinkSoft,
+      hoverColor: AppColors.pinkSoft.withValues(alpha: .22),
     );
 
     return base.copyWith(
@@ -152,6 +155,7 @@ abstract final class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(0, 54),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -161,12 +165,33 @@ abstract final class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(0, 52),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
           foregroundColor: AppColors.ink,
           side: const BorderSide(color: AppColors.border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: const Size(44, 44),
+          foregroundColor: AppColors.ink,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size.square(44),
+          foregroundColor: AppColors.ink,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
+          ),
         ),
       ),
       chipTheme: base.chipTheme.copyWith(
@@ -186,6 +211,41 @@ abstract final class AppTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 0,
         selectedLabelStyle: TextStyle(fontWeight: FontWeight.w700),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        height: 72,
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: AppColors.pinkSoft,
+        elevation: 0,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          return IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? AppColors.ink
+                : AppColors.muted,
+            size: 23,
+          );
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          return TextStyle(
+            color: states.contains(WidgetState.selected)
+                ? AppColors.ink
+                : AppColors.muted,
+            fontSize: 11,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w700
+                : FontWeight.w500,
+          );
+        }),
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: AppColors.ink,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        textStyle: const TextStyle(color: Colors.white, fontSize: 12),
+        waitDuration: const Duration(milliseconds: 450),
       ),
       snackBarTheme: const SnackBarThemeData(
         backgroundColor: AppColors.ink,

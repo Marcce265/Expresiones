@@ -67,7 +67,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: ResponsivePage(
-        maxWidth: 1040,
+        maxWidth: 1120,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -92,7 +92,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             const SizedBox(height: 24),
             LayoutBuilder(
               builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 780;
+                final wide = constraints.maxWidth >= 860;
                 final overview = Column(
                   children: [
                     _RequestCard(lines: widget.lines, subtotal: _subtotal),
@@ -419,21 +419,7 @@ class _SendPanel extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 10),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: onCopy,
-                icon: const Icon(Icons.copy_rounded, size: 18),
-                label: const Text('Copiar mensaje'),
-              ),
-            ),
-            QuoteExportButtons(
-              quoteId: quoteId,
-              lines: lines,
-              details: details,
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -467,12 +453,36 @@ class _SendPanel extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
-            const SizedBox(height: 14),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 18),
+              child: Divider(),
+            ),
+            Text(
+              'También puedes guardar o copiar la cotización',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton(
+              child: OutlinedButton.icon(
+                onPressed: onCopy,
+                icon: const Icon(Icons.copy_rounded, size: 18),
+                label: const Text('Copiar mensaje'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            QuoteExportButtons(
+              quoteId: quoteId,
+              lines: lines,
+              details: details,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton.icon(
                 onPressed: onEdit,
-                child: const Text('Editar cotización'),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Editar cotización'),
               ),
             ),
           ],

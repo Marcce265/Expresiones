@@ -8,10 +8,12 @@ class PrivacyScreen extends StatefulWidget {
     super.key,
     required this.onBack,
     required this.onClearLocalData,
+    this.onAdminLogin,
   });
 
   final VoidCallback onBack;
   final Future<void> Function() onClearLocalData;
+  final VoidCallback? onAdminLogin;
 
   @override
   State<PrivacyScreen> createState() => _PrivacyScreenState();
@@ -84,7 +86,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Última actualización: 15 de octubre de 2026',
+                  'Última actualización: 20 de octubre de 2026',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 24),
@@ -180,6 +182,18 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   ),
                 ),
                 const SizedBox(height: 28),
+                if (widget.onAdminLogin != null)
+                  Center(
+                    child: TextButton(
+                      onPressed: widget.onAdminLogin,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.muted,
+                        textStyle: const TextStyle(fontSize: 11),
+                      ),
+                      child: const Text('Iniciar sesión administrativa'),
+                    ),
+                  ),
+                const SizedBox(height: 12),
               ],
             ),
           ),

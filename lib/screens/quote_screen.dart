@@ -129,10 +129,18 @@ class _PageHeading extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineLarge,
           ),
         ),
-        Text(
-          '$itemCount ${itemCount == 1 ? 'producto' : 'productos'}',
-          style: Theme.of(context).textTheme.bodySmall
-              ?.copyWith(color: AppColors.muted),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: AppColors.canvas,
+            borderRadius: BorderRadius.circular(99),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Text(
+            '$itemCount ${itemCount == 1 ? 'producto' : 'productos'}',
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: AppColors.muted),
+          ),
         ),
       ],
     );
@@ -189,123 +197,185 @@ class _QuoteLineCard extends StatelessWidget {
     );
     final image = variant?.previewImageUrl ?? product.previewImageUrl;
 
+    final identity = _QuoteLineIdentity(
+      resolved: resolved,
+      onRemove: () => onRemove(line),
+    );
+    final priceAndQuantity = _PriceAndQuantity(
+      resolved: resolved,
+      quantityControl: _QuantityControl(
+        value: line.quantity,
+        canIncrease: canIncrease,
+        onQuantityEntered: (value) {
+          if (product.canRequest(value, variantId: line.variantId)) {
+            onQuantityChanged(line, value);
+          }
+        },
+        onDecrease: () {
+          if (line.quantity > 1) {
+            onQuantityChanged(line, line.quantity - 1);
+          } else {
+            onRemove(line);
+          }
+        },
+        onIncrease: canIncrease
+            ? () => onQuantityChanged(line, line.quantity + 1)
+            : null,
+      ),
+    );
+
+    Widget visual({required double width, required double height}) => ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: ProductVisual(
+          label: resolved.displayName,
+          imageAsset: image,
+          colorHex: variant?.colorHex,
+          categoryKey: product.category.key,
+          fit: productImageFit(product, variant: variant),
+          cropBottomFraction: productImageCropBottom(product, variant: variant),
+          alignment: productImageAlignment(product),
+        ),
+      ),
+    );
+
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: SizedBox(
-                width: 86,
-                height: 96,
-                child: ProductVisual(
-                  label: resolved.displayName,
-                  imageAsset: image,
-                  colorHex: variant?.colorHex,
-                  categoryKey: product.category.key,
-                  fit: productImageFit(product, variant: variant),
-                  cropBottomFraction: productImageCropBottom(
-                    product,
-                    variant: variant,
-                  ),
-                  alignment: productImageAlignment(product),
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
+        padding: const EdgeInsets.all(16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 520;
+            if (compact) {
+              return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          resolved.displayName,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        tooltip: 'Quitar ${resolved.displayName}',
-                        onPressed: () => onRemove(line),
-                        icon: const Icon(Icons.close_rounded, size: 20),
-                      ),
+                      visual(width: 82, height: 88),
+                      const SizedBox(width: 14),
+                      Expanded(child: identity),
                     ],
                   ),
-                  if (resolved.code case final code?)
-                    Text(
-                      'Código $code · ${resolved.priceTierLabel}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    )
-                  else
-                    Text(
-                      resolved.priceTierLabel,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  if (line.customization.trim().isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      line.customization.trim(),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(color: AppColors.ink),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 10,
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'S/ ${resolved.total.toStringAsFixed(2)}',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          Text(
-                            'S/ ${resolved.unitPrice.toStringAsFixed(2)} por ${product.unitLabel}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                      _QuantityControl(
-                        value: line.quantity,
-                        canIncrease: canIncrease,
-                        onQuantityEntered: (value) {
-                          if (product.canRequest(
-                            value,
-                            variantId: line.variantId,
-                          )) {
-                            onQuantityChanged(line, value);
-                          }
-                        },
-                        onDecrease: () {
-                          if (line.quantity > 1) {
-                            onQuantityChanged(line, line.quantity - 1);
-                          } else {
-                            onRemove(line);
-                          }
-                        },
-                        onIncrease: canIncrease
-                            ? () => onQuantityChanged(line, line.quantity + 1)
-                            : null,
-                      ),
-                    ],
-                  ),
+                  const SizedBox(height: 16),
+                  priceAndQuantity,
                 ],
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                visual(width: 104, height: 116),
+                const SizedBox(width: 18),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      identity,
+                      const SizedBox(height: 16),
+                      priceAndQuantity,
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _QuoteLineIdentity extends StatelessWidget {
+  const _QuoteLineIdentity({required this.resolved, required this.onRemove});
+
+  final ResolvedQuoteLine resolved;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final customization = resolved.line.customization.trim();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                resolved.displayName,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              tooltip: 'Quitar ${resolved.displayName}',
+              onPressed: onRemove,
+              icon: const Icon(Icons.delete_outline_rounded, size: 20),
             ),
           ],
         ),
-      ),
+        if (resolved.code case final code?)
+          Text(
+            'Código $code · ${resolved.priceTierLabel}',
+            style: Theme.of(context).textTheme.bodySmall,
+          )
+        else
+          Text(
+            resolved.priceTierLabel,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        if (customization.isNotEmpty) ...[
+          const SizedBox(height: 5),
+          Text(
+            customization,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppColors.ink),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _PriceAndQuantity extends StatelessWidget {
+  const _PriceAndQuantity({
+    required this.resolved,
+    required this.quantityControl,
+  });
+
+  final ResolvedQuoteLine resolved;
+  final Widget quantityControl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 16,
+      runSpacing: 12,
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'S/ ${resolved.total.toStringAsFixed(2)}',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            Text(
+              'S/ ${resolved.unitPrice.toStringAsFixed(2)} por ${resolved.product.unitLabel}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        quantityControl,
+      ],
     );
   }
 }
@@ -394,7 +464,14 @@ class _QuoteSummary extends StatelessWidget {
               width: double.infinity,
               child: FilledButton(
                 onPressed: onContinue,
-                child: const Text('Continuar con mis datos'),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Continuar con mis datos'),
+                    SizedBox(width: 8),
+                    Icon(Icons.arrow_forward_rounded, size: 19),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 8),

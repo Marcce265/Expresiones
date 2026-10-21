@@ -192,7 +192,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: ResponsivePage(
-        maxWidth: 820,
+        maxWidth: 960,
         child: Form(
           key: _formKey,
           autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -203,252 +203,241 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
               const SizedBox(height: 18),
               const StepProgress(current: 2),
               const SizedBox(height: 24),
-              Text(
-                'Solo pedimos lo necesario para preparar el mensaje y revisar la fecha contigo.',
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.muted),
-              ),
-              const SizedBox(height: 22),
-              const _FieldLabel('Nombre'),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _nameController,
-                textCapitalization: TextCapitalization.words,
-                textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.name],
-                maxLength: 80,
-                decoration: const InputDecoration(
-                  hintText: '¿Cómo te llamas?',
-                  prefixIcon: Icon(Icons.person_outline_rounded),
-                  counterText: '',
-                ),
-                validator: _validateName,
-              ),
-              const SizedBox(height: 18),
-              const _FieldLabel('Teléfono'),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.telephoneNumber],
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ()-]')),
-                  LengthLimitingTextInputFormatter(18),
-                ],
-                decoration: const InputDecoration(
-                  hintText: '+51 999 999 999',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                ),
-                validator: _validatePhone,
-              ),
-              const SizedBox(height: 22),
-              const _FieldLabel('¿Cómo lo recibirás?'),
-              const SizedBox(height: 10),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final horizontal = constraints.maxWidth >= 560;
-                  final pickup = _DeliveryOption(
-                    title: 'Recojo en Huancayo',
-                    subtitle: 'Coordinamos lugar y horario',
-                    icon: Icons.storefront_outlined,
-                    selected: _deliveryMethod == DeliveryMethod.pickup,
-                    onTap: () => setState(() {
-                      _deliveryMethod = DeliveryMethod.pickup;
-                      _agencyError = false;
-                    }),
-                  );
-                  final shipping = _DeliveryOption(
-                    title: 'Envío por Shalom',
-                    subtitle: 'La tarifa se confirma después',
-                    icon: Icons.local_shipping_outlined,
-                    selected: _deliveryMethod == DeliveryMethod.shalom,
-                    onTap: () =>
-                        setState(() => _deliveryMethod = DeliveryMethod.shalom),
-                  );
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Eyebrow('Datos de coordinación'),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Solo pedimos lo necesario para preparar el mensaje y revisar la fecha contigo.',
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(color: AppColors.muted),
+                      ),
+                      const SizedBox(height: 24),
+                      _ContactFields(
+                        nameController: _nameController,
+                        phoneController: _phoneController,
+                        validateName: _validateName,
+                        validatePhone: _validatePhone,
+                      ),
+                      const SizedBox(height: 22),
+                      const Divider(),
+                      const SizedBox(height: 22),
+                      const _FieldLabel('¿Cómo lo recibirás?'),
+                      const SizedBox(height: 10),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final horizontal = constraints.maxWidth >= 560;
+                          final pickup = _DeliveryOption(
+                            title: 'Recojo en Huancayo',
+                            subtitle: 'Coordinamos lugar y horario',
+                            icon: Icons.storefront_outlined,
+                            selected: _deliveryMethod == DeliveryMethod.pickup,
+                            onTap: () => setState(() {
+                              _deliveryMethod = DeliveryMethod.pickup;
+                              _agencyError = false;
+                            }),
+                          );
+                          final shipping = _DeliveryOption(
+                            title: 'Envío por Shalom',
+                            subtitle: 'La tarifa se confirma después',
+                            icon: Icons.local_shipping_outlined,
+                            selected: _deliveryMethod == DeliveryMethod.shalom,
+                            onTap: () => setState(
+                              () => _deliveryMethod = DeliveryMethod.shalom,
+                            ),
+                          );
 
-                  if (horizontal) {
-                    return Row(
-                      children: [
-                        Expanded(child: pickup),
-                        const SizedBox(width: 12),
-                        Expanded(child: shipping),
-                      ],
-                    );
-                  }
-                  return Column(
-                    children: [pickup, const SizedBox(height: 10), shipping],
-                  );
-                },
-              ),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                child: _deliveryMethod == DeliveryMethod.shalom
-                    ? Padding(
-                        key: const ValueKey('destination'),
-                        padding: const EdgeInsets.only(top: 18),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const _FieldLabel('Agencia de destino'),
-                            const SizedBox(height: 8),
-                            InkWell(
-                              onTap: _pickAgency,
-                              borderRadius: BorderRadius.circular(14),
-                              child: InputDecorator(
-                                decoration: InputDecoration(
-                                  prefixIcon: const Icon(
-                                    Icons.location_on_outlined,
-                                  ),
-                                  suffixIcon: const Icon(
-                                    Icons.chevron_right_rounded,
-                                  ),
-                                  errorText: _agencyError
-                                      ? 'Selecciona una agencia Shalom.'
-                                      : null,
-                                ),
-                                child: _agencyId.isEmpty
-                                    ? Text(
-                                        'Buscar agencia Shalom',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyLarge
-                                            ?.copyWith(color: AppColors.muted),
-                                      )
-                                    : Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            _agencyName,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .labelLarge,
-                                          ),
-                                          if (_agencyLocality.isNotEmpty)
-                                            Text(
-                                              _agencyLocality,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall,
-                                            ),
-                                          if (_agencyAddress.isNotEmpty)
-                                            Text(
-                                              _agencyAddress,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall,
-                                            ),
-                                        ],
-                                      ),
-                              ),
-                            ),
-                            if (_agencyId.isNotEmpty &&
-                                _agencyLatitude != null &&
-                                _agencyLongitude != null) ...[
-                              const SizedBox(height: 6),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: TextButton.icon(
-                                  onPressed: () =>
-                                      MapLauncherService.openCoordinates(
-                                    latitude: _agencyLatitude!,
-                                    longitude: _agencyLongitude!,
-                                    label: _agencyName,
-                                  ),
-                                  icon: const Icon(Icons.map_outlined, size: 16),
-                                  label: const Text('Ver agencia en Google Maps'),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: AppColors.ink,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                      vertical: 2,
-                                    ),
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                ),
-                              ),
+                          if (horizontal) {
+                            return Row(
+                              children: [
+                                Expanded(child: pickup),
+                                const SizedBox(width: 12),
+                                Expanded(child: shipping),
+                              ],
+                            );
+                          }
+                          return Column(
+                            children: [
+                              pickup,
+                              const SizedBox(height: 10),
+                              shipping,
                             ],
-                            const SizedBox(height: 6),
-                            Text(
-                              'El costo de envío se confirmará por WhatsApp.',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
+                          );
+                        },
+                      ),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        child: _deliveryMethod == DeliveryMethod.shalom
+                            ? Padding(
+                                key: const ValueKey('destination'),
+                                padding: const EdgeInsets.only(top: 18),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const _FieldLabel('Agencia de destino'),
+                                    const SizedBox(height: 8),
+                                    InkWell(
+                                      onTap: _pickAgency,
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: InputDecorator(
+                                        decoration: InputDecoration(
+                                          prefixIcon: const Icon(
+                                            Icons.location_on_outlined,
+                                          ),
+                                          suffixIcon: const Icon(
+                                            Icons.chevron_right_rounded,
+                                          ),
+                                          errorText: _agencyError
+                                              ? 'Selecciona una agencia Shalom.'
+                                              : null,
+                                        ),
+                                        child: _agencyId.isEmpty
+                                            ? Text(
+                                                'Buscar agencia Shalom',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyLarge
+                                                    ?.copyWith(
+                                                      color: AppColors.muted,
+                                                    ),
+                                              )
+                                            : Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    _agencyName,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .labelLarge,
+                                                  ),
+                                                  if (_agencyLocality
+                                                      .isNotEmpty)
+                                                    Text(
+                                                      _agencyLocality,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodySmall,
+                                                    ),
+                                                  if (_agencyAddress.isNotEmpty)
+                                                    Text(
+                                                      _agencyAddress,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodySmall,
+                                                    ),
+                                                ],
+                                              ),
+                                      ),
+                                    ),
+                                    if (_agencyId.isNotEmpty &&
+                                        _agencyLatitude != null &&
+                                        _agencyLongitude != null) ...[
+                                      const SizedBox(height: 6),
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: TextButton.icon(
+                                          onPressed: () =>
+                                              MapLauncherService.openCoordinates(
+                                                latitude: _agencyLatitude!,
+                                                longitude: _agencyLongitude!,
+                                                label: _agencyName,
+                                              ),
+                                          icon: const Icon(
+                                            Icons.map_outlined,
+                                            size: 16,
+                                          ),
+                                          label: const Text(
+                                            'Ver agencia en Google Maps',
+                                          ),
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: AppColors.ink,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 2,
+                                            ),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'El costo de envío se confirmará por WhatsApp.',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : const SizedBox.shrink(key: ValueKey('pickup')),
+                      ),
+                      const SizedBox(height: 22),
+                      const _FieldLabel('Fecha deseada'),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: _pickDate,
+                        borderRadius: BorderRadius.circular(14),
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.calendar_today_outlined),
+                            suffixIcon: Icon(Icons.expand_more_rounded),
+                          ),
+                          child: Text(
+                            _desiredDate == null
+                                ? 'Selecciona una fecha (opcional)'
+                                : _formatDate(_desiredDate!),
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  color: _desiredDate == null
+                                      ? AppColors.muted
+                                      : AppColors.ink,
+                                ),
+                          ),
                         ),
-                      )
-                    : const SizedBox.shrink(key: ValueKey('pickup')),
-              ),
-              const SizedBox(height: 22),
-              const _FieldLabel('Fecha deseada'),
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: _pickDate,
-                borderRadius: BorderRadius.circular(14),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.calendar_today_outlined),
-                    suffixIcon: Icon(Icons.expand_more_rounded),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _firstSelectableDate == null
+                            ? 'No hay fechas disponibles dentro de los próximos 365 días.'
+                            : 'Primera fecha estimada: ${_formatDate(_firstSelectableDate!)}. Los domingos no están disponibles.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      if (widget.productionPoints > 0) ...[
+                        const SizedBox(height: 16),
+                        InfoBanner(
+                          title: 'Revisaremos la capacidad de producción',
+                          message:
+                              'Tu selección requiere ${widget.productionPoints} ${widget.productionPoints == 1 ? 'punto' : 'puntos'} de producción. La fecha queda confirmada por WhatsApp.',
+                          icon: Icons.schedule_outlined,
+                          color: AppColors.canvas,
+                        ),
+                      ],
+                      const SizedBox(height: 22),
+                      const _FieldLabel('Nota para Expresiones'),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _noteController,
+                        minLines: 3,
+                        maxLines: 6,
+                        maxLength: 500,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: const InputDecoration(
+                          hintText: 'Color, referencia, dedicatoria o detalle adicional…',
+                          alignLabelWithHint: true,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      _SubmitArea(onPressed: _submit),
+                    ],
                   ),
-                  child: Text(
-                    _desiredDate == null
-                        ? 'Selecciona una fecha (opcional)'
-                        : _formatDate(_desiredDate!),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: _desiredDate == null
-                          ? AppColors.muted
-                          : AppColors.ink,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _firstSelectableDate == null
-                    ? 'No hay fechas disponibles dentro de los próximos 365 días.'
-                    : 'Primera fecha estimada: ${_formatDate(_firstSelectableDate!)}. Los domingos no están disponibles.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              if (widget.productionPoints > 0) ...[
-                const SizedBox(height: 16),
-                InfoBanner(
-                  title: 'Revisaremos la capacidad de producción',
-                  message:
-                      'Tu selección requiere ${widget.productionPoints} ${widget.productionPoints == 1 ? 'punto' : 'puntos'} de producción. La fecha queda confirmada por WhatsApp.',
-                  icon: Icons.schedule_outlined,
-                  color: AppColors.canvas,
-                ),
-              ],
-              const SizedBox(height: 22),
-              const _FieldLabel('Nota para Expresiones'),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _noteController,
-                minLines: 3,
-                maxLines: 6,
-                maxLength: 500,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText:
-                      'Color, referencia, dedicatoria o detalle adicional…',
-                  alignLabelWithHint: true,
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _submit,
-                  child: const Text('Revisar mi cotización'),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  'Todavía no se realizará ningún pago.',
-                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
             ],
@@ -474,6 +463,132 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     if (digits.isEmpty) return 'Escribe tu número de teléfono.';
     if (digits.length != 9) return 'Ingresa un número peruano de 9 dígitos.';
     return null;
+  }
+}
+
+class _ContactFields extends StatelessWidget {
+  const _ContactFields({
+    required this.nameController,
+    required this.phoneController,
+    required this.validateName,
+    required this.validatePhone,
+  });
+
+  final TextEditingController nameController;
+  final TextEditingController phoneController;
+  final FormFieldValidator<String> validateName;
+  final FormFieldValidator<String> validatePhone;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = _LabeledField(
+      label: 'Nombre',
+      child: TextFormField(
+        controller: nameController,
+        textCapitalization: TextCapitalization.words,
+        textInputAction: TextInputAction.next,
+        autofillHints: const [AutofillHints.name],
+        maxLength: 80,
+        decoration: const InputDecoration(
+          hintText: '¿Cómo te llamas?',
+          prefixIcon: Icon(Icons.person_outline_rounded),
+          counterText: '',
+        ),
+        validator: validateName,
+      ),
+    );
+    final phone = _LabeledField(
+      label: 'Teléfono',
+      child: TextFormField(
+        controller: phoneController,
+        keyboardType: TextInputType.phone,
+        textInputAction: TextInputAction.next,
+        autofillHints: const [AutofillHints.telephoneNumber],
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ()-]')),
+          LengthLimitingTextInputFormatter(18),
+        ],
+        decoration: const InputDecoration(
+          hintText: '+51 999 999 999',
+          prefixIcon: Icon(Icons.phone_outlined),
+        ),
+        validator: validatePhone,
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 650) {
+          return Column(children: [name, const SizedBox(height: 18), phone]);
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: name),
+            const SizedBox(width: 18),
+            Expanded(child: phone),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _LabeledField extends StatelessWidget {
+  const _LabeledField({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [_FieldLabel(label), const SizedBox(height: 8), child],
+    );
+  }
+}
+
+class _SubmitArea extends StatelessWidget {
+  const _SubmitArea({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final hint = Text(
+      'Todavía no se realizará ningún pago.',
+      textAlign: TextAlign.center,
+      style: Theme.of(context).textTheme.bodySmall,
+    );
+    final button = FilledButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.arrow_forward_rounded, size: 19),
+      label: const Text('Revisar mi cotización'),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 620) {
+          return Column(
+            children: [
+              SizedBox(width: double.infinity, child: button),
+              const SizedBox(height: 10),
+              hint,
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(
+              child: Align(alignment: Alignment.centerLeft, child: hint),
+            ),
+            const SizedBox(width: 20),
+            SizedBox(width: 280, child: button),
+          ],
+        );
+      },
+    );
   }
 }
 

@@ -24,7 +24,7 @@ List<CatalogTile> expandCatalogTiles(Iterable<CatalogProduct> products) {
   ];
 }
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   const ProductCard({
     super.key,
     required this.product,
@@ -45,130 +45,203 @@ class ProductCard extends StatelessWidget {
   final bool showPrice;
 
   @override
+  State<ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    final variantId = variant?.id;
-    final status = product.stockStatusFor(variantId);
-    final unavailable = !product.isActive || status == StockStatus.outOfStock;
-    final title = variant?.name ?? product.name;
-    final sku = variant?.sku ?? product.sku;
+    final variantId = widget.variant?.id;
+    final status = widget.product.stockStatusFor(variantId);
+    final unavailable =
+        !widget.product.isActive || status == StockStatus.outOfStock;
+    final title = widget.variant?.name ?? widget.product.name;
+    final sku = widget.variant?.sku ?? widget.product.sku;
     final image =
-        imageAsset ??
-        variant?.previewImageUrl ??
-        productFamilyHeroAsset(product) ??
-        product.previewImageUrl;
-    final price = product.unitPriceFor(1, variantId: variantId);
-    final pricePrefix = product.startingAt ? 'Desde ' : '';
-    final imageFit = productImageFit(product, variant: variant);
+        widget.imageAsset ??
+        widget.variant?.previewImageUrl ??
+        productFamilyHeroAsset(widget.product) ??
+        widget.product.previewImageUrl;
+    final price = widget.product.unitPriceFor(1, variantId: variantId);
+    final pricePrefix = widget.product.startingAt ? 'Desde ' : '';
+    final imageFit = productImageFit(widget.product, variant: widget.variant);
 
     return Semantics(
       button: true,
       enabled: !unavailable,
       label: [
         title,
-        if (showPrice) _priceLabel(price),
+        if (widget.showPrice) _priceLabel(price),
         if (unavailable) 'Agotado',
       ].join(', '),
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        elevation: 1.2,
-        shadowColor: Colors.black.withValues(alpha: .12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: Color(0xFFF0EDE8)),
-        ),
-        child: InkWell(
-          onTap: unavailable ? null : onTap,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ColoredBox(
-                      color: Colors.white,
-                      child: ProductVisual(
-                        label: title,
-                        imageAsset: image,
-                        colorHex: variant?.colorHex,
-                        categoryKey: _visualCategory(product.category),
-                        fit: imageFit,
-                        cropBottomFraction: productImageCropBottom(
-                          product,
-                          variant: variant,
-                        ),
-                        alignment: productImageAlignment(product),
-                      ),
-                    ),
-                    if (unavailable)
-                      Positioned.fill(
-                        child: ColoredBox(
-                          color: Colors.white.withValues(alpha: .78),
-                          child: const Center(child: _UnavailableBadge()),
-                        ),
-                      ),
-                  ],
-                ),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: AnimatedScale(
+          scale: _hovered && !unavailable ? 1.012 : 1,
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: _hovered ? AppColors.border : const Color(0xFFF0EDE8),
               ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  compact ? 12 : 15,
-                  compact ? 10 : 12,
-                  compact ? 12 : 15,
-                  compact ? 12 : 15,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    alpha: _hovered && !unavailable ? .11 : .055,
+                  ),
+                  blurRadius: _hovered ? 22 : 12,
+                  offset: Offset(0, _hovered ? 9 : 5),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: unavailable ? null : widget.onTap,
+                overlayColor: WidgetStatePropertyAll(
+                  AppColors.ink.withValues(alpha: .045),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (showCategory) ...[
-                      Text(
-                        (variant == null
-                                ? product.attributes['catalogGroup'] ??
-                                      product.category.label
-                                : product.name)
-                            .toUpperCase(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              color: AppColors.muted,
-                              fontSize: 9,
-                              letterSpacing: .75,
+                    Expanded(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          ColoredBox(
+                            color: Colors.white,
+                            child: ProductVisual(
+                              label: title,
+                              imageAsset: image,
+                              colorHex: widget.variant?.colorHex,
+                              categoryKey: _visualCategory(
+                                widget.product.category,
+                              ),
+                              fit: imageFit,
+                              cropBottomFraction: productImageCropBottom(
+                                widget.product,
+                                variant: widget.variant,
+                              ),
+                              alignment: productImageAlignment(widget.product),
                             ),
+                          ),
+                          if (unavailable)
+                            Positioned.fill(
+                              child: ColoredBox(
+                                color: Colors.white.withValues(alpha: .78),
+                                child: const Center(child: _UnavailableBadge()),
+                              ),
+                            ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                    ],
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelLarge
-                          ?.copyWith(fontSize: compact ? 13 : 14),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      sku == null
-                          ? 'Por ${product.unitLabel}'
-                          : 'Código $sku · por ${product.unitLabel}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(fontSize: compact ? 10 : 11),
-                    ),
-                    if (showPrice) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        '$pricePrefix${_priceLabel(price)}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontSize: compact ? 16 : 17),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        widget.compact ? 12 : 15,
+                        widget.compact ? 10 : 12,
+                        widget.compact ? 12 : 15,
+                        widget.compact ? 12 : 15,
                       ),
-                    ],
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (widget.showCategory) ...[
+                            Text(
+                              (widget.variant == null
+                                      ? widget
+                                                .product
+                                                .attributes['catalogGroup'] ??
+                                            widget.product.category.label
+                                      : widget.product.name)
+                                  .toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(
+                                    color: AppColors.muted,
+                                    fontSize: 9,
+                                    letterSpacing: .75,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                          Text(
+                            title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  fontSize: widget.compact ? 13 : 14,
+                                  height: 1.22,
+                                ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            sku == null
+                                ? 'Por ${widget.product.unitLabel}'
+                                : 'Código $sku · por ${widget.product.unitLabel}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(fontSize: widget.compact ? 10 : 11),
+                          ),
+                          if (widget.showPrice) ...[
+                            const SizedBox(height: 5),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '$pricePrefix${_priceLabel(price)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontSize: widget.compact ? 16 : 17,
+                                        ),
+                                  ),
+                                ),
+                                if (!widget.compact) ...[
+                                  const SizedBox(width: 8),
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 160),
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: _hovered
+                                          ? AppColors.ink
+                                          : AppColors.canvas,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 15,
+                                      color: _hovered
+                                          ? Colors.white
+                                          : AppColors.ink,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -104,6 +104,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         builder: (privacyContext) => PrivacyScreen(
           onBack: () => Navigator.of(privacyContext).pop(),
           onClearLocalData: store.clearLocalData,
+          onAdminLogin: () => unawaited(_openAdminPortal()),
         ),
       ),
     );
@@ -192,10 +193,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               details: details,
               quoteId: quoteId,
               message: message,
-              onSendWhatsapp: () => _openWhatsapp(
-                message,
-                recordQuoteSent: true,
-              ),
+              onSendWhatsapp: () =>
+                  _openWhatsapp(message, recordQuoteSent: true),
               onCopyMessage: () {
                 Clipboard.setData(ClipboardData(text: message));
               },
@@ -227,6 +226,17 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (recordQuoteSent && mounted) {
       await context.read<AppStore>().recordQuoteSent();
     }
+  }
+
+  Future<void> _openAdminPortal() async {
+    final uri = Uri.parse('https://expresiones.pages.dev/admin/');
+    final opened = await launchUrl(
+      uri,
+      mode: kIsWeb
+          ? LaunchMode.platformDefault
+          : LaunchMode.externalApplication,
+    );
+    if (!opened) throw StateError('No se pudo abrir el acceso administrativo.');
   }
 
   @override
@@ -270,46 +280,253 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       ),
     };
 
-    return Scaffold(
-      body: SafeArea(child: page),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: (value) {
-          setState(() {
-            if (value == 1) _catalogCategory = null;
-            _index = value;
-          });
-        },
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_rounded),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final desktop = constraints.maxWidth >= 1024;
+        return Scaffold(
+          body: SafeArea(
+            child: Row(
+              children: [
+                if (desktop)
+                  _DesktopNavigation(
+                    currentIndex: _index,
+                    quoteQuantity: store.cartQuantity,
+                    onSelect: _selectDestination,
+                  ),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, animation) =>
+                        FadeTransition(opacity: animation, child: child),
+                    child: KeyedSubtree(key: ValueKey(_index), child: page),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          bottomNavigationBar: desktop
+              ? null
+              : NavigationBar(
+                  selectedIndex: _index,
+                  onDestinationSelected: _selectDestination,
+                  destinations: [
+                    const NavigationDestination(
+                      icon: Icon(Icons.home_outlined),
+                      selectedIcon: Icon(Icons.home_rounded),
+                      label: 'Inicio',
+                    ),
+                    const NavigationDestination(
+                      icon: Icon(Icons.grid_view_outlined),
+                      selectedIcon: Icon(Icons.grid_view_rounded),
+                      label: 'Catálogo',
+                    ),
+                    NavigationDestination(
+                      icon: Badge.count(
+                        count: store.cartQuantity,
+                        isLabelVisible: store.cartQuantity > 0,
+                        child: const Icon(Icons.shopping_bag_outlined),
+                      ),
+                      selectedIcon: Badge.count(
+                        count: store.cartQuantity,
+                        isLabelVisible: store.cartQuantity > 0,
+                        child: const Icon(Icons.shopping_bag_rounded),
+                      ),
+                      label: 'Cotización',
+                    ),
+                    const NavigationDestination(
+                      icon: Icon(Icons.help_outline_rounded),
+                      selectedIcon: Icon(Icons.help_rounded),
+                      label: 'Ayuda',
+                    ),
+                  ],
+                ),
+        );
+      },
+    );
+  }
+
+  void _selectDestination(int value) {
+    setState(() {
+      if (value == 1) _catalogCategory = null;
+      _index = value;
+    });
+  }
+}
+
+class _DesktopNavigation extends StatelessWidget {
+  const _DesktopNavigation({
+    required this.currentIndex,
+    required this.quoteQuantity,
+    required this.onSelect,
+  });
+
+  final int currentIndex;
+  final int quoteQuantity;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final destinations =
+        <({IconData icon, IconData selectedIcon, String label})>[
+          (
+            icon: Icons.home_outlined,
+            selectedIcon: Icons.home_rounded,
             label: 'Inicio',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view_outlined),
-            activeIcon: Icon(Icons.grid_view_rounded),
+          (
+            icon: Icons.grid_view_outlined,
+            selectedIcon: Icons.grid_view_rounded,
             label: 'Catálogo',
           ),
-          BottomNavigationBarItem(
-            icon: Badge.count(
-              count: store.cartQuantity,
-              isLabelVisible: store.cartQuantity > 0,
-              child: const Icon(Icons.shopping_bag_outlined),
-            ),
-            activeIcon: Badge.count(
-              count: store.cartQuantity,
-              isLabelVisible: store.cartQuantity > 0,
-              child: const Icon(Icons.shopping_bag_rounded),
-            ),
+          (
+            icon: Icons.shopping_bag_outlined,
+            selectedIcon: Icons.shopping_bag_rounded,
             label: 'Cotización',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.help_outline_rounded),
-            activeIcon: Icon(Icons.help_rounded),
+          (
+            icon: Icons.help_outline_rounded,
+            selectedIcon: Icons.help_rounded,
             label: 'Ayuda',
           ),
-        ],
+        ];
+
+    return Container(
+      width: 248,
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(right: BorderSide(color: AppColors.border)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 28, 18, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Expresiones',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Materiales para crear y expresar más',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 30),
+            for (var index = 0; index < destinations.length; index++) ...[
+              _DesktopNavigationItem(
+                icon: currentIndex == index
+                    ? destinations[index].selectedIcon
+                    : destinations[index].icon,
+                label: destinations[index].label,
+                selected: currentIndex == index,
+                badgeCount: index == 2 ? quoteQuantity : 0,
+                onTap: () => onSelect(index),
+              ),
+              const SizedBox(height: 6),
+            ],
+            const Spacer(),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.pinkSoft,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.lock_open_rounded, size: 20),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Cotiza libremente',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'No necesitas una cuenta. El pedido se confirma por WhatsApp.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DesktopNavigationItem extends StatelessWidget {
+  const _DesktopNavigationItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final int badgeCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: selected ? AppColors.ink : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          hoverColor: selected
+              ? Colors.white.withValues(alpha: .08)
+              : AppColors.pinkSoft,
+          focusColor: selected
+              ? Colors.white.withValues(alpha: .12)
+              : AppColors.pinkSoft,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            child: Row(
+              children: [
+                Badge.count(
+                  count: badgeCount,
+                  isLabelVisible: badgeCount > 0,
+                  backgroundColor: AppColors.pinkStrong,
+                  child: Icon(
+                    icon,
+                    size: 21,
+                    color: selected ? Colors.white : AppColors.ink,
+                  ),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: selected ? Colors.white : AppColors.ink,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
