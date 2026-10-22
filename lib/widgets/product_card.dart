@@ -64,8 +64,7 @@ class _ProductCardState extends State<ProductCard> {
     final image =
         widget.imageAsset ??
         widget.variant?.previewImageUrl ??
-        productFamilyHeroAsset(widget.product) ??
-        widget.product.previewImageUrl;
+        productFamilyCoverImage(widget.product);
     final price = widget.product.unitPriceFor(1, variantId: variantId);
     final pricePrefix = widget.product.startingAt ? 'Desde ' : '';
     final imageFit = productImageFit(widget.product, variant: widget.variant);

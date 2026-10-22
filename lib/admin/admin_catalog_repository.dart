@@ -76,17 +76,60 @@ class AdminCatalogRepository {
     required String contentType,
     String folder = 'uploads',
   }) async {
+    validateCatalogImageUpload(bytes: bytes, contentType: contentType);
+    final path = buildCatalogImagePath(
+      folder: folder,
+      fileName: fileName,
+      contentType: contentType,
+      timestampMicros: DateTime.now().microsecondsSinceEpoch,
+    );
+    await _client.storage
+        .from('catalog')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(contentType: contentType, upsert: false),
+        );
+    return path;
+  }
+
+  static const maximumCatalogImageBytes = 8 * 1024 * 1024;
+  static const allowedCatalogImageTypes = {
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+  };
+
+  static void validateCatalogImageUpload({
+    required Uint8List bytes,
+    required String contentType,
+  }) {
     if (bytes.isEmpty) throw const FormatException('La imagen está vacía.');
-    const maximumBytes = 8 * 1024 * 1024;
-    if (bytes.length > maximumBytes) {
+    if (bytes.length > maximumCatalogImageBytes) {
       throw const FormatException('La imagen no puede superar 8 MB.');
     }
-    const allowedTypes = {'image/jpeg', 'image/png', 'image/webp'};
-    if (!allowedTypes.contains(contentType)) {
+    if (!allowedCatalogImageTypes.contains(contentType)) {
       throw const FormatException('Usa una imagen JPG, PNG o WebP.');
     }
+  }
 
-    final safeFolder = normalizedDocumentId(folder);
+  /// Builds a deterministic, bucket-relative destination for an upload.
+  /// Keeping folder separators makes assets easy to inspect and prevents a
+  /// public Storage URL from ever being used as the database value.
+  static String buildCatalogImagePath({
+    required String folder,
+    required String fileName,
+    required String contentType,
+    required int timestampMicros,
+  }) {
+    if (!allowedCatalogImageTypes.contains(contentType)) {
+      throw const FormatException('Usa una imagen JPG, PNG o WebP.');
+    }
+    final safeFolder = folder
+        .split(RegExp(r'[\\/]+'))
+        .map(normalizedDocumentId)
+        .where((segment) => segment.isNotEmpty)
+        .join('/');
     final safeBase = normalizedDocumentId(
       fileName.replaceFirst(RegExp(r'\.[^.]+$'), ''),
     );
@@ -95,14 +138,9 @@ class AdminCatalogRepository {
       'image/webp' => 'webp',
       _ => 'jpg',
     };
-    final path = '$safeFolder/${DateTime.now().microsecondsSinceEpoch}-'
-        '${safeBase.isEmpty ? 'imagen' : safeBase}.$extension';
-    await _client.storage.from('catalog').uploadBinary(
-      path,
-      bytes,
-      fileOptions: FileOptions(contentType: contentType, upsert: false),
-    );
-    return path;
+    final directory = safeFolder.isEmpty ? 'uploads' : safeFolder;
+    final base = safeBase.isEmpty ? 'imagen' : safeBase;
+    return '$directory/$timestampMicros-$base.$extension';
   }
 
   static String normalizedDocumentId(String value) {

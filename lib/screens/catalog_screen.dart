@@ -508,7 +508,7 @@ class _FamilyCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final heroAsset = productFamilyHeroAsset(product);
+    final familyCover = productFamilyCoverImage(product);
     final images = <String>[];
     for (final variant in product.variants.where((item) => item.isActive)) {
       final image = variant.previewImageUrl;
@@ -522,8 +522,8 @@ class _FamilyCover extends StatelessWidget {
       if (image != null && image.isNotEmpty) images.add(image);
     }
 
-    final visual = heroAsset != null
-        ? _coverImage(heroAsset)
+    final visual = familyCover != null
+        ? _coverImage(familyCover)
         : _FamilyMosaic(product: product, images: images);
 
     return Semantics(

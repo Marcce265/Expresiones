@@ -58,6 +58,42 @@ void main() {
     expect(tester.getSize(visualFinder), tester.getSize(imageStack));
   });
 
+  testWidgets(
+    'la tarjeta familiar muestra la portada administrada más reciente',
+    (tester) async {
+      const managedCover = 'https://cdn.example/catalog/new-cover.webp';
+      const updatedProduct = CatalogProduct(
+        id: 'limpiapipas-premium-8mm',
+        name: 'Limpiapipas premium 8 mm',
+        category: ProductCategory.materials,
+        basePrice: 5,
+        imageUrl: managedCover,
+        thumbnailUrl: managedCover,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 180,
+              height: 238,
+              child: ProductCard(
+                product: updatedProduct,
+                compact: true,
+                showPrice: false,
+                onTap: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final visual = tester.widget<ProductVisual>(find.byType(ProductVisual));
+      expect(visual.imageAsset, managedCover);
+      expect(visual.imageAsset, isNot(productFamilyHeroAsset(updatedProduct)));
+    },
+  );
+
   for (final viewport in const [Size(390, 844), Size(900, 900)]) {
     testWidgets(
       'el detalle de limpiapipas es cuadrado en ${viewport.width.toInt()} px',

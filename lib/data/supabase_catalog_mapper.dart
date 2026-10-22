@@ -75,15 +75,22 @@ class SupabaseCatalogMapper {
           'isActive': family['active'],
           'isFeatured': family['featured'],
           'sortOrder': family['sort_order'],
+          // `cover_path` is the canonical image edited by the administrator.
+          // Optimized derivatives may still contain the previous image until a
+          // background processor regenerates them, so they are fallbacks only.
           'imageUrl': resolveImage(
-            family['cover_detail_path'] ??
-                family['cover_path'] ??
-                family['cover_thumb_path'],
+            _firstImagePath(family, const [
+              'cover_path',
+              'cover_detail_path',
+              'cover_thumb_path',
+            ]),
           ),
           'thumbnailUrl': resolveImage(
-            family['cover_thumb_path'] ??
-                family['cover_path'] ??
-                family['cover_detail_path'],
+            _firstImagePath(family, const [
+              'cover_path',
+              'cover_thumb_path',
+              'cover_detail_path',
+            ]),
           ),
           'tags': family['tags'],
           'attributes': family['attributes'],
@@ -111,15 +118,21 @@ class SupabaseCatalogMapper {
       'name': variant['name'],
       'sku': variant['sku'],
       'colorHex': variant['color_hex'],
+      // `image_path` is the value written by the CRUD. Prefer it over stale
+      // derivative paths for the same reason as the family cover above.
       'imageUrl': resolveImage(
-        variant['detail_path'] ??
-            variant['image_path'] ??
-            variant['thumb_path'],
+        _firstImagePath(variant, const [
+          'image_path',
+          'detail_path',
+          'thumb_path',
+        ]),
       ),
       'thumbnailUrl': resolveImage(
-        variant['thumb_path'] ??
-            variant['image_path'] ??
-            variant['detail_path'],
+        _firstImagePath(variant, const [
+          'image_path',
+          'thumb_path',
+          'detail_path',
+        ]),
       ),
       'priceOverride': variant['base_price'],
       'priceTiers': [for (final tier in tiers) _tierMap(tier)],
@@ -153,5 +166,13 @@ class SupabaseCatalogMapper {
   static int _int(Object? value) {
     if (value is num) return value.toInt();
     return int.tryParse('$value') ?? 0;
+  }
+
+  static Object? _firstImagePath(Map<String, dynamic> row, List<String> keys) {
+    for (final key in keys) {
+      final value = row[key];
+      if (value != null && value.toString().trim().isNotEmpty) return value;
+    }
+    return null;
   }
 }

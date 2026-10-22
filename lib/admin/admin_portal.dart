@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
 import '../widgets/product_card.dart';
+import 'admin_image_draft.dart';
 import '../widgets/product_visual.dart';
 import 'admin_analytics_screen.dart';
 import 'admin_catalog_repository.dart';
@@ -347,6 +348,7 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final _search = TextEditingController();
   final Set<String> _hiddenProductIds = {};
+  late Stream<List<CatalogProduct>> _productsStream;
   String _query = '';
   String _catalogGroup = 'Todos';
 
@@ -360,6 +362,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     'Herramientas',
     'Frases',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _productsStream = widget.repository.watchProducts();
+  }
 
   @override
   void dispose() {
@@ -380,7 +388,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     if (result == _ProductEditorResult.deleted && product != null) {
       _hiddenProductIds.add(product.id);
     }
-    setState(() {});
+    setState(() {
+      // A new async stream performs an immediate database read. This keeps the
+      // editor deterministic even when Realtime is delayed or disabled.
+      _productsStream = widget.repository.watchProducts();
+    });
     final message = switch (result) {
       _ProductEditorResult.created => 'Producto creado.',
       _ProductEditorResult.updated => 'Producto actualizado.',
@@ -430,7 +442,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         label: const Text('Nuevo producto'),
       ),
       body: StreamBuilder<List<CatalogProduct>>(
-        stream: widget.repository.watchProducts(),
+        stream: _productsStream,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return _AdminError(
@@ -963,7 +975,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
   late final TextEditingController _name;
   late final TextEditingController _sku;
   late final TextEditingController _description;
-  late final TextEditingController _imageUrl;
+  late final AdminImageDraft _image;
   late final TextEditingController _unitLabel;
   late final TextEditingController _basePrice;
   late final TextEditingController _stock;
@@ -987,7 +999,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     _name = TextEditingController(text: product?.name ?? '');
     _sku = TextEditingController(text: product?.sku ?? '');
     _description = TextEditingController(text: product?.description ?? '');
-    _imageUrl = TextEditingController(text: product?.imageUrl ?? '');
+    _image = AdminImageDraft.fromProduct(product);
     _unitLabel = TextEditingController(text: product?.unitLabel ?? 'unidad');
     _basePrice = TextEditingController(
       text: product == null ? '' : product.basePrice.toStringAsFixed(2),
@@ -1015,7 +1027,6 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       _name,
       _sku,
       _description,
-      _imageUrl,
       _unitLabel,
       _basePrice,
       _stock,
@@ -1061,10 +1072,10 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
         'isActive': _isActive,
         'isFeatured': _isFeatured,
         'sortOrder': int.parse(_sortOrder.text.trim()),
-        'imageUrl': _imageUrl.text.trim(),
         'tags': widget.product?.tags ?? const <String>[],
         'attributes': widget.product?.attributes ?? const <String, String>{},
       };
+      _image.writeReplacementTo(data);
       if (stock != null) {
         data['stock'] = stock;
       } else if (widget.product != null) {
@@ -1201,9 +1212,9 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       if (!mounted) return;
       setState(() {
         if (variant == null) {
-          _imageUrl.text = path;
+          _image.replaceWith(path);
         } else {
-          variant.imageUrl.text = path;
+          variant.image.replaceWith(path);
         }
       });
     } catch (error) {
@@ -1287,7 +1298,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                       label: _name.text.trim().isEmpty
                           ? 'Imagen del producto'
                           : _name.text.trim(),
-                      imageUrl: _previewUrl(_imageUrl.text),
+                      imageUrl: _previewUrl(_image.previewValue),
                       uploading: _uploadingImage,
                       onPick: _pickImage,
                     ),
@@ -1468,7 +1479,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                       for (final variant in _variants)
                         _VariantEditorTile(
                           draft: variant,
-                          imageUrl: _previewUrl(variant.imageUrl.text),
+                          imageUrl: _previewUrl(variant.image.previewValue),
                           uploading: _uploadingImage,
                           onPickImage: () => _pickImage(variant: variant),
                           onDelete: () => _removeVariant(variant),
@@ -1583,7 +1594,7 @@ class _VariantDraft {
     : name = TextEditingController(text: variant.name),
       sku = TextEditingController(text: variant.sku ?? ''),
       colorHex = TextEditingController(text: variant.colorHex ?? ''),
-      imageUrl = TextEditingController(text: variant.imageUrl ?? ''),
+      image = AdminImageDraft.fromVariant(variant),
       price = TextEditingController(
         text: variant.priceOverride?.toStringAsFixed(2) ?? '',
       ),
@@ -1603,7 +1614,7 @@ class _VariantDraft {
   final TextEditingController name;
   final TextEditingController sku;
   final TextEditingController colorHex;
-  final TextEditingController imageUrl;
+  final AdminImageDraft image;
   final TextEditingController price;
   final TextEditingController stock;
   StockStatus status;
@@ -1619,7 +1630,7 @@ class _VariantDraft {
     } else {
       data['colorHex'] = normalizedColor;
     }
-    data['imageUrl'] = imageUrl.text.trim();
+    image.writeReplacementTo(data);
     data.remove('thumbnailUrl');
     final parsedPrice = _optionalDecimal(price.text);
     final parsedStock = _optionalInt(stock.text);
@@ -1642,7 +1653,6 @@ class _VariantDraft {
     name.dispose();
     sku.dispose();
     colorHex.dispose();
-    imageUrl.dispose();
     price.dispose();
     stock.dispose();
   }

@@ -135,6 +135,35 @@ void main() {
     );
   });
 
+  test(
+    'la portada administrada tiene prioridad sobre el recurso editorial',
+    () {
+      const withoutManagedCover = CatalogProduct(
+        id: 'limpiapipas-premium-8mm',
+        name: 'Limpiapipas premium 8 mm',
+        category: ProductCategory.materials,
+        basePrice: 5,
+      );
+      const updated = CatalogProduct(
+        id: 'limpiapipas-premium-8mm',
+        name: 'Limpiapipas premium 8 mm',
+        category: ProductCategory.materials,
+        basePrice: 5,
+        imageUrl: 'https://cdn.example/new-main.webp',
+        thumbnailUrl: 'https://cdn.example/new-main.webp',
+      );
+
+      expect(
+        productFamilyCoverImage(updated),
+        'https://cdn.example/new-main.webp',
+      );
+      expect(
+        productFamilyCoverImage(withoutManagedCover),
+        productFamilyHeroAsset(withoutManagedCover),
+      );
+    },
+  );
+
   test('todas las familias del catálogo tienen imágenes para su portada', () {
     final families = seedCatalogProducts.where(
       (product) =>

@@ -25,4 +25,4 @@ enable_signup = false
 
 [storage]
 enabled = true
-file_size_limit = "5MiB"
+file_size_limit = "8MiB"

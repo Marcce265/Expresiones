@@ -9,6 +9,13 @@ String? productFamilyHeroAsset(CatalogProduct product) => switch (product.id) {
   _ => null,
 };
 
+/// Image shown for a family card or overview.
+///
+/// The administrator's current cover is authoritative. Editorial assets are
+/// only offline fallbacks for seed products that do not publish a cover.
+String? productFamilyCoverImage(CatalogProduct product) =>
+    product.previewImageUrl ?? productFamilyHeroAsset(product);
+
 BoxFit productImageFit(CatalogProduct product, {ProductVariant? variant}) {
   if (product.id == 'limpiapipas-premium-8mm' && variant != null) {
     return BoxFit.cover;
