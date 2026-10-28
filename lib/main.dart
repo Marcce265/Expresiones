@@ -8,23 +8,29 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'data/catalog_repository.dart';
 import 'data/production_capacity_repository.dart';
+import 'data/product_popularity_repository.dart';
+import 'data/site_settings_repository.dart';
 import 'models/catalog_models.dart';
+import 'models/checkout_order.dart';
 import 'models/coordination_details.dart';
+import 'models/quote_line.dart';
+import 'models/storefront_settings.dart';
 import 'screens/catalog_screen.dart';
 import 'screens/coordination_screen.dart';
 import 'screens/help_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/order_success_screen.dart';
+import 'screens/payment_screen.dart';
 import 'screens/product_detail_screen.dart';
 import 'screens/privacy_screen.dart';
 import 'screens/quote_screen.dart';
 import 'screens/review_screen.dart';
 import 'services/quote_message.dart';
+import 'services/simulated_payment_service.dart';
 import 'services/supabase_bootstrap.dart';
 import 'state/app_store.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_notice.dart';
-
-const _whatsappNumber = '51956744914';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +41,12 @@ Future<void> main() async {
     repository.loadProducts,
     catalogStreamLoader: repository.watchProducts,
     capacityRepository: SupabaseCapacityRepository(client: supabase.client),
+    siteSettingsRepository: SupabaseSiteSettingsRepository(
+      client: supabase.client,
+    ),
+    popularityRepository: SupabaseProductPopularityRepository(
+      client: supabase.client,
+    ),
     // Analytics stays disabled until the planned Phase 9.
     telemetry: null,
   );
@@ -50,8 +62,9 @@ class ExpresionesApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<AppStore>().storefrontSettings;
     return MaterialApp(
-      title: 'Expresiones',
+      title: settings.text(StorefrontText.brandName),
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       home: const AppShell(),
@@ -98,11 +111,21 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   void _showQuote() => setState(() => _index = 2);
 
+  void _openLastOrder(CheckoutOrder order) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            Scaffold(body: SafeArea(child: _orderSuccessScreen(order))),
+      ),
+    );
+  }
+
   void _openPrivacy() {
     final store = context.read<AppStore>();
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (privacyContext) => PrivacyScreen(
+          settings: store.storefrontSettings,
           onBack: () => Navigator.of(privacyContext).pop(),
           onClearLocalData: store.clearLocalData,
           onAdminLogin: () => unawaited(_openAdminPortal()),
@@ -130,7 +153,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 Navigator.of(routeContext).pop();
                 showAppNotice(
                   context,
-                  '$quantity × ${product.name} agregado a tu cotización.',
+                  '$quantity × ${product.name} agregado a tu carrito.',
                   actionLabel: 'Ver',
                   onAction: _showQuote,
                 );
@@ -151,9 +174,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         builder: (coordinationContext) => Scaffold(
           body: SafeArea(
             child: CoordinationScreen(
+              settings: store.storefrontSettings,
               initial: store.details,
               earliestDate: store.earliestDesiredDate,
-              productionPoints: store.productionPoints,
+              deliveryWeekdays: store.deliveryWeekdaysFor,
               isDateAvailable: store.isDesiredDateAvailable,
               onSubmit: (details) {
                 store.updateDetails(details);
@@ -177,6 +201,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       id: quoteId,
       lines: lines,
       details: details,
+      brandName: store.storefrontSettings.text(StorefrontText.brandName),
     );
 
     Navigator.of(coordinationContext).push(
@@ -184,6 +209,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         builder: (reviewContext) => Scaffold(
           body: SafeArea(
             child: ReviewScreen(
+              settings: store.storefrontSettings,
               lines: lines,
               details: details,
               quoteId: quoteId,
@@ -197,6 +223,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 setState(() => _index = 2);
                 Navigator.of(reviewContext).popUntil((route) => route.isFirst);
               },
+              onContinueToPayment: () =>
+                  _openPayment(reviewContext, lines, details),
             ),
           ),
         ),
@@ -204,12 +232,86 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     );
   }
 
+  void _openPayment(
+    BuildContext reviewContext,
+    List<ResolvedQuoteLine> lines,
+    CoordinationDetails details,
+  ) {
+    final store = context.read<AppStore>();
+    final service = SimulatedPaymentService();
+    final amount = lines.fold<double>(0, (sum, line) => sum + line.total);
+    Navigator.of(reviewContext).push(
+      MaterialPageRoute<void>(
+        builder: (paymentContext) => Scaffold(
+          body: SafeArea(
+            child: PaymentScreen(
+              lines: lines,
+              details: details,
+              settings: store.storefrontSettings,
+              onBack: () => Navigator.of(paymentContext).pop(),
+              onProcessPayment: (method) =>
+                  service.process(method: method, amount: amount),
+              onApproved: (payment) async {
+                final order = CheckoutOrder.fromQuote(
+                  id: service.createOrderId(),
+                  lines: lines,
+                  details: details,
+                  payment: payment,
+                  createdAt: payment.processedAt,
+                );
+                await store.completeCheckout(order);
+                if (!paymentContext.mounted || !mounted) return;
+                setState(() => _index = 0);
+                Navigator.of(paymentContext).pushAndRemoveUntil(
+                  MaterialPageRoute<void>(
+                    builder: (_) => Scaffold(
+                      body: SafeArea(child: _orderSuccessScreen(order)),
+                    ),
+                  ),
+                  (route) => route.isFirst,
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _orderSuccessScreen(CheckoutOrder order) {
+    final store = context.read<AppStore>();
+    final message = QuoteMessageBuilder.buildOrder(
+      order: order,
+      brandName: store.storefrontSettings.text(StorefrontText.brandName),
+    );
+    return OrderSuccessScreen(
+      order: order,
+      settings: store.storefrontSettings,
+      onSendWhatsapp: () => _openWhatsapp(message, recordQuoteSent: true),
+      onCopySummary: () => Clipboard.setData(ClipboardData(text: message)),
+      onHome: () => _finishOrderFlow(catalog: false),
+      onNewOrder: () => _finishOrderFlow(catalog: true),
+    );
+  }
+
+  void _finishOrderFlow({required bool catalog}) {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    setState(() {
+      _catalogCategory = catalog ? ProductCategory.materials : null;
+      _index = catalog ? 1 : 0;
+    });
+  }
+
   Future<void> _openWhatsapp(
     String message, {
     bool recordQuoteSent = false,
   }) async {
+    final number = context
+        .read<AppStore>()
+        .storefrontSettings
+        .normalizedWhatsappNumber;
     final uri = Uri.parse(
-      'https://wa.me/$_whatsappNumber?text=${Uri.encodeComponent(message)}',
+      'https://wa.me/$number?text=${Uri.encodeComponent(message)}',
     );
     final opened = await launchUrl(
       uri,
@@ -244,14 +346,19 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
     final page = switch (_index) {
       0 => HomeScreen(
+        settings: store.storefrontSettings,
         products: store.products,
+        popularProducts: store.popularProducts,
         onBrowse: _showCatalog,
         onProduct: _openProduct,
         onOpenQuote: _showQuote,
         quoteQuantity: store.cartQuantity,
         onZeroResultSearch: store.recordZeroResultSearch,
+        lastOrder: store.lastOrder,
+        onOpenLastOrder: _openLastOrder,
       ),
       1 => CatalogScreen(
+        settings: store.storefrontSettings,
         key: ValueKey(_catalogCategory),
         products: store.products,
         initialCategory: _catalogCategory,
@@ -261,6 +368,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onZeroResultSearch: store.recordZeroResultSearch,
       ),
       2 => QuoteScreen(
+        settings: store.storefrontSettings,
         lines: store.resolvedLines,
         onQuantityChanged: store.updateQuantity,
         onRemove: store.removeLine,
@@ -269,8 +377,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onBack: () => setState(() => _index = 0),
       ),
       _ => HelpScreen(
-        onContact: () =>
-            _openWhatsapp('Hola, Expresiones. Quisiera hacer una consulta.'),
+        settings: store.storefrontSettings,
+        onContact: () => _openWhatsapp(
+          'Hola, ${store.storefrontSettings.text(StorefrontText.brandName)}. Quisiera hacer una consulta.',
+        ),
         onPrivacy: _openPrivacy,
         onAdminLogin: () => unawaited(_openAdminPortal()),
       ),
@@ -285,6 +395,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               children: [
                 if (desktop)
                   _DesktopNavigation(
+                    settings: store.storefrontSettings,
                     currentIndex: _index,
                     quoteQuantity: store.cartQuantity,
                     onSelect: _selectDestination,
@@ -329,7 +440,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                         isLabelVisible: store.cartQuantity > 0,
                         child: const Icon(Icons.shopping_bag_rounded),
                       ),
-                      label: 'Cotización',
+                      label: 'Carrito',
                     ),
                     const NavigationDestination(
                       icon: Icon(Icons.help_outline_rounded),
@@ -353,11 +464,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
 class _DesktopNavigation extends StatelessWidget {
   const _DesktopNavigation({
+    required this.settings,
     required this.currentIndex,
     required this.quoteQuantity,
     required this.onSelect,
   });
 
+  final StorefrontSettings settings;
   final int currentIndex;
   final int quoteQuantity;
   final ValueChanged<int> onSelect;
@@ -379,7 +492,7 @@ class _DesktopNavigation extends StatelessWidget {
           (
             icon: Icons.shopping_bag_outlined,
             selectedIcon: Icons.shopping_bag_rounded,
-            label: 'Cotización',
+            label: 'Carrito',
           ),
           (
             icon: Icons.help_outline_rounded,
@@ -405,7 +518,7 @@ class _DesktopNavigation extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Expresiones',
+                    settings.text(StorefrontText.brandName),
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontStyle: FontStyle.italic,
                       fontWeight: FontWeight.w500,
@@ -413,7 +526,7 @@ class _DesktopNavigation extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Materiales para crear y expresar más',
+                    settings.text(StorefrontText.brandTagline),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -446,12 +559,12 @@ class _DesktopNavigation extends StatelessWidget {
                   const Icon(Icons.lock_open_rounded, size: 20),
                   const SizedBox(height: 8),
                   Text(
-                    'Cotiza libremente',
+                    settings.text(StorefrontText.homeSidebarTitle),
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    'No necesitas una cuenta. El pedido se confirma por WhatsApp.',
+                    settings.text(StorefrontText.homeSidebarBody),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],

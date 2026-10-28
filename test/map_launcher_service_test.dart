@@ -14,7 +14,10 @@ void main() {
       );
 
       expect(uri.scheme, 'geo');
-      expect(uri.toString(), 'geo:-12.046374,-77.042793?q=-12.046374,-77.042793');
+      expect(
+        uri.toString(),
+        'geo:-12.046374,-77.042793?q=-12.046374,-77.042793',
+      );
     });
 
     test('buildGeoUri incluye etiqueta codificada si se proporciona', () {
@@ -66,40 +69,48 @@ void main() {
       expect(copy.shalomAgencyName, 'Agencia Huancayo Real');
     });
 
-    test('QuoteMessageBuilder incluye link a Google Maps si hay coordenadas', () {
-      const product = CatalogProduct(
-        id: 'mat_01',
-        name: 'Limpiapipas',
-        category: ProductCategory.materials,
-        basePrice: 2.0,
-      );
+    test(
+      'QuoteMessageBuilder incluye link a Google Maps si hay coordenadas',
+      () {
+        const product = CatalogProduct(
+          id: 'mat_01',
+          name: 'Limpiapipas',
+          category: ProductCategory.materials,
+          basePrice: 2.0,
+        );
 
-      final lines = [
-        const ResolvedQuoteLine(
-          line: QuoteLine(productId: 'mat_01', quantity: 10),
-          product: product,
-        ),
-      ];
+        final lines = [
+          const ResolvedQuoteLine(
+            line: QuoteLine(productId: 'mat_01', quantity: 10),
+            product: product,
+          ),
+        ];
 
-      final message = QuoteMessageBuilder.build(
-        id: 'COT-TEST-GEO',
-        lines: lines,
-        details: const CoordinationDetails(
-          name: 'Carlos Mendoza',
-          phone: '987654321',
-          deliveryMethod: DeliveryMethod.shalom,
-          shalomAgencyId: '123',
-          shalomAgencyName: 'Agencia Huancayo Real',
-          shalomAgencyAddress: 'Av. Real 450',
-          shalomAgencyLocality: 'Huancayo · Junín',
-          shalomAgencyLatitude: -12.0673,
-          shalomAgencyLongitude: -75.2049,
-        ),
-      );
+        final message = QuoteMessageBuilder.build(
+          id: 'COT-TEST-GEO',
+          lines: lines,
+          details: const CoordinationDetails(
+            name: 'Carlos Mendoza',
+            phone: '987654321',
+            deliveryMethod: DeliveryMethod.shalom,
+            shalomAgencyId: '123',
+            shalomAgencyName: 'Agencia Huancayo Real',
+            shalomAgencyAddress: 'Av. Real 450',
+            shalomAgencyLocality: 'Huancayo · Junín',
+            shalomAgencyLatitude: -12.0673,
+            shalomAgencyLongitude: -75.2049,
+          ),
+        );
 
-      expect(message, contains('COT-TEST-GEO'));
-      expect(message, contains('Agencia Shalom: Agencia Huancayo Real'));
-      expect(message, contains('Mapa: https://www.google.com/maps/search/?api=1&query=-12.0673,-75.2049'));
-    });
+        expect(message, contains('COT-TEST-GEO'));
+        expect(message, contains('Agencia Shalom: Agencia Huancayo Real'));
+        expect(
+          message,
+          contains(
+            'Mapa: https://www.google.com/maps/search/?api=1&query=-12.0673,-75.2049',
+          ),
+        );
+      },
+    );
   });
 }

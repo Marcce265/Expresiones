@@ -51,8 +51,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         variant?.thumbnailUrl ??
         product.imageUrl ??
         product.thumbnailUrl;
-    final title = variant?.name ?? product.name;
-    final sku = variant?.sku ?? product.sku;
+    final title = variant == null ? product.name : variantDisplayName(variant!);
+    final hideInternalPaletteCode =
+        variant?.attributes.containsKey('paletteNumber') ?? false;
+    final sku = hideInternalPaletteCode ? null : variant?.sku ?? product.sku;
     final total = product.totalFor(_quantity, variantId: _variantId);
     final canAdd = product.canRequest(_quantity, variantId: _variantId);
     final imageFit = productImageFit(product, variant: variant);
@@ -246,6 +248,9 @@ class _ProductInformation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeVariants = product.variants
+        .where((item) => item.isActive)
+        .toList(growable: false);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -387,26 +392,14 @@ class _ProductInformation extends StatelessWidget {
             ),
           ),
         ],
-        if (product.variants.length > 1) ...[
+        if (activeVariants.length > 1) ...[
           const SizedBox(height: 17),
-          Text(
-            'Otros colores y modelos',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-          const SizedBox(height: 8),
           LayoutBuilder(
             builder: (context, constraints) {
               final options = [
-                for (final option in product.variants.where(
-                  (item) => item.isActive,
-                ))
+                for (final option in activeVariants)
                   ChoiceChip(
-                    avatar: option.colorHex == null
-                        ? null
-                        : CircleAvatar(
-                            backgroundColor: _color(option.colorHex!),
-                          ),
-                    label: Text(option.name),
+                    label: Text(variantDisplayName(option)),
                     selected: variantId == option.id,
                     onSelected: (_) => onVariant(option.id),
                   ),
@@ -518,12 +511,4 @@ class _AvailabilityPill extends StatelessWidget {
       ),
     );
   }
-}
-
-Color _color(String value) {
-  final normalized = value.replaceAll('#', '');
-  final parsed = int.tryParse(normalized, radix: 16);
-  return parsed == null
-      ? AppColors.border
-      : Color(normalized.length == 6 ? 0xFF000000 | parsed : parsed);
 }

@@ -6,6 +6,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../models/coordination_details.dart';
+import '../models/checkout_order.dart';
 import '../models/quote_line.dart';
 
 /// Creates portable quote documents without sending customer data to a server.
@@ -13,6 +14,187 @@ import '../models/quote_line.dart';
 /// PDF and XLSX bytes are generated on the device. [savePdf] and [saveXlsx]
 /// then use the native/browser save mechanism exposed by `file_saver`.
 abstract final class QuoteExportService {
+  static Future<Uint8List> buildOrderPdf(CheckoutOrder order) async {
+    final regularFont = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/Roboto-Regular.ttf'),
+    );
+    final boldFont = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/Roboto-Bold.ttf'),
+    );
+    final document = pw.Document(
+      title: 'Comprobante simulado ${order.id}',
+      author: 'Expresiones',
+      subject: 'Comprobante de pedido simulado',
+      creator: 'Aplicación Expresiones',
+    );
+
+    document.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        theme: pw.ThemeData.withFont(base: regularFont, bold: boldFont),
+        margin: const pw.EdgeInsets.all(40),
+        footer: (context) => pw.Align(
+          alignment: pw.Alignment.centerRight,
+          child: pw.Text(
+            'Página ${context.pageNumber} de ${context.pagesCount}',
+            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+          ),
+        ),
+        build: (context) => [
+          pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'Expresiones',
+                      style: pw.TextStyle(
+                        fontSize: 26,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text('Comprobante de pedido simulado'),
+                  ],
+                ),
+              ),
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: pw.BoxDecoration(
+                  color: PdfColor.fromHex('#F7E7ED'),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Text(
+                      order.id,
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.Text(
+                      DateFormat('dd/MM/yyyy HH:mm').format(order.createdAt),
+                      style: const pw.TextStyle(fontSize: 9),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 18),
+          pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColor.fromHex('#F5F1EE'),
+              borderRadius: pw.BorderRadius.circular(8),
+            ),
+            child: pw.Text(
+              'PAGO SIMULADO · No se realizó ningún cobro real.',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          pw.SizedBox(height: 18),
+          pw.TableHelper.fromTextArray(
+            headers: const [
+              'Producto',
+              'Código',
+              'Cantidad',
+              'Precio unit.',
+              'Importe',
+            ],
+            data: [
+              for (final item in order.items)
+                [
+                  _orderProductDescription(item),
+                  item.sku ?? '',
+                  item.quantity.toString(),
+                  _money(item.unitPrice),
+                  _money(item.lineTotal),
+                ],
+            ],
+            headerDecoration: pw.BoxDecoration(
+              color: PdfColor.fromHex('#201A1B'),
+            ),
+            headerStyle: pw.TextStyle(
+              color: PdfColors.white,
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 9,
+            ),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+            cellPadding: const pw.EdgeInsets.all(7),
+            columnWidths: const {
+              0: pw.FlexColumnWidth(3.4),
+              1: pw.FlexColumnWidth(1.3),
+              2: pw.FlexColumnWidth(1),
+              3: pw.FlexColumnWidth(1.4),
+              4: pw.FlexColumnWidth(1.4),
+            },
+          ),
+          pw.SizedBox(height: 14),
+          pw.Align(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Container(
+              width: 250,
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.grey400),
+                borderRadius: pw.BorderRadius.circular(8),
+              ),
+              child: pw.Column(
+                children: [
+                  _pdfAmount('Productos', order.productsSubtotal),
+                  pw.SizedBox(height: 6),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Envío'),
+                      pw.Text(
+                        order.shippingPending ? 'Por confirmar' : 'S/ 0.00',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  pw.Divider(color: PdfColors.grey400),
+                  _pdfAmount('Total simulado', order.simulatedTotal),
+                ],
+              ),
+            ),
+          ),
+          pw.SizedBox(height: 22),
+          pw.Text(
+            'Pago de demostración',
+            style: pw.TextStyle(fontSize: 15, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 8),
+          _pdfDetail('Método', order.payment.methodLabel),
+          _pdfDetail(
+            'Estado',
+            order.payment.isApproved ? 'Aprobado (simulado)' : 'Rechazado',
+          ),
+          _pdfDetail('Referencia', order.payment.reference),
+          _pdfDetail(
+            'Procesado',
+            DateFormat('dd/MM/yyyy HH:mm').format(order.payment.processedAt),
+          ),
+          pw.SizedBox(height: 18),
+          pw.Text(
+            'Entrega y coordinación',
+            style: pw.TextStyle(fontSize: 15, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 8),
+          ..._pdfCoordinationDetails(order.details),
+        ],
+      ),
+    );
+
+    return document.save();
+  }
+
   static Future<Uint8List> buildPdf({
     required String quoteId,
     required List<ResolvedQuoteLine> lines,
@@ -188,6 +370,9 @@ abstract final class QuoteExportService {
                 ? 'Por coordinar'
                 : DateFormat('dd/MM/yyyy').format(details.desiredDate!),
           ),
+          for (final entry in details.customFields.entries)
+            if (entry.value.trim().isNotEmpty)
+              _pdfDetail(entry.key, entry.value.trim()),
           if (details.note.trim().isNotEmpty)
             _pdfDetail('Nota', details.note.trim()),
           pw.SizedBox(height: 24),
@@ -302,6 +487,8 @@ abstract final class QuoteExportService {
             ? 'Por coordinar'
             : DateFormat('dd/MM/yyyy').format(details.desiredDate!),
       ),
+      for (final entry in details.customFields.entries)
+        if (entry.value.trim().isNotEmpty) (entry.key, entry.value.trim()),
       if (details.note.trim().isNotEmpty) ('Nota', details.note.trim()),
     ];
     for (var index = 0; index < detailsRows.length; index++) {
@@ -324,6 +511,149 @@ abstract final class QuoteExportService {
     final bytes = workbook.encode();
     if (bytes == null) {
       throw StateError('No se pudo generar el archivo XLSX.');
+    }
+    return Uint8List.fromList(bytes);
+  }
+
+  static Uint8List buildOrderXlsx(CheckoutOrder order) {
+    final workbook = Excel.createExcel();
+    const sheetName = 'Pedido simulado';
+    final sheet = workbook[sheetName];
+    final defaultSheet = workbook.getDefaultSheet();
+    if (defaultSheet != null && defaultSheet != sheetName) {
+      workbook.delete(defaultSheet);
+    }
+    workbook.setDefaultSheet(sheetName);
+
+    final titleStyle = CellStyle(
+      bold: true,
+      fontSize: 18,
+      fontColorHex: ExcelColor.fromHexString('#201A1B'),
+    );
+    final labelStyle = CellStyle(
+      bold: true,
+      fontColorHex: ExcelColor.fromHexString('#201A1B'),
+    );
+    final warningStyle = CellStyle(
+      bold: true,
+      fontColorHex: ExcelColor.fromHexString('#7A283F'),
+      backgroundColorHex: ExcelColor.fromHexString('#F7E7ED'),
+    );
+    final headerStyle = CellStyle(
+      bold: true,
+      fontColorHex: ExcelColor.white,
+      backgroundColorHex: ExcelColor.fromHexString('#201A1B'),
+      horizontalAlign: HorizontalAlign.Center,
+    );
+    final moneyStyle = CellStyle(
+      numberFormat: NumFormat.custom(formatCode: 'S/ #,##0.00'),
+    );
+
+    _setText(sheet, 0, 0, 'EXPRESIONES', style: titleStyle);
+    _setText(sheet, 0, 1, 'Comprobante de pedido simulado');
+    _setText(
+      sheet,
+      0,
+      2,
+      'PAGO SIMULADO · No se realizó ningún cobro real.',
+      style: warningStyle,
+    );
+    _setText(sheet, 3, 0, 'Pedido', style: labelStyle);
+    _setText(sheet, 4, 0, order.id);
+    _setText(sheet, 3, 1, 'Fecha', style: labelStyle);
+    _setText(
+      sheet,
+      4,
+      1,
+      DateFormat('dd/MM/yyyy HH:mm').format(order.createdAt),
+    );
+
+    const tableRow = 4;
+    const headers = [
+      'Producto',
+      'Código',
+      'Cantidad',
+      'Precio unitario',
+      'Importe',
+    ];
+    for (var column = 0; column < headers.length; column++) {
+      _setText(sheet, column, tableRow, headers[column], style: headerStyle);
+    }
+    for (var index = 0; index < order.items.length; index++) {
+      final item = order.items[index];
+      final row = tableRow + index + 1;
+      _setText(sheet, 0, row, _orderProductDescription(item));
+      _setText(sheet, 1, row, item.sku ?? '');
+      _setInt(sheet, 2, row, item.quantity);
+      _setDouble(sheet, 3, row, item.unitPrice, style: moneyStyle);
+      _setDouble(sheet, 4, row, item.lineTotal, style: moneyStyle);
+    }
+
+    final totalRow = tableRow + order.items.length + 2;
+    _setText(sheet, 3, totalRow, 'Productos', style: labelStyle);
+    _setDouble(sheet, 4, totalRow, order.productsSubtotal, style: moneyStyle);
+    _setText(sheet, 3, totalRow + 1, 'Envío', style: labelStyle);
+    _setText(
+      sheet,
+      4,
+      totalRow + 1,
+      order.shippingPending ? 'Por confirmar' : 'S/ 0.00',
+    );
+    _setText(sheet, 3, totalRow + 2, 'Total simulado', style: labelStyle);
+    _setDouble(sheet, 4, totalRow + 2, order.simulatedTotal, style: moneyStyle);
+
+    final paymentStart = totalRow + 4;
+    final rows = <(String, String)>[
+      ('Método de pago', order.payment.methodLabel),
+      (
+        'Estado',
+        order.payment.isApproved ? 'Aprobado (simulado)' : 'Rechazado',
+      ),
+      ('Referencia de pago', order.payment.reference),
+      (
+        'Procesado',
+        DateFormat('dd/MM/yyyy HH:mm').format(order.payment.processedAt),
+      ),
+      ('Cliente', order.details.name.trim()),
+      ('Teléfono', order.details.phone.trim()),
+      ('Entrega', order.details.deliveryLabel),
+      if (order.details.deliveryMethod == DeliveryMethod.shalom &&
+          order.details.shalomAgencyId.isNotEmpty) ...[
+        ('Agencia Shalom', order.details.shalomAgencyName),
+        ('Ubicación', order.details.shalomAgencyLocality),
+        ('Dirección', order.details.shalomAgencyAddress),
+      ],
+      (
+        'Fecha deseada',
+        order.details.desiredDate == null
+            ? 'Por coordinar'
+            : DateFormat('dd/MM/yyyy').format(order.details.desiredDate!),
+      ),
+      for (final entry in order.details.customFields.entries)
+        if (entry.value.trim().isNotEmpty) (entry.key, entry.value.trim()),
+      if (order.details.note.trim().isNotEmpty)
+        ('Nota', order.details.note.trim()),
+    ];
+    for (var index = 0; index < rows.length; index++) {
+      _setText(
+        sheet,
+        0,
+        paymentStart + index,
+        rows[index].$1,
+        style: labelStyle,
+      );
+      _setText(sheet, 1, paymentStart + index, rows[index].$2);
+    }
+
+    sheet.setColumnWidth(0, 46);
+    sheet.setColumnWidth(1, 25);
+    sheet.setColumnWidth(2, 12);
+    sheet.setColumnWidth(3, 18);
+    sheet.setColumnWidth(4, 22);
+
+    final bytes = workbook.encode();
+    if (bytes == null) {
+      throw StateError('No se pudo generar el comprobante XLSX.');
     }
     return Uint8List.fromList(bytes);
   }
@@ -362,11 +692,39 @@ abstract final class QuoteExportService {
     );
   }
 
+  static Future<String?> saveOrderPdf(CheckoutOrder order) async {
+    final bytes = await buildOrderPdf(order);
+    return FileSaver.instance.saveToDownloads(
+      name: _safeFileName('comprobante_simulado_${order.id}'),
+      bytes: bytes,
+      fileExtension: 'pdf',
+      mimeType: MimeType.pdf,
+      subfolder: 'Expresiones',
+    );
+  }
+
+  static Future<String?> saveOrderXlsx(CheckoutOrder order) {
+    return FileSaver.instance.saveToDownloads(
+      name: _safeFileName('comprobante_simulado_${order.id}'),
+      bytes: buildOrderXlsx(order),
+      fileExtension: 'xlsx',
+      mimeType: MimeType.microsoftExcel,
+      subfolder: 'Expresiones',
+    );
+  }
+
   static double _subtotal(List<ResolvedQuoteLine> lines) =>
       lines.fold(0, (sum, item) => sum + item.total);
 
   static String _productDescription(ResolvedQuoteLine item) {
     final customization = item.line.customization.trim();
+    return customization.isEmpty
+        ? item.displayName
+        : '${item.displayName}\n$customization';
+  }
+
+  static String _orderProductDescription(CheckoutOrderItem item) {
+    final customization = item.customization.trim();
     return customization.isEmpty
         ? item.displayName
         : '${item.displayName}\n$customization';
@@ -394,6 +752,44 @@ abstract final class QuoteExportService {
         ],
       ),
     );
+  }
+
+  static pw.Widget _pdfAmount(String label, double value) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(label),
+        pw.Text(
+          _money(value),
+          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  static List<pw.Widget> _pdfCoordinationDetails(CoordinationDetails details) {
+    return [
+      _pdfDetail('Cliente', details.name.trim()),
+      _pdfDetail('Teléfono', details.phone.trim()),
+      _pdfDetail('Entrega', details.deliveryLabel),
+      if (details.deliveryMethod == DeliveryMethod.shalom &&
+          details.shalomAgencyId.isNotEmpty) ...[
+        _pdfDetail('Agencia', details.shalomAgencyName),
+        _pdfDetail('Ubicación', details.shalomAgencyLocality),
+        _pdfDetail('Dirección', details.shalomAgencyAddress),
+      ],
+      _pdfDetail(
+        'Fecha deseada',
+        details.desiredDate == null
+            ? 'Por coordinar'
+            : DateFormat('dd/MM/yyyy').format(details.desiredDate!),
+      ),
+      for (final entry in details.customFields.entries)
+        if (entry.value.trim().isNotEmpty)
+          _pdfDetail(entry.key, entry.value.trim()),
+      if (details.note.trim().isNotEmpty)
+        _pdfDetail('Nota', details.note.trim()),
+    ];
   }
 
   static void _setText(

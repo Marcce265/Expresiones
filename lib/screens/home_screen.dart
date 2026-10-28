@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/catalog_models.dart';
+import '../models/checkout_order.dart';
+import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/product_card.dart';
@@ -11,19 +13,27 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     required this.products,
+    this.popularProducts = const [],
     required this.onBrowse,
     required this.onProduct,
     required this.onOpenQuote,
     required this.quoteQuantity,
+    this.settings = const StorefrontSettings(),
     this.onZeroResultSearch,
+    this.lastOrder,
+    this.onOpenLastOrder,
   });
 
   final List<CatalogProduct> products;
+  final List<CatalogProduct> popularProducts;
   final ValueChanged<ProductCategory> onBrowse;
   final ProductSelected onProduct;
   final VoidCallback onOpenQuote;
   final int quoteQuantity;
+  final StorefrontSettings settings;
   final ValueChanged<String>? onZeroResultSearch;
+  final CheckoutOrder? lastOrder;
+  final ValueChanged<CheckoutOrder>? onOpenLastOrder;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -63,28 +73,39 @@ class _HomeScreenState extends State<HomeScreen> {
         : expandCatalogTiles(products)
               .where((tile) => _matches(tile, query))
               .toList();
-    final featured = expandCatalogTiles(products)
+    final rankedProducts = widget.popularProducts
         .where(
-          (tile) =>
-              tile.variant?.previewImageUrl != null ||
-              tile.product.previewImageUrl != null,
+          (product) =>
+              product.isActive && product.category == ProductCategory.materials,
         )
-        .take(6)
-        .toList();
+        .toList(growable: false);
+    final featured = _featuredProductTiles(
+      rankedProducts.isEmpty ? products : rankedProducts,
+      fallbackProducts: products,
+    );
 
     return SingleChildScrollView(
       child: ResponsivePage(
-        maxWidth: 1180,
+        maxWidth: 1400,
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 36),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _TopBar(
+              settings: widget.settings,
               quoteQuantity: widget.quoteQuantity,
               onOpenQuote: widget.onOpenQuote,
             ),
+            if (widget.lastOrder != null && widget.onOpenLastOrder != null) ...[
+              const SizedBox(height: 18),
+              _LastOrderCard(
+                order: widget.lastOrder!,
+                onOpen: () => widget.onOpenLastOrder!(widget.lastOrder!),
+              ),
+            ],
             const SizedBox(height: 28),
             _HomeIntro(
+              settings: widget.settings,
               searchController: _searchController,
               query: _query,
               onSearchChanged: _onSearchChanged,
@@ -116,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _SearchResults(results: results, onProduct: widget.onProduct),
             ] else ...[
               SectionHeader(
-                title: 'Más consultados',
+                title: widget.settings.text(StorefrontText.homeFeaturedTitle),
                 actionLabel: 'Ver todo',
                 onAction: () => widget.onBrowse(ProductCategory.materials),
               ),
@@ -132,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _FeaturedProducts(
                   products: featured,
                   onProduct: widget.onProduct,
+                  onBrowse: () => widget.onBrowse(ProductCategory.materials),
                 ),
             ],
           ],
@@ -165,9 +187,59 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({required this.quoteQuantity, required this.onOpenQuote});
+class _LastOrderCard extends StatelessWidget {
+  const _LastOrderCard({required this.order, required this.onOpen});
 
+  final CheckoutOrder order;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.pinkSoft,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.receipt_long_outlined),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Último pedido simulado',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${order.id} · S/ ${order.simulatedTotal.toStringAsFixed(2)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          OutlinedButton(onPressed: onOpen, child: const Text('Ver')),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.settings,
+    required this.quoteQuantity,
+    required this.onOpenQuote,
+  });
+
+  final StorefrontSettings settings;
   final int quoteQuantity;
   final VoidCallback onOpenQuote;
 
@@ -180,7 +252,7 @@ class _TopBar extends StatelessWidget {
           if (!usesDesktopNavigation)
             Expanded(
               child: Text(
-                'Expresiones',
+                settings.text(StorefrontText.brandName),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontStyle: FontStyle.italic,
                   fontWeight: FontWeight.w500,
@@ -197,11 +269,11 @@ class _TopBar extends StatelessWidget {
                 ? OutlinedButton.icon(
                     onPressed: onOpenQuote,
                     icon: const Icon(Icons.shopping_bag_outlined, size: 19),
-                    label: const Text('Mi cotización'),
+                    label: const Text('Mi carrito'),
                   )
                 : IconButton.outlined(
                     onPressed: onOpenQuote,
-                    tooltip: 'Mi cotización',
+                    tooltip: 'Mi carrito',
                     icon: const Icon(Icons.shopping_bag_outlined, size: 20),
                   ),
           ),
@@ -213,6 +285,7 @@ class _TopBar extends StatelessWidget {
 
 class _HomeIntro extends StatelessWidget {
   const _HomeIntro({
+    required this.settings,
     required this.searchController,
     required this.query,
     required this.onSearchChanged,
@@ -222,6 +295,7 @@ class _HomeIntro extends StatelessWidget {
     required this.showHero,
   });
 
+  final StorefrontSettings settings;
   final TextEditingController searchController;
   final String query;
   final ValueChanged<String> onSearchChanged;
@@ -232,19 +306,20 @@ class _HomeIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final heroSource = settings.text(StorefrontText.homeHeroImage).trim();
     final copy = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        const Eyebrow('Catálogo de materiales'),
+        Eyebrow(settings.text(StorefrontText.homeEyebrow)),
         const SizedBox(height: 10),
         Text(
-          'Encuentra lo que necesitas',
+          settings.text(StorefrontText.homeTitle),
           style: Theme.of(context).textTheme.displaySmall,
         ),
         const SizedBox(height: 8),
         Text(
-          'Materiales, colores y acabados para crear detalles que expresan más.',
+          settings.text(StorefrontText.homeSubtitle),
           style: Theme.of(context).textTheme.bodyLarge
               ?.copyWith(color: AppColors.muted),
         ),
@@ -255,7 +330,7 @@ class _HomeIntro extends StatelessWidget {
           onSubmitted: onSearchSubmitted,
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
-            hintText: 'Buscar por material, color o código',
+            hintText: settings.text(StorefrontText.homeSearchHint),
             prefixIcon: const Icon(Icons.search_rounded),
             suffixIcon: query.isEmpty
                 ? null
@@ -280,7 +355,7 @@ class _HomeIntro extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset('assets/images/catalog_hero.webp', fit: BoxFit.cover),
+            _HomeHeroImage(source: heroSource),
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -303,8 +378,20 @@ class _HomeIntro extends StatelessWidget {
             children: [copy, const SizedBox(height: 22), hero],
           );
         }
+        if (constraints.maxWidth >= 1180) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 4, child: copy),
+              const SizedBox(width: 28),
+              Expanded(flex: 5, child: hero),
+              const SizedBox(width: 18),
+              const SizedBox(width: 220, child: _HomeTrustRail()),
+            ],
+          );
+        }
         return Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(flex: 5, child: copy),
             const SizedBox(width: 36),
@@ -316,29 +403,69 @@ class _HomeIntro extends StatelessWidget {
   }
 }
 
+class _HomeHeroImage extends StatelessWidget {
+  const _HomeHeroImage({required this.source});
+
+  final String source;
+
+  @override
+  Widget build(BuildContext context) {
+    final clean = source.isEmpty ? 'assets/images/catalog_hero.webp' : source;
+    if (clean.startsWith('http://') || clean.startsWith('https://')) {
+      return Image.network(
+        clean,
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.high,
+        errorBuilder: (_, _, _) => Image.asset(
+          'assets/images/catalog_hero.webp',
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.high,
+        ),
+      );
+    }
+    return Image.asset(
+      clean,
+      fit: BoxFit.cover,
+      filterQuality: FilterQuality.high,
+      errorBuilder: (_, _, _) => Image.asset(
+        'assets/images/catalog_hero.webp',
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.high,
+      ),
+    );
+  }
+}
+
 class _FeaturedProducts extends StatelessWidget {
-  const _FeaturedProducts({required this.products, required this.onProduct});
+  const _FeaturedProducts({
+    required this.products,
+    required this.onProduct,
+    required this.onBrowse,
+  });
 
   final List<CatalogTile> products;
   final ProductSelected onProduct;
+  final VoidCallback onBrowse;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 700;
-        final targetColumns = constraints.maxWidth >= 1040
+        final showBrowseCard = constraints.maxWidth >= 1260;
+        final itemCount = products.length + (showBrowseCard ? 1 : 0);
+        final targetColumns = showBrowseCard
+            ? 7
+            : constraints.maxWidth >= 1040
             ? 6
             : constraints.maxWidth >= 700
             ? 3
             : 2;
-        final columns = products.length < targetColumns
-            ? products.length
-            : targetColumns;
+        final columns = itemCount < targetColumns ? itemCount : targetColumns;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: products.length,
+          itemCount: itemCount,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns == 0 ? 1 : columns,
             mainAxisExtent: compact ? 250 : 292,
@@ -346,6 +473,9 @@ class _FeaturedProducts extends StatelessWidget {
             mainAxisSpacing: compact ? 12 : 16,
           ),
           itemBuilder: (context, index) {
+            if (index == products.length) {
+              return _BrowseCatalogCard(onTap: onBrowse);
+            }
             final tile = products[index];
             return ProductCard(
               product: tile.product,
@@ -356,6 +486,142 @@ class _FeaturedProducts extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _HomeTrustRail extends StatelessWidget {
+  const _HomeTrustRail();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        _HomeTrustItem(
+          icon: Icons.lock_open_rounded,
+          title: 'Sin registro',
+          description: 'Arma tu carrito libremente.',
+        ),
+        SizedBox(height: 10),
+        _HomeTrustItem(
+          icon: Icons.stacked_line_chart_rounded,
+          title: 'Precios por volumen',
+          description: 'Calculamos el mejor precio por cantidad.',
+        ),
+        SizedBox(height: 10),
+        _HomeTrustItem(
+          icon: Icons.local_shipping_outlined,
+          title: 'Recojo o envío',
+          description: 'Huancayo y agencias Shalom.',
+        ),
+      ],
+    );
+  }
+}
+
+class _HomeTrustItem extends StatelessWidget {
+  const _HomeTrustItem({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.pinkSoft,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 20),
+          ),
+          const SizedBox(height: 11),
+          Text(title, style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 3),
+          Text(
+            description,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppColors.muted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BrowseCatalogCard extends StatelessWidget {
+  const _BrowseCatalogCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.pinkSoft,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.grid_view_rounded),
+              ),
+              const Spacer(),
+              Text(
+                'Todo el catálogo',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                'Explora materiales, colores y acabados.',
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: AppColors.muted),
+              ),
+              const SizedBox(height: 14),
+              const Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Ver productos',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  SizedBox(width: 6),
+                  Icon(Icons.arrow_forward_rounded, size: 19),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -462,4 +728,45 @@ bool _matches(CatalogTile tile, String query) {
     variant?.sku ?? '',
     ...?variant?.attributes.values,
   ].any((value) => value.toLowerCase().contains(query));
+}
+
+List<CatalogTile> _featuredProductTiles(
+  Iterable<CatalogProduct> rankedProducts, {
+  required Iterable<CatalogProduct> fallbackProducts,
+}) {
+  final tiles = <CatalogTile>[];
+  final seen = <String>{};
+
+  void add(CatalogTile tile) {
+    final key = '${tile.product.id}::${tile.variant?.id ?? ''}';
+    if (seen.add(key)) tiles.add(tile);
+  }
+
+  for (final product in rankedProducts) {
+    final variants = product.variants
+        .where(
+          (variant) =>
+              variant.isActive && variant.stockStatus != StockStatus.outOfStock,
+        )
+        .toList(growable: false);
+    final hasActiveVariants = product.variants.any(
+      (variant) => variant.isActive,
+    );
+    if (hasActiveVariants && variants.isEmpty) continue;
+    if (!hasActiveVariants && product.stockStatus == StockStatus.outOfStock) {
+      continue;
+    }
+    add((product: product, variant: variants.isEmpty ? null : variants.first));
+    if (tiles.length == 6) return List.unmodifiable(tiles);
+  }
+
+  for (final tile in expandCatalogTiles(fallbackProducts).where(
+    (tile) =>
+        tile.product.isActive &&
+        tile.product.stockStatusFor(tile.variant?.id) != StockStatus.outOfStock,
+  )) {
+    add(tile);
+    if (tiles.length == 6) break;
+  }
+  return List.unmodifiable(tiles);
 }

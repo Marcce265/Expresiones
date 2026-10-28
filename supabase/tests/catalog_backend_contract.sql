@@ -51,6 +51,16 @@ begin
     raise exception 'admin_save_catalog_family must preserve omitted imageUrl values';
   end if;
 
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'catalog_metadata'
+  ) then
+    raise exception 'catalog_metadata is missing from supabase_realtime';
+  end if;
+
   foreach v_table in array array[
     'families',
     'variants',
@@ -58,14 +68,14 @@ begin
     'variant_price_tiers'
   ]
   loop
-    if not exists (
+    if exists (
       select 1
       from pg_publication_tables
       where pubname = 'supabase_realtime'
         and schemaname = 'public'
         and tablename = v_table
     ) then
-      raise exception '% is missing from supabase_realtime', v_table;
+      raise exception '% must not be published directly', v_table;
     end if;
   end loop;
 
@@ -90,8 +100,7 @@ begin
     'families',
     'variants',
     'family_price_tiers',
-    'variant_price_tiers',
-    'availability'
+    'variant_price_tiers'
   ]
   loop
     if exists (
@@ -118,6 +127,31 @@ begin
       raise exception '% must have separate admin write policies', v_table;
     end if;
   end loop;
+
+  if exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'availability'
+      and policyname = 'availability_admin_write'
+  ) or (
+    select count(*)
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'availability'
+      and policyname in (
+        'availability_admin_insert',
+        'availability_admin_update'
+      )
+  ) <> 2 or exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'availability'
+      and cmd = 'DELETE'
+  ) then
+    raise exception 'availability must allow admin insert/update without delete';
+  end if;
 
   foreach v_index in array array[
     'public.categories_created_by_idx',

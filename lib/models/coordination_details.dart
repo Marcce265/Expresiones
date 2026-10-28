@@ -14,6 +14,7 @@ class CoordinationDetails {
     this.shalomAgencyLongitude,
     this.desiredDate,
     this.note = '',
+    this.customFields = const {},
   });
 
   final String name;
@@ -24,12 +25,18 @@ class CoordinationDetails {
   final String shalomAgencyName;
   final String shalomAgencyAddress;
   final String shalomAgencyLocality;
+
   /// Coordenadas de la agencia Shalom seleccionada (pueden ser nulas si
   /// la agencia no tiene datos de geolocalización registrados).
   final double? shalomAgencyLatitude;
   final double? shalomAgencyLongitude;
   final DateTime? desiredDate;
   final String note;
+
+  /// Additional checkout answers keyed by the label shown to the customer.
+  /// Labels are stored with the order so later admin renames do not alter old
+  /// receipts or WhatsApp messages.
+  final Map<String, String> customFields;
 
   String get deliveryLabel {
     if (deliveryMethod == DeliveryMethod.pickup) return 'Recojo en Huancayo';
@@ -52,6 +59,7 @@ class CoordinationDetails {
     DateTime? desiredDate,
     bool clearDesiredDate = false,
     String? note,
+    Map<String, String>? customFields,
   }) {
     return CoordinationDetails(
       name: name ?? this.name,
@@ -62,12 +70,17 @@ class CoordinationDetails {
       shalomAgencyName: shalomAgencyName ?? this.shalomAgencyName,
       shalomAgencyAddress: shalomAgencyAddress ?? this.shalomAgencyAddress,
       shalomAgencyLocality: shalomAgencyLocality ?? this.shalomAgencyLocality,
-      shalomAgencyLatitude:
-          clearAgencyCoords ? null : shalomAgencyLatitude ?? this.shalomAgencyLatitude,
-      shalomAgencyLongitude:
-          clearAgencyCoords ? null : shalomAgencyLongitude ?? this.shalomAgencyLongitude,
+      shalomAgencyLatitude: clearAgencyCoords
+          ? null
+          : shalomAgencyLatitude ?? this.shalomAgencyLatitude,
+      shalomAgencyLongitude: clearAgencyCoords
+          ? null
+          : shalomAgencyLongitude ?? this.shalomAgencyLongitude,
       desiredDate: clearDesiredDate ? null : desiredDate ?? this.desiredDate,
       note: note ?? this.note,
+      customFields: customFields == null
+          ? this.customFields
+          : Map.unmodifiable(customFields),
     );
   }
 
@@ -84,10 +97,20 @@ class CoordinationDetails {
     'shalomAgencyLongitude': shalomAgencyLongitude,
     'desiredDate': desiredDate?.toIso8601String(),
     'note': note,
+    'customFields': customFields,
   };
 
   factory CoordinationDetails.fromJson(Map<String, Object?> json) {
     final deliveryName = json['deliveryMethod'] as String?;
+    final rawCustomFields = json['customFields'];
+    final customFields = <String, String>{};
+    if (rawCustomFields is Map) {
+      for (final entry in rawCustomFields.entries) {
+        final label = entry.key.toString().trim();
+        final value = entry.value?.toString().trim() ?? '';
+        if (label.isNotEmpty && value.isNotEmpty) customFields[label] = value;
+      }
+    }
     return CoordinationDetails(
       name: json['name'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
@@ -101,9 +124,11 @@ class CoordinationDetails {
       shalomAgencyAddress: json['shalomAgencyAddress'] as String? ?? '',
       shalomAgencyLocality: json['shalomAgencyLocality'] as String? ?? '',
       shalomAgencyLatitude: (json['shalomAgencyLatitude'] as num?)?.toDouble(),
-      shalomAgencyLongitude: (json['shalomAgencyLongitude'] as num?)?.toDouble(),
+      shalomAgencyLongitude: (json['shalomAgencyLongitude'] as num?)
+          ?.toDouble(),
       desiredDate: DateTime.tryParse(json['desiredDate'] as String? ?? ''),
       note: json['note'] as String? ?? '',
+      customFields: Map.unmodifiable(customFields),
     );
   }
 }

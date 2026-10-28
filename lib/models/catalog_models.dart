@@ -60,9 +60,31 @@ class PriceTier {
     this.label,
   });
 
+  /// Builds the persisted per-unit tier from the total price merchants use.
+  factory PriceTier.fromPresentationTotal({
+    required int minQuantity,
+    required double totalPrice,
+    String? label,
+  }) {
+    if (minQuantity < 1) {
+      throw ArgumentError.value(minQuantity, 'minQuantity');
+    }
+    if (!totalPrice.isFinite || totalPrice < 0) {
+      throw ArgumentError.value(totalPrice, 'totalPrice');
+    }
+    return PriceTier(
+      minQuantity: minQuantity,
+      unitPrice: totalPrice / minQuantity,
+      label: label,
+    );
+  }
+
   final int minQuantity;
   final double unitPrice;
   final String? label;
+
+  /// Total charged when this presentation starts applying.
+  double get presentationTotal => minQuantity * unitPrice;
 
   bool appliesTo(int quantity) => quantity >= minQuantity;
 
@@ -218,6 +240,19 @@ class ProductVariant {
     'isActive': isActive,
     if (attributes.isNotEmpty) 'attributes': attributes,
   };
+}
+
+/// Public-facing variant name without internal palette numbering.
+///
+/// The palette number and SKU stay intact in the database for inventory and
+/// search; only the customer-facing label is simplified.
+String variantDisplayName(ProductVariant variant) {
+  if (!variant.attributes.containsKey('paletteNumber')) return variant.name;
+  final separator = variant.name.indexOf('·');
+  if (separator < 0 || separator == variant.name.length - 1) {
+    return variant.name;
+  }
+  return variant.name.substring(separator + 1).trim();
 }
 
 /// Backend-neutral catalog entity used by the UI and quote calculator.

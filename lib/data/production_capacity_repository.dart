@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/production_capacity.dart';
 
 abstract interface class CapacityRepository {
-  Future<ProductionCapacitySnapshot> load();
   Stream<ProductionCapacitySnapshot> watch();
 }
 
@@ -24,23 +23,6 @@ class SupabaseCapacityRepository implements CapacityRepository {
   final ProductionCapacitySnapshot fallback;
 
   @override
-  Future<ProductionCapacitySnapshot> load() async {
-    final activeClient = client;
-    if (activeClient == null) return fallback;
-
-    try {
-      final row = await activeClient
-          .from('availability')
-          .select('data')
-          .eq('id', 'public')
-          .maybeSingle();
-      return _snapshotFromRow(row);
-    } catch (_) {
-      return fallback;
-    }
-  }
-
-  @override
   Stream<ProductionCapacitySnapshot> watch() async* {
     final activeClient = client;
     if (activeClient == null) {
@@ -49,10 +31,11 @@ class SupabaseCapacityRepository implements CapacityRepository {
     }
 
     try {
-      await for (final rows in activeClient
-          .from('availability')
-          .stream(primaryKey: const ['id'])
-          .eq('id', 'public')) {
+      await for (final rows
+          in activeClient
+              .from('availability')
+              .stream(primaryKey: const ['id'])
+              .eq('id', 'public')) {
         if (rows.isEmpty) {
           yield fallback;
         } else {

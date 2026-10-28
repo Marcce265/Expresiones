@@ -378,6 +378,7 @@ async function uploadStorageObject(config, objectPath, bytes) {
     {
       method: 'POST',
       headers: apiHeaders(config.serviceRole, {
+        'cache-control': '31536000',
         'content-type': 'image/webp',
         'x-upsert': 'true',
       }),

@@ -14,14 +14,14 @@ class AdminOperationsRepository {
         .stream(primaryKey: const ['id'])
         .eq('id', 'public')
         .map((rows) {
-      if (rows.isEmpty || rows.first['data'] is! Map) {
-        return ProductionCapacitySnapshot.twoPersonFallback();
-      }
-      final data = (rows.first['data'] as Map).map(
-        (key, value) => MapEntry(key.toString(), value),
-      );
-      return ProductionCapacitySnapshot.fromMap(data);
-    });
+          if (rows.isEmpty || rows.first['data'] is! Map) {
+            return ProductionCapacitySnapshot.twoPersonFallback();
+          }
+          final data = (rows.first['data'] as Map).map(
+            (key, value) => MapEntry(key.toString(), value),
+          );
+          return ProductionCapacitySnapshot.fromMap(data);
+        });
   }
 
   Future<void> saveCapacity(ProductionCapacitySnapshot snapshot) async {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 
@@ -9,44 +10,46 @@ class HelpScreen extends StatelessWidget {
     required this.onContact,
     required this.onPrivacy,
     required this.onAdminLogin,
+    this.settings = const StorefrontSettings(),
   });
 
   final VoidCallback onContact;
   final VoidCallback onPrivacy;
   final VoidCallback onAdminLogin;
+  final StorefrontSettings settings;
 
   @override
   Widget build(BuildContext context) {
-    const items = <({IconData icon, String title, String body})>[
+    final items = <({IconData icon, String title, String body})>[
       (
         icon: Icons.receipt_long_outlined,
-        title: '¿Cómo funciona la cotización?',
-        body: 'Elige productos y cantidades. La app calcula un subtotal de productos y prepara el mensaje para WhatsApp. No necesitas crear una cuenta.',
+        title: settings.text(StorefrontText.helpFaqTitle(1)),
+        body: settings.text(StorefrontText.helpFaqBody(1)),
       ),
       (
         icon: Icons.inventory_2_outlined,
-        title: 'Stock y precio final',
-        body: 'Expresiones confirma disponibilidad y precio antes de cualquier pago. Agregar productos no reserva stock.',
+        title: settings.text(StorefrontText.helpFaqTitle(2)),
+        body: settings.text(StorefrontText.helpFaqBody(2)),
       ),
       (
         icon: Icons.storefront_outlined,
-        title: 'Recojo en Huancayo',
-        body: 'La dirección y el horario se coordinan al confirmar el pedido por WhatsApp.',
+        title: settings.text(StorefrontText.helpFaqTitle(3)),
+        body: settings.text(StorefrontText.helpFaqBody(3)),
       ),
       (
         icon: Icons.local_shipping_outlined,
-        title: 'Envíos nacionales',
-        body: 'Los envíos se coordinan mediante Shalom. La tarifa se confirma según destino, tamaño y peso.',
+        title: settings.text(StorefrontText.helpFaqTitle(4)),
+        body: settings.text(StorefrontText.helpFaqBody(4)),
       ),
       (
         icon: Icons.event_available_outlined,
-        title: 'Fechas y capacidad',
-        body: 'Los ramos y regalos son artesanales. La fecha solicitada depende de la carga de producción y queda confirmada por WhatsApp.',
+        title: settings.text(StorefrontText.helpFaqTitle(5)),
+        body: settings.text(StorefrontText.helpFaqBody(5)),
       ),
       (
         icon: Icons.payments_outlined,
-        title: 'Pago',
-        body: 'No se cobra dentro de esta app. El pago se coordina únicamente después de confirmar todos los detalles.',
+        title: settings.text(StorefrontText.helpFaqTitle(6)),
+        body: settings.text(StorefrontText.helpFaqBody(6)),
       ),
     ];
 
@@ -56,22 +59,22 @@ class HelpScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Eyebrow('Estamos para ayudarte'),
+            Eyebrow(settings.text(StorefrontText.helpEyebrow)),
             const SizedBox(height: 8),
             Text(
-              'Preguntas frecuentes',
+              settings.text(StorefrontText.helpTitle),
               style: Theme.of(context).textTheme.headlineLarge,
             ),
             const SizedBox(height: 8),
             Text(
-              'Cotiza con calma. La conversación final siempre continúa con una persona de Expresiones.',
+              settings.text(StorefrontText.helpBody),
               style: Theme.of(context).textTheme.bodyLarge
                   ?.copyWith(color: AppColors.muted),
             ),
             const SizedBox(height: 20),
-            const InfoBanner(
-              title: 'La cotización es libre y sin registro',
-              message: 'Puedes revisar productos, calcular cantidades y preparar tu solicitud sin crear una cuenta.',
+            InfoBanner(
+              title: settings.text(StorefrontText.helpBannerTitle),
+              message: settings.text(StorefrontText.helpBannerBody),
               icon: Icons.lock_open_rounded,
             ),
             const SizedBox(height: 24),
@@ -116,6 +119,8 @@ class HelpScreen extends StatelessWidget {
                 onPrivacy: onPrivacy,
                 onContact: onContact,
                 onAdminLogin: onAdminLogin,
+                privacyLabel: settings.text(StorefrontText.helpPrivacyButton),
+                contactLabel: settings.text(StorefrontText.helpContactButton),
               ),
             ),
           ],
@@ -169,25 +174,29 @@ class _HelpActions extends StatelessWidget {
     required this.onPrivacy,
     required this.onContact,
     required this.onAdminLogin,
+    required this.privacyLabel,
+    required this.contactLabel,
   });
 
   final bool horizontal;
   final VoidCallback onPrivacy;
   final VoidCallback onContact;
   final VoidCallback onAdminLogin;
+  final String privacyLabel;
+  final String contactLabel;
 
   @override
   Widget build(BuildContext context) {
     final privacy = OutlinedButton.icon(
       onPressed: onPrivacy,
       icon: const Icon(Icons.privacy_tip_outlined),
-      label: const Text('Privacidad y mis datos'),
+      label: Text(privacyLabel),
     );
     final contact = FilledButton.icon(
       onPressed: onContact,
       style: FilledButton.styleFrom(backgroundColor: AppColors.whatsapp),
       icon: const Icon(Icons.chat_outlined),
-      label: const Text('Hablar con Expresiones'),
+      label: Text(contactLabel),
     );
     final primaryActions = horizontal
         ? Row(

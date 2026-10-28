@@ -204,7 +204,6 @@ abstract final class AppTheme {
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
           minimumSize: const Size.square(44),
-          foregroundColor: AppColors.ink,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(13),
           ),

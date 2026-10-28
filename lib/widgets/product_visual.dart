@@ -5,7 +5,8 @@ import '../theme/app_theme.dart';
 
 String? productFamilyHeroAsset(CatalogProduct product) => switch (product.id) {
   'limpiapipas-premium-8mm' => 'assets/images/family_heroes/limpiapipas.webp',
-  'cinta-satinada-100m' => 'assets/images/family_heroes/cinta_satinada.webp',
+  'cinta-satinada-100m' =>
+    'assets/images/family_heroes/cinta_satinada_todos_colores.webp',
   _ => null,
 };
 

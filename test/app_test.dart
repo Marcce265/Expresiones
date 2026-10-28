@@ -3,7 +3,9 @@ import 'package:expresiones/main.dart';
 import 'package:expresiones/models/catalog_models.dart';
 import 'package:expresiones/models/coordination_details.dart';
 import 'package:expresiones/models/quote_line.dart';
+import 'package:expresiones/models/storefront_settings.dart';
 import 'package:expresiones/screens/catalog_screen.dart';
+import 'package:expresiones/screens/home_screen.dart';
 import 'package:expresiones/services/quote_message.dart';
 import 'package:expresiones/state/app_store.dart';
 import 'package:expresiones/widgets/product_visual.dart';
@@ -131,7 +133,7 @@ void main() {
     );
     expect(
       productFamilyHeroAsset(cinta),
-      'assets/images/family_heroes/cinta_satinada.webp',
+      'assets/images/family_heroes/cinta_satinada_todos_colores.webp',
     );
   });
 
@@ -234,9 +236,45 @@ void main() {
     expect(find.text('Expresiones'), findsOneWidget);
     expect(find.text('Inicio'), findsOneWidget);
     expect(find.text('Catálogo'), findsOneWidget);
-    expect(find.text('Cotización'), findsOneWidget);
+    expect(find.text('Carrito'), findsOneWidget);
     expect(find.text('Ayuda'), findsOneWidget);
   });
+
+  testWidgets(
+    'la portada pública usa la imagen configurada por administración',
+    (tester) async {
+      const configuredAsset =
+          'assets/images/family_heroes/cinta_satinada_todos_colores.webp';
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: HomeScreen(
+              products: const [],
+              popularProducts: const [],
+              settings: const StorefrontSettings(
+                texts: {StorefrontText.homeHeroImage: configuredAsset},
+              ),
+              onBrowse: (_) {},
+              onProduct: (_, _) {},
+              onOpenQuote: () {},
+              quoteQuantity: 0,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Image &&
+              widget.image is AssetImage &&
+              (widget.image as AssetImage).assetName == configuredAsset,
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('agrupa los precios al entrar a una familia del catálogo', (
     tester,
@@ -268,7 +306,7 @@ void main() {
       find.byKey(const ValueKey('family-overview-limpiapipas-premium-8mm')),
       findsOneWidget,
     );
-    expect(find.text('34 colores'), findsOneWidget);
+    expect(find.text('34 colores'), findsNothing);
     expect(find.text('Mismos precios para todas las opciones'), findsOneWidget);
     expect(find.text('S/ 5.00 c/u'), findsOneWidget);
     expect(find.text('S/ 4.50 c/u'), findsOneWidget);

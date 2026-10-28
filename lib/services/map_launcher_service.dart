@@ -37,10 +37,7 @@ abstract final class MapLauncherService {
       longitude: longitude,
       label: label,
     );
-    final webUri = buildWebMapUri(
-      latitude: latitude,
-      longitude: longitude,
-    );
+    final webUri = buildWebMapUri(latitude: latitude, longitude: longitude);
 
     if (await canLaunchUrl(geoUri)) {
       return launchUrl(geoUri);

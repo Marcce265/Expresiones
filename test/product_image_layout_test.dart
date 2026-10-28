@@ -171,4 +171,52 @@ void main() {
     expect(aspectFinder, findsOneWidget);
     expect(tester.widget<AspectRatio>(aspectFinder).aspectRatio, 1.18);
   });
+
+  testWidgets('las variantes usan botones con nombres públicos limpios', (
+    tester,
+  ) async {
+    const ribbon = CatalogProduct(
+      id: 'cinta-satinada-100m',
+      name: 'Cinta satinada 100 m',
+      category: ProductCategory.materials,
+      basePrice: 29,
+      variants: [
+        ProductVariant(
+          id: 'satin-01',
+          name: 'N.º 01 · Blanco perla',
+          sku: 'SAT-01',
+          attributes: {'paletteNumber': '01'},
+        ),
+        ProductVariant(
+          id: 'satin-02',
+          name: 'N.º 02 · Marfil',
+          sku: 'SAT-02',
+          attributes: {'paletteNumber': '02'},
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ProductDetailScreen(
+            product: ribbon,
+            onAdd: ({
+              required int quantity,
+              String? variantId,
+              required String customization,
+            }) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(ChoiceChip), findsNWidgets(2));
+    expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+    expect(find.text('Blanco perla'), findsWidgets);
+    expect(find.text('Marfil'), findsOneWidget);
+    expect(find.textContaining('N.º'), findsNothing);
+    expect(find.text('Color'), findsNothing);
+  });
 }

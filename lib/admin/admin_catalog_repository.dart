@@ -88,12 +88,17 @@ class AdminCatalogRepository {
         .uploadBinary(
           path,
           bytes,
-          fileOptions: FileOptions(contentType: contentType, upsert: false),
+          fileOptions: FileOptions(
+            cacheControl: catalogImageCacheSeconds,
+            contentType: contentType,
+            upsert: false,
+          ),
         );
     return path;
   }
 
   static const maximumCatalogImageBytes = 8 * 1024 * 1024;
+  static const catalogImageCacheSeconds = '31536000';
   static const allowedCatalogImageTypes = {
     'image/jpeg',
     'image/png',

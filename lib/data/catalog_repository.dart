@@ -28,6 +28,8 @@ class CatalogRepository {
   final List<CatalogProduct> _fallbackProducts;
   final String cacheKey;
 
+  String get _cacheVersionKey => '$cacheKey.version';
+
   CatalogDataSource _lastSource = CatalogDataSource.localSeed;
   Object? _lastError;
 
@@ -44,7 +46,8 @@ class CatalogRepository {
     return _useFallback();
   }
 
-  /// Emits a fresh snapshot and then refreshes after any normalized table edit.
+  /// Emits the cached catalog when its version is current, otherwise refreshes
+  /// once. Subsequent edits are detected through the tiny metadata singleton.
   Stream<List<CatalogProduct>> watchProducts({
     bool includeInactive = false,
   }) async* {
@@ -61,78 +64,118 @@ class CatalogRepository {
       return;
     }
 
+    final cached = includeInactive ? null : await _loadCache();
+    final cachedVersion = includeInactive ? null : await _loadCacheVersion();
+    var emittedAny = false;
+    int? emittedVersion;
     try {
-      final products = await _fetchRemote(includeInactive: includeInactive);
-      _lastSource = CatalogDataSource.supabase;
-      _lastError = null;
-      if (!includeInactive) await _saveCache(products);
-      yield products;
-    } catch (error) {
-      _lastError = error;
-      final cached = includeInactive ? null : await _loadCache();
-      if (cached != null) {
-        _lastSource = CatalogDataSource.cache;
-        yield _sorted(cached);
-      } else {
-        yield _useFallback(includeInactive: includeInactive);
-      }
-    }
+      final metadataRows = _coalesceAfterFirst(
+        activeClient
+            .from('catalog_metadata')
+            .stream(primaryKey: const ['id'])
+            .eq('id', 'public'),
+      );
+      await for (final rows in metadataRows) {
+        final version = _catalogVersion(rows);
+        if (!includeInactive &&
+            !emittedAny &&
+            cached != null &&
+            version != null &&
+            version == cachedVersion) {
+          _lastSource = CatalogDataSource.cache;
+          _lastError = null;
+          emittedAny = true;
+          emittedVersion = version;
+          yield _sorted(cached);
+          continue;
+        }
+        if (version != null && version == emittedVersion) continue;
 
-    final changes = StreamController<void>();
-    final subscriptions = <StreamSubscription<dynamic>>[];
-    Timer? debounce;
-
-    void scheduleRefresh() {
-      debounce?.cancel();
-      debounce = Timer(const Duration(milliseconds: 300), () {
-        if (!changes.isClosed) changes.add(null);
-      });
-    }
-
-    void watchTable(String table) {
-      final subscription = activeClient
-          .from(table)
-          .stream(primaryKey: const ['id'])
-          .listen(
-            (_) => scheduleRefresh(),
-            onError: (Object error, StackTrace stackTrace) {
-              _lastError = error;
-            },
-          );
-      subscriptions.add(subscription);
-    }
-
-    for (final table in const [
-      'families',
-      'variants',
-      'family_price_tiers',
-      'variant_price_tiers',
-    ]) {
-      watchTable(table);
-    }
-
-    try {
-      await for (final _ in changes.stream) {
         try {
-          final products = await _fetchRemote(
-            includeInactive: includeInactive,
-          );
+          final products = await _fetchRemote(includeInactive: includeInactive);
           _lastSource = CatalogDataSource.supabase;
           _lastError = null;
-          if (!includeInactive) await _saveCache(products);
+          if (!includeInactive) {
+            await _saveCache(products, version: version);
+          }
+          emittedAny = true;
+          emittedVersion = version;
           yield products;
         } catch (error) {
-          // Keep the last good catalog on screen while connectivity recovers.
           _lastError = error;
+          if (!emittedAny) {
+            emittedAny = true;
+            if (cached != null) {
+              _lastSource = CatalogDataSource.cache;
+              yield _sorted(cached);
+            } else {
+              yield _useFallback(includeInactive: includeInactive);
+            }
+          }
         }
       }
-    } finally {
-      debounce?.cancel();
-      for (final subscription in subscriptions) {
-        await subscription.cancel();
+    } catch (error) {
+      _lastError = error;
+      if (!emittedAny) {
+        if (cached != null) {
+          _lastSource = CatalogDataSource.cache;
+          yield _sorted(cached);
+        } else {
+          yield _useFallback(includeInactive: includeInactive);
+        }
       }
-      await changes.close();
     }
+  }
+
+  int? _catalogVersion(List<Map<String, dynamic>> rows) {
+    if (rows.isEmpty) return null;
+    final raw = rows.first['version'];
+    return raw is num ? raw.toInt() : int.tryParse('$raw');
+  }
+
+  Stream<T> _coalesceAfterFirst<T>(Stream<T> source) {
+    late final StreamController<T> controller;
+    StreamSubscription<T>? subscription;
+    Timer? timer;
+    T? pending;
+    var hasPending = false;
+    var isFirst = true;
+
+    void flush() {
+      if (!hasPending || controller.isClosed) return;
+      hasPending = false;
+      controller.add(pending as T);
+    }
+
+    controller = StreamController<T>(
+      onListen: () {
+        subscription = source.listen(
+          (event) {
+            if (isFirst) {
+              isFirst = false;
+              controller.add(event);
+              return;
+            }
+            pending = event;
+            hasPending = true;
+            timer?.cancel();
+            timer = Timer(const Duration(milliseconds: 300), flush);
+          },
+          onError: controller.addError,
+          onDone: () {
+            timer?.cancel();
+            flush();
+            unawaited(controller.close());
+          },
+        );
+      },
+      onCancel: () {
+        timer?.cancel();
+        final cancellation = subscription?.cancel();
+        if (cancellation != null) unawaited(cancellation);
+      },
+    );
+    return controller.stream;
   }
 
   Future<CatalogProduct?> findById(String id) async {
@@ -192,10 +235,7 @@ class CatalogRepository {
     String table,
   ) async {
     final response = await client.from(table).select();
-    return [
-      for (final row in response)
-        Map<String, dynamic>.from(row),
-    ];
+    return [for (final row in response) Map<String, dynamic>.from(row)];
   }
 
   bool _isActive(Map<String, dynamic> row) => row['active'] != false;
@@ -232,9 +272,7 @@ class CatalogRepository {
             .whereType<Map>()
             .map(
               (item) => CatalogProduct.fromMap(
-                item.map(
-                  (key, value) => MapEntry(key.toString(), value),
-                ),
+                item.map((key, value) => MapEntry(key.toString(), value)),
               ),
             )
             .toList(),
@@ -244,13 +282,27 @@ class CatalogRepository {
     }
   }
 
-  Future<void> _saveCache(List<CatalogProduct> products) async {
+  Future<int?> _loadCacheVersion() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      return preferences.getInt(_cacheVersionKey);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _saveCache(List<CatalogProduct> products, {int? version}) async {
     try {
       final preferences = await SharedPreferences.getInstance();
       await preferences.setString(
         cacheKey,
         jsonEncode([for (final product in products) product.toMap()]),
       );
+      if (version == null) {
+        await preferences.remove(_cacheVersionKey);
+      } else {
+        await preferences.setInt(_cacheVersionKey, version);
+      }
     } catch (_) {
       // Storage quota and privacy-mode failures must not break the catalog.
     }
@@ -266,11 +318,12 @@ class CatalogRepository {
   }
 
   List<CatalogProduct> _sorted(List<CatalogProduct> products) {
-    products.sort((a, b) {
-      final order = a.sortOrder.compareTo(b.sortOrder);
-      if (order != 0) return order;
-      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-    });
-    return List.unmodifiable(products);
+    final sorted = [...products]
+      ..sort((a, b) {
+        final order = a.sortOrder.compareTo(b.sortOrder);
+        if (order != 0) return order;
+        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      });
+    return List.unmodifiable(sorted);
   }
 }

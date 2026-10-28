@@ -38,6 +38,7 @@ void main() {
         ),
         'products/limpiapipas-premium/variants/123456-piel-final.png',
       );
+      expect(AdminCatalogRepository.catalogImageCacheSeconds, '31536000');
     });
 
     test('valida contenido vacío, tamaño y formato antes de subir', () {

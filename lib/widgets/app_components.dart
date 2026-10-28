@@ -204,7 +204,7 @@ class StepProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const labels = ['Cotización', 'Datos', 'Revisión'];
+    const labels = ['Carrito', 'Datos', 'Revisión', 'Pago', 'Listo'];
     return Row(
       children: List.generate(labels.length, (index) {
         final step = index + 1;

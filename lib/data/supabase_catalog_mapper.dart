@@ -45,6 +45,12 @@ class SupabaseCatalogMapper {
         variantsByFamily[familyUuid] ?? const [],
       );
       familyVariants.sort(_bySortOrderThenName);
+      final familyImages = _imagePaths(
+        family,
+        canonicalKey: 'cover_path',
+        thumbnailKey: 'cover_thumb_path',
+        detailKey: 'cover_detail_path',
+      );
 
       products.add(
         CatalogProduct.fromMap({
@@ -75,23 +81,8 @@ class SupabaseCatalogMapper {
           'isActive': family['active'],
           'isFeatured': family['featured'],
           'sortOrder': family['sort_order'],
-          // `cover_path` is the canonical image edited by the administrator.
-          // Optimized derivatives may still contain the previous image until a
-          // background processor regenerates them, so they are fallbacks only.
-          'imageUrl': resolveImage(
-            _firstImagePath(family, const [
-              'cover_path',
-              'cover_detail_path',
-              'cover_thumb_path',
-            ]),
-          ),
-          'thumbnailUrl': resolveImage(
-            _firstImagePath(family, const [
-              'cover_path',
-              'cover_thumb_path',
-              'cover_detail_path',
-            ]),
-          ),
+          'imageUrl': resolveImage(familyImages.detail),
+          'thumbnailUrl': resolveImage(familyImages.thumbnail),
           'tags': family['tags'],
           'attributes': family['attributes'],
           'createdAt': family['created_at'],
@@ -113,27 +104,19 @@ class SupabaseCatalogMapper {
     Map<String, dynamic> variant,
     List<Map<String, dynamic>> tiers,
   ) {
+    final images = _imagePaths(
+      variant,
+      canonicalKey: 'image_path',
+      thumbnailKey: 'thumb_path',
+      detailKey: 'detail_path',
+    );
     return {
       'id': variant['slug'],
       'name': variant['name'],
       'sku': variant['sku'],
       'colorHex': variant['color_hex'],
-      // `image_path` is the value written by the CRUD. Prefer it over stale
-      // derivative paths for the same reason as the family cover above.
-      'imageUrl': resolveImage(
-        _firstImagePath(variant, const [
-          'image_path',
-          'detail_path',
-          'thumb_path',
-        ]),
-      ),
-      'thumbnailUrl': resolveImage(
-        _firstImagePath(variant, const [
-          'image_path',
-          'thumb_path',
-          'detail_path',
-        ]),
-      ),
+      'imageUrl': resolveImage(images.detail),
+      'thumbnailUrl': resolveImage(images.thumbnail),
       'priceOverride': variant['base_price'],
       'priceTiers': [for (final tier in tiers) _tierMap(tier)],
       'stock': variant['stock_count'],
@@ -168,11 +151,43 @@ class SupabaseCatalogMapper {
     return int.tryParse('$value') ?? 0;
   }
 
-  static Object? _firstImagePath(Map<String, dynamic> row, List<String> keys) {
-    for (final key in keys) {
-      final value = row[key];
-      if (value != null && value.toString().trim().isNotEmpty) return value;
+  static ({Object? detail, Object? thumbnail}) _imagePaths(
+    Map<String, dynamic> row, {
+    required String canonicalKey,
+    required String thumbnailKey,
+    required String detailKey,
+  }) {
+    final canonical = _imagePath(row[canonicalKey]);
+    final thumbnail = _imagePath(row[thumbnailKey]);
+    final detail = _imagePath(row[detailKey]);
+
+    // A newly uploaded canonical image invalidates the old derivatives. The
+    // database normally clears them; this guard also protects older rows.
+    if (canonical != null &&
+        detail != null &&
+        _comparableImagePath(canonical) != _comparableImagePath(detail)) {
+      return (detail: canonical, thumbnail: canonical);
     }
-    return null;
+    return (
+      detail: detail ?? canonical ?? thumbnail,
+      thumbnail: thumbnail ?? canonical ?? detail,
+    );
+  }
+
+  static Object? _imagePath(Object? value) =>
+      value == null || value.toString().trim().isEmpty ? null : value;
+
+  static String _comparableImagePath(Object value) {
+    var path = value.toString().trim();
+    const publicCatalogMarker = '/storage/v1/object/public/catalog/';
+    final markerIndex = path.indexOf(publicCatalogMarker);
+    if (markerIndex >= 0) {
+      path = path.substring(markerIndex + publicCatalogMarker.length);
+    } else if (path.startsWith('storage://catalog/')) {
+      path = path.substring('storage://catalog/'.length);
+    } else if (path.startsWith('catalog/')) {
+      path = path.substring('catalog/'.length);
+    }
+    return path.replaceFirst(RegExp(r'^/+'), '');
   }
 }

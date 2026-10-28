@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/quote_line.dart';
+import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/product_visual.dart';
@@ -17,6 +18,7 @@ class QuoteScreen extends StatelessWidget {
     required this.onContinue,
     required this.onBrowse,
     this.onBack,
+    this.settings = const StorefrontSettings(),
   });
 
   final List<ResolvedQuoteLine> lines;
@@ -25,6 +27,7 @@ class QuoteScreen extends StatelessWidget {
   final VoidCallback onContinue;
   final VoidCallback onBrowse;
   final VoidCallback? onBack;
+  final StorefrontSettings settings;
 
   double get subtotal => lines.fold(0, (sum, item) => sum + item.total);
 
@@ -40,8 +43,8 @@ class QuoteScreen extends StatelessWidget {
               _PageHeading(itemCount: 0, onBack: onBack),
               EmptyState(
                 icon: Icons.shopping_bag_outlined,
-                title: 'Tu cotización está vacía',
-                message: 'Explora el catálogo y agrega los materiales que quieras consultar.',
+                title: settings.text(StorefrontText.quoteEmptyTitle),
+                message: settings.text(StorefrontText.quoteEmptyBody),
                 action: FilledButton.icon(
                   onPressed: onBrowse,
                   icon: const Icon(Icons.grid_view_rounded),
@@ -65,9 +68,9 @@ class QuoteScreen extends StatelessWidget {
             const SizedBox(height: 18),
             const StepProgress(current: 1),
             const SizedBox(height: 24),
-            const InfoBanner(
-              title: 'Aún no es un pedido',
-              message: 'Expresiones confirmará disponibilidad, precio final, fecha y envío por WhatsApp.',
+            InfoBanner(
+              title: settings.text(StorefrontText.quoteNoticeTitle),
+              message: settings.text(StorefrontText.quoteNoticeBody),
               icon: Icons.info_outline_rounded,
             ),
             const SizedBox(height: 24),
@@ -80,6 +83,7 @@ class QuoteScreen extends StatelessWidget {
                   onRemove: onRemove,
                 );
                 final summary = _QuoteSummary(
+                  settings: settings,
                   subtotal: subtotal,
                   onContinue: onContinue,
                   onBrowse: onBrowse,
@@ -206,7 +210,7 @@ class _PageHeading extends StatelessWidget {
         const SizedBox(width: 4),
         Expanded(
           child: Text(
-            'Mi cotización',
+            'Mi carrito',
             style: Theme.of(context).textTheme.headlineLarge,
           ),
         ),
@@ -493,11 +497,13 @@ class _QuantityControl extends StatelessWidget {
 
 class _QuoteSummary extends StatelessWidget {
   const _QuoteSummary({
+    required this.settings,
     required this.subtotal,
     required this.onContinue,
     required this.onBrowse,
   });
 
+  final StorefrontSettings settings;
   final double subtotal;
   final VoidCallback onContinue;
   final VoidCallback onBrowse;
@@ -527,7 +533,7 @@ class _QuoteSummary extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Resumen de cotización',
+                        'Resumen del carrito',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
@@ -568,7 +574,7 @@ class _QuoteSummary extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Los precios pueden variar según disponibilidad y personalización.',
+              settings.text(StorefrontText.quotePriceNote),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 22),
@@ -579,7 +585,7 @@ class _QuoteSummary extends StatelessWidget {
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Continuar con mis datos'),
+                    Text('Continuar con la compra'),
                     SizedBox(width: 8),
                     Icon(Icons.arrow_forward_rounded, size: 19),
                   ],

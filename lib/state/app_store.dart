@@ -4,13 +4,17 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/local_checkout_receipt_store.dart';
+import '../data/product_popularity_repository.dart';
 import '../models/catalog_models.dart';
+import '../models/checkout_order.dart';
 import '../models/coordination_details.dart';
 import '../models/production_capacity.dart';
 import '../models/quote_line.dart';
 import '../data/production_capacity_repository.dart';
+import '../data/site_settings_repository.dart';
+import '../models/storefront_settings.dart';
 import '../services/commerce_telemetry_service.dart';
-import '../services/production_capacity_service.dart';
 
 typedef CatalogLoader = Future<List<CatalogProduct>> Function();
 typedef CatalogStreamLoader = Stream<List<CatalogProduct>> Function();
@@ -20,6 +24,8 @@ class AppStore extends ChangeNotifier {
     this._catalogLoader, {
     this.catalogStreamLoader,
     this.capacityRepository,
+    this.siteSettingsRepository,
+    this.popularityRepository,
     this.telemetry,
   });
 
@@ -29,14 +35,21 @@ class AppStore extends ChangeNotifier {
   final CatalogLoader _catalogLoader;
   final CatalogStreamLoader? catalogStreamLoader;
   final CapacityRepository? capacityRepository;
+  final SiteSettingsRepository? siteSettingsRepository;
+  final ProductPopularityRepository? popularityRepository;
   final CommerceTelemetryService? telemetry;
   final Map<String, QuoteLine> _cart = {};
   List<CatalogProduct> _products = const [];
+  List<String> _popularProductIds = const [];
   CoordinationDetails _details = const CoordinationDetails();
   ProductionCapacitySnapshot _capacitySnapshot =
       ProductionCapacitySnapshot.twoPersonFallback();
+  StorefrontSettings _storefrontSettings = const StorefrontSettings();
+  final LocalCheckoutReceiptStore _receiptStore = LocalCheckoutReceiptStore();
+  CheckoutOrder? _lastOrder;
   StreamSubscription<List<CatalogProduct>>? _catalogSubscription;
   StreamSubscription<ProductionCapacitySnapshot>? _capacitySubscription;
+  StreamSubscription<StorefrontSettings>? _siteSettingsSubscription;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -46,6 +59,34 @@ class AppStore extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get hasQuote => _cart.isNotEmpty;
   ProductionCapacitySnapshot get capacitySnapshot => _capacitySnapshot;
+  StorefrontSettings get storefrontSettings => _storefrontSettings;
+  CheckoutOrder? get lastOrder => _lastOrder;
+
+  /// Six distinct product families ordered by aggregate public activity.
+  ///
+  /// Missing or newly-created products are filled from catalog order so the
+  /// home page is useful before the first popularity events arrive.
+  List<CatalogProduct> get popularProducts {
+    final materials = _products
+        .where(
+          (product) =>
+              product.isActive && product.category == ProductCategory.materials,
+        )
+        .toList(growable: false);
+    final byId = {for (final product in materials) product.id: product};
+    final selected = <CatalogProduct>[];
+    final seen = <String>{};
+    for (final id in _popularProductIds) {
+      final product = byId[id];
+      if (product != null && seen.add(product.id)) selected.add(product);
+      if (selected.length == 6) break;
+    }
+    for (final product in materials) {
+      if (selected.length == 6) break;
+      if (seen.add(product.id)) selected.add(product);
+    }
+    return List.unmodifiable(selected);
+  }
 
   List<ResolvedQuoteLine> get resolvedLines {
     final byId = {for (final product in _products) product.id: product};
@@ -61,43 +102,32 @@ class AppStore extends ChangeNotifier {
   int get cartQuantity =>
       _cart.values.fold(0, (sum, line) => sum + line.quantity);
   double get subtotal => resolvedLines.fold(0, (sum, item) => sum + item.total);
-  int get productionPoints =>
-      resolvedLines.fold(0, (sum, item) => sum + item.productionPoints);
   int get maximumLeadDays => resolvedLines.fold(
     0,
     (maximum, item) => item.leadDays > maximum ? item.leadDays : maximum,
   );
 
-  ProductionPlan get earliestProductionPlan =>
-      ProductionCapacityService(_capacitySnapshot).earliestPlan(
-        requiredPoints: productionPoints,
-        minimumLeadDays: maximumLeadDays,
-        now: DateTime.now(),
-      );
-
   DateTime get earliestDesiredDate =>
-      earliestProductionPlan.completionDate ??
-      DateTime.now().add(Duration(days: maximumLeadDays));
+      dateOnly(DateTime.now()).add(Duration(days: maximumLeadDays));
 
-  bool isDesiredDateAvailable(DateTime date) =>
-      ProductionCapacityService(_capacitySnapshot)
-          .planByDate(
-            requiredPoints: productionPoints,
-            minimumLeadDays: maximumLeadDays,
-            now: DateTime.now(),
-            desiredDate: date,
-          )
-          .isAvailable;
+  Set<int> deliveryWeekdaysFor(DeliveryMethod method) =>
+      _capacitySnapshot.weekdaysForDelivery(method.name);
+
+  bool isDesiredDateAvailable(DateTime date, DeliveryMethod method) =>
+      _capacitySnapshot.isDeliveryDay(method.name, date) &&
+      !dateOnly(date).isBefore(earliestDesiredDate);
 
   Future<void> initialize() async {
     _isLoading = true;
     notifyListeners();
     await _restoreLocalState();
+    _lastOrder = await _receiptStore.load();
     await telemetry?.initialize();
-    await _loadCapacity();
+    await _startCapacityWatch();
+    await _startSiteSettingsWatch();
     await reloadCatalog(notifyAtStart: false);
+    await _loadPopularity(notify: false);
     _startCatalogWatch();
-    _startCapacityWatch();
   }
 
   Future<void> reloadCatalog({bool notifyAtStart = true}) async {
@@ -147,6 +177,10 @@ class AppStore extends ChangeNotifier {
         ),
       );
     }
+    _recordPopularity(
+      (repository) =>
+          repository.recordAdded(product.id, quantity: safeQuantity),
+    );
     notifyListeners();
   }
 
@@ -155,10 +189,18 @@ class AppStore extends ChangeNotifier {
       removeLine(line);
       return;
     }
-    if (!_cart.containsKey(line.key)) return;
+    final current = _cart[line.key];
+    if (current == null) return;
     _cart[line.key] = line.copyWith(quantity: quantity);
     _persistCart();
     _recordQuoteActivity();
+    final addedQuantity = quantity - current.quantity;
+    if (addedQuantity > 0) {
+      _recordPopularity(
+        (repository) =>
+            repository.recordAdded(line.productId, quantity: addedQuantity),
+      );
+    }
     notifyListeners();
   }
 
@@ -171,13 +213,15 @@ class AppStore extends ChangeNotifier {
 
   void recordProductView(CatalogProduct product, String? variantId) {
     final commerceTelemetry = telemetry;
-    if (commerceTelemetry == null) return;
-    unawaited(
-      commerceTelemetry.recordProductView(
-        productId: product.id,
-        variantId: variantId,
-      ),
-    );
+    if (commerceTelemetry != null) {
+      unawaited(
+        commerceTelemetry.recordProductView(
+          productId: product.id,
+          variantId: variantId,
+        ),
+      );
+    }
+    _recordPopularity((repository) => repository.recordView(product.id));
   }
 
   void recordZeroResultSearch(String query) {
@@ -200,7 +244,15 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> clearLocalData() async {
+  Future<void> completeCheckout(CheckoutOrder order) async {
+    if (!order.payment.isApproved) {
+      throw StateError('Solo se puede guardar un pago simulado aprobado.');
+    }
+    await _receiptStore.save(order);
+    // Aggregate metrics are useful for ranking, but must not delay the success
+    // screen when the network is slow or unavailable.
+    unawaited(_recordCompletedPopularity(order));
+    _lastOrder = order;
     _cart.clear();
     _details = const CoordinationDetails();
     final preferences = await SharedPreferences.getInstance();
@@ -208,6 +260,19 @@ class AppStore extends ChangeNotifier {
       preferences.remove(_cartKey),
       preferences.remove(_detailsKey),
     ]);
+    notifyListeners();
+  }
+
+  Future<void> clearLocalData() async {
+    _cart.clear();
+    _details = const CoordinationDetails();
+    final preferences = await SharedPreferences.getInstance();
+    await Future.wait([
+      preferences.remove(_cartKey),
+      preferences.remove(_detailsKey),
+      _receiptStore.clear(),
+    ]);
+    _lastOrder = null;
     await telemetry?.clearLocalData();
     notifyListeners();
   }
@@ -261,10 +326,47 @@ class AppStore extends ChangeNotifier {
     _removeMissingCartLines();
   }
 
-  Future<void> _loadCapacity() async {
-    final repository = capacityRepository;
+  Future<void> _loadPopularity({bool notify = true}) async {
+    final repository = popularityRepository;
     if (repository == null) return;
-    _capacitySnapshot = await repository.load();
+    try {
+      _popularProductIds = await repository.loadTopProductIds(limit: 6);
+      if (notify) notifyListeners();
+    } catch (_) {
+      // Ranking is optional. Catalog order remains the deterministic fallback.
+    }
+  }
+
+  void _recordPopularity(
+    Future<void> Function(ProductPopularityRepository repository) action,
+  ) {
+    final repository = popularityRepository;
+    if (repository == null) return;
+    unawaited(() async {
+      try {
+        await action(repository);
+      } catch (_) {
+        // A metrics outage must never block catalog or cart interactions.
+      }
+    }());
+  }
+
+  Future<void> _recordCompletedPopularity(CheckoutOrder order) async {
+    final repository = popularityRepository;
+    if (repository == null) return;
+    final quantities = <String, int>{};
+    for (final item in order.items) {
+      quantities.update(
+        item.productId,
+        (current) => current + item.quantity,
+        ifAbsent: () => item.quantity,
+      );
+    }
+    try {
+      await repository.recordCompleted(quantities);
+    } catch (_) {
+      // Checkout succeeds even if anonymous aggregate metrics are unavailable.
+    }
   }
 
   void _startCatalogWatch() {
@@ -282,19 +384,54 @@ class AppStore extends ChangeNotifier {
     );
   }
 
-  void _startCapacityWatch() {
+  Future<void> _startCapacityWatch() async {
     final repository = capacityRepository;
     if (repository == null) return;
-    unawaited(_capacitySubscription?.cancel());
+    await _capacitySubscription?.cancel();
+    final ready = Completer<void>();
     _capacitySubscription = repository.watch().listen(
       (snapshot) {
         _capacitySnapshot = snapshot;
-        notifyListeners();
+        if (ready.isCompleted) {
+          notifyListeners();
+        } else {
+          ready.complete();
+        }
       },
       onError: (_) {
+        if (!ready.isCompleted) ready.complete();
         // Keep the last valid snapshot or the conservative local fallback.
       },
+      onDone: () {
+        if (!ready.isCompleted) ready.complete();
+      },
     );
+    await ready.future;
+  }
+
+  Future<void> _startSiteSettingsWatch() async {
+    final repository = siteSettingsRepository;
+    if (repository == null) return;
+    await _siteSettingsSubscription?.cancel();
+    final ready = Completer<void>();
+    _siteSettingsSubscription = repository.watch().listen(
+      (settings) {
+        _storefrontSettings = settings;
+        if (ready.isCompleted) {
+          notifyListeners();
+        } else {
+          ready.complete();
+        }
+      },
+      onError: (_) {
+        if (!ready.isCompleted) ready.complete();
+        // Keep the last valid settings or the local defaults.
+      },
+      onDone: () {
+        if (!ready.isCompleted) ready.complete();
+      },
+    );
+    await ready.future;
   }
 
   void _recordQuoteActivity() {
@@ -422,6 +559,7 @@ class AppStore extends ChangeNotifier {
   void dispose() {
     unawaited(_catalogSubscription?.cancel());
     unawaited(_capacitySubscription?.cancel());
+    unawaited(_siteSettingsSubscription?.cancel());
     super.dispose();
   }
 }

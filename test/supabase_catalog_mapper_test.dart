@@ -16,6 +16,9 @@ void main() {
                   'kind': 'materials',
                   'base_price': 5,
                   'active': true,
+                  'cover_path':
+                      'https://project.supabase.co/storage/v1/object/public/'
+                      'catalog/family/detail.webp',
                   'cover_thumb_path': 'family/thumb.webp',
                   'cover_detail_path': 'family/detail.webp',
                 },
@@ -27,6 +30,9 @@ void main() {
                   'slug': 'piel',
                   'name': 'Piel',
                   'active': true,
+                  'image_path':
+                      'https://project.supabase.co/storage/v1/object/public/'
+                      'catalog/variant/detail.webp',
                   'thumb_path': 'variant/thumb.webp',
                   'detail_path': 'variant/detail.webp',
                 },

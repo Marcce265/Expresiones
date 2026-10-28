@@ -7,6 +7,7 @@ import 'dart:math' as math;
 class ProductionCapacitySnapshot {
   const ProductionCapacitySnapshot({
     required this.weeklyCapacityPoints,
+    this.deliveryWeekdays = defaultDeliveryWeekdays,
     this.reservedPointsByDate = const {},
     this.overridesByDate = const {},
     this.horizonDays = 120,
@@ -16,6 +17,23 @@ class ProductionCapacitySnapshot {
 
   /// Keys use [DateTime.weekday] (`1` Monday through `7` Sunday).
   final Map<int, int> weeklyCapacityPoints;
+
+  /// Days customers may choose for each delivery method.
+  ///
+  /// Keys match `DeliveryMethod.name`; values use [DateTime.weekday].
+  static const Map<String, Set<int>> defaultDeliveryWeekdays = {
+    'pickup': {
+      DateTime.monday,
+      DateTime.tuesday,
+      DateTime.wednesday,
+      DateTime.thursday,
+      DateTime.friday,
+      DateTime.saturday,
+    },
+    'shalom': {DateTime.monday, DateTime.saturday},
+  };
+
+  final Map<String, Set<int>> deliveryWeekdays;
 
   /// Aggregated confirmed workload, keyed as `yyyy-MM-dd`.
   final Map<String, int> reservedPointsByDate;
@@ -85,6 +103,7 @@ class ProductionCapacitySnapshot {
       weeklyCapacityPoints: weekly.isEmpty
           ? ProductionCapacitySnapshot.twoPersonFallback().weeklyCapacityPoints
           : Map.unmodifiable(weekly),
+      deliveryWeekdays: _deliveryWeekdays(map['deliveryWeekdays']),
       reservedPointsByDate: Map.unmodifiable(reserved),
       overridesByDate: Map.unmodifiable(overrides),
       horizonDays: math.max(1, _int(map['horizonDays'], fallback: 120)),
@@ -109,10 +128,20 @@ class ProductionCapacitySnapshot {
   int availableFor(DateTime date) =>
       math.max(0, capacityFor(date) - reservedFor(date));
 
+  Set<int> weekdaysForDelivery(String method) =>
+      deliveryWeekdays[method] ?? defaultDeliveryWeekdays[method] ?? const {};
+
+  bool isDeliveryDay(String method, DateTime date) =>
+      weekdaysForDelivery(method).contains(date.weekday);
+
   Map<String, dynamic> toMap() => {
     'weeklyCapacityPoints': {
       for (final entry in weeklyCapacityPoints.entries)
         entry.key.toString(): entry.value,
+    },
+    'deliveryWeekdays': {
+      for (final entry in deliveryWeekdays.entries)
+        entry.key: (entry.value.toList()..sort()),
     },
     'reservedPointsByDate': reservedPointsByDate,
     'overridesByDate': {
@@ -226,4 +255,29 @@ String? _nonEmptyString(Object? value) {
 DateTime? _dateTime(Object? value) {
   if (value is DateTime) return value;
   return DateTime.tryParse(value?.toString() ?? '');
+}
+
+Map<String, Set<int>> _deliveryWeekdays(Object? value) {
+  final map = value is Map ? value : const <Object?, Object?>{};
+  return Map.unmodifiable({
+    for (final method
+        in ProductionCapacitySnapshot.defaultDeliveryWeekdays.keys)
+      method: Set.unmodifiable(
+        _weekdaySet(
+          map[method],
+          ProductionCapacitySnapshot.defaultDeliveryWeekdays[method]!,
+        ),
+      ),
+  });
+}
+
+Set<int> _weekdaySet(Object? value, Set<int> fallback) {
+  if (value is! Iterable) return fallback;
+  final parsed = value
+      .map((item) => _int(item, fallback: 0))
+      .where(
+        (weekday) => weekday >= DateTime.monday && weekday <= DateTime.sunday,
+      )
+      .toSet();
+  return parsed.isEmpty ? fallback : parsed;
 }

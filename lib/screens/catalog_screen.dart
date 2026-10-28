@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/catalog_models.dart';
+import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/product_card.dart';
@@ -15,6 +16,7 @@ class CatalogScreen extends StatefulWidget {
     required this.onProduct,
     required this.onBack,
     required this.onOpenQuote,
+    this.settings = const StorefrontSettings(),
     this.initialCategory,
     this.onZeroResultSearch,
   });
@@ -24,6 +26,7 @@ class CatalogScreen extends StatefulWidget {
   final ProductSelected onProduct;
   final VoidCallback onBack;
   final VoidCallback onOpenQuote;
+  final StorefrontSettings settings;
   final ValueChanged<String>? onZeroResultSearch;
 
   @override
@@ -115,22 +118,23 @@ class _CatalogScreenState extends State<CatalogScreen> {
                               style: Theme.of(context).textTheme.headlineMedium,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 7,
+                          if (family == null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(99),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Text(
+                                '${tiles.length} productos',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: AppColors.ink),
+                              ),
                             ),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(99),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Text(
-                              '${tiles.length} ${_itemLabel(family)}',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: AppColors.ink),
-                            ),
-                          ),
                         ],
                       ),
                       if (family != null) ...[
@@ -140,7 +144,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                           sharedPricing: sharedPricing,
                         ),
                         const SizedBox(height: 18),
-                        const Eyebrow('Elige un color o modelo'),
+                        Eyebrow(_familyOptionLabel(family)),
                         const SizedBox(height: 8),
                       ] else
                         const SizedBox(height: 10),
@@ -149,7 +153,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
                         onChanged: _onSearchChanged,
                         onSubmitted: _reportEmptySearch,
                         decoration: InputDecoration(
-                          hintText: 'Buscar por color o modelo',
+                          hintText: widget.settings.text(
+                            StorefrontText.catalogSearchHint,
+                          ),
                           prefixIcon: const Icon(Icons.search_rounded),
                           suffixIcon: _query.isEmpty
                               ? null
@@ -176,12 +182,16 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 ),
               ),
               if (tiles.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   hasScrollBody: false,
                   child: EmptyState(
                     icon: Icons.search_off_rounded,
-                    title: 'No encontramos productos',
-                    message: 'Prueba otro término o elige un filtro diferente.',
+                    title: widget.settings.text(
+                      StorefrontText.catalogEmptyTitle,
+                    ),
+                    message: widget.settings.text(
+                      StorefrontText.catalogEmptyBody,
+                    ),
                   ),
                 )
               else ...[
@@ -280,7 +290,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 child: FilledButton.icon(
                   onPressed: widget.onOpenQuote,
                   icon: const Icon(Icons.shopping_bag_outlined, size: 19),
-                  label: const Text('Ver mi cotización'),
+                  label: const Text('Ver mi carrito'),
                 ),
               ),
             ),
@@ -452,13 +462,10 @@ String familyDisplayName(CatalogProduct product) => switch (product.id) {
   _ => product.name,
 };
 
-String _itemLabel(CatalogProduct? family) {
-  if (family == null) return 'productos';
-  return switch (family.id) {
-    'limpiapipas-premium-8mm' || 'cinta-satinada-100m' => 'colores',
-    _ => 'modelos',
-  };
-}
+String _familyOptionLabel(CatalogProduct family) => switch (family.id) {
+  'limpiapipas-premium-8mm' || 'cinta-satinada-100m' => 'Elige un color',
+  _ => 'Elige una opción',
+};
 
 class _FamilyOverview extends StatelessWidget {
   const _FamilyOverview({required this.product, required this.sharedPricing});

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/coordination_details.dart';
 import '../models/quote_line.dart';
+import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
@@ -18,6 +19,8 @@ class ReviewScreen extends StatefulWidget {
     required this.onSendWhatsapp,
     required this.onCopyMessage,
     required this.onEditQuote,
+    this.onContinueToPayment,
+    this.settings = const StorefrontSettings(),
   });
 
   final List<ResolvedQuoteLine> lines;
@@ -27,6 +30,8 @@ class ReviewScreen extends StatefulWidget {
   final Future<void> Function() onSendWhatsapp;
   final VoidCallback onCopyMessage;
   final VoidCallback onEditQuote;
+  final VoidCallback? onContinueToPayment;
+  final StorefrontSettings settings;
 
   @override
   State<ReviewScreen> createState() => _ReviewScreenState();
@@ -86,7 +91,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    'Revisa antes de enviar',
+                    widget.settings.text(StorefrontText.reviewTitle),
                     style: Theme.of(context).textTheme.headlineLarge,
                   ),
                 ),
@@ -96,7 +101,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             Padding(
               padding: const EdgeInsets.only(left: 52),
               child: Text(
-                'Comprueba los productos, tus datos y la agencia antes de abrir WhatsApp.',
+                widget.settings.text(StorefrontText.reviewBody),
                 style: Theme.of(context).textTheme.bodyMedium
                     ?.copyWith(color: AppColors.muted),
               ),
@@ -111,7 +116,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   children: [
                     _RequestCard(lines: widget.lines, subtotal: _subtotal),
                     const SizedBox(height: 14),
-                    _CoordinationCard(details: widget.details),
+                    _CoordinationCard(
+                      details: widget.details,
+                      settings: widget.settings,
+                    ),
                   ],
                 );
                 final sendPanel = _SendPanel(
@@ -123,6 +131,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   onSend: _send,
                   onCopy: _copy,
                   onEdit: widget.onEditQuote,
+                  onContinueToPayment: widget.onContinueToPayment,
+                  settings: widget.settings,
                 );
 
                 if (!wide) {
@@ -291,9 +301,10 @@ class _ReviewLine extends StatelessWidget {
 }
 
 class _CoordinationCard extends StatelessWidget {
-  const _CoordinationCard({required this.details});
+  const _CoordinationCard({required this.details, required this.settings});
 
   final CoordinationDetails details;
+  final StorefrontSettings settings;
 
   @override
   Widget build(BuildContext context) {
@@ -321,11 +332,11 @@ class _CoordinationCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Datos de coordinación',
+                        settings.text(StorefrontText.reviewContactTitle),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
-                        'Contacto, entrega y fecha elegida',
+                        settings.text(StorefrontText.reviewContactBody),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -376,6 +387,14 @@ class _CoordinationCard extends StatelessWidget {
                   ? 'Fecha deseada: por coordinar'
                   : 'Fecha deseada: ${_formatDate(desiredDate)}',
             ),
+            for (final entry in details.customFields.entries)
+              if (entry.value.trim().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _DetailRow(
+                  icon: Icons.assignment_outlined,
+                  label: '${entry.key}: ${entry.value.trim()}',
+                ),
+              ],
             if (details.note.trim().isNotEmpty) ...[
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
@@ -421,6 +440,8 @@ class _SendPanel extends StatelessWidget {
     required this.onSend,
     required this.onCopy,
     required this.onEdit,
+    this.onContinueToPayment,
+    required this.settings,
   });
 
   final String quoteId;
@@ -431,6 +452,8 @@ class _SendPanel extends StatelessWidget {
   final VoidCallback onSend;
   final VoidCallback onCopy;
   final VoidCallback onEdit;
+  final VoidCallback? onContinueToPayment;
+  final StorefrontSettings settings;
 
   @override
   Widget build(BuildContext context) {
@@ -447,11 +470,11 @@ class _SendPanel extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Mensaje listo para enviar',
+                        settings.text(StorefrontText.reviewMessageTitle),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
-                        'Puedes revisarlo antes de abrir WhatsApp',
+                        settings.text(StorefrontText.reviewMessageBody),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -493,13 +516,24 @@ class _SendPanel extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
+            if (onContinueToPayment != null) ...[
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: onContinueToPayment,
+                  icon: const Icon(Icons.lock_outline_rounded, size: 19),
+                  label: const Text('Continuar al pago de prueba'),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
             SizedBox(
               width: double.infinity,
-              child: FilledButton.icon(
+              child: OutlinedButton.icon(
                 onPressed: sending ? null : onSend,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.whatsapp,
-                  foregroundColor: Colors.white,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.whatsapp,
+                  side: const BorderSide(color: AppColors.whatsapp),
                 ),
                 icon: sending
                     ? const SizedBox(
@@ -507,21 +541,21 @@ class _SendPanel extends StatelessWidget {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AppColors.whatsapp,
                         ),
                       )
                     : const Icon(Icons.chat_outlined),
                 label: Text(
                   sending
                       ? 'Abriendo WhatsApp…'
-                      : 'Enviar cotización por WhatsApp',
+                      : 'Enviar por WhatsApp sin pagar',
                 ),
               ),
             ),
             const SizedBox(height: 10),
             Center(
               child: Text(
-                'No se realiza ningún pago dentro de la aplicación.',
+                settings.text(StorefrontText.reviewPaymentNote),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -555,7 +589,7 @@ class _SendPanel extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: onEdit,
                 icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Editar cotización'),
+                label: const Text('Editar carrito'),
               ),
             ),
           ],

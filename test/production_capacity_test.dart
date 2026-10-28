@@ -99,5 +99,24 @@ void main() {
       expect(plan.notBefore, DateTime(2026, 10, 14));
       expect(plan.completionDate, DateTime(2026, 10, 14));
     });
+
+    test('conserva los días configurados para cada tipo de entrega', () {
+      final snapshot = ProductionCapacitySnapshot.fromMap({
+        'weeklyCapacityPoints': {'1': 8},
+        'deliveryWeekdays': {
+          'pickup': [2, 3, 4],
+          'shalom': [DateTime.monday, DateTime.saturday],
+        },
+      });
+      final restored = ProductionCapacitySnapshot.fromMap(snapshot.toMap());
+
+      expect(restored.weekdaysForDelivery('pickup'), {2, 3, 4});
+      expect(restored.weekdaysForDelivery('shalom'), {
+        DateTime.monday,
+        DateTime.saturday,
+      });
+      expect(restored.isDeliveryDay('shalom', DateTime(2026, 10, 24)), isTrue);
+      expect(restored.isDeliveryDay('shalom', DateTime(2026, 10, 23)), isFalse);
+    });
   });
 }

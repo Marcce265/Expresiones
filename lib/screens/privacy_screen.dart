@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
@@ -10,11 +11,13 @@ class PrivacyScreen extends StatefulWidget {
     required this.onBack,
     required this.onClearLocalData,
     this.onAdminLogin,
+    this.settings = const StorefrontSettings(),
   });
 
   final VoidCallback onBack;
   final Future<void> Function() onClearLocalData;
   final VoidCallback? onAdminLogin;
+  final StorefrontSettings settings;
 
   @override
   State<PrivacyScreen> createState() => _PrivacyScreenState();
@@ -29,8 +32,9 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Borrar datos de este dispositivo'),
         content: const Text(
-          'Se eliminarán la cotización, los datos de coordinación y los eventos '
-          'anónimos que todavía no se hayan enviado. Esta acción no puede deshacerse.',
+          'Se eliminarán el carrito, los datos de coordinación, el último '
+          'comprobante de demostración y los eventos anónimos que todavía no '
+          'se hayan enviado. Esta acción no puede deshacerse.',
         ),
         actions: [
           TextButton(
@@ -72,7 +76,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        'Privacidad',
+                        widget.settings.text(StorefrontText.privacyTitle),
                         style: Theme.of(context).textTheme.headlineLarge,
                       ),
                     ),
@@ -80,71 +84,24 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Política de privacidad de Expresiones',
+                  widget.settings.text(StorefrontText.privacySubtitle),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Última actualización: 20 de octubre de 2026',
+                  widget.settings.text(StorefrontText.privacyUpdatedAt),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 24),
-                const _PrivacySection(
-                  title: 'Datos guardados en tu dispositivo',
-                  body:
-                      'La cotización, el nombre, el teléfono, la forma de entrega, '
-                      'la agencia elegida, la fecha y la nota se guardan localmente '
-                      'para que puedas continuar después. Expresiones no recibe esos '
-                      'datos mientras permanecen guardados localmente.',
-                ),
-                const _PrivacySection(
-                  title: 'Envío por WhatsApp',
-                  body:
-                      'Cuando eliges enviar la cotización, la aplicación prepara el '
-                      'mensaje y abre WhatsApp. Tú decides si finalmente lo envías. '
-                      'Desde ese momento, el tratamiento del mensaje también se rige '
-                      'por las condiciones y la política de WhatsApp.',
-                ),
-                const _PrivacySection(
-                  title: 'Catálogo y capacidad',
-                  body:
-                      'La base de datos en la nube (Supabase) se utiliza para consultar productos, precios, '
-                      'stock y disponibilidad agregada. Los nombres, teléfonos, notas '
-                      'y cotizaciones no se guardan en la base de datos remota.',
-                ),
-                const _PrivacySection(
-                  title: 'Medición anónima',
-                  body:
-                      'Cuando la medición comercial está habilitada, se registran '
-                      'búsquedas sin resultado, identificadores técnicos de productos '
-                      'vistos o agregados y rangos de importe. También se registra si '
-                      'se abrió WhatsApp para enviarla o si quedó '
-                      'inactiva. Estos eventos no '
-                      'incluyen nombre, teléfono, dirección, nota, personalización ni '
-                      'un identificador del cliente.',
-                ),
-                const _PrivacySection(
-                  title: 'Archivos exportados',
-                  body:
-                      'Los archivos PDF y Excel se generan en el dispositivo. Quedan '
-                      'bajo tu control en la carpeta de descargas y no se suben a un '
-                      'servidor de Expresiones.',
-                ),
-                const _PrivacySection(
-                  title: 'Directorio de Shalom',
-                  body:
-                      'La lista de agencias es una copia local del directorio público '
-                      'de Shalom. Seleccionar una agencia no realiza una reserva ni '
-                      'comparte automáticamente tus datos con Shalom.',
-                ),
-                const _PrivacySection(
-                  title: 'Conservación y contacto',
-                  body:
-                      'Los datos locales permanecen hasta que se borren desde esta '
-                      'pantalla, se limpien los datos de la aplicación o se desinstale. '
-                      'Para consultas sobre privacidad puedes comunicarte con '
-                      'Expresiones al WhatsApp +51 956 744 914.',
-                ),
+                for (var index = 1; index <= 8; index++)
+                  _PrivacySection(
+                    title: widget.settings.text(
+                      StorefrontText.privacySectionTitle(index),
+                    ),
+                    body: widget.settings.text(
+                      StorefrontText.privacySectionBody(index),
+                    ),
+                  ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(18),
@@ -156,13 +113,14 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Control de tus datos',
+                        widget.settings.text(
+                          StorefrontText.privacyControlTitle,
+                        ),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Puedes borrar ahora la información almacenada por Expresiones '
-                        'en este dispositivo.',
+                      Text(
+                        widget.settings.text(StorefrontText.privacyControlBody),
                       ),
                       const SizedBox(height: 14),
                       OutlinedButton.icon(
@@ -175,7 +133,11 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                                 ),
                               )
                             : const Icon(Icons.delete_outline_rounded),
-                        label: const Text('Borrar mis datos locales'),
+                        label: Text(
+                          widget.settings.text(
+                            StorefrontText.privacyClearButton,
+                          ),
+                        ),
                       ),
                     ],
                   ),

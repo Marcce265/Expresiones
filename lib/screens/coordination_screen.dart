@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/coordination_details.dart';
+import '../models/production_capacity.dart';
 import '../models/shalom_agency.dart';
+import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
+import '../widgets/checkout_field_icons.dart';
+import '../widgets/pickup_location_map.dart';
 import '../widgets/shalom_embedded_map.dart';
 import 'shalom_agency_picker.dart';
 
@@ -14,16 +18,18 @@ class CoordinationScreen extends StatefulWidget {
     super.key,
     required this.initial,
     required this.earliestDate,
-    required this.productionPoints,
     required this.onSubmit,
     this.isDateAvailable,
+    this.deliveryWeekdays,
+    this.settings = const StorefrontSettings(),
   });
 
   final CoordinationDetails initial;
   final DateTime earliestDate;
-  final int productionPoints;
   final ValueChanged<CoordinationDetails> onSubmit;
-  final bool Function(DateTime date)? isDateAvailable;
+  final bool Function(DateTime date, DeliveryMethod method)? isDateAvailable;
+  final Set<int> Function(DeliveryMethod method)? deliveryWeekdays;
+  final StorefrontSettings settings;
 
   @override
   State<CoordinationScreen> createState() => _CoordinationScreenState();
@@ -34,6 +40,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
   late final TextEditingController _noteController;
+  final Map<String, TextEditingController> _customControllers = {};
   late DeliveryMethod _deliveryMethod;
   DateTime? _desiredDate;
   late String _agencyId;
@@ -51,6 +58,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     _nameController = TextEditingController(text: initial.name);
     _phoneController = TextEditingController(text: initial.phone);
     _noteController = TextEditingController(text: initial.note);
+    _syncCustomControllers(initialValues: initial.customFields);
     _deliveryMethod = initial.deliveryMethod;
     _agencyId = initial.shalomAgencyId;
     _agencyName = initial.shalomAgencyName;
@@ -61,6 +69,37 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     _desiredDate = initial.desiredDate == null
         ? null
         : _dateOnly(initial.desiredDate!);
+    if (_desiredDate != null && !_isSelectable(_desiredDate!)) {
+      _desiredDate = null;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant CoordinationScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.settings.checkoutFields != widget.settings.checkoutFields) {
+      _syncCustomControllers(initialValues: widget.initial.customFields);
+    }
+  }
+
+  void _syncCustomControllers({required Map<String, String> initialValues}) {
+    final activeIds = <String>{};
+    for (final field in widget.settings.checkoutFields.where(
+      (field) => field.enabled,
+    )) {
+      activeIds.add(field.id);
+      _customControllers.putIfAbsent(
+        field.id,
+        () => TextEditingController(
+          text: initialValues[field.label] ?? initialValues[field.id] ?? '',
+        ),
+      );
+    }
+    for (final id in _customControllers.keys.toList()) {
+      if (!activeIds.contains(id)) {
+        _customControllers.remove(id)?.dispose();
+      }
+    }
   }
 
   @override
@@ -68,6 +107,9 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     _noteController.dispose();
+    for (final controller in _customControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -89,11 +131,27 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     return null;
   }
 
+  Set<int> get _allowedWeekdays =>
+      widget.deliveryWeekdays?.call(_deliveryMethod) ??
+      ProductionCapacitySnapshot.defaultDeliveryWeekdays[_deliveryMethod
+          .name] ??
+      const {};
+
   bool _isSelectable(DateTime date) {
     final value = _dateOnly(date);
     return !value.isBefore(_firstDate) &&
-        value.weekday != DateTime.sunday &&
-        (widget.isDateAvailable?.call(value) ?? true);
+        _allowedWeekdays.contains(value.weekday) &&
+        (widget.isDateAvailable?.call(value, _deliveryMethod) ?? true);
+  }
+
+  void _selectDeliveryMethod(DeliveryMethod method) {
+    setState(() {
+      _deliveryMethod = method;
+      _agencyError = false;
+      if (_desiredDate != null && !_isSelectable(_desiredDate!)) {
+        _desiredDate = null;
+      }
+    });
   }
 
   Future<void> _pickDate() async {
@@ -150,6 +208,15 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   void _submit() {
     FocusManager.instance.primaryFocus?.unfocus();
     if (!_formKey.currentState!.validate()) return;
+    if (_desiredDate != null && !_isSelectable(_desiredDate!)) {
+      setState(() => _desiredDate = null);
+      showAppNotice(
+        context,
+        'La fecha elegida ya no está disponible. Elige una nueva fecha.',
+        tone: AppNoticeTone.info,
+      );
+      return;
+    }
     if (_deliveryMethod == DeliveryMethod.shalom && _agencyId.isEmpty) {
       setState(() => _agencyError = true);
       return;
@@ -183,6 +250,12 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
             : null,
         desiredDate: _desiredDate,
         note: _noteController.text.trim(),
+        customFields: Map.unmodifiable({
+          for (final field in widget.settings.checkoutFields)
+            if (field.enabled &&
+                (_customControllers[field.id]?.text.trim().isNotEmpty ?? false))
+              field.label: _customControllers[field.id]!.text.trim(),
+        }),
       ),
     );
   }
@@ -210,22 +283,45 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
               _FormSectionCard(
                 number: '1',
                 icon: Icons.person_outline_rounded,
-                title: 'Tus datos de contacto',
-                description: 'Los usaremos únicamente para coordinar esta cotización contigo.',
-                child: _ContactFields(
-                  nameController: _nameController,
-                  phoneController: _phoneController,
-                  validateName: _validateName,
-                  validatePhone: _validatePhone,
+                title: widget.settings.text(
+                  StorefrontText.coordinationContactTitle,
+                ),
+                description: widget.settings.text(
+                  StorefrontText.coordinationContactBody,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _ContactFields(
+                      nameController: _nameController,
+                      phoneController: _phoneController,
+                      validateName: _validateName,
+                      validatePhone: _validatePhone,
+                    ),
+                    if (widget.settings.checkoutFields.any(
+                      (field) => field.enabled,
+                    )) ...[
+                      const Divider(height: 34),
+                      _CustomCheckoutFields(
+                        fields: widget.settings.checkoutFields
+                            .where((field) => field.enabled)
+                            .toList(growable: false),
+                        controllers: _customControllers,
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(height: 18),
               _FormSectionCard(
                 number: '2',
                 icon: Icons.local_shipping_outlined,
-                title: 'Entrega del pedido',
-                description:
-                    'Elige recojo en Huancayo o una agencia Shalom de destino.',
+                title: widget.settings.text(
+                  StorefrontText.coordinationDeliveryTitle,
+                ),
+                description: widget.settings.text(
+                  StorefrontText.coordinationDeliveryBody,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -233,23 +329,28 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                       builder: (context, constraints) {
                         final horizontal = constraints.maxWidth >= 620;
                         final pickup = _DeliveryOption(
-                          title: 'Recojo en Huancayo',
-                          subtitle: 'Coordinamos lugar y horario',
+                          title: widget.settings.text(
+                            StorefrontText.coordinationPickupTitle,
+                          ),
+                          subtitle: widget.settings.text(
+                            StorefrontText.coordinationPickupBody,
+                          ),
                           icon: Icons.storefront_outlined,
                           selected: _deliveryMethod == DeliveryMethod.pickup,
-                          onTap: () => setState(() {
-                            _deliveryMethod = DeliveryMethod.pickup;
-                            _agencyError = false;
-                          }),
+                          onTap: () =>
+                              _selectDeliveryMethod(DeliveryMethod.pickup),
                         );
                         final shipping = _DeliveryOption(
-                          title: 'Envío por Shalom',
-                          subtitle: 'Elige una agencia en cualquier ciudad',
+                          title: widget.settings.text(
+                            StorefrontText.coordinationShalomTitle,
+                          ),
+                          subtitle: widget.settings.text(
+                            StorefrontText.coordinationShalomBody,
+                          ),
                           icon: Icons.local_shipping_outlined,
                           selected: _deliveryMethod == DeliveryMethod.shalom,
-                          onTap: () => setState(
-                            () => _deliveryMethod = DeliveryMethod.shalom,
-                          ),
+                          onTap: () =>
+                              _selectDeliveryMethod(DeliveryMethod.shalom),
                         );
 
                         if (horizontal) {
@@ -284,7 +385,10 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                               showError: _agencyError,
                               onChooseAgency: _pickAgency,
                             )
-                          : const SizedBox.shrink(key: ValueKey('pickup')),
+                          : _PickupDestinationSection(
+                              key: const ValueKey('pickup'),
+                              location: widget.settings.pickupLocation,
+                            ),
                     ),
                   ],
                 ),
@@ -295,8 +399,12 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                   final dateSection = _FormSectionCard(
                     number: '3',
                     icon: Icons.calendar_month_outlined,
-                    title: 'Fecha deseada',
-                    description: 'Consulta la primera fecha estimada y elige el día que prefieres.',
+                    title: widget.settings.text(
+                      StorefrontText.coordinationDateTitle,
+                    ),
+                    description: widget.settings.text(
+                      StorefrontText.coordinationDateBody,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -325,27 +433,21 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                         Text(
                           _firstSelectableDate == null
                               ? 'No hay fechas disponibles dentro de los próximos 365 días.'
-                              : 'Primera fecha estimada: ${_formatDate(_firstSelectableDate!)}. Los domingos no están disponibles.',
+                              : 'Primera fecha estimada: ${_formatDate(_firstSelectableDate!)}. ${_deliveryScheduleMessage()}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
-                        if (widget.productionPoints > 0) ...[
-                          const SizedBox(height: 16),
-                          InfoBanner(
-                            title: 'Capacidad de producción',
-                            message:
-                                'Tu selección requiere ${widget.productionPoints} ${widget.productionPoints == 1 ? 'punto' : 'puntos'} de trabajo. Confirmaremos la fecha por WhatsApp.',
-                            icon: Icons.schedule_outlined,
-                            color: AppColors.pinkSoft,
-                          ),
-                        ],
                       ],
                     ),
                   );
                   final noteSection = _FormSectionCard(
                     number: '4',
                     icon: Icons.notes_rounded,
-                    title: 'Detalles finales',
-                    description: 'Añade colores, referencias, dedicatorias o indicaciones especiales.',
+                    title: widget.settings.text(
+                      StorefrontText.coordinationDetailsTitle,
+                    ),
+                    description: widget.settings.text(
+                      StorefrontText.coordinationDetailsBody,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -355,9 +457,10 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                           maxLines: 7,
                           maxLength: 500,
                           textCapitalization: TextCapitalization.sentences,
-                          decoration: const InputDecoration(
-                            hintText:
-                                'Escribe aquí cualquier detalle adicional…',
+                          decoration: InputDecoration(
+                            hintText: widget.settings.text(
+                              StorefrontText.coordinationDetailsHint,
+                            ),
                             alignLabelWithHint: true,
                           ),
                         ),
@@ -399,6 +502,13 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     if (text.isEmpty) return 'Escribe tu nombre.';
     if (letters < 2) return 'Escribe un nombre válido.';
     return null;
+  }
+
+  String _deliveryScheduleMessage() {
+    final days = _formatWeekdays(_allowedWeekdays);
+    return _deliveryMethod == DeliveryMethod.shalom
+        ? 'Los envíos por Shalom salen $days.'
+        : 'Puedes elegir recojo $days.';
   }
 
   String? _validatePhone(String? value) {
@@ -505,6 +615,95 @@ class _FormSectionCard extends StatelessWidget {
   }
 }
 
+class _PickupDestinationSection extends StatelessWidget {
+  const _PickupDestinationSection({super.key, required this.location});
+
+  final PickupLocationSettings location;
+
+  @override
+  Widget build(BuildContext context) {
+    final details = Container(
+      constraints: const BoxConstraints(minHeight: 320),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CircleAvatar(
+                backgroundColor: AppColors.pinkSoft,
+                child: Icon(Icons.storefront_outlined),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Punto de recojo',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    Text(
+                      location.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ],
+                ),
+              ),
+              if (location.hasCoordinates)
+                const Icon(Icons.check_circle_rounded),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _AgencyDetail(icon: Icons.place_outlined, text: location.address),
+          const SizedBox(height: 14),
+          Text(
+            location.hasCoordinates
+                ? 'Revisa la ubicación directamente en el mapa. El horario exacto se confirma por WhatsApp.'
+                : 'La dirección y el horario exactos se confirmarán por WhatsApp.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+    final map = PickupLocationMap(location: location, height: 320);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _FieldLabel('Ubicación de recojo'),
+          const SizedBox(height: 10),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 880) {
+                return Column(
+                  children: [details, const SizedBox(height: 12), map],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 5, child: details),
+                  const SizedBox(width: 18),
+                  Expanded(flex: 7, child: map),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ShalomDestinationSection extends StatelessWidget {
   const _ShalomDestinationSection({
     super.key,
@@ -579,6 +778,59 @@ class _ShalomDestinationSection extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CustomCheckoutFields extends StatelessWidget {
+  const _CustomCheckoutFields({
+    required this.fields,
+    required this.controllers,
+  });
+
+  final List<CheckoutCustomField> fields;
+  final Map<String, TextEditingController> controllers;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final half = constraints.maxWidth >= 650
+            ? (constraints.maxWidth - 18) / 2
+            : constraints.maxWidth;
+        return Wrap(
+          spacing: 18,
+          runSpacing: 18,
+          children: [
+            for (final field in fields)
+              SizedBox(
+                width: field.multiline ? constraints.maxWidth : half,
+                child: _LabeledField(
+                  label: '${field.label}${field.required ? ' *' : ''}',
+                  child: TextFormField(
+                    controller: controllers[field.id],
+                    minLines: field.multiline ? 3 : 1,
+                    maxLines: field.multiline ? 5 : 1,
+                    maxLength: field.multiline ? 500 : 160,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      hintText: field.hint.isEmpty ? null : field.hint,
+                      prefixIcon: Icon(CheckoutFieldIcons.resolve(field.icon)),
+                      counterText: field.multiline ? null : '',
+                      alignLabelWithHint: field.multiline,
+                    ),
+                    validator: (value) {
+                      if (field.required && (value?.trim().isEmpty ?? true)) {
+                        return 'Completa este campo.';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -855,14 +1107,14 @@ class _SubmitArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hint = Text(
-      'Todavía no se realizará ningún pago.',
+      'Después podrás completar un pago de demostración sin cobros reales.',
       textAlign: TextAlign.center,
       style: Theme.of(context).textTheme.bodySmall,
     );
     final button = FilledButton.icon(
       onPressed: onPressed,
       icon: const Icon(Icons.arrow_forward_rounded, size: 19),
-      label: const Text('Revisar mi cotización'),
+      label: const Text('Revisar mi compra'),
     );
 
     return LayoutBuilder(
@@ -1023,4 +1275,21 @@ String _formatDate(DateTime value) {
     'diciembre',
   ];
   return '${value.day} de ${months[value.month - 1]} de ${value.year}';
+}
+
+String _formatWeekdays(Set<int> weekdays) {
+  const names = {
+    DateTime.monday: 'lunes',
+    DateTime.tuesday: 'martes',
+    DateTime.wednesday: 'miércoles',
+    DateTime.thursday: 'jueves',
+    DateTime.friday: 'viernes',
+    DateTime.saturday: 'sábado',
+    DateTime.sunday: 'domingo',
+  };
+  final values = weekdays.toList()..sort();
+  final labels = values.map((day) => names[day]!).toList(growable: false);
+  if (labels.isEmpty) return 'según disponibilidad';
+  if (labels.length == 1) return 'el ${labels.single}';
+  return '${labels.take(labels.length - 1).join(', ')} y ${labels.last}';
 }
