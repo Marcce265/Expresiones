@@ -2243,19 +2243,25 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final compactDialog = MediaQuery.sizeOf(context).width < 600;
+    final media = MediaQuery.sizeOf(context);
+    final isMobile = media.width < 768;
+
     return Dialog(
-      insetPadding: EdgeInsets.all(compactDialog ? 8 : 20),
+      backgroundColor: AppColors.canvas,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 8 : 24,
+        vertical: isMobile ? 8 : 20,
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: 860,
-          maxHeight:
-              MediaQuery.sizeOf(context).height - (compactDialog ? 16 : 40),
+          maxWidth: 1360,
+          maxHeight: media.height - (isMobile ? 16 : 40),
         ),
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 12, 14),
+            Container(
+              color: AppColors.surface,
+              padding: const EdgeInsets.fromLTRB(24, 18, 16, 16),
               child: Row(
                 children: [
                   Expanded(
@@ -2266,10 +2272,10 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                           widget.product == null
                               ? 'CREAR EN EL CATÁLOGO'
                               : 'EDITAR EN EL CATÁLOGO',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                 color: AppColors.muted,
                                 letterSpacing: 1.05,
+                                fontWeight: FontWeight.w600,
                               ),
                         ),
                         const SizedBox(height: 4),
@@ -2277,9 +2283,11 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                           widget.product == null
                               ? 'Nuevo producto'
                               : widget.product!.name,
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.headlineSmall,
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ],
                     ),
@@ -2287,216 +2295,387 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                   IconButton(
                     onPressed: _saving ? null : () => Navigator.pop(context),
                     icon: const Icon(Icons.close_rounded),
+                    tooltip: 'Cerrar',
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
+            const Divider(height: 1, color: AppColors.border),
             Expanded(
               child: Form(
                 key: _formKey,
-                child: ListView(
-                  padding: const EdgeInsets.all(24),
-                  children: [
-                    _ImageEditor(
-                      label: _name.text.trim().isEmpty
-                          ? 'Imagen del producto'
-                          : _name.text.trim(),
-                      imageUrl: _previewUrl(_image.previewValue),
-                      uploading: _uploadingImage,
-                      onPick: _pickImage,
-                    ),
-                    const SizedBox(height: 18),
-                    _formRow([
-                      TextFormField(
-                        controller: _name,
-                        decoration: const InputDecoration(
-                          labelText: 'Nombre *',
-                        ),
-                        validator: _required,
-                      ),
-                      TextFormField(
-                        controller: _sku,
-                        decoration: const InputDecoration(
-                          labelText: 'Código / SKU',
-                        ),
-                      ),
-                    ]),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _description,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Descripción',
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    _formRow([
-                      DropdownButtonFormField<ProductCategory>(
-                        initialValue: _category,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Categoría',
-                        ),
-                        items: [
-                          for (final category in ProductCategory.values)
-                            DropdownMenuItem(
-                              value: category,
-                              child: Text(category.label),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) setState(() => _category = value);
-                        },
-                      ),
-                    ]),
-                    const SizedBox(height: 14),
-                    _formRow([
-                      TextFormField(
-                        controller: _basePrice,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Precio base (S/) *',
-                        ),
-                        validator: _nonNegativeDecimal,
-                      ),
-                      TextFormField(
-                        controller: _stock,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Stock exacto',
-                          hintText: 'Vacío si no se publica',
-                        ),
-                        validator: _optionalNonNegativeInt,
-                      ),
-                      DropdownButtonFormField<StockStatus>(
-                        initialValue: _stockStatus,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Disponibilidad',
-                        ),
-                        items: [
-                          for (final status in StockStatus.values)
-                            DropdownMenuItem(
-                              value: status,
-                              child: Text(status.label),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _stockStatus = value);
-                          }
-                        },
-                      ),
-                    ]),
-                    const SizedBox(height: 18),
-                    _PriceTiersEditor(
-                      tiers: _priceTiers,
-                      onAdd: (quantity) => _addPriceTier(_priceTiers, quantity),
-                      onRemove: (tier) => _removePriceTier(_priceTiers, tier),
-                      onChanged: () => setState(() {}),
-                    ),
-                    const SizedBox(height: 14),
-                    _formRow([
-                      TextFormField(
-                        controller: _leadDays,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Días de preparación',
-                        ),
-                        validator: _nonNegativeInt,
-                      ),
-                      TextFormField(
-                        controller: _sortOrder,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Orden'),
-                        validator: _nonNegativeInt,
-                      ),
-                    ]),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 18,
-                      runSpacing: 6,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWide = constraints.maxWidth >= 940;
+
+                    final imageCard = _cardContainer(
+                      context: context,
+                      title: 'Imagen principal',
+                      subtitle: 'Foto de portada que se mostrará en el catálogo',
                       children: [
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Publicado'),
-                          value: _isActive,
-                          onChanged: (value) =>
-                              setState(() => _isActive = value),
-                        ),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Destacado'),
-                          value: _isFeatured,
-                          onChanged: (value) =>
-                              setState(() => _isFeatured = value),
-                        ),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Precio por revisar'),
-                          value: _priceIsEstimate,
-                          onChanged: (value) =>
-                              setState(() => _priceIsEstimate = value),
+                        _ImageEditor(
+                          label: _name.text.trim().isEmpty
+                              ? 'Imagen del producto'
+                              : _name.text.trim(),
+                          imageUrl: _previewUrl(_image.previewValue),
+                          uploading: _uploadingImage,
+                          onPick: _pickImage,
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
+                    );
+
+                    final infoCard = _cardContainer(
+                      context: context,
+                      title: 'Información básica',
+                      subtitle: 'Datos visibles y clasificación del producto',
                       children: [
-                        Expanded(
-                          child: Text(
-                            'Variantes (${_variants.length})',
-                            style: Theme.of(context).textTheme.titleLarge,
+                        TextFormField(
+                          controller: _name,
+                          decoration: const InputDecoration(
+                            labelText: 'Nombre del producto *',
+                            hintText: 'Ej. Limpiapipas premium 8 mm',
+                          ),
+                          validator: _required,
+                        ),
+                        const SizedBox(height: 14),
+                        LayoutBuilder(
+                          builder: (context, c) {
+                            final stack = c.maxWidth < 460;
+                            final categoryField = DropdownButtonFormField<ProductCategory>(
+                              initialValue: _category,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Categoría',
+                              ),
+                              items: [
+                                for (final category in ProductCategory.values)
+                                  DropdownMenuItem(
+                                    value: category,
+                                    child: Text(category.label),
+                                  ),
+                              ],
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => _category = value);
+                                }
+                              },
+                            );
+                            final skuField = TextFormField(
+                              controller: _sku,
+                              decoration: const InputDecoration(
+                                labelText: 'Código / SKU',
+                                hintText: 'Ej. XS',
+                              ),
+                            );
+                            if (stack) {
+                              return Column(
+                                children: [
+                                  categoryField,
+                                  const SizedBox(height: 14),
+                                  skuField,
+                                ],
+                              );
+                            }
+                            return Row(
+                              children: [
+                                Expanded(flex: 3, child: categoryField),
+                                const SizedBox(width: 12),
+                                Expanded(flex: 2, child: skuField),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _description,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            labelText: 'Descripción',
+                            hintText: 'Detalles, material, dimensiones o uso recomendado...',
                           ),
                         ),
-                        FilledButton.tonalIcon(
-                          onPressed: _addVariant,
-                          icon: const Icon(Icons.add_rounded),
-                          label: const Text('Agregar variante'),
-                        ),
                       ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Opciones en las que viene este producto (colores o modelos). Todas compartirán el mismo precio base y precios por mayor.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 10),
-                    if (_variants.isEmpty)
-                      const InfoBanner(
-                        icon: Icons.layers_outlined,
-                        title: 'Este producto aún no tiene variantes',
-                        message: 'Agrégalas cuando el material se venda en distintos colores, tamaños o modelos.',
-                      )
-                    else
-                      for (final variant in _variants)
-                        _VariantEditorTile(
-                          draft: variant,
-                          imageUrl: _previewUrl(variant.image.previewValue),
-                          uploading: _uploadingImage,
-                          onPickImage: () => _pickImage(variant: variant),
-                          onDelete: () => _removeVariant(variant),
+                    );
+
+                    final pricingCard = _cardContainer(
+                      context: context,
+                      title: 'Precios e Inventario',
+                      subtitle: 'Precio unitario, stock y descuentos al por mayor',
+                      children: [
+                        LayoutBuilder(
+                          builder: (context, c) {
+                            final stack = c.maxWidth < 560;
+                            final basePriceField = TextFormField(
+                              controller: _basePrice,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: 'Precio base (S/) *',
+                                prefixText: 'S/ ',
+                                hintText: '0.00',
+                              ),
+                              validator: _nonNegativeDecimal,
+                            );
+                            final stockField = TextFormField(
+                              controller: _stock,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Stock exacto',
+                                hintText: 'Vacío si es ilimitado',
+                              ),
+                              validator: _optionalNonNegativeInt,
+                            );
+                            final statusField = DropdownButtonFormField<StockStatus>(
+                              initialValue: _stockStatus,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Disponibilidad',
+                              ),
+                              items: [
+                                for (final status in StockStatus.values)
+                                  DropdownMenuItem(
+                                    value: status,
+                                    child: Text(status.label),
+                                  ),
+                              ],
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => _stockStatus = value);
+                                }
+                              },
+                            );
+                            if (stack) {
+                              return Column(
+                                children: [
+                                  basePriceField,
+                                  const SizedBox(height: 12),
+                                  stockField,
+                                  const SizedBox(height: 12),
+                                  statusField,
+                                ],
+                              );
+                            }
+                            return Row(
+                              children: [
+                                Expanded(flex: 3, child: basePriceField),
+                                const SizedBox(width: 12),
+                                Expanded(flex: 3, child: stockField),
+                                const SizedBox(width: 12),
+                                Expanded(flex: 4, child: statusField),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'Precios por mayor (Docena / Ciento)',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Aplica para el producto base y para todas sus variantes.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.muted,
+                              ),
+                        ),
+                        const SizedBox(height: 10),
+                        _PriceTiersEditor(
+                          tiers: _priceTiers,
+                          onAdd: (quantity) => _addPriceTier(_priceTiers, quantity),
+                          onRemove: (tier) => _removePriceTier(_priceTiers, tier),
                           onChanged: () => setState(() {}),
                         ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        _error!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+                      ],
+                    );
+
+                    final visibilityCard = _cardContainer(
+                      context: context,
+                      title: 'Visibilidad y Estado',
+                      subtitle: 'Controla si se muestra y cómo se presenta a los clientes',
+                      children: [
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Publicado en catálogo', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                          subtitle: const Text('Visible para los clientes en la tienda', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                          value: _isActive,
+                          onChanged: (value) => setState(() => _isActive = value),
                         ),
+                        const Divider(height: 14, color: AppColors.border),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Producto destacado', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                          subtitle: const Text('Aparece en inicio y recomendaciones destacadas', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                          value: _isFeatured,
+                          onChanged: (value) => setState(() => _isFeatured = value),
+                        ),
+                        const Divider(height: 14, color: AppColors.border),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Precio por revisar', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                          subtitle: const Text("Muestra etiqueta 'A consultar' en vez del precio fijo", style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                          value: _priceIsEstimate,
+                          onChanged: (value) => setState(() => _priceIsEstimate = value),
+                        ),
+                      ],
+                    );
+
+                    final logisticsCard = _cardContainer(
+                      context: context,
+                      title: 'Logística y Catálogo',
+                      subtitle: 'Tiempo de preparación y posición de orden',
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _leadDays,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'Días de preparación',
+                                  hintText: '0',
+                                  prefixIcon: Icon(Icons.schedule_rounded, size: 18),
+                                ),
+                                validator: _nonNegativeInt,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _sortOrder,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'Orden de lista',
+                                  hintText: '0',
+                                  prefixIcon: Icon(Icons.sort_rounded, size: 18),
+                                ),
+                                validator: _nonNegativeInt,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Días requeridos antes de despachar y orden numérico en el catálogo.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.muted,
+                                fontSize: 11,
+                              ),
+                        ),
+                      ],
+                    );
+
+                    final variantsCard = _cardContainer(
+                      context: context,
+                      title: 'Variantes (${_variants.length})',
+                      subtitle: 'Opciones de color o presentación. Todas comparten los mismos precios.',
+                      trailing: FilledButton.tonalIcon(
+                        onPressed: _addVariant,
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: const Text('Agregar opción'),
                       ),
-                    ],
-                  ],
+                      children: [
+                        if (_variants.isEmpty)
+                          const InfoBanner(
+                            icon: Icons.layers_outlined,
+                            title: 'Este producto aún no tiene variantes',
+                            message: 'Agrégalas cuando el producto se venda en diferentes opciones o colores.',
+                          )
+                        else
+                          for (final variant in _variants)
+                            _VariantEditorTile(
+                              draft: variant,
+                              imageUrl: _previewUrl(variant.image.previewValue),
+                              uploading: _uploadingImage,
+                              onPickImage: () => _pickImage(variant: variant),
+                              onDelete: () => _removeVariant(variant),
+                              onChanged: () => setState(() {}),
+                            ),
+                      ],
+                    );
+
+                    return ListView(
+                      padding: EdgeInsets.all(isMobile ? 12 : 24),
+                      children: [
+                        if (isWide)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 60,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    infoCard,
+                                    const SizedBox(height: 18),
+                                    pricingCard,
+                                    const SizedBox(height: 18),
+                                    variantsCard,
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                flex: 40,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    imageCard,
+                                    const SizedBox(height: 18),
+                                    visibilityCard,
+                                    const SizedBox(height: 18),
+                                    logisticsCard,
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              imageCard,
+                              const SizedBox(height: 14),
+                              infoCard,
+                              const SizedBox(height: 14),
+                              pricingCard,
+                              const SizedBox(height: 14),
+                              visibilityCard,
+                              const SizedBox(height: 14),
+                              logisticsCard,
+                              const SizedBox(height: 14),
+                              variantsCard,
+                            ],
+                          ),
+                        if (_error != null) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.errorContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              _error!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onErrorContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
-            const Divider(height: 1),
-            Padding(
-              padding: EdgeInsets.all(compactDialog ? 12 : 16),
+            const Divider(height: 1, color: AppColors.border),
+            Container(
+              color: AppColors.surface,
+              padding: EdgeInsets.all(isMobile ? 12 : 16),
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final saveButton = FilledButton.icon(
@@ -2511,7 +2690,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                           )
                         : const Icon(Icons.save_outlined),
                     label: Text(
-                      _uploadingImage ? 'Subiendo imagen…' : 'Guardar cambios',
+                      _uploadingImage ? 'Subiendo imagen...' : 'Guardar cambios',
                     ),
                   );
                   final cancelButton = TextButton(
@@ -2545,7 +2724,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                       if (widget.product != null) deleteButton,
                       const Spacer(),
                       cancelButton,
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       saveButton,
                     ],
                   );
@@ -2558,29 +2737,58 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     );
   }
 
-  Widget _formRow(List<Widget> fields) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 620) {
-          return Column(
-            children: [
-              for (var index = 0; index < fields.length; index++) ...[
-                fields[index],
-                if (index != fields.length - 1) const SizedBox(height: 14),
-              ],
-            ],
-          );
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _cardContainer({
+    required BuildContext context,
+    required String title,
+    String? subtitle,
+    Widget? trailing,
+    required List<Widget> children,
+  }) {
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (var index = 0; index < fields.length; index++) ...[
-              Expanded(child: fields[index]),
-              if (index != fields.length - 1) const SizedBox(width: 12),
-            ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          subtitle,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.muted,
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                ?trailing,
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...children,
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -3082,7 +3290,46 @@ class _ImageEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = compact ? 104.0 : 144.0;
+    if (!compact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 190,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: ProductVisual(
+              label: label,
+              imageAsset: imageUrl,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'JPG, PNG o WebP. Máximo 8 MB.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                ),
+          ),
+          const SizedBox(height: 10),
+          FilledButton.tonalIcon(
+            onPressed: uploading ? null : onPick,
+            icon: uploading
+                ? const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.photo_camera_outlined, size: 18),
+            label: Text(uploading ? 'Subiendo imagen...' : 'Cambiar imagen'),
+          ),
+        ],
+      );
+    }
+    const size = 76.0;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -3092,7 +3339,7 @@ class _ImageEditor extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.border),
           ),
           child: ProductVisual(
@@ -3100,30 +3347,34 @@ class _ImageEditor extends StatelessWidget {
             imageAsset: imageUrl,
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                compact ? 'Imagen de esta variante' : 'Imagen principal',
-                style: Theme.of(context).textTheme.titleMedium,
+                'Imagen de esta opción',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 3),
               Text(
-                'JPG, PNG o WebP. Máximo 8 MB.',
-                style: Theme.of(context).textTheme.bodySmall,
+                'JPG, PNG o WebP hasta 8 MB',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.muted,
+                    ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: uploading ? null : onPick,
                 icon: uploading
                     ? const SizedBox.square(
-                        dimension: 16,
+                        dimension: 14,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.image_outlined),
-                label: Text(uploading ? 'Subiendo…' : 'Cambiar imagen'),
+                    : const Icon(Icons.image_outlined, size: 16),
+                label: Text(uploading ? 'Subiendo...' : 'Cambiar foto'),
               ),
             ],
           ),
