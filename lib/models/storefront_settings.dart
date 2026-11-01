@@ -108,7 +108,7 @@ abstract final class StorefrontText {
     homeFeaturedTitle: 'Más consultados',
     homeSidebarTitle: 'Cotiza libremente',
     homeSidebarBody:
-        'No necesitas una cuenta. El pedido se confirma por WhatsApp.',
+        'No necesitas una cuenta. La cotización se confirma por WhatsApp.',
     adminHomeDescription: 'Administra el catálogo, el carrito, las entregas y el contenido de la tienda desde un solo lugar.',
     catalogSearchHint: 'Buscar por color o modelo',
     catalogEmptyTitle: 'No encontramos productos',
@@ -116,14 +116,14 @@ abstract final class StorefrontText {
     quoteEmptyTitle: 'Tu cotización está vacía',
     quoteEmptyBody:
         'Explora el catálogo y agrega los materiales que quieras consultar.',
-    quoteNoticeTitle: 'Aún no es un pedido',
+    quoteNoticeTitle: 'Cotización por confirmar',
     quoteNoticeBody: 'Expresiones confirmará disponibilidad, precio final, fecha y envío por WhatsApp.',
     quotePriceNote:
         'Los precios pueden variar según disponibilidad y personalización.',
     coordinationContactTitle: 'Tus datos de contacto',
     coordinationContactBody:
         'Los usaremos únicamente para coordinar esta cotización contigo.',
-    coordinationDeliveryTitle: 'Entrega del pedido',
+    coordinationDeliveryTitle: 'Forma de entrega',
     coordinationDeliveryBody:
         'Elige recojo en Huancayo o una agencia Shalom de destino.',
     coordinationPickupTitle: 'Recojo en Huancayo',
@@ -146,9 +146,8 @@ abstract final class StorefrontText {
     reviewContactTitle: 'Datos de coordinación',
     reviewContactBody: 'Contacto, entrega y fecha elegida',
     paymentEyebrow: 'Pago de demostración',
-    paymentTitle: 'Completa tu compra simulada',
-    paymentBody:
-        'Elige un método de prueba para finalizar el recorrido de compra.',
+    paymentTitle: 'Completa la demostración de tu cotización',
+    paymentBody: 'Elige un método de prueba para finalizar la demostración.',
     paymentDemoBadge: 'ENTORNO DE DEMOSTRACIÓN',
     paymentCardMethod: 'Tarjeta de demostración',
     paymentCardDescription:
@@ -163,14 +162,14 @@ abstract final class StorefrontText {
     paymentRejectedTitle: 'La simulación fue rechazada',
     paymentRejectedBody: 'No se realizó ningún cobro. Puedes elegir otro método y volver a intentarlo.',
     paymentRetryButton: 'Volver a intentar',
-    successEyebrow: 'Compra simulada completada',
-    successTitle: 'Tu pedido de demostración está listo',
+    successEyebrow: 'Demostración completada',
+    successTitle: 'Tu cotización de demostración está lista',
     successBody: 'Guarda el comprobante y envía el resumen por WhatsApp para continuar la coordinación.',
     successPaymentLabel: 'Pago simulado aprobado',
     successNoCharge: 'Este comprobante es demostrativo. No acredita un pago ni produjo ningún cobro.',
-    successWhatsappButton: 'Enviar pedido por WhatsApp',
+    successWhatsappButton: 'Enviar cotización por WhatsApp',
     successHomeButton: 'Volver al inicio',
-    successNewOrderButton: 'Realizar otra compra',
+    successNewOrderButton: 'Realizar otra cotización',
     helpEyebrow: 'Estamos para ayudarte',
     helpTitle: 'Preguntas frecuentes',
     helpBody: 'Cotiza con calma. La conversación final siempre continúa con una persona de Expresiones.',
@@ -183,18 +182,18 @@ abstract final class StorefrontText {
     'help.faq2.title': 'Stock y precio final',
     'help.faq2.body': 'Expresiones confirma disponibilidad y precio antes de cualquier pago. Agregar productos no reserva stock.',
     'help.faq3.title': 'Recojo en Huancayo',
-    'help.faq3.body': 'La dirección y el horario se coordinan al confirmar el pedido por WhatsApp.',
+    'help.faq3.body': 'La dirección y el horario se coordinan al confirmar la cotización por WhatsApp.',
     'help.faq4.title': 'Envíos nacionales',
     'help.faq4.body': 'Los envíos se coordinan mediante Shalom. La tarifa se confirma según destino, tamaño y peso.',
     'help.faq5.title': 'Fechas de entrega',
     'help.faq5.body': 'Elige una fecha entre los días habilitados para recojo o para envío por Shalom. La coordinación final se confirma por WhatsApp.',
     'help.faq6.title': 'Pago',
-    'help.faq6.body': 'La app incluye un pago simulado para completar la demostración del proceso de compra. No solicita datos financieros ni realiza cobros reales.',
+    'help.faq6.body': 'La app incluye un pago simulado para completar la demostración de la cotización. No solicita datos financieros ni realiza cobros reales.',
     privacyTitle: 'Privacidad',
     privacySubtitle: 'Política de privacidad de Expresiones',
     privacyUpdatedAt: 'Última actualización: 24 de octubre de 2026',
     'privacy.section1.title': 'Datos guardados en tu dispositivo',
-    'privacy.section1.body': 'El carrito, el nombre, el teléfono, la forma de entrega, la agencia elegida, la fecha, la nota y el último comprobante de demostración se guardan localmente para que puedas continuar después. Expresiones no recibe esos datos mientras permanecen guardados localmente.',
+    'privacy.section1.body': 'El carrito, el nombre, el teléfono, el DNI cuando eliges Shalom, la forma de entrega, la agencia elegida, la fecha, el horario de recojo y la nota se guardan localmente para que puedas continuar después. Expresiones no recibe esos datos mientras permanecen guardados localmente.',
     'privacy.section2.title': 'Envío por WhatsApp',
     'privacy.section2.body': 'Cuando eliges enviar la cotización, la aplicación prepara el mensaje y abre WhatsApp. Tú decides si finalmente lo envías. Desde ese momento, el tratamiento del mensaje también se rige por las condiciones y la política de WhatsApp.',
     'privacy.section3.title': 'Catálogo y días de entrega',
@@ -270,6 +269,18 @@ class PickupLocationSettings {
   };
 }
 
+enum CheckoutFieldScope {
+  both,
+  pickup,
+  shalom;
+
+  String get label => switch (this) {
+    both => 'Recojo y Shalom',
+    pickup => 'Solo recojo',
+    shalom => 'Solo Shalom',
+  };
+}
+
 class CheckoutCustomField {
   const CheckoutCustomField({
     required this.id,
@@ -279,6 +290,7 @@ class CheckoutCustomField {
     this.required = false,
     this.multiline = false,
     this.enabled = true,
+    this.scope = CheckoutFieldScope.both,
   });
 
   final String id;
@@ -288,6 +300,17 @@ class CheckoutCustomField {
   final bool required;
   final bool multiline;
   final bool enabled;
+  final CheckoutFieldScope scope;
+
+  bool appliesTo(String deliveryMethod) =>
+      scope == CheckoutFieldScope.both || scope.name == deliveryMethod;
+
+  static bool isReservedLabel(String label) {
+    final normalized = label.trim().toLowerCase();
+    return normalized == 'dni' ||
+        normalized == 'fecha de nacimiento' ||
+        normalized == 'horario de recojo';
+  }
 
   factory CheckoutCustomField.fromMap(Map<String, dynamic> map) {
     return CheckoutCustomField(
@@ -298,6 +321,10 @@ class CheckoutCustomField {
       required: map['required'] == true,
       multiline: map['multiline'] == true,
       enabled: map['enabled'] != false,
+      scope: CheckoutFieldScope.values.firstWhere(
+        (value) => value.name == map['scope']?.toString(),
+        orElse: () => CheckoutFieldScope.both,
+      ),
     );
   }
 
@@ -309,6 +336,7 @@ class CheckoutCustomField {
     bool? required,
     bool? multiline,
     bool? enabled,
+    CheckoutFieldScope? scope,
   }) => CheckoutCustomField(
     id: id ?? this.id,
     label: label ?? this.label,
@@ -317,6 +345,7 @@ class CheckoutCustomField {
     required: required ?? this.required,
     multiline: multiline ?? this.multiline,
     enabled: enabled ?? this.enabled,
+    scope: scope ?? this.scope,
   );
 
   Map<String, dynamic> toMap() => {
@@ -327,6 +356,7 @@ class CheckoutCustomField {
     'required': required,
     'multiline': multiline,
     'enabled': enabled,
+    'scope': scope.name,
   };
 }
 

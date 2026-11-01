@@ -29,6 +29,18 @@ class AdminOperationsRepository {
     await client.from('availability').upsert({'id': 'public', 'data': data});
   }
 
+  Future<List<AdminAuditLog>> loadAuditLogs({int limit = 100}) async {
+    final rows = await client
+        .from('admin_audit_logs')
+        .select(
+          'id, action, resource_type, resource_id, resource_label, '
+          'actor_email, changed_sections, created_at',
+        )
+        .order('created_at', ascending: false)
+        .limit(limit.clamp(1, 100));
+    return rows.map(AdminAuditLog.fromMap).toList(growable: false);
+  }
+
   /// Reads at most [limit] anonymous events from the selected recent window.
   /// This keeps both Supabase reads and admin rendering bounded.
   Stream<AdminAnalyticsSummary> watchAnalytics({
@@ -44,6 +56,46 @@ class AdminOperationsRepository {
       ),
     );
   }
+}
+
+class AdminAuditLog {
+  const AdminAuditLog({
+    required this.id,
+    required this.action,
+    required this.resourceType,
+    required this.resourceId,
+    required this.resourceLabel,
+    required this.actorEmail,
+    required this.changedSections,
+    required this.createdAt,
+  });
+
+  factory AdminAuditLog.fromMap(Map<String, dynamic> row) {
+    final rawSections = row['changed_sections'];
+    return AdminAuditLog(
+      id: (row['id'] as num?)?.toInt() ?? 0,
+      action: row['action']?.toString() ?? 'update',
+      resourceType: row['resource_type']?.toString() ?? '',
+      resourceId: row['resource_id']?.toString() ?? '',
+      resourceLabel: row['resource_label']?.toString() ?? '',
+      actorEmail: row['actor_email']?.toString() ?? '',
+      changedSections: rawSections is Iterable
+          ? rawSections.map((value) => value.toString()).toList(growable: false)
+          : const [],
+      createdAt:
+          DateTime.tryParse(row['created_at']?.toString() ?? '')?.toLocal() ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+    );
+  }
+
+  final int id;
+  final String action;
+  final String resourceType;
+  final String resourceId;
+  final String resourceLabel;
+  final String actorEmail;
+  final List<String> changedSections;
+  final DateTime createdAt;
 }
 
 class AdminAnalyticsSummary {

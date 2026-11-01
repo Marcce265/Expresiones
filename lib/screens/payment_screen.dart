@@ -258,7 +258,7 @@ class _OrderSummary extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Resumen del pedido',
+                        'Resumen de la cotización',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(

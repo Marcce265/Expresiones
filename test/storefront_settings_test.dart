@@ -16,7 +16,7 @@ void main() {
 
       expect(
         settings.text(StorefrontText.paymentTitle),
-        'Completa tu compra simulada',
+        'Completa la demostración de tu cotización',
       );
       expect(
         settings.text(StorefrontText.paymentDisclaimer),
@@ -71,6 +71,7 @@ void main() {
             icon: 'badge',
             hint: 'Documento para recoger',
             required: true,
+            scope: CheckoutFieldScope.shalom,
           ),
           CheckoutCustomField(
             id: 'dedicatoria',
@@ -88,6 +89,7 @@ void main() {
       expect(restored.checkoutFields, hasLength(2));
       expect(restored.checkoutFields.first.icon, 'badge');
       expect(restored.checkoutFields.first.required, isTrue);
+      expect(restored.checkoutFields.first.scope, CheckoutFieldScope.shalom);
       expect(restored.checkoutFields.last.enabled, isFalse);
     });
 
@@ -103,6 +105,7 @@ void main() {
 
       expect(restored.checkoutFields, hasLength(1));
       expect(restored.checkoutFields.single.label, 'Primero');
+      expect(restored.checkoutFields.single.scope, CheckoutFieldScope.both);
     });
   });
 }

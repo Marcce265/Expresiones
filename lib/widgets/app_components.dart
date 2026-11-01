@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/feature_flags.dart';
 import '../theme/app_theme.dart';
 
 class ResponsivePage extends StatelessWidget {
@@ -204,7 +205,9 @@ class StepProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const labels = ['Carrito', 'Datos', 'Revisión', 'Pago', 'Listo'];
+    const labels = FeatureFlags.demoPayment
+        ? ['Carrito', 'Datos', 'Revisión', 'Pago', 'Listo']
+        : ['Carrito', 'Datos', 'Revisión'];
     return Row(
       children: List.generate(labels.length, (index) {
         final step = index + 1;

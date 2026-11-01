@@ -91,6 +91,7 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
   late List<CheckoutCustomField> _fields;
   late final Set<int> _pickupWeekdays;
   late final Set<int> _shalomWeekdays;
+  late final List<String> _pickupTimeSlots;
   int? _fieldEditorIndex;
   bool _saving = false;
 
@@ -109,13 +110,16 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
     super.initState();
     final location = widget.initial.pickupLocation;
     _locationAddress = TextEditingController(text: location.address);
-    _fields = List.of(widget.initial.checkoutFields);
+    _fields = widget.initial.checkoutFields
+        .where((field) => !CheckoutCustomField.isReservedLabel(field.label))
+        .toList();
     _pickupWeekdays = Set.of(
       widget.initialSchedule.weekdaysForDelivery('pickup'),
     );
     _shalomWeekdays = Set.of(
       widget.initialSchedule.weekdaysForDelivery('shalom'),
     );
+    _pickupTimeSlots = List.of(widget.initialSchedule.pickupTimeSlots);
   }
 
   @override
@@ -145,10 +149,12 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
       );
       return;
     }
-    if (_pickupWeekdays.isEmpty || _shalomWeekdays.isEmpty) {
+    if (_pickupWeekdays.isEmpty ||
+        _shalomWeekdays.isEmpty ||
+        _pickupTimeSlots.isEmpty) {
       showAppNotice(
         context,
-        'Selecciona al menos un día para cada forma de entrega.',
+        'Selecciona al menos un día para cada forma de entrega y un horario de recojo.',
         tone: AppNoticeTone.error,
       );
       return;
@@ -170,7 +176,9 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
         widget.onSave(
           widget.initial.copyWith(
             pickupLocation: _locationPreview,
-            checkoutFields: List.unmodifiable(_fields),
+            checkoutFields: List.unmodifiable(
+              _fields.map((field) => field.copyWith(required: true)),
+            ),
           ),
         ),
         widget.onSaveSchedule(
@@ -180,6 +188,7 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
               'pickup': Set.unmodifiable(_pickupWeekdays),
               'shalom': Set.unmodifiable(_shalomWeekdays),
             }),
+            pickupTimeSlots: List.unmodifiable(_pickupTimeSlots),
             reservedPointsByDate: widget.initialSchedule.reservedPointsByDate,
             overridesByDate: widget.initialSchedule.overridesByDate,
             horizonDays: widget.initialSchedule.horizonDays,
@@ -214,6 +223,14 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
   void _applyField(CheckoutCustomField result) {
     final index = _fieldEditorIndex;
     if (index == null) return;
+    if (CheckoutCustomField.isReservedLabel(result.label)) {
+      showAppNotice(
+        context,
+        'DNI y horario de recojo ya están incluidos en el formulario.',
+        tone: AppNoticeTone.error,
+      );
+      return;
+    }
     final duplicate = _fields.asMap().entries.any(
       (entry) =>
           entry.key != (index < 0 ? null : index) &&
@@ -404,6 +421,8 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
               title: 'Recojo en Huancayo',
               selected: _pickupWeekdays,
             ),
+            const SizedBox(height: 20),
+            _pickupTimeSlotEditor(context),
             const Divider(height: 32),
             _deliveryDayPicker(
               context,
@@ -415,6 +434,140 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
         ),
       ),
     );
+  }
+
+  Widget _pickupTimeSlotEditor(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.schedule_outlined, size: 21),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Horarios de atención',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        Text(
+          'El cliente elegirá uno después de seleccionar la fecha de recojo.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (var index = 0; index < _pickupTimeSlots.length; index++)
+              InputChip(
+                avatar: const Icon(Icons.schedule_outlined, size: 18),
+                label: Text(_pickupTimeSlots[index]),
+                tooltip: 'Editar horario',
+                onPressed: () => _editPickupTimeSlot(index),
+                onDeleted: _pickupTimeSlots.length == 1
+                    ? null
+                    : () => setState(() => _pickupTimeSlots.removeAt(index)),
+              ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _pickupTimeSlots.length >= 24
+              ? null
+              : () => _editPickupTimeSlot(),
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Agregar horario'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _editPickupTimeSlot([int? index]) async {
+    final existing = index == null
+        ? null
+        : _parseTimeSlot(_pickupTimeSlots[index]);
+    final start = await showTimePicker(
+      context: context,
+      helpText: index == null ? 'Inicio del nuevo horario' : 'Editar inicio',
+      initialTime: existing?.$1 ?? const TimeOfDay(hour: 7, minute: 0),
+      builder: _force24HourClock,
+    );
+    if (start == null || !mounted) return;
+    final startMinutes = start.hour * 60 + start.minute;
+    final suggestedEnd = (startMinutes + 60).clamp(0, 1439);
+    final end = await showTimePicker(
+      context: context,
+      helpText: index == null ? 'Fin del nuevo horario' : 'Editar fin',
+      initialTime:
+          existing?.$2 ??
+          TimeOfDay(hour: suggestedEnd ~/ 60, minute: suggestedEnd % 60),
+      builder: _force24HourClock,
+    );
+    if (end == null || !mounted) return;
+    if (end.hour * 60 + end.minute <= startMinutes) {
+      showAppNotice(
+        context,
+        'La hora final debe ser posterior a la hora inicial.',
+        tone: AppNoticeTone.error,
+      );
+      return;
+    }
+    final slot = '${_formatTime(start)} - ${_formatTime(end)}';
+    if (_pickupTimeSlots.asMap().entries.any(
+      (entry) => entry.key != index && entry.value == slot,
+    )) {
+      showAppNotice(
+        context,
+        'Ese horario ya está agregado.',
+        tone: AppNoticeTone.error,
+      );
+      return;
+    }
+    setState(() {
+      if (index == null) {
+        _pickupTimeSlots.add(slot);
+      } else {
+        _pickupTimeSlots[index] = slot;
+      }
+      _pickupTimeSlots.sort(
+        (left, right) =>
+            _slotStartMinutes(left).compareTo(_slotStartMinutes(right)),
+      );
+    });
+  }
+
+  Widget _force24HourClock(BuildContext context, Widget? child) => MediaQuery(
+    data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+    child: child!,
+  );
+
+  String _formatTime(TimeOfDay value) =>
+      '${value.hour.toString().padLeft(2, '0')}:'
+      '${value.minute.toString().padLeft(2, '0')}';
+
+  (TimeOfDay, TimeOfDay)? _parseTimeSlot(String value) {
+    final match = RegExp(r'^(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})$')
+        .firstMatch(value);
+    if (match == null) return null;
+    return (
+      TimeOfDay(
+        hour: int.parse(match.group(1)!),
+        minute: int.parse(match.group(2)!),
+      ),
+      TimeOfDay(
+        hour: int.parse(match.group(3)!),
+        minute: int.parse(match.group(4)!),
+      ),
+    );
+  }
+
+  int _slotStartMinutes(String value) {
+    final parsed = _parseTimeSlot(value);
+    return parsed == null ? 0 : parsed.$1.hour * 60 + parsed.$1.minute;
   }
 
   Widget _deliveryDayPicker(
@@ -496,7 +649,7 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           Text(
-                            'Nombre y teléfono siempre se mantienen. Puedes añadir más preguntas aquí mismo.',
+                            'Cada forma de entrega pide solo los datos necesarios. Los campos adicionales pueden dirigirse a recojo, Shalom o ambos.',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -532,6 +685,11 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
               },
             ),
             const SizedBox(height: 18),
+            Text(
+              'Recojo en Huancayo',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 8),
             const Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -539,12 +697,39 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
                 _FixedContactField(
                   icon: Icons.person_outline_rounded,
                   label: 'Nombre',
-                  hint: '¿Cómo te llamas?',
+                  hint: 'Obligatorio',
                 ),
                 _FixedContactField(
                   icon: Icons.phone_outlined,
                   label: 'Teléfono',
-                  hint: '+51 999 999 999',
+                  hint: 'Obligatorio',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Envío por Shalom',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 8),
+            const Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _FixedContactField(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Nombre completo',
+                  hint: 'Obligatorio',
+                ),
+                _FixedContactField(
+                  icon: Icons.phone_outlined,
+                  label: 'Teléfono',
+                  hint: 'Obligatorio',
+                ),
+                _FixedContactField(
+                  icon: Icons.badge_outlined,
+                  label: 'DNI',
+                  hint: '8 dígitos · titular mayor de edad',
                 ),
               ],
             ),
@@ -682,7 +867,7 @@ class _InlineCheckoutFieldEditorState
   late final TextEditingController _label;
   late final TextEditingController _hint;
   late String _icon;
-  late bool _required;
+  late CheckoutFieldScope _scope;
   late bool _multiline;
   late bool _enabled;
 
@@ -692,7 +877,7 @@ class _InlineCheckoutFieldEditorState
     _label = TextEditingController(text: widget.initial?.label ?? '');
     _hint = TextEditingController(text: widget.initial?.hint ?? '');
     _icon = widget.initial?.icon ?? CheckoutFieldIcons.fallbackKey;
-    _required = widget.initial?.required ?? false;
+    _scope = widget.initial?.scope ?? CheckoutFieldScope.shalom;
     _multiline = widget.initial?.multiline ?? false;
     _enabled = widget.initial?.enabled ?? true;
   }
@@ -714,9 +899,10 @@ class _InlineCheckoutFieldEditorState
         label: _label.text.trim(),
         icon: _icon,
         hint: _hint.text.trim(),
-        required: _required,
+        required: true,
         multiline: _multiline,
         enabled: _enabled,
+        scope: _scope,
       ),
     );
   }
@@ -784,6 +970,24 @@ class _InlineCheckoutFieldEditorState
               ),
               const SizedBox(height: 4),
               Text(
+                '¿Dónde aparecerá?',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final scope in CheckoutFieldScope.values)
+                    ChoiceChip(
+                      label: Text(scope.label),
+                      selected: _scope == scope,
+                      onSelected: (_) => setState(() => _scope = scope),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
                 'Icono del campo',
                 style: Theme.of(context).textTheme.labelLarge,
               ),
@@ -809,16 +1013,6 @@ class _InlineCheckoutFieldEditorState
                 spacing: 12,
                 runSpacing: 8,
                 children: [
-                  SizedBox(
-                    width: 245,
-                    child: SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Obligatorio'),
-                      subtitle: const Text('El cliente deberá completarlo.'),
-                      value: _required,
-                      onChanged: (value) => setState(() => _required = value),
-                    ),
-                  ),
                   SizedBox(
                     width: 245,
                     child: SwitchListTile(
@@ -931,7 +1125,8 @@ class _CheckoutFieldTile extends StatelessWidget {
                     ),
                     Text(
                       [
-                        field.required ? 'Obligatorio' : 'Opcional',
+                        field.scope.label,
+                        'Obligatorio',
                         field.multiline ? 'Respuesta larga' : 'Respuesta corta',
                       ].join(' · '),
                       maxLines: 1,

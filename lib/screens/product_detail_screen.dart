@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/catalog_models.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/assistant_guide.dart';
 import '../widgets/product_visual.dart';
 import '../widgets/quantity_input.dart';
 
@@ -18,11 +19,13 @@ class ProductDetailScreen extends StatefulWidget {
     required this.product,
     required this.onAdd,
     this.initialVariantId,
+    this.onHelp,
   });
 
   final CatalogProduct product;
   final String? initialVariantId;
   final AddProductCallback onAdd;
+  final VoidCallback? onHelp;
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -74,6 +77,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
                 const SizedBox(width: 12),
                 const Expanded(child: Eyebrow('Detalle del producto')),
+                if (widget.onHelp != null) ...[
+                  IconButton.outlined(
+                    onPressed: widget.onHelp,
+                    tooltip: '¿Necesitas ayuda?',
+                    icon: const Icon(Icons.help_outline_rounded, size: 19),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 if (constraints.maxWidth >= 600)
                   TextButton.icon(
                     onPressed: () => Navigator.maybePop(context),
@@ -301,6 +312,12 @@ class _ProductInformation extends StatelessWidget {
           unitLabel: product.unitLabel,
         ),
         const SizedBox(height: 20),
+        const AssistantGuideCard(
+          compact: true,
+          title: 'Jashy te ayuda',
+          message: 'Elige una opción, escribe la cantidad y pulsa “Agregar a mi cotización”.',
+        ),
+        const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, constraints) {
             final quantityPanel = Column(

@@ -89,6 +89,7 @@ void main() {
     expect(find.text('Morado uva'), findsOneWidget);
     expect(find.text('Limpiapipas premium 8 mm'), findsNothing);
 
+    await tester.ensureVisible(find.text('Verde militar'));
     await tester.tap(find.text('Verde militar'));
     expect(openedVariant, 'verde-militar');
     expect(tester.takeException(), isNull);

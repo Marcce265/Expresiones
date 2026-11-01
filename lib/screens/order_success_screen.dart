@@ -59,7 +59,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen> {
     setState(() => _copying = true);
     try {
       await widget.onCopySummary();
-      if (mounted) showAppNotice(context, 'Resumen del pedido copiado.');
+      if (mounted) showAppNotice(context, 'Resumen de la cotización copiado.');
     } catch (_) {
       if (mounted) {
         showAppNotice(
@@ -236,7 +236,7 @@ class _OrderReceiptCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Comprobante del pedido',
+                        'Comprobante de la cotización',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
@@ -460,7 +460,7 @@ class _DeliveryCard extends StatelessWidget {
             _DetailRow(
               icon: Icons.calendar_today_outlined,
               text: desiredDate == null
-                  ? 'Fecha por coordinar'
+                  ? 'Fecha no registrada'
                   : 'Fecha deseada: ${_formatDate(desiredDate)}',
             ),
             for (final entry in details.customFields.entries)

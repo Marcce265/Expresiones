@@ -233,11 +233,22 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Hola, soy Jashy'), findsOneWidget);
+    await tester.ensureVisible(find.text('Entendido'));
+    await tester.tap(find.text('Entendido'));
+    await tester.pumpAndSettle();
     expect(find.text('Expresiones'), findsOneWidget);
     expect(find.text('Inicio'), findsOneWidget);
     expect(find.text('Catálogo'), findsOneWidget);
     expect(find.text('Carrito'), findsOneWidget);
     expect(find.text('Ayuda'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(value: store, child: const ExpresionesApp()),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Hola, soy Jashy'), findsNothing);
   });
 
   testWidgets(
@@ -298,6 +309,8 @@ void main() {
 
     await tester.pumpWidget(catalog(seedCatalogProducts));
     await tester.pumpAndSettle();
+
+    expect(find.textContaining(' productos'), findsNothing);
 
     await tester.tap(find.text('Limpiapipas premium 8 mm'));
     await tester.pumpAndSettle();

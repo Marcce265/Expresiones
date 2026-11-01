@@ -113,6 +113,8 @@ class AppStore extends ChangeNotifier {
   Set<int> deliveryWeekdaysFor(DeliveryMethod method) =>
       _capacitySnapshot.weekdaysForDelivery(method.name);
 
+  List<String> get pickupTimeSlots => _capacitySnapshot.pickupTimeSlots;
+
   bool isDesiredDateAvailable(DateTime date, DeliveryMethod method) =>
       _capacitySnapshot.isDeliveryDay(method.name, date) &&
       !dateOnly(date).isBefore(earliestDesiredDate);

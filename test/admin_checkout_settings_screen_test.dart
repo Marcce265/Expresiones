@@ -30,12 +30,17 @@ void main() {
     await tester.pump();
 
     expect(find.text('Días de entrega'), findsOneWidget);
+    expect(find.text('Horarios de atención'), findsOneWidget);
+    expect(find.text('07:00 - 08:00'), findsOneWidget);
+    expect(find.text('Agregar horario'), findsOneWidget);
     expect(find.text('Tus datos de contacto'), findsOneWidget);
+    expect(find.text('Fecha de nacimiento'), findsNothing);
 
-    final pencil = find.byIcon(Icons.edit_outlined);
-    expect(pencil, findsOneWidget);
-    await tester.ensureVisible(pencil);
-    await tester.tap(pencil);
+    final addField = find.widgetWithText(FilledButton, 'Agregar campo');
+    expect(addField, findsOneWidget);
+    await tester.ensureVisible(addField);
+    await tester.pumpAndSettle();
+    await tester.tap(addField);
     await tester.pump();
 
     expect(find.text('Agregar campo'), findsWidgets);
@@ -66,14 +71,10 @@ void main() {
     await tester.pump();
     expect(tester.takeException(), isNull);
 
-    final pencil = find.byIcon(Icons.edit_outlined);
-    final pageScrollable = find
-        .ancestor(of: pencil, matching: find.byType(Scrollable))
-        .first;
-    final scrollable = tester.state<ScrollableState>(pageScrollable);
-    scrollable.position.jumpTo(scrollable.position.maxScrollExtent);
+    final addField = find.widgetWithText(FilledButton, 'Agregar campo');
+    await tester.ensureVisible(addField);
     await tester.pumpAndSettle();
-    await tester.tap(pencil);
+    await tester.tap(addField);
     await tester.pump();
 
     expect(find.text('Nombre del campo'), findsOneWidget);

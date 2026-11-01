@@ -7,6 +7,7 @@ import '../models/shalom_agency.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/assistant_guide.dart';
 import '../widgets/app_notice.dart';
 import '../widgets/checkout_field_icons.dart';
 import '../widgets/pickup_location_map.dart';
@@ -21,6 +22,7 @@ class CoordinationScreen extends StatefulWidget {
     required this.onSubmit,
     this.isDateAvailable,
     this.deliveryWeekdays,
+    this.pickupTimeSlots = ProductionCapacitySnapshot.defaultPickupTimeSlots,
     this.settings = const StorefrontSettings(),
   });
 
@@ -29,6 +31,7 @@ class CoordinationScreen extends StatefulWidget {
   final ValueChanged<CoordinationDetails> onSubmit;
   final bool Function(DateTime date, DeliveryMethod method)? isDateAvailable;
   final Set<int> Function(DeliveryMethod method)? deliveryWeekdays;
+  final List<String> pickupTimeSlots;
   final StorefrontSettings settings;
 
   @override
@@ -39,10 +42,12 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
+  late final TextEditingController _dniController;
   late final TextEditingController _noteController;
   final Map<String, TextEditingController> _customControllers = {};
   late DeliveryMethod _deliveryMethod;
   DateTime? _desiredDate;
+  String? _pickupTimeSlot;
   late String _agencyId;
   late String _agencyName;
   late String _agencyAddress;
@@ -50,6 +55,8 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   double? _agencyLatitude;
   double? _agencyLongitude;
   bool _agencyError = false;
+  bool _desiredDateError = false;
+  bool _pickupTimeSlotError = false;
 
   @override
   void initState() {
@@ -57,6 +64,16 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     final initial = widget.initial;
     _nameController = TextEditingController(text: initial.name);
     _phoneController = TextEditingController(text: initial.phone);
+    _dniController = TextEditingController(
+      text: _answerForLabel(initial.customFields, 'DNI'),
+    );
+    final savedPickupTime = _answerForLabel(
+      initial.customFields,
+      'Horario de recojo',
+    );
+    _pickupTimeSlot = widget.pickupTimeSlots.contains(savedPickupTime)
+        ? savedPickupTime
+        : null;
     _noteController = TextEditingController(text: initial.note);
     _syncCustomControllers(initialValues: initial.customFields);
     _deliveryMethod = initial.deliveryMethod;
@@ -80,12 +97,17 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     if (oldWidget.settings.checkoutFields != widget.settings.checkoutFields) {
       _syncCustomControllers(initialValues: widget.initial.customFields);
     }
+    if (oldWidget.pickupTimeSlots != widget.pickupTimeSlots &&
+        !widget.pickupTimeSlots.contains(_pickupTimeSlot)) {
+      _pickupTimeSlot = null;
+    }
   }
 
   void _syncCustomControllers({required Map<String, String> initialValues}) {
     final activeIds = <String>{};
     for (final field in widget.settings.checkoutFields.where(
-      (field) => field.enabled,
+      (field) =>
+          field.enabled && !CheckoutCustomField.isReservedLabel(field.label),
     )) {
       activeIds.add(field.id);
       _customControllers.putIfAbsent(
@@ -106,6 +128,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _dniController.dispose();
     _noteController.dispose();
     for (final controller in _customControllers.values) {
       controller.dispose();
@@ -148,11 +171,23 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     setState(() {
       _deliveryMethod = method;
       _agencyError = false;
+      _pickupTimeSlotError = false;
       if (_desiredDate != null && !_isSelectable(_desiredDate!)) {
         _desiredDate = null;
       }
     });
   }
+
+  List<CheckoutCustomField> get _activeCheckoutFields => widget
+      .settings
+      .checkoutFields
+      .where(
+        (field) =>
+            field.enabled &&
+            !CheckoutCustomField.isReservedLabel(field.label) &&
+            field.appliesTo(_deliveryMethod.name),
+      )
+      .toList(growable: false);
 
   Future<void> _pickDate() async {
     final current = _desiredDate;
@@ -163,7 +198,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
       if (mounted) {
         showAppNotice(
           context,
-          'No hay fechas disponibles. Escríbenos por WhatsApp para coordinar.',
+          'No hay fechas disponibles para esta forma de entrega. Intenta con la otra opción.',
           tone: AppNoticeTone.info,
         );
       }
@@ -183,7 +218,10 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
       errorInvalidText: 'Elige otro día disponible',
     );
     if (selected != null && mounted) {
-      setState(() => _desiredDate = _dateOnly(selected));
+      setState(() {
+        _desiredDate = _dateOnly(selected);
+        _desiredDateError = false;
+      });
     }
   }
 
@@ -207,7 +245,20 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
 
   void _submit() {
     FocusManager.instance.primaryFocus?.unfocus();
-    if (!_formKey.currentState!.validate()) return;
+    final formValid = _formKey.currentState!.validate();
+    final needsShippingIdentity = _deliveryMethod == DeliveryMethod.shalom;
+    setState(() {
+      _desiredDateError = _desiredDate == null;
+      _pickupTimeSlotError =
+          _deliveryMethod == DeliveryMethod.pickup && _pickupTimeSlot == null;
+      _agencyError = needsShippingIdentity && _agencyId.isEmpty;
+    });
+    if (!formValid ||
+        _desiredDateError ||
+        _pickupTimeSlotError ||
+        _agencyError) {
+      return;
+    }
     if (_desiredDate != null && !_isSelectable(_desiredDate!)) {
       setState(() => _desiredDate = null);
       showAppNotice(
@@ -217,11 +268,6 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
       );
       return;
     }
-    if (_deliveryMethod == DeliveryMethod.shalom && _agencyId.isEmpty) {
-      setState(() => _agencyError = true);
-      return;
-    }
-
     widget.onSubmit(
       CoordinationDetails(
         name: _nameController.text.trim(),
@@ -251,9 +297,13 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         desiredDate: _desiredDate,
         note: _noteController.text.trim(),
         customFields: Map.unmodifiable({
-          for (final field in widget.settings.checkoutFields)
-            if (field.enabled &&
-                (_customControllers[field.id]?.text.trim().isNotEmpty ?? false))
+          if (_deliveryMethod == DeliveryMethod.shalom) ...{
+            'DNI': _dniController.text.trim(),
+          },
+          if (_deliveryMethod == DeliveryMethod.pickup)
+            'Horario de recojo': _pickupTimeSlot!,
+          for (final field in _activeCheckoutFields)
+            if (_customControllers[field.id]?.text.trim().isNotEmpty ?? false)
               field.label: _customControllers[field.id]!.text.trim(),
         }),
       ),
@@ -279,6 +329,12 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                   child: const StepProgress(current: 2),
                 ),
               ),
+              const SizedBox(height: 18),
+              const AssistantGuideCard(
+                compact: true,
+                title: 'Jashy te ayuda',
+                message: 'Completa los campos marcados con *, elige la entrega, la fecha y el horario disponible.',
+              ),
               const SizedBox(height: 26),
               _FormSectionCard(
                 number: '1',
@@ -295,17 +351,21 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                     _ContactFields(
                       nameController: _nameController,
                       phoneController: _phoneController,
+                      fullName: _deliveryMethod == DeliveryMethod.shalom,
                       validateName: _validateName,
                       validatePhone: _validatePhone,
                     ),
-                    if (widget.settings.checkoutFields.any(
-                      (field) => field.enabled,
-                    )) ...[
+                    if (_deliveryMethod == DeliveryMethod.shalom) ...[
+                      const Divider(height: 34),
+                      _ShalomIdentityFields(
+                        dniController: _dniController,
+                        validateDni: _validateDni,
+                      ),
+                    ],
+                    if (_activeCheckoutFields.isNotEmpty) ...[
                       const Divider(height: 34),
                       _CustomCheckoutFields(
-                        fields: widget.settings.checkoutFields
-                            .where((field) => field.enabled)
-                            .toList(growable: false),
+                        fields: _activeCheckoutFields,
                         controllers: _customControllers,
                       ),
                     ],
@@ -412,13 +472,18 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                           onTap: _pickDate,
                           borderRadius: BorderRadius.circular(14),
                           child: InputDecorator(
-                            decoration: const InputDecoration(
-                              prefixIcon: Icon(Icons.calendar_today_outlined),
-                              suffixIcon: Icon(Icons.expand_more_rounded),
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(
+                                Icons.calendar_today_outlined,
+                              ),
+                              suffixIcon: const Icon(Icons.expand_more_rounded),
+                              errorText: _desiredDateError
+                                  ? 'Selecciona una fecha.'
+                                  : null,
                             ),
                             child: Text(
                               _desiredDate == null
-                                  ? 'Selecciona una fecha (opcional)'
+                                  ? 'Selecciona una fecha'
                                   : _formatDate(_desiredDate!),
                               style: Theme.of(context).textTheme.bodyLarge
                                   ?.copyWith(
@@ -436,6 +501,20 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                               : 'Primera fecha estimada: ${_formatDate(_firstSelectableDate!)}. ${_deliveryScheduleMessage()}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
+                        const SizedBox(height: 18),
+                        if (_deliveryMethod == DeliveryMethod.pickup)
+                          _PickupTimeSelector(
+                            slots: widget.pickupTimeSlots,
+                            selected: _pickupTimeSlot,
+                            enabled: _desiredDate != null,
+                            showError: _pickupTimeSlotError,
+                            onSelected: (slot) => setState(() {
+                              _pickupTimeSlot = slot;
+                              _pickupTimeSlotError = false;
+                            }),
+                          )
+                        else
+                          const _ShalomDispatchNotice(),
                       ],
                     ),
                   );
@@ -501,6 +580,20 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     final letters = RegExp(r'[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]').allMatches(text).length;
     if (text.isEmpty) return 'Escribe tu nombre.';
     if (letters < 2) return 'Escribe un nombre válido.';
+    if (_deliveryMethod == DeliveryMethod.shalom &&
+        text.split(RegExp(r'\s+')).where((part) => part.length >= 2).length <
+            2) {
+      return 'Escribe tu nombre completo.';
+    }
+    return null;
+  }
+
+  String? _validateDni(String? value) {
+    final digits = (value ?? '').trim();
+    if (digits.isEmpty) return 'Escribe tu DNI.';
+    if (!RegExp(r'^\d{8}$').hasMatch(digits)) {
+      return 'El DNI debe tener 8 dígitos.';
+    }
     return null;
   }
 
@@ -806,7 +899,7 @@ class _CustomCheckoutFields extends StatelessWidget {
               SizedBox(
                 width: field.multiline ? constraints.maxWidth : half,
                 child: _LabeledField(
-                  label: '${field.label}${field.required ? ' *' : ''}',
+                  label: '${field.label} *',
                   child: TextFormField(
                     controller: controllers[field.id],
                     minLines: field.multiline ? 3 : 1,
@@ -820,7 +913,7 @@ class _CustomCheckoutFields extends StatelessWidget {
                       alignLabelWithHint: field.multiline,
                     ),
                     validator: (value) {
-                      if (field.required && (value?.trim().isEmpty ?? true)) {
+                      if (value?.trim().isEmpty ?? true) {
                         return 'Completa este campo.';
                       }
                       return null;
@@ -956,7 +1049,7 @@ class _AgencySelectionCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Elige la agencia donde recogerás tu pedido',
+                        'Elige la agencia donde recogerás tu envío',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
@@ -1020,35 +1113,37 @@ class _ContactFields extends StatelessWidget {
   const _ContactFields({
     required this.nameController,
     required this.phoneController,
+    required this.fullName,
     required this.validateName,
     required this.validatePhone,
   });
 
   final TextEditingController nameController;
   final TextEditingController phoneController;
+  final bool fullName;
   final FormFieldValidator<String> validateName;
   final FormFieldValidator<String> validatePhone;
 
   @override
   Widget build(BuildContext context) {
     final name = _LabeledField(
-      label: 'Nombre',
+      label: fullName ? 'Nombre completo *' : 'Nombre *',
       child: TextFormField(
         controller: nameController,
         textCapitalization: TextCapitalization.words,
         textInputAction: TextInputAction.next,
         autofillHints: const [AutofillHints.name],
         maxLength: 80,
-        decoration: const InputDecoration(
-          hintText: '¿Cómo te llamas?',
-          prefixIcon: Icon(Icons.person_outline_rounded),
+        decoration: InputDecoration(
+          hintText: fullName ? 'Nombres y apellidos' : '¿Cómo te llamas?',
+          prefixIcon: const Icon(Icons.person_outline_rounded),
           counterText: '',
         ),
         validator: validateName,
       ),
     );
     final phone = _LabeledField(
-      label: 'Teléfono',
+      label: 'Teléfono *',
       child: TextFormField(
         controller: phoneController,
         keyboardType: TextInputType.phone,
@@ -1084,6 +1179,139 @@ class _ContactFields extends StatelessWidget {
   }
 }
 
+class _ShalomIdentityFields extends StatelessWidget {
+  const _ShalomIdentityFields({
+    required this.dniController,
+    required this.validateDni,
+  });
+
+  final TextEditingController dniController;
+  final FormFieldValidator<String> validateDni;
+
+  @override
+  Widget build(BuildContext context) {
+    final dni = _LabeledField(
+      label: 'DNI *',
+      child: TextFormField(
+        controller: dniController,
+        keyboardType: TextInputType.number,
+        textInputAction: TextInputAction.next,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(8),
+        ],
+        decoration: const InputDecoration(
+          hintText: '8 dígitos',
+          prefixIcon: Icon(Icons.badge_outlined),
+          counterText: '',
+        ),
+        validator: validateDni,
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        dni,
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.pinkSoft,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outline_rounded, size: 19),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'La agencia entregará el envío únicamente a la persona indicada. El nombre, teléfono y DNI deben coincidir, y el DNI debe pertenecer a una persona mayor de edad.',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PickupTimeSelector extends StatelessWidget {
+  const _PickupTimeSelector({
+    required this.slots,
+    required this.selected,
+    required this.enabled,
+    required this.showError,
+    required this.onSelected,
+  });
+
+  final List<String> slots;
+  final String? selected;
+  final bool enabled;
+  final bool showError;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _FieldLabel('Horario de atención *'),
+        const SizedBox(height: 8),
+        Text(
+          enabled
+              ? 'Elige la hora aproximada en la que recogerás tu cotización.'
+              : 'Primero selecciona una fecha de recojo.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final slot in slots)
+              ChoiceChip(
+                label: Text(slot),
+                selected: selected == slot,
+                onSelected: enabled ? (_) => onSelected(slot) : null,
+              ),
+          ],
+        ),
+        if (showError) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Selecciona un horario de atención.',
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ShalomDispatchNotice extends StatelessWidget {
+  const _ShalomDispatchNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.schedule_outlined, size: 20),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            'Los envíos se llevan a la agencia Shalom los días habilitados entre las 5:00 p. m. y 6:00 p. m.; no necesitas elegir un horario.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _LabeledField extends StatelessWidget {
   const _LabeledField({required this.label, required this.child});
 
@@ -1107,14 +1335,14 @@ class _SubmitArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hint = Text(
-      'Después podrás completar un pago de demostración sin cobros reales.',
+      'Revisa tus datos antes de preparar el mensaje de WhatsApp.',
       textAlign: TextAlign.center,
       style: Theme.of(context).textTheme.bodySmall,
     );
     final button = FilledButton.icon(
       onPressed: onPressed,
       icon: const Icon(Icons.arrow_forward_rounded, size: 19),
-      label: const Text('Revisar mi compra'),
+      label: const Text('Revisar mi cotización'),
     );
 
     return LayoutBuilder(
@@ -1258,6 +1486,14 @@ class _DeliveryOption extends StatelessWidget {
 
 DateTime _dateOnly(DateTime value) =>
     DateTime(value.year, value.month, value.day);
+
+String _answerForLabel(Map<String, String> answers, String label) {
+  final expected = label.toLowerCase();
+  for (final entry in answers.entries) {
+    if (entry.key.trim().toLowerCase() == expected) return entry.value.trim();
+  }
+  return '';
+}
 
 String _formatDate(DateTime value) {
   const months = [

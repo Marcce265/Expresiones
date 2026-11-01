@@ -5,6 +5,7 @@ import '../models/quote_line.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/assistant_guide.dart';
 import '../widgets/app_notice.dart';
 import '../widgets/quote_export_buttons.dart';
 import '../widgets/shalom_embedded_map.dart';
@@ -108,6 +109,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
             ),
             const SizedBox(height: 18),
             const StepProgress(current: 3),
+            const SizedBox(height: 18),
+            const AssistantGuideCard(
+              compact: true,
+              title: 'Jashy te ayuda',
+              message: 'Comprueba los productos y tus datos. Después envía la cotización por WhatsApp; aquí no se cobra nada.',
+            ),
             const SizedBox(height: 24),
             LayoutBuilder(
               builder: (context, constraints) {
@@ -384,7 +391,7 @@ class _CoordinationCard extends StatelessWidget {
             _DetailRow(
               icon: Icons.calendar_today_outlined,
               label: desiredDate == null
-                  ? 'Fecha deseada: por coordinar'
+                  ? 'Fecha deseada: no registrada'
                   : 'Fecha deseada: ${_formatDate(desiredDate)}',
             ),
             for (final entry in details.customFields.entries)
@@ -546,20 +553,20 @@ class _SendPanel extends StatelessWidget {
                       )
                     : const Icon(Icons.chat_outlined),
                 label: Text(
-                  sending
-                      ? 'Abriendo WhatsApp…'
-                      : 'Enviar por WhatsApp sin pagar',
+                  sending ? 'Abriendo WhatsApp…' : 'Enviar por WhatsApp',
                 ),
               ),
             ),
-            const SizedBox(height: 10),
-            Center(
-              child: Text(
-                settings.text(StorefrontText.reviewPaymentNote),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
+            if (onContinueToPayment != null) ...[
+              const SizedBox(height: 10),
+              Center(
+                child: Text(
+                  settings.text(StorefrontText.reviewPaymentNote),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
-            ),
+            ],
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 18),
               child: Divider(),

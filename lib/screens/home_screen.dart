@@ -7,6 +7,7 @@ import '../models/checkout_order.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/assistant_guide.dart';
 import '../widgets/product_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -95,6 +96,12 @@ class _HomeScreenState extends State<HomeScreen> {
               settings: widget.settings,
               quoteQuantity: widget.quoteQuantity,
               onOpenQuote: widget.onOpenQuote,
+            ),
+            const SizedBox(height: 14),
+            const AssistantGuideCard(
+              compact: true,
+              title: 'Jashy te ayuda',
+              message: 'Busca un material por nombre, color o código. También puedes entrar al catálogo.',
             ),
             if (widget.lastOrder != null && widget.onOpenLastOrder != null) ...[
               const SizedBox(height: 18),
@@ -211,7 +218,7 @@ class _LastOrderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Último pedido simulado',
+                  'Última cotización simulada',
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
                 const SizedBox(height: 2),

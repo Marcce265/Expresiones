@@ -64,7 +64,7 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Elige dónde recogerás tu pedido',
+                  'Elige la agencia de destino',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 6),

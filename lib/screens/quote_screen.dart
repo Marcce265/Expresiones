@@ -4,6 +4,7 @@ import '../models/quote_line.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/assistant_guide.dart';
 import '../widgets/product_visual.dart';
 import '../widgets/quantity_input.dart';
 
@@ -29,8 +30,6 @@ class QuoteScreen extends StatelessWidget {
   final VoidCallback? onBack;
   final StorefrontSettings settings;
 
-  double get subtotal => lines.fold(0, (sum, item) => sum + item.total);
-
   @override
   Widget build(BuildContext context) {
     if (lines.isEmpty) {
@@ -41,6 +40,13 @@ class QuoteScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _PageHeading(itemCount: 0, onBack: onBack),
+              const SizedBox(height: 16),
+              const AssistantGuideCard(
+                compact: true,
+                title: 'Jashy te ayuda',
+                message: 'Tu carrito está vacío. Entra al catálogo y agrega los materiales que necesitas.',
+              ),
+              const SizedBox(height: 16),
               EmptyState(
                 icon: Icons.shopping_bag_outlined,
                 title: settings.text(StorefrontText.quoteEmptyTitle),
@@ -68,10 +74,10 @@ class QuoteScreen extends StatelessWidget {
             const SizedBox(height: 18),
             const StepProgress(current: 1),
             const SizedBox(height: 24),
-            InfoBanner(
+            AssistantGuideCard(
+              compact: true,
               title: settings.text(StorefrontText.quoteNoticeTitle),
               message: settings.text(StorefrontText.quoteNoticeBody),
-              icon: Icons.info_outline_rounded,
             ),
             const SizedBox(height: 24),
             LayoutBuilder(
@@ -82,16 +88,14 @@ class QuoteScreen extends StatelessWidget {
                   onQuantityChanged: onQuantityChanged,
                   onRemove: onRemove,
                 );
-                final summary = _QuoteSummary(
-                  settings: settings,
-                  subtotal: subtotal,
+                final nextStep = _QuoteNextStep(
                   onContinue: onContinue,
                   onBrowse: onBrowse,
                 );
 
                 if (!wide) {
                   return Column(
-                    children: [items, const SizedBox(height: 22), summary],
+                    children: [items, const SizedBox(height: 22), nextStep],
                   );
                 }
 
@@ -100,7 +104,7 @@ class QuoteScreen extends StatelessWidget {
                   children: [
                     Expanded(flex: 7, child: items),
                     const SizedBox(width: 28),
-                    Expanded(flex: 3, child: summary),
+                    Expanded(flex: 3, child: nextStep),
                   ],
                 );
               },
@@ -495,16 +499,9 @@ class _QuantityControl extends StatelessWidget {
   }
 }
 
-class _QuoteSummary extends StatelessWidget {
-  const _QuoteSummary({
-    required this.settings,
-    required this.subtotal,
-    required this.onContinue,
-    required this.onBrowse,
-  });
+class _QuoteNextStep extends StatelessWidget {
+  const _QuoteNextStep({required this.onContinue, required this.onBrowse});
 
-  final StorefrontSettings settings;
-  final double subtotal;
   final VoidCallback onContinue;
   final VoidCallback onBrowse;
 
@@ -525,7 +522,7 @@ class _QuoteSummary extends StatelessWidget {
                     color: AppColors.pinkSoft,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.receipt_long_outlined, size: 21),
+                  child: const Icon(Icons.arrow_forward_rounded, size: 21),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -533,11 +530,11 @@ class _QuoteSummary extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Resumen del carrito',
+                        'Siguiente: datos para coordinar',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
-                        'Subtotal antes de coordinar',
+                        'Completa la entrega y la fecha de tu cotización.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -549,46 +546,28 @@ class _QuoteSummary extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 18),
               child: Divider(),
             ),
-            _SummaryRow(
-              label: 'Productos',
-              value: 'S/ ${subtotal.toStringAsFixed(2)}',
+            const _NextStepItem(
+              icon: Icons.person_outline_rounded,
+              text: 'Datos de contacto',
             ),
             const SizedBox(height: 12),
-            const _SummaryRow(label: 'Envío', value: 'Por confirmar'),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 18),
-              child: Divider(),
+            const _NextStepItem(
+              icon: Icons.local_shipping_outlined,
+              text: 'Recojo o envío por Shalom',
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Subtotal de productos',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                PriceText(subtotal),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              settings.text(StorefrontText.quotePriceNote),
-              style: Theme.of(context).textTheme.bodySmall,
+            const SizedBox(height: 12),
+            const _NextStepItem(
+              icon: Icons.calendar_today_outlined,
+              text: 'Fecha disponible',
             ),
             const SizedBox(height: 22),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
                 onPressed: onContinue,
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Continuar con la compra'),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward_rounded, size: 19),
-                  ],
+                child: const Text(
+                  'Continuar con la cotización',
+                  textAlign: TextAlign.center,
                 ),
               ),
             ),
@@ -607,24 +586,19 @@ class _QuoteSummary extends StatelessWidget {
   }
 }
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.label, required this.value});
+class _NextStepItem extends StatelessWidget {
+  const _NextStepItem({required this.icon, required this.text});
 
-  final String label;
-  final String value;
+  final IconData icon;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: AppColors.muted),
-          ),
-        ),
-        Text(value, style: Theme.of(context).textTheme.bodyMedium),
+        Icon(icon, size: 20, color: AppColors.muted),
+        const SizedBox(width: 10),
+        Expanded(child: Text(text)),
       ],
     );
   }

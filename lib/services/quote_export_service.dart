@@ -24,7 +24,7 @@ abstract final class QuoteExportService {
     final document = pw.Document(
       title: 'Comprobante simulado ${order.id}',
       author: 'Expresiones',
-      subject: 'Comprobante de pedido simulado',
+      subject: 'Comprobante de cotización simulada',
       creator: 'Aplicación Expresiones',
     );
 
@@ -56,7 +56,7 @@ abstract final class QuoteExportService {
                       ),
                     ),
                     pw.SizedBox(height: 4),
-                    pw.Text('Comprobante de pedido simulado'),
+                    pw.Text('Comprobante de cotización simulada'),
                   ],
                 ),
               ),
@@ -367,7 +367,7 @@ abstract final class QuoteExportService {
           _pdfDetail(
             'Fecha deseada',
             details.desiredDate == null
-                ? 'Por coordinar'
+                ? 'No registrada'
                 : DateFormat('dd/MM/yyyy').format(details.desiredDate!),
           ),
           for (final entry in details.customFields.entries)
@@ -384,7 +384,7 @@ abstract final class QuoteExportService {
               borderRadius: pw.BorderRadius.circular(8),
             ),
             child: pw.Text(
-              'Esta cotización no confirma el pedido. Stock, precio final, '
+              'Esta cotización no confirma la solicitud. Stock, precio final, '
               'fecha y costo de envío se coordinan por WhatsApp.',
               style: const pw.TextStyle(fontSize: 9),
             ),
@@ -484,7 +484,7 @@ abstract final class QuoteExportService {
       (
         'Fecha deseada',
         details.desiredDate == null
-            ? 'Por coordinar'
+            ? 'No registrada'
             : DateFormat('dd/MM/yyyy').format(details.desiredDate!),
       ),
       for (final entry in details.customFields.entries)
@@ -517,7 +517,7 @@ abstract final class QuoteExportService {
 
   static Uint8List buildOrderXlsx(CheckoutOrder order) {
     final workbook = Excel.createExcel();
-    const sheetName = 'Pedido simulado';
+    const sheetName = 'Cotización simulada';
     final sheet = workbook[sheetName];
     final defaultSheet = workbook.getDefaultSheet();
     if (defaultSheet != null && defaultSheet != sheetName) {
@@ -550,7 +550,7 @@ abstract final class QuoteExportService {
     );
 
     _setText(sheet, 0, 0, 'EXPRESIONES', style: titleStyle);
-    _setText(sheet, 0, 1, 'Comprobante de pedido simulado');
+    _setText(sheet, 0, 1, 'Comprobante de cotización simulada');
     _setText(
       sheet,
       0,
@@ -558,7 +558,7 @@ abstract final class QuoteExportService {
       'PAGO SIMULADO · No se realizó ningún cobro real.',
       style: warningStyle,
     );
-    _setText(sheet, 3, 0, 'Pedido', style: labelStyle);
+    _setText(sheet, 3, 0, 'Cotización', style: labelStyle);
     _setText(sheet, 4, 0, order.id);
     _setText(sheet, 3, 1, 'Fecha', style: labelStyle);
     _setText(
@@ -626,7 +626,7 @@ abstract final class QuoteExportService {
       (
         'Fecha deseada',
         order.details.desiredDate == null
-            ? 'Por coordinar'
+            ? 'No registrada'
             : DateFormat('dd/MM/yyyy').format(order.details.desiredDate!),
       ),
       for (final entry in order.details.customFields.entries)
@@ -781,7 +781,7 @@ abstract final class QuoteExportService {
       _pdfDetail(
         'Fecha deseada',
         details.desiredDate == null
-            ? 'Por coordinar'
+            ? 'No registrada'
             : DateFormat('dd/MM/yyyy').format(details.desiredDate!),
       ),
       for (final entry in details.customFields.entries)

@@ -53,12 +53,18 @@ void main() {
       findsOneWidget,
     );
 
-    final dozenQuantity = find.byWidgetPredicate(
-      (widget) => widget is TextFormField && widget.controller?.text == '12',
-    );
-    final dozenTotal = find.byWidgetPredicate(
-      (widget) => widget is TextFormField && widget.controller?.text == '30.00',
-    );
+    final dozenQuantity = find
+        .ancestor(
+          of: find.text('Cantidad'),
+          matching: find.byType(TextFormField),
+        )
+        .first;
+    final dozenTotal = find
+        .ancestor(
+          of: find.text('Precio total (S/)'),
+          matching: find.byType(TextFormField),
+        )
+        .first;
     await tester.enterText(dozenQuantity, '1');
     tester.state<FormState>(find.byType(Form)).validate();
     await tester.pump();

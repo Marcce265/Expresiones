@@ -8,6 +8,7 @@ class ProductionCapacitySnapshot {
   const ProductionCapacitySnapshot({
     required this.weeklyCapacityPoints,
     this.deliveryWeekdays = defaultDeliveryWeekdays,
+    this.pickupTimeSlots = defaultPickupTimeSlots,
     this.reservedPointsByDate = const {},
     this.overridesByDate = const {},
     this.horizonDays = 120,
@@ -33,7 +34,24 @@ class ProductionCapacitySnapshot {
     'shalom': {DateTime.monday, DateTime.saturday},
   };
 
+  static const List<String> defaultPickupTimeSlots = [
+    '07:00 - 08:00',
+    '08:00 - 09:00',
+    '09:00 - 10:00',
+    '10:00 - 11:00',
+    '11:00 - 12:00',
+    '12:00 - 13:00',
+    '13:00 - 14:00',
+    '14:00 - 15:00',
+    '15:00 - 16:00',
+    '16:00 - 17:00',
+    '17:00 - 18:00',
+  ];
+
   final Map<String, Set<int>> deliveryWeekdays;
+
+  /// Hour ranges customers may choose for pickup at the Huancayo store.
+  final List<String> pickupTimeSlots;
 
   /// Aggregated confirmed workload, keyed as `yyyy-MM-dd`.
   final Map<String, int> reservedPointsByDate;
@@ -104,6 +122,7 @@ class ProductionCapacitySnapshot {
           ? ProductionCapacitySnapshot.twoPersonFallback().weeklyCapacityPoints
           : Map.unmodifiable(weekly),
       deliveryWeekdays: _deliveryWeekdays(map['deliveryWeekdays']),
+      pickupTimeSlots: _pickupTimeSlots(map['pickupTimeSlots']),
       reservedPointsByDate: Map.unmodifiable(reserved),
       overridesByDate: Map.unmodifiable(overrides),
       horizonDays: math.max(1, _int(map['horizonDays'], fallback: 120)),
@@ -143,6 +162,7 @@ class ProductionCapacitySnapshot {
       for (final entry in deliveryWeekdays.entries)
         entry.key: (entry.value.toList()..sort()),
     },
+    'pickupTimeSlots': pickupTimeSlots,
     'reservedPointsByDate': reservedPointsByDate,
     'overridesByDate': {
       for (final entry in overridesByDate.entries)
@@ -269,6 +289,35 @@ Map<String, Set<int>> _deliveryWeekdays(Object? value) {
         ),
       ),
   });
+}
+
+List<String> _pickupTimeSlots(Object? value) {
+  if (value is! Iterable) {
+    return ProductionCapacitySnapshot.defaultPickupTimeSlots;
+  }
+  final seen = <String>{};
+  final parsed = <String>[];
+  for (final item in value) {
+    final slot = item.toString().trim();
+    if (_isTimeSlot(slot) && seen.add(slot)) parsed.add(slot);
+  }
+  return parsed.isEmpty
+      ? ProductionCapacitySnapshot.defaultPickupTimeSlots
+      : List.unmodifiable(parsed);
+}
+
+bool _isTimeSlot(String value) {
+  final match = RegExp(r'^(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})$')
+      .firstMatch(value);
+  if (match == null) return false;
+  final startHour = int.parse(match.group(1)!);
+  final startMinute = int.parse(match.group(2)!);
+  final endHour = int.parse(match.group(3)!);
+  final endMinute = int.parse(match.group(4)!);
+  if (startHour > 23 || endHour > 23 || startMinute > 59 || endMinute > 59) {
+    return false;
+  }
+  return startHour * 60 + startMinute < endHour * 60 + endMinute;
 }
 
 Set<int> _weekdaySet(Object? value, Set<int> fallback) {

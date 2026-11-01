@@ -109,7 +109,10 @@ void main() {
 
     await tester.binding.handlePopRoute();
     await tester.pump();
-    expect(find.text('Completa tu compra simulada'), findsOneWidget);
+    expect(
+      find.text('Completa la demostración de tu cotización'),
+      findsOneWidget,
+    );
 
     payment.complete(
       SimulatedPayment(
@@ -165,7 +168,7 @@ void main() {
 
     expect(find.text('SIM-20261024-120000-000'), findsOneWidget);
     expect(find.text('No se realizó ningún cobro'), findsOneWidget);
-    expect(find.text('Enviar pedido por WhatsApp'), findsOneWidget);
+    expect(find.text('Enviar cotización por WhatsApp'), findsOneWidget);
     expect(find.text('Copiar resumen'), findsOneWidget);
     expect(find.text('Guardar PDF'), findsOneWidget);
     expect(find.text('Guardar Excel'), findsOneWidget);

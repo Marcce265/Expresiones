@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/feature_flags.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
@@ -509,102 +510,107 @@ const _sections = <_ContentSection>[
         StorefrontText.reviewMessageBody,
         'Descripción del mensaje',
       ),
-      _TextFieldSpec(
-        StorefrontText.reviewPaymentNote,
-        'Nota sobre el pago',
-        multiline: true,
-      ),
+      if (FeatureFlags.demoPayment)
+        _TextFieldSpec(
+          StorefrontText.reviewPaymentNote,
+          'Nota sobre el pago',
+          multiline: true,
+        ),
     ],
   ),
-  _ContentSection(
-    title: 'Pago simulado y confirmación',
-    description:
-        'Presentación, métodos de demostración, errores y comprobante final.',
-    icon: Icons.credit_card_outlined,
-    fields: [
-      _TextFieldSpec(StorefrontText.paymentEyebrow, 'Texto superior'),
-      _TextFieldSpec(StorefrontText.paymentTitle, 'Título del pago'),
-      _TextFieldSpec(
-        StorefrontText.paymentBody,
-        'Descripción del pago',
-        multiline: true,
-      ),
-      _TextFieldSpec(
-        StorefrontText.paymentDemoBadge,
-        'Etiqueta de demostración',
-      ),
-      _TextFieldSpec(
-        StorefrontText.paymentCardMethod,
-        'Nombre de tarjeta demo',
-      ),
-      _TextFieldSpec(
-        StorefrontText.paymentCardDescription,
-        'Descripción de tarjeta demo',
-        multiline: true,
-      ),
-      _TextFieldSpec(StorefrontText.paymentYapeMethod, 'Nombre de Yape demo'),
-      _TextFieldSpec(
-        StorefrontText.paymentYapeDescription,
-        'Descripción de Yape demo',
-        multiline: true,
-      ),
-      _TextFieldSpec(
-        StorefrontText.paymentShippingPending,
-        'Envío por confirmar',
-      ),
-      _TextFieldSpec(
-        StorefrontText.paymentSubmitButton,
-        'Botón para simular pago',
-      ),
-      _TextFieldSpec(
-        StorefrontText.paymentProcessing,
-        'Mensaje mientras procesa',
-      ),
-      _TextFieldSpec(
-        StorefrontText.paymentDisclaimer,
-        'Aviso de seguridad',
-        multiline: true,
-      ),
-      _TextFieldSpec(
-        StorefrontText.paymentRejectedTitle,
-        'Título de pago rechazado',
-      ),
-      _TextFieldSpec(
-        StorefrontText.paymentRejectedBody,
-        'Descripción de pago rechazado',
-        multiline: true,
-      ),
-      _TextFieldSpec(
-        StorefrontText.paymentRetryButton,
-        'Botón para reintentar',
-      ),
-      _TextFieldSpec(StorefrontText.successEyebrow, 'Comprobante · superior'),
-      _TextFieldSpec(StorefrontText.successTitle, 'Comprobante · título'),
-      _TextFieldSpec(
-        StorefrontText.successBody,
-        'Comprobante · descripción',
-        multiline: true,
-      ),
-      _TextFieldSpec(
-        StorefrontText.successPaymentLabel,
-        'Estado del pago simulado',
-      ),
-      _TextFieldSpec(
-        StorefrontText.successNoCharge,
-        'Aviso de comprobante',
-        multiline: true,
-      ),
-      _TextFieldSpec(StorefrontText.successWhatsappButton, 'Botón de WhatsApp'),
-      _TextFieldSpec(
-        StorefrontText.successHomeButton,
-        'Botón para volver al inicio',
-      ),
-      _TextFieldSpec(
-        StorefrontText.successNewOrderButton,
-        'Botón para otra compra',
-      ),
-    ],
-  ),
+  if (FeatureFlags.demoPayment)
+    _ContentSection(
+      title: 'Pago simulado y confirmación',
+      description:
+          'Presentación, métodos de demostración, errores y comprobante final.',
+      icon: Icons.credit_card_outlined,
+      fields: [
+        _TextFieldSpec(StorefrontText.paymentEyebrow, 'Texto superior'),
+        _TextFieldSpec(StorefrontText.paymentTitle, 'Título del pago'),
+        _TextFieldSpec(
+          StorefrontText.paymentBody,
+          'Descripción del pago',
+          multiline: true,
+        ),
+        _TextFieldSpec(
+          StorefrontText.paymentDemoBadge,
+          'Etiqueta de demostración',
+        ),
+        _TextFieldSpec(
+          StorefrontText.paymentCardMethod,
+          'Nombre de tarjeta demo',
+        ),
+        _TextFieldSpec(
+          StorefrontText.paymentCardDescription,
+          'Descripción de tarjeta demo',
+          multiline: true,
+        ),
+        _TextFieldSpec(StorefrontText.paymentYapeMethod, 'Nombre de Yape demo'),
+        _TextFieldSpec(
+          StorefrontText.paymentYapeDescription,
+          'Descripción de Yape demo',
+          multiline: true,
+        ),
+        _TextFieldSpec(
+          StorefrontText.paymentShippingPending,
+          'Envío por confirmar',
+        ),
+        _TextFieldSpec(
+          StorefrontText.paymentSubmitButton,
+          'Botón para simular pago',
+        ),
+        _TextFieldSpec(
+          StorefrontText.paymentProcessing,
+          'Mensaje mientras procesa',
+        ),
+        _TextFieldSpec(
+          StorefrontText.paymentDisclaimer,
+          'Aviso de seguridad',
+          multiline: true,
+        ),
+        _TextFieldSpec(
+          StorefrontText.paymentRejectedTitle,
+          'Título de pago rechazado',
+        ),
+        _TextFieldSpec(
+          StorefrontText.paymentRejectedBody,
+          'Descripción de pago rechazado',
+          multiline: true,
+        ),
+        _TextFieldSpec(
+          StorefrontText.paymentRetryButton,
+          'Botón para reintentar',
+        ),
+        _TextFieldSpec(StorefrontText.successEyebrow, 'Comprobante · superior'),
+        _TextFieldSpec(StorefrontText.successTitle, 'Comprobante · título'),
+        _TextFieldSpec(
+          StorefrontText.successBody,
+          'Comprobante · descripción',
+          multiline: true,
+        ),
+        _TextFieldSpec(
+          StorefrontText.successPaymentLabel,
+          'Estado del pago simulado',
+        ),
+        _TextFieldSpec(
+          StorefrontText.successNoCharge,
+          'Aviso de comprobante',
+          multiline: true,
+        ),
+        _TextFieldSpec(
+          StorefrontText.successWhatsappButton,
+          'Botón de WhatsApp',
+        ),
+        _TextFieldSpec(
+          StorefrontText.successHomeButton,
+          'Botón para volver al inicio',
+        ),
+        _TextFieldSpec(
+          StorefrontText.successNewOrderButton,
+          'Botón para otra cotización',
+        ),
+      ],
+    ),
   _ContentSection(
     title: 'Ayuda y preguntas frecuentes',
     description: 'Presentación, aviso, botones y seis respuestas.',
@@ -631,8 +637,10 @@ const _sections = <_ContentSection>[
       _TextFieldSpec('help.faq4.body', 'Respuesta 4', multiline: true),
       _TextFieldSpec('help.faq5.title', 'Pregunta 5'),
       _TextFieldSpec('help.faq5.body', 'Respuesta 5', multiline: true),
-      _TextFieldSpec('help.faq6.title', 'Pregunta 6'),
-      _TextFieldSpec('help.faq6.body', 'Respuesta 6', multiline: true),
+      if (FeatureFlags.demoPayment) ...[
+        _TextFieldSpec('help.faq6.title', 'Pregunta 6'),
+        _TextFieldSpec('help.faq6.body', 'Respuesta 6', multiline: true),
+      ],
     ],
   ),
   _ContentSection(
@@ -685,12 +693,14 @@ const _sections = <_ContentSection>[
         'Sección 7 · contenido',
         multiline: true,
       ),
-      _TextFieldSpec('privacy.section8.title', 'Sección 8 · título'),
-      _TextFieldSpec(
-        'privacy.section8.body',
-        'Sección 8 · contenido',
-        multiline: true,
-      ),
+      if (FeatureFlags.demoPayment) ...[
+        _TextFieldSpec('privacy.section8.title', 'Sección 8 · título'),
+        _TextFieldSpec(
+          'privacy.section8.body',
+          'Sección 8 · contenido',
+          multiline: true,
+        ),
+      ],
       _TextFieldSpec(
         StorefrontText.privacyControlTitle,
         'Control de datos · título',

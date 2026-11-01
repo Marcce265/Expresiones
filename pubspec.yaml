@@ -74,6 +74,7 @@ flutter:
     - assets/data/
     - assets/fonts/
     - assets/images/catalog_hero.webp
+    - assets/images/jashy_assistant.png
     # Dos portadas editoriales pequeñas forman parte de la interfaz; las 221
     # fotos dinámicas del catálogo se sirven desde Supabase Storage.
     - assets/images/family_heroes/

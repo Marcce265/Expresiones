@@ -12,6 +12,7 @@ import '../widgets/app_notice.dart';
 import '../widgets/product_card.dart';
 import 'admin_image_draft.dart';
 import '../widgets/product_visual.dart';
+import 'admin_audit_log_screen.dart';
 import 'admin_analytics_screen.dart';
 import 'admin_catalog_repository.dart';
 import 'admin_checkout_settings_screen.dart';
@@ -463,6 +464,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       _openAnalytics();
       return;
     }
+    if (query.contains('historial') ||
+        query.contains('auditoria') ||
+        query.contains('registro administrativo')) {
+      setState(() => _sectionIndex = 3);
+      return;
+    }
     if (query.contains('carrito') ||
         query.contains('formulario') ||
         query.contains('entrega') ||
@@ -541,10 +548,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onEditHero: _openHeroEditor,
           ),
           1 => _buildCatalogSection(),
-          _ => AdminCheckoutSettingsScreen(
+          2 => AdminCheckoutSettingsScreen(
             repository: AdminSiteSettingsRepository(client: widget.client),
             operations: widget.operations,
           ),
+          _ => AdminAuditLogScreen(repository: widget.operations),
         };
 
         return Scaffold(
@@ -604,6 +612,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       icon: Icon(Icons.shopping_bag_outlined),
                       selectedIcon: Icon(Icons.shopping_bag_rounded),
                       label: 'Carrito',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.history_outlined),
+                      selectedIcon: Icon(Icons.history_rounded),
+                      label: 'Historial',
                     ),
                   ],
                 ),
@@ -671,7 +684,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         const InfoBanner(
                           icon: Icons.edit_outlined,
                           title: 'Editar es sencillo',
-                          message: 'Pulsa el lápiz de una tarjeta para cambiar su foto, textos, precio, stock, colores y variantes.',
+                          message: 'Toca el lápiz ✏️ de cualquier producto para cambiar fotos, textos, precio, stock y variantes.',
                         ),
                         SizedBox(height: compact ? 14 : 18),
                         Row(
@@ -806,30 +819,55 @@ class _AdminNavigation extends StatelessWidget {
       (Icons.home_outlined, Icons.home_rounded, 'Inicio'),
       (Icons.grid_view_outlined, Icons.grid_view_rounded, 'Catálogo'),
       (Icons.shopping_bag_outlined, Icons.shopping_bag_rounded, 'Carrito'),
+      (Icons.history_outlined, Icons.history_rounded, 'Historial'),
     ];
     return Container(
-      width: 248,
+      width: 256,
       decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(right: BorderSide(color: AppColors.border)),
       ),
-      padding: const EdgeInsets.fromLTRB(18, 26, 18, 20),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
               children: [
-                Text(
-                  'Modo administrador',
-                  style: Theme.of(context).textTheme.titleMedium,
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.canvas,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: const Center(
+                    child: Text('🌸', style: TextStyle(fontSize: 18)),
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Gestiona la tienda',
-                  style: Theme.of(context).textTheme.bodySmall,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Expresiones',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontFamily: 'PlayfairDisplay',
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      Text(
+                        'Modo administrador',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                              fontSize: 11,
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -851,24 +889,35 @@ class _AdminNavigation extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.pinkSoft,
+              color: AppColors.canvas,
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                const Icon(Icons.admin_panel_settings_outlined, size: 21),
-                const SizedBox(height: 8),
-                Text(
-                  'Sesión protegida',
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  email,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
+                const Icon(Icons.shield_outlined, size: 20, color: AppColors.muted),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sesión protegida',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      Text(
+                        email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontSize: 11,
+                              color: AppColors.muted,
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -900,16 +949,23 @@ class _AdminNavigationItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
+        hoverColor: AppColors.canvas,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           child: Row(
             children: [
-              Icon(icon, size: 21, color: selected ? Colors.white : null),
+              Icon(
+                icon,
+                size: 21,
+                color: selected ? Colors.white : AppColors.muted,
+              ),
               const SizedBox(width: 13),
               Text(
                 label,
-                style: Theme.of(context).textTheme.labelLarge
-                    ?.copyWith(color: selected ? Colors.white : AppColors.ink),
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: selected ? Colors.white : AppColors.ink,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                    ),
               ),
             ],
           ),
@@ -1223,21 +1279,27 @@ class _AdminQuickAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: AppColors.border),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(22),
           child: Row(
             children: [
               Container(
-                width: 50,
-                height: 50,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
-                  color: AppColors.pinkSoft,
-                  borderRadius: BorderRadius.circular(15),
+                  color: AppColors.canvas,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
                 ),
-                child: Icon(icon, size: 24),
+                child: Icon(icon, size: 24, color: AppColors.ink),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -1257,9 +1319,15 @@ class _AdminQuickAction extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Tooltip(
-                message: actionLabel,
-                child: const Icon(Icons.arrow_forward_rounded),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.canvas,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: const Icon(Icons.arrow_forward_rounded, size: 18),
               ),
             ],
           ),
@@ -2046,13 +2114,6 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
   String? _pricingError() {
     final productError = _priceTierListError(_priceTiers, owner: 'el producto');
     if (productError != null) return productError;
-    for (final variant in _variants) {
-      final error = _priceTierListError(
-        variant.priceTiers,
-        owner: 'la variante “${variant.name.text.trim()}”',
-      );
-      if (error != null) return error;
-    }
     return null;
   }
 
@@ -2400,8 +2461,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Abre cada variante para editar su nombre, código, color, '
-                      'imagen, precio, stock y disponibilidad.',
+                      'Opciones en las que viene este producto (colores o modelos). Todas compartirán el mismo precio base y precios por mayor.',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 10),
@@ -2419,10 +2479,6 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                           uploading: _uploadingImage,
                           onPickImage: () => _pickImage(variant: variant),
                           onDelete: () => _removeVariant(variant),
-                          onAddPriceTier: (quantity) =>
-                              _addPriceTier(variant.priceTiers, quantity),
-                          onRemovePriceTier: (tier) =>
-                              _removePriceTier(variant.priceTiers, tier),
                           onChanged: () => setState(() {}),
                         ),
                     if (_error != null) ...[
@@ -2746,15 +2802,8 @@ class _VariantDraft {
   _VariantDraft(this.variant)
     : name = TextEditingController(text: variant.name),
       sku = TextEditingController(text: variant.sku ?? ''),
-      colorHex = TextEditingController(text: variant.colorHex ?? ''),
       image = AdminImageDraft.fromVariant(variant),
-      price = TextEditingController(
-        text: variant.priceOverride?.toStringAsFixed(2) ?? '',
-      ),
       stock = TextEditingController(text: variant.stock?.toString() ?? ''),
-      priceTiers = [
-        for (final tier in variant.priceTiers) _PriceTierDraft.fromTier(tier),
-      ],
       status = variant.stockStatus,
       active = variant.isActive;
 
@@ -2769,11 +2818,8 @@ class _VariantDraft {
   final ProductVariant variant;
   final TextEditingController name;
   final TextEditingController sku;
-  final TextEditingController colorHex;
   final AdminImageDraft image;
-  final TextEditingController price;
   final TextEditingController stock;
-  final List<_PriceTierDraft> priceTiers;
   StockStatus status;
   bool active;
 
@@ -2781,27 +2827,17 @@ class _VariantDraft {
     final data = Map<String, dynamic>.from(variant.toMap());
     data['name'] = name.text.trim();
     data['sku'] = sku.text.trim();
-    final normalizedColor = _normalizedHex(colorHex.text);
-    if (normalizedColor == null) {
-      data.remove('colorHex');
-    } else {
-      data['colorHex'] = normalizedColor;
-    }
+    data.remove('colorHex');
+    data.remove('priceOverride');
+    data.remove('priceTiers');
     image.writeReplacementTo(data);
     data.remove('thumbnailUrl');
-    final parsedPrice = _optionalDecimal(price.text);
     final parsedStock = _optionalInt(stock.text);
-    if (parsedPrice == null) {
-      data.remove('priceOverride');
-    } else {
-      data['priceOverride'] = parsedPrice;
-    }
     if (parsedStock == null) {
       data.remove('stock');
     } else {
       data['stock'] = parsedStock;
     }
-    data['priceTiers'] = [for (final tier in priceTiers) tier.toMap()];
     data['stockStatus'] = status.key;
     data['isActive'] = active;
     return data;
@@ -2810,12 +2846,7 @@ class _VariantDraft {
   void dispose() {
     name.dispose();
     sku.dispose();
-    colorHex.dispose();
-    price.dispose();
     stock.dispose();
-    for (final tier in priceTiers) {
-      tier.dispose();
-    }
   }
 }
 
@@ -2826,8 +2857,6 @@ class _VariantEditorTile extends StatelessWidget {
     required this.uploading,
     required this.onPickImage,
     required this.onDelete,
-    required this.onAddPriceTier,
-    required this.onRemovePriceTier,
     required this.onChanged,
   });
 
@@ -2836,64 +2865,104 @@ class _VariantEditorTile extends StatelessWidget {
   final bool uploading;
   final VoidCallback onPickImage;
   final VoidCallback onDelete;
-  final ValueChanged<int?> onAddPriceTier;
-  final ValueChanged<_PriceTierDraft> onRemovePriceTier;
   final VoidCallback onChanged;
 
   @override
   Widget build(BuildContext context) {
+    final hasImg = imageUrl != null && imageUrl!.trim().isNotEmpty;
     return Card(
-      color: AppColors.canvas,
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
-        leading: _ColorSwatch(value: draft.colorHex.text),
-        title: Text(draft.name.text),
-        subtitle: Text(
-          draft.sku.text.trim().isEmpty ? draft.variant.id : draft.sku.text,
+        shape: const Border(),
+        collapsedShape: const Border(),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 44,
+          height: 44,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: AppColors.canvas,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: hasImg
+              ? ProductVisual(
+                  label: draft.name.text,
+                  imageAsset: imageUrl,
+                )
+              : const Icon(Icons.photo_outlined, size: 22, color: AppColors.muted),
+        ),
+        title: Text(
+          draft.name.text.trim().isEmpty ? 'Opción / color sin nombre' : draft.name.text,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        subtitle: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              draft.sku.text.trim().isEmpty ? draft.variant.id : draft.sku.text,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: draft.active ? const Color(0xFFE8F5E9) : const Color(0xFFEEEEEE),
+                borderRadius: BorderRadius.circular(99),
+              ),
+              child: Text(
+                draft.active ? 'Visible' : 'Oculta',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: draft.active ? const Color(0xFF2E7D32) : AppColors.muted,
+                ),
+              ),
+            ),
+          ],
         ),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
+          const Divider(height: 1, color: AppColors.border),
+          const SizedBox(height: 14),
           _ImageEditor(
             label: draft.name.text,
             imageUrl: imageUrl,
-            colorHex: draft.colorHex.text,
             uploading: uploading,
             onPick: onPickImage,
             compact: true,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           LayoutBuilder(
             builder: (context, constraints) {
               final fields = <Widget>[
                 TextFormField(
                   controller: draft.name,
-                  decoration: const InputDecoration(labelText: 'Nombre *'),
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre de la opción *',
+                    hintText: 'Ej. Verde militar, Rojo perla...',
+                  ),
                   validator: _required,
                   onChanged: (_) => onChanged(),
                 ),
                 TextFormField(
                   controller: draft.sku,
-                  decoration: const InputDecoration(labelText: 'Código / SKU'),
-                  onChanged: (_) => onChanged(),
-                ),
-                TextFormField(
-                  controller: draft.colorHex,
-                  decoration: InputDecoration(
-                    labelText: 'Color (HEX)',
-                    hintText: '#E7A2B4',
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: _ColorSwatch(value: draft.colorHex.text),
-                    ),
+                  decoration: const InputDecoration(
+                    labelText: 'Código / SKU',
+                    hintText: 'Ej. XS-1',
                   ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[#0-9a-fA-F]')),
-                    LengthLimitingTextInputFormatter(7),
-                  ],
-                  validator: _optionalHexColor,
                   onChanged: (_) => onChanged(),
                 ),
               ];
-              if (constraints.maxWidth < 700) {
+              if (constraints.maxWidth < 650) {
                 return Column(
                   children: [
                     for (var index = 0; index < fields.length; index++) ...[
@@ -2918,20 +2987,12 @@ class _VariantEditorTile extends StatelessWidget {
             builder: (context, constraints) {
               final fields = <Widget>[
                 TextFormField(
-                  controller: draft.price,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Precio propio (S/)',
-                    hintText: 'Vacío: usa precio base',
-                  ),
-                  validator: _optionalNonNegativeDecimal,
-                ),
-                TextFormField(
                   controller: draft.stock,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Stock exacto'),
+                  decoration: const InputDecoration(
+                    labelText: 'Stock exacto',
+                    hintText: 'Vacío si no se controla',
+                  ),
                   validator: _optionalNonNegativeInt,
                 ),
                 DropdownButtonFormField<StockStatus>(
@@ -2954,18 +3015,8 @@ class _VariantEditorTile extends StatelessWidget {
                     }
                   },
                 ),
-                SwitchListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                  title: const Text('Publicada'),
-                  subtitle: const Text('Visible en el catálogo'),
-                  value: draft.active,
-                  onChanged: (value) {
-                    draft.active = value;
-                    onChanged();
-                  },
-                ),
               ];
-              if (constraints.maxWidth < 700) {
+              if (constraints.maxWidth < 650) {
                 return Column(
                   children: [
                     for (var index = 0; index < fields.length; index++) ...[
@@ -2975,25 +3026,28 @@ class _VariantEditorTile extends StatelessWidget {
                   ],
                 );
               }
-              final fieldWidth = (constraints.maxWidth - 12) / 2;
-              return Wrap(
-                spacing: 12,
-                runSpacing: 12,
+              return Row(
                 children: [
-                  for (final field in fields)
-                    SizedBox(width: fieldWidth, child: field),
+                  for (var index = 0; index < fields.length; index++) ...[
+                    Expanded(child: fields[index]),
+                    if (index < fields.length - 1) const SizedBox(width: 12),
+                  ],
                 ],
               );
             },
           ),
-          const SizedBox(height: 14),
-          _PriceTiersEditor(
-            tiers: draft.priceTiers,
-            onAdd: onAddPriceTier,
-            onRemove: onRemovePriceTier,
-            onChanged: onChanged,
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+            title: const Text('Visible en el catálogo'),
+            subtitle: const Text('Si lo desactivas, los clientes no podrán elegir este color/opción'),
+            value: draft.active,
+            onChanged: (value) {
+              draft.active = value;
+              onChanged();
+            },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(
@@ -3017,20 +3071,18 @@ class _ImageEditor extends StatelessWidget {
     required this.imageUrl,
     required this.uploading,
     required this.onPick,
-    this.colorHex,
     this.compact = false,
   });
 
   final String label;
   final String? imageUrl;
-  final String? colorHex;
   final bool uploading;
   final VoidCallback onPick;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final size = compact ? 108.0 : 150.0;
+    final size = compact ? 104.0 : 144.0;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -3046,7 +3098,6 @@ class _ImageEditor extends StatelessWidget {
           child: ProductVisual(
             label: label,
             imageAsset: imageUrl,
-            colorHex: colorHex,
           ),
         ),
         const SizedBox(width: 16),
@@ -3078,29 +3129,6 @@ class _ImageEditor extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ColorSwatch extends StatelessWidget {
-  const _ColorSwatch({required this.value});
-
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _colorFromHex(value);
-    return Container(
-      width: 28,
-      height: 28,
-      decoration: BoxDecoration(
-        color: color ?? Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: color == null
-          ? const Icon(Icons.palette_outlined, size: 15)
-          : null,
     );
   }
 }
@@ -3695,14 +3723,6 @@ String? _nonNegativeDecimal(String? value) {
       : null;
 }
 
-String? _optionalNonNegativeDecimal(String? value) {
-  if (value == null || value.trim().isEmpty) return null;
-  final parsed = _optionalDecimal(value);
-  return parsed == null || !parsed.isFinite || parsed < 0
-      ? 'Ingresa un monto válido.'
-      : null;
-}
-
 String? _nonNegativeInt(String? value) {
   final parsed = int.tryParse(value?.trim() ?? '');
   return parsed == null || parsed < 0 ? 'Ingresa un número válido.' : null;
@@ -3755,22 +3775,4 @@ String? _optionalNonNegativeInt(String? value) {
   if (value == null || value.trim().isEmpty) return null;
   final parsed = int.tryParse(value.trim());
   return parsed == null || parsed < 0 ? 'Ingresa un número válido.' : null;
-}
-
-String? _normalizedHex(String? value) {
-  final text = value?.trim().replaceFirst('#', '').toUpperCase() ?? '';
-  return RegExp(r'^[0-9A-F]{6}$').hasMatch(text) ? '#$text' : null;
-}
-
-String? _optionalHexColor(String? value) {
-  if (value == null || value.trim().isEmpty) return null;
-  return _normalizedHex(value) == null
-      ? 'Usa un color HEX como #E7A2B4.'
-      : null;
-}
-
-Color? _colorFromHex(String? value) {
-  final normalized = _normalizedHex(value);
-  if (normalized == null) return null;
-  return Color(0xFF000000 | int.parse(normalized.substring(1), radix: 16));
 }

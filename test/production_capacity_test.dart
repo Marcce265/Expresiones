@@ -107,6 +107,7 @@ void main() {
           'pickup': [2, 3, 4],
           'shalom': [DateTime.monday, DateTime.saturday],
         },
+        'pickupTimeSlots': ['08:00 - 09:00', '15:00 - 16:00'],
       });
       final restored = ProductionCapacitySnapshot.fromMap(snapshot.toMap());
 
@@ -117,6 +118,26 @@ void main() {
       });
       expect(restored.isDeliveryDay('shalom', DateTime(2026, 10, 24)), isTrue);
       expect(restored.isDeliveryDay('shalom', DateTime(2026, 10, 23)), isFalse);
+      expect(restored.pickupTimeSlots, ['08:00 - 09:00', '15:00 - 16:00']);
+    });
+
+    test('usa horarios de recojo seguros cuando faltan o son inválidos', () {
+      final missing = ProductionCapacitySnapshot.fromMap({
+        'weeklyCapacityPoints': {'1': 8},
+      });
+      final invalid = ProductionCapacitySnapshot.fromMap({
+        'weeklyCapacityPoints': {'1': 8},
+        'pickupTimeSlots': ['18:00 - 17:00'],
+      });
+
+      expect(
+        missing.pickupTimeSlots,
+        ProductionCapacitySnapshot.defaultPickupTimeSlots,
+      );
+      expect(
+        invalid.pickupTimeSlots,
+        ProductionCapacitySnapshot.defaultPickupTimeSlots,
+      );
     });
   });
 }

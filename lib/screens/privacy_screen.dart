@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/feature_flags.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
@@ -31,10 +32,10 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Borrar datos de este dispositivo'),
-        content: const Text(
-          'Se eliminarán el carrito, los datos de coordinación, el último '
-          'comprobante de demostración y los eventos anónimos que todavía no '
-          'se hayan enviado. Esta acción no puede deshacerse.',
+        content: Text(
+          FeatureFlags.demoPayment
+              ? 'Se eliminarán el carrito, los datos de coordinación, el último comprobante de demostración y los eventos anónimos que todavía no se hayan enviado. Esta acción no puede deshacerse.'
+              : 'Se eliminarán el carrito, los datos de coordinación y los eventos anónimos que todavía no se hayan enviado. Esta acción no puede deshacerse.',
         ),
         actions: [
           TextButton(
@@ -93,7 +94,11 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 24),
-                for (var index = 1; index <= 8; index++)
+                for (
+                  var index = 1;
+                  index <= (FeatureFlags.demoPayment ? 8 : 7);
+                  index++
+                )
                   _PrivacySection(
                     title: widget.settings.text(
                       StorefrontText.privacySectionTitle(index),

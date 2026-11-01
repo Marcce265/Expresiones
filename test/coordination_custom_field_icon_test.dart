@@ -34,7 +34,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('COLOR PREFERIDO'), findsOneWidget);
+    expect(find.text('COLOR PREFERIDO *'), findsOneWidget);
     expect(find.byIcon(Icons.palette_outlined), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

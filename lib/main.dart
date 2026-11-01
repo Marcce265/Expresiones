@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'config/feature_flags.dart';
 import 'data/catalog_repository.dart';
+import 'data/guide_preferences.dart';
 import 'data/production_capacity_repository.dart';
 import 'data/product_popularity_repository.dart';
 import 'data/site_settings_repository.dart';
@@ -31,6 +33,7 @@ import 'services/supabase_bootstrap.dart';
 import 'state/app_store.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_notice.dart';
+import 'widgets/assistant_guide.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,8 +83,10 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
+  final _guidePreferences = const GuidePreferences();
   int _index = 0;
   ProductCategory? _catalogCategory;
+  bool _guideCheckScheduled = false;
 
   @override
   void initState() {
@@ -143,6 +148,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             child: ProductDetailScreen(
               product: product,
               initialVariantId: variantId,
+              onHelp: () => _showAssistantGuide(routeContext),
               onAdd: ({required quantity, variantId, required customization}) {
                 context.read<AppStore>().addProduct(
                   product,
@@ -171,19 +177,19 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (coordinationContext) => Scaffold(
-          body: SafeArea(
-            child: CoordinationScreen(
-              settings: store.storefrontSettings,
-              initial: store.details,
-              earliestDate: store.earliestDesiredDate,
-              deliveryWeekdays: store.deliveryWeekdaysFor,
-              isDateAvailable: store.isDesiredDateAvailable,
-              onSubmit: (details) {
-                store.updateDetails(details);
-                _openReview(coordinationContext, details);
-              },
-            ),
+        builder: (coordinationContext) => _checkoutScaffold(
+          routeContext: coordinationContext,
+          child: CoordinationScreen(
+            settings: store.storefrontSettings,
+            initial: store.details,
+            earliestDate: store.earliestDesiredDate,
+            deliveryWeekdays: store.deliveryWeekdaysFor,
+            pickupTimeSlots: store.pickupTimeSlots,
+            isDateAvailable: store.isDesiredDateAvailable,
+            onSubmit: (details) {
+              store.updateDetails(details);
+              _openReview(coordinationContext, details);
+            },
           ),
         ),
       ),
@@ -206,29 +212,69 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
     Navigator.of(coordinationContext).push(
       MaterialPageRoute<void>(
-        builder: (reviewContext) => Scaffold(
-          body: SafeArea(
-            child: ReviewScreen(
-              settings: store.storefrontSettings,
-              lines: lines,
-              details: details,
-              quoteId: quoteId,
-              message: message,
-              onSendWhatsapp: () =>
-                  _openWhatsapp(message, recordQuoteSent: true),
-              onCopyMessage: () {
-                Clipboard.setData(ClipboardData(text: message));
-              },
-              onEditQuote: () {
-                setState(() => _index = 2);
-                Navigator.of(reviewContext).popUntil((route) => route.isFirst);
-              },
-              onContinueToPayment: () =>
-                  _openPayment(reviewContext, lines, details),
-            ),
+        builder: (reviewContext) => _checkoutScaffold(
+          routeContext: reviewContext,
+          child: ReviewScreen(
+            settings: store.storefrontSettings,
+            lines: lines,
+            details: details,
+            quoteId: quoteId,
+            message: message,
+            onSendWhatsapp: () => _openWhatsapp(message, recordQuoteSent: true),
+            onCopyMessage: () {
+              Clipboard.setData(ClipboardData(text: message));
+            },
+            onEditQuote: () {
+              setState(() => _index = 2);
+              Navigator.of(reviewContext).popUntil((route) => route.isFirst);
+            },
+            onContinueToPayment: FeatureFlags.demoPayment
+                ? () => _openPayment(reviewContext, lines, details)
+                : null,
           ),
         ),
       ),
+    );
+  }
+
+  Widget _checkoutScaffold({
+    required BuildContext routeContext,
+    required Widget child,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final store = context.watch<AppStore>();
+        final desktop = constraints.maxWidth >= 1024;
+        void leaveCheckout(int destination) {
+          Navigator.of(routeContext).popUntil((route) => route.isFirst);
+          _selectDestination(destination);
+        }
+
+        return Scaffold(
+          body: SafeArea(
+            child: Row(
+              children: [
+                if (desktop)
+                  _DesktopNavigation(
+                    settings: store.storefrontSettings,
+                    currentIndex: 2,
+                    quoteQuantity: store.cartQuantity,
+                    onSelect: leaveCheckout,
+                  ),
+                Expanded(child: child),
+              ],
+            ),
+          ),
+          bottomNavigationBar: desktop
+              ? null
+              : _MobileNavigation(
+                  selectedIndex: 2,
+                  quoteQuantity: store.cartQuantity,
+                  onSelect: leaveCheckout,
+                ),
+          floatingActionButton: _assistantHelpButton(routeContext),
+        );
+      },
     );
   }
 
@@ -336,6 +382,36 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (!opened) throw StateError('No se pudo abrir el acceso administrativo.');
   }
 
+  void _scheduleAssistantOnboarding() {
+    if (_guideCheckScheduled) return;
+    _guideCheckScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final shouldShow = await _guidePreferences.shouldShowOnboarding();
+      if (!mounted || !shouldShow) return;
+      await _showAssistantGuide(context, showDoNotShowAgain: true);
+      await _guidePreferences.markOnboardingSeen();
+    });
+  }
+
+  Future<void> _showAssistantGuide(
+    BuildContext guideContext, {
+    bool showDoNotShowAgain = false,
+  }) async {
+    await showAssistantGuideSheet(
+      context: guideContext,
+      title: assistantGuideTitle,
+      message: assistantGuideMessage,
+      steps: assistantGuideSteps,
+      showDoNotShowAgain: showDoNotShowAgain,
+    );
+  }
+
+  Widget _assistantHelpButton(BuildContext guideContext) {
+    return AssistantHelpButton(
+      onPressed: () => _showAssistantGuide(guideContext),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final store = context.watch<AppStore>();
@@ -343,6 +419,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (store.isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
+    _scheduleAssistantOnboarding();
 
     final page = switch (_index) {
       0 => HomeScreen(
@@ -354,8 +431,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onOpenQuote: _showQuote,
         quoteQuantity: store.cartQuantity,
         onZeroResultSearch: store.recordZeroResultSearch,
-        lastOrder: store.lastOrder,
-        onOpenLastOrder: _openLastOrder,
+        lastOrder: FeatureFlags.demoPayment ? store.lastOrder : null,
+        onOpenLastOrder: FeatureFlags.demoPayment ? _openLastOrder : null,
       ),
       1 => CatalogScreen(
         settings: store.storefrontSettings,
@@ -415,40 +492,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           ),
           bottomNavigationBar: desktop
               ? null
-              : NavigationBar(
+              : _MobileNavigation(
                   selectedIndex: _index,
-                  onDestinationSelected: _selectDestination,
-                  destinations: [
-                    const NavigationDestination(
-                      icon: Icon(Icons.home_outlined),
-                      selectedIcon: Icon(Icons.home_rounded),
-                      label: 'Inicio',
-                    ),
-                    const NavigationDestination(
-                      icon: Icon(Icons.grid_view_outlined),
-                      selectedIcon: Icon(Icons.grid_view_rounded),
-                      label: 'Catálogo',
-                    ),
-                    NavigationDestination(
-                      icon: Badge.count(
-                        count: store.cartQuantity,
-                        isLabelVisible: store.cartQuantity > 0,
-                        child: const Icon(Icons.shopping_bag_outlined),
-                      ),
-                      selectedIcon: Badge.count(
-                        count: store.cartQuantity,
-                        isLabelVisible: store.cartQuantity > 0,
-                        child: const Icon(Icons.shopping_bag_rounded),
-                      ),
-                      label: 'Carrito',
-                    ),
-                    const NavigationDestination(
-                      icon: Icon(Icons.help_outline_rounded),
-                      selectedIcon: Icon(Icons.help_rounded),
-                      label: 'Ayuda',
-                    ),
-                  ],
+                  quoteQuantity: store.cartQuantity,
+                  onSelect: _selectDestination,
                 ),
+          floatingActionButton: _assistantHelpButton(context),
         );
       },
     );
@@ -459,6 +508,56 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       if (value == 1) _catalogCategory = null;
       _index = value;
     });
+  }
+}
+
+class _MobileNavigation extends StatelessWidget {
+  const _MobileNavigation({
+    required this.selectedIndex,
+    required this.quoteQuantity,
+    required this.onSelect,
+  });
+
+  final int selectedIndex;
+  final int quoteQuantity;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationBar(
+      selectedIndex: selectedIndex,
+      onDestinationSelected: onSelect,
+      destinations: [
+        const NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home_rounded),
+          label: 'Inicio',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.grid_view_outlined),
+          selectedIcon: Icon(Icons.grid_view_rounded),
+          label: 'Catálogo',
+        ),
+        NavigationDestination(
+          icon: Badge.count(
+            count: quoteQuantity,
+            isLabelVisible: quoteQuantity > 0,
+            child: const Icon(Icons.shopping_bag_outlined),
+          ),
+          selectedIcon: Badge.count(
+            count: quoteQuantity,
+            isLabelVisible: quoteQuantity > 0,
+            child: const Icon(Icons.shopping_bag_rounded),
+          ),
+          label: 'Carrito',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.help_outline_rounded),
+          selectedIcon: Icon(Icons.help_rounded),
+          label: 'Ayuda',
+        ),
+      ],
+    );
   }
 }
 

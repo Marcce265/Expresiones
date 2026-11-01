@@ -6,6 +6,7 @@ import '../models/catalog_models.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/assistant_guide.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_visual.dart';
 
@@ -118,23 +119,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
                               style: Theme.of(context).textTheme.headlineMedium,
                             ),
                           ),
-                          if (family == null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 7,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(99),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: Text(
-                                '${tiles.length} productos',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: AppColors.ink),
-                              ),
-                            ),
                         ],
                       ),
                       if (family != null) ...[
@@ -177,6 +161,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
                           onSelected: _selectFilter,
                         ),
                       ],
+                      const SizedBox(height: 12),
+                      const AssistantGuideCard(
+                        compact: true,
+                        title: 'Jashy te ayuda',
+                        message: 'Toca un producto para ver sus colores, elegir la cantidad y agregarlo al carrito.',
+                      ),
                     ],
                   ),
                 ),

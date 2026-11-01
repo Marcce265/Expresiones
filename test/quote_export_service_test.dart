@@ -114,7 +114,7 @@ void main() {
       expect(ascii.decode(pdf.take(4).toList()), '%PDF');
 
       final bytes = QuoteExportService.buildOrderXlsx(order);
-      final sheet = Excel.decodeBytes(bytes)['Pedido simulado'];
+      final sheet = Excel.decodeBytes(bytes)['Cotización simulada'];
       expect(
         sheet.cell(CellIndex.indexByString('A3')).value?.toString(),
         contains('No se realizó ningún cobro real'),

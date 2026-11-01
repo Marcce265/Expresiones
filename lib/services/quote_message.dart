@@ -70,7 +70,7 @@ abstract final class QuoteMessageBuilder {
         'Fecha deseada: ${DateFormat('dd/MM/yyyy').format(details.desiredDate!)}',
       );
     } else {
-      buffer.writeln('Fecha deseada: por coordinar');
+      buffer.writeln('Fecha deseada: no registrada');
     }
     for (final entry in details.customFields.entries) {
       if (entry.value.trim().isNotEmpty) {

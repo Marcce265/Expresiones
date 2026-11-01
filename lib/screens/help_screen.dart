@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/feature_flags.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
@@ -46,11 +47,12 @@ class HelpScreen extends StatelessWidget {
         title: settings.text(StorefrontText.helpFaqTitle(5)),
         body: settings.text(StorefrontText.helpFaqBody(5)),
       ),
-      (
-        icon: Icons.payments_outlined,
-        title: settings.text(StorefrontText.helpFaqTitle(6)),
-        body: settings.text(StorefrontText.helpFaqBody(6)),
-      ),
+      if (FeatureFlags.demoPayment)
+        (
+          icon: Icons.payments_outlined,
+          title: settings.text(StorefrontText.helpFaqTitle(6)),
+          body: settings.text(StorefrontText.helpFaqBody(6)),
+        ),
     ];
 
     return SingleChildScrollView(
