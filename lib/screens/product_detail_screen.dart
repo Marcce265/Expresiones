@@ -76,7 +76,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 19),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(child: Eyebrow('Detalle del producto')),
+                const Expanded(child: Eyebrow('Descripción del producto')),
                 if (widget.onHelp != null) ...[
                   IconButton.outlined(
                     onPressed: widget.onHelp,

@@ -236,7 +236,7 @@ class _OrderReceiptCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Comprobante de la cotización',
+                        'Resumen de tu pedido',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
@@ -256,7 +256,7 @@ class _OrderReceiptCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(99),
                   ),
                   child: Text(
-                    'SIMULACIÓN',
+                    'DEMO',
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ),

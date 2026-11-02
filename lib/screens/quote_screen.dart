@@ -43,8 +43,8 @@ class QuoteScreen extends StatelessWidget {
               const SizedBox(height: 16),
               const AssistantGuideCard(
                 compact: true,
-                title: 'Jashy te ayuda',
-                message: 'Tu carrito está vacío. Entra al catálogo y agrega los materiales que necesitas.',
+                title: 'Tu carrito está vacío',
+                message: 'Explora el catálogo, elige materiales y agrégalos aquí para cotizar.',
               ),
               const SizedBox(height: 16),
               EmptyState(
@@ -74,12 +74,8 @@ class QuoteScreen extends StatelessWidget {
             const SizedBox(height: 18),
             const StepProgress(current: 1),
             const SizedBox(height: 24),
-            AssistantGuideCard(
-              compact: true,
-              title: settings.text(StorefrontText.quoteNoticeTitle),
-              message: settings.text(StorefrontText.quoteNoticeBody),
-            ),
-            const SizedBox(height: 24),
+            // Info de precios mostrada en la tarjeta de resumen
+            const SizedBox(height: 8),
             LayoutBuilder(
               builder: (context, constraints) {
                 final wide = constraints.maxWidth >= 940;
@@ -534,7 +530,7 @@ class _QuoteNextStep extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
-                        'Completa la entrega y la fecha de tu cotización.',
+                        'Elige cómo recibir tu pedido y la fecha que prefieres.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],

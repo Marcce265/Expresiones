@@ -100,8 +100,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 14),
             const AssistantGuideCard(
               compact: true,
-              title: 'Jashy te ayuda',
-              message: 'Busca un material por nombre, color o código. También puedes entrar al catálogo.',
+              title: '¿Qué estás buscando?',
+              message: 'Escribe un material, color o código y aparecerá aquí. También puedes explorar por categoría.',
             ),
             if (widget.lastOrder != null && widget.onOpenLastOrder != null) ...[
               const SizedBox(height: 18),
@@ -211,19 +211,19 @@ class _LastOrderCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.receipt_long_outlined),
+          const Icon(Icons.shopping_bag_outlined),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Última cotización simulada',
+                  'Tu último pedido',
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${order.id} · S/ ${order.simulatedTotal.toStringAsFixed(2)}',
+                  'S/ ${order.simulatedTotal.toStringAsFixed(2)} · ${order.totalQuantity} ${order.totalQuantity == 1 ? "producto" : "productos"}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
@@ -507,19 +507,19 @@ class _HomeTrustRail extends StatelessWidget {
         _HomeTrustItem(
           icon: Icons.lock_open_rounded,
           title: 'Sin registro',
-          description: 'Arma tu carrito libremente.',
+          description: 'Sin cuenta ni contraseña. Solo elige y cotiza.',
         ),
         SizedBox(height: 10),
         _HomeTrustItem(
           icon: Icons.stacked_line_chart_rounded,
           title: 'Precios por volumen',
-          description: 'Calculamos el mejor precio por cantidad.',
+          description: 'Más unidades, menor precio por unidad.',
         ),
         SizedBox(height: 10),
         _HomeTrustItem(
           icon: Icons.local_shipping_outlined,
           title: 'Recojo o envío',
-          description: 'Huancayo y agencias Shalom.',
+          description: 'Recoge en Huancayo o envíamos por Shalom.',
         ),
       ],
     );
