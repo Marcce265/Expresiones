@@ -15,6 +15,8 @@ void main() {
             onContact: () {},
             onPrivacy: () {},
             onAdminLogin: () => opened = true,
+            onAssistantGuide: () {},
+            assistantMuted: false,
           ),
         ),
       ),

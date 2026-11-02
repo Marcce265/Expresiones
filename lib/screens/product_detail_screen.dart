@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/catalog_models.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
-import '../widgets/assistant_guide.dart';
 import '../widgets/product_visual.dart';
 import '../widgets/quantity_input.dart';
 
@@ -310,12 +309,6 @@ class _ProductInformation extends StatelessWidget {
           status: product.stockStatusFor(variantId),
           stock: variant?.stock ?? product.stock,
           unitLabel: product.unitLabel,
-        ),
-        const SizedBox(height: 20),
-        const AssistantGuideCard(
-          compact: true,
-          title: 'Jashy te ayuda',
-          message: 'Elige una opción, escribe la cantidad y pulsa “Agregar a mi cotización”.',
         ),
         const SizedBox(height: 16),
         LayoutBuilder(

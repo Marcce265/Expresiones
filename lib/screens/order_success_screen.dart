@@ -187,13 +187,30 @@ class _SuccessHero extends StatelessWidget {
               ),
             );
 
+            final jashyCelebration = SizedBox(
+              width: compact ? 74 : 92,
+              height: compact ? 104 : 128,
+              child: Image.asset(
+                'assets/images/jashy_bouquet.png',
+                fit: BoxFit.contain,
+                alignment: Alignment.bottomCenter,
+                excludeFromSemantics: true,
+              ),
+            );
             if (compact) {
               return Column(
                 children: [
                   step,
-                  const SizedBox(height: 18),
-                  icon,
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      icon,
+                      const SizedBox(width: 14),
+                      jashyCelebration,
+                    ],
+                  ),
+                  const SizedBox(height: 14),
                   copy,
                 ],
               );
@@ -201,6 +218,8 @@ class _SuccessHero extends StatelessWidget {
             return Row(
               children: [
                 icon,
+                const SizedBox(width: 14),
+                jashyCelebration,
                 const SizedBox(width: 18),
                 Expanded(child: copy),
                 const SizedBox(width: 18),

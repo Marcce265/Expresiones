@@ -7,7 +7,6 @@ import '../models/checkout_order.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
-import '../widgets/assistant_guide.dart';
 import '../widgets/product_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -96,12 +95,6 @@ class _HomeScreenState extends State<HomeScreen> {
               settings: widget.settings,
               quoteQuantity: widget.quoteQuantity,
               onOpenQuote: widget.onOpenQuote,
-            ),
-            const SizedBox(height: 14),
-            const AssistantGuideCard(
-              compact: true,
-              title: '¿Qué estás buscando?',
-              message: 'Escribe un material, color o código y aparecerá aquí. También puedes explorar por categoría.',
             ),
             if (widget.lastOrder != null && widget.onOpenLastOrder != null) ...[
               const SizedBox(height: 18),

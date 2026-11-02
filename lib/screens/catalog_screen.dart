@@ -6,7 +6,6 @@ import '../models/catalog_models.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
-import '../widgets/assistant_guide.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_visual.dart';
 
@@ -161,12 +160,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
                           onSelected: _selectFilter,
                         ),
                       ],
-                      const SizedBox(height: 12),
-                      const AssistantGuideCard(
-                        compact: true,
-                        title: 'Jashy te ayuda',
-                        message: 'Toca un producto para ver sus colores, elegir la cantidad y agregarlo al carrito.',
-                      ),
                     ],
                   ),
                 ),

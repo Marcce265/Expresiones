@@ -5,7 +5,6 @@ import '../models/quote_line.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
-import '../widgets/assistant_guide.dart';
 import '../widgets/app_notice.dart';
 import '../widgets/quote_export_buttons.dart';
 import '../widgets/shalom_embedded_map.dart';
@@ -109,12 +108,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
             ),
             const SizedBox(height: 18),
             const StepProgress(current: 3),
-            const SizedBox(height: 18),
-            const AssistantGuideCard(
-              compact: true,
-              title: 'Jashy te ayuda',
-              message: 'Comprueba los productos y tus datos. Después envía la cotización por WhatsApp; aquí no se cobra nada.',
-            ),
             const SizedBox(height: 24),
             LayoutBuilder(
               builder: (context, constraints) {

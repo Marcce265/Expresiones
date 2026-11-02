@@ -7,7 +7,6 @@ import '../models/shalom_agency.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
-import '../widgets/assistant_guide.dart';
 import '../widgets/app_notice.dart';
 import '../widgets/checkout_field_icons.dart';
 import '../widgets/pickup_location_map.dart';
@@ -328,12 +327,6 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                   constraints: const BoxConstraints(maxWidth: 920),
                   child: const StepProgress(current: 2),
                 ),
-              ),
-              const SizedBox(height: 18),
-              const AssistantGuideCard(
-                compact: true,
-                title: 'Jashy te ayuda',
-                message: 'Completa los campos marcados con *, elige la entrega, la fecha y el horario disponible.',
               ),
               const SizedBox(height: 26),
               _FormSectionCard(

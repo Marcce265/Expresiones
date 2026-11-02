@@ -18,4 +18,15 @@ void main() {
     await preferences.reactivateOnboarding();
     expect(await preferences.shouldShowOnboarding(), isTrue);
   });
+
+  test('silencia y reactiva a Jashy de forma independiente', () async {
+    expect(await preferences.isAssistantMuted(), isFalse);
+
+    await preferences.muteAssistant();
+    expect(await preferences.isAssistantMuted(), isTrue);
+    expect(await preferences.shouldShowOnboarding(), isTrue);
+
+    await preferences.unmuteAssistant();
+    expect(await preferences.isAssistantMuted(), isFalse);
+  });
 }

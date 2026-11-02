@@ -11,12 +11,16 @@ class HelpScreen extends StatelessWidget {
     required this.onContact,
     required this.onPrivacy,
     required this.onAdminLogin,
+    required this.onAssistantGuide,
+    required this.assistantMuted,
     this.settings = const StorefrontSettings(),
   });
 
   final VoidCallback onContact;
   final VoidCallback onPrivacy;
   final VoidCallback onAdminLogin;
+  final VoidCallback onAssistantGuide;
+  final bool assistantMuted;
   final StorefrontSettings settings;
 
   @override
@@ -121,6 +125,8 @@ class HelpScreen extends StatelessWidget {
                 onPrivacy: onPrivacy,
                 onContact: onContact,
                 onAdminLogin: onAdminLogin,
+                onAssistantGuide: onAssistantGuide,
+                assistantMuted: assistantMuted,
                 privacyLabel: settings.text(StorefrontText.helpPrivacyButton),
                 contactLabel: settings.text(StorefrontText.helpContactButton),
               ),
@@ -176,6 +182,8 @@ class _HelpActions extends StatelessWidget {
     required this.onPrivacy,
     required this.onContact,
     required this.onAdminLogin,
+    required this.onAssistantGuide,
+    required this.assistantMuted,
     required this.privacyLabel,
     required this.contactLabel,
   });
@@ -184,6 +192,8 @@ class _HelpActions extends StatelessWidget {
   final VoidCallback onPrivacy;
   final VoidCallback onContact;
   final VoidCallback onAdminLogin;
+  final VoidCallback onAssistantGuide;
+  final bool assistantMuted;
   final String privacyLabel;
   final String contactLabel;
 
@@ -220,6 +230,14 @@ class _HelpActions extends StatelessWidget {
       children: [
         primaryActions,
         const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: onAssistantGuide,
+          icon: const Icon(Icons.support_agent_rounded),
+          label: Text(
+            assistantMuted ? 'Activar guía de Jashy' : 'Repetir guía de Jashy',
+          ),
+        ),
+        const SizedBox(height: 6),
         Semantics(
           button: true,
           label: 'Acceso exclusivo para la administración de Expresiones',

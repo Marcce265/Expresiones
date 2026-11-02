@@ -1,4 +1,5 @@
 import 'package:expresiones/data/seed_catalog.dart';
+import 'package:expresiones/data/guide_preferences.dart';
 import 'package:expresiones/main.dart';
 import 'package:expresiones/models/catalog_models.dart';
 import 'package:expresiones/models/coordination_details.dart';
@@ -233,9 +234,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Hola, soy Jashy'), findsOneWidget);
-    await tester.ensureVisible(find.text('Entendido'));
-    await tester.tap(find.text('Entendido'));
+    expect(find.text('¡Hola! Soy Jashy'), findsOneWidget);
+    expect(find.byKey(const ValueKey('jashy_tour_spotlight')), findsOneWidget);
+    for (var step = 0; step < 5; step++) {
+      await tester.tap(find.text('Siguiente'));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text('Listo'));
     await tester.pumpAndSettle();
     expect(find.text('Expresiones'), findsOneWidget);
     expect(find.text('Inicio'), findsOneWidget);
@@ -248,7 +253,51 @@ void main() {
       ChangeNotifierProvider.value(value: store, child: const ExpresionesApp()),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Hola, soy Jashy'), findsNothing);
+    expect(find.text('¡Hola! Soy Jashy'), findsNothing);
+  });
+
+  testWidgets('No molestar oculta a Jashy y Ayuda permite reactivarla', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    await const GuidePreferences().markOnboardingSeen();
+    final store = AppStore(() async => seedCatalogProducts);
+    await store.initialize();
+
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(value: store, child: const ExpresionesApp()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Abrir ayuda de Jashy'));
+    await tester.pumpAndSettle();
+    expect(find.text('Inicio'), findsWidgets);
+
+    await tester.tap(find.byTooltip('Cerrar ayuda de Jashy'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Ayuda'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Repetir guía de Jashy'));
+    await tester.tap(find.text('Repetir guía de Jashy'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('No molestar'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Abrir ayuda de Jashy'), findsNothing);
+
+    await tester.ensureVisible(find.text('Activar guía de Jashy'));
+    await tester.tap(find.text('Activar guía de Jashy'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('¡Hola! Soy Jashy'), findsOneWidget);
+    await tester.tap(find.text('No molestar'));
+    await tester.pumpAndSettle();
   });
 
   testWidgets(

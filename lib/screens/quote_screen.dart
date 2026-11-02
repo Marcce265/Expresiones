@@ -4,7 +4,6 @@ import '../models/quote_line.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
-import '../widgets/assistant_guide.dart';
 import '../widgets/product_visual.dart';
 import '../widgets/quantity_input.dart';
 
@@ -40,12 +39,6 @@ class QuoteScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _PageHeading(itemCount: 0, onBack: onBack),
-              const SizedBox(height: 16),
-              const AssistantGuideCard(
-                compact: true,
-                title: 'Tu carrito está vacío',
-                message: 'Explora el catálogo, elige materiales y agrégalos aquí para cotizar.',
-              ),
               const SizedBox(height: 16),
               EmptyState(
                 icon: Icons.shopping_bag_outlined,

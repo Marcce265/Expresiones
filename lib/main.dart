@@ -34,6 +34,7 @@ import 'state/app_store.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_notice.dart';
 import 'widgets/assistant_guide.dart';
+import 'widgets/jashy_tour.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,9 +85,13 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   final _guidePreferences = const GuidePreferences();
+  final _navigationKeys = List<GlobalKey>.generate(4, (_) => GlobalKey());
+  final _assistantButtonKey = GlobalKey();
   int _index = 0;
   ProductCategory? _catalogCategory;
   bool _guideCheckScheduled = false;
+  bool _assistantReady = false;
+  bool _assistantMuted = false;
 
   @override
   void initState() {
@@ -148,7 +153,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             child: ProductDetailScreen(
               product: product,
               initialVariantId: variantId,
-              onHelp: () => _showAssistantGuide(routeContext),
+              onHelp: () => _showContextGuide(
+                routeContext,
+                const JashyTourStep(
+                  title: 'Elige y agrega',
+                  message: 'Elige una opción y la cantidad.',
+                  imageAsset: 'assets/images/jashy_book.png',
+                ),
+              ),
               onAdd: ({required quantity, variantId, required customization}) {
                 context.read<AppStore>().addProduct(
                   product,
@@ -179,6 +191,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       MaterialPageRoute<void>(
         builder: (coordinationContext) => _checkoutScaffold(
           routeContext: coordinationContext,
+          assistantStep: const JashyTourStep(
+            title: 'Completa tus datos',
+            message: 'Llena los campos y elige entrega y fecha.',
+            imageAsset: 'assets/images/jashy_writing.png',
+          ),
           child: CoordinationScreen(
             settings: store.storefrontSettings,
             initial: store.details,
@@ -214,6 +231,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       MaterialPageRoute<void>(
         builder: (reviewContext) => _checkoutScaffold(
           routeContext: reviewContext,
+          assistantStep: const JashyTourStep(
+            title: 'Revisa y envía',
+            message: 'Verifica todo y envía por WhatsApp.',
+            imageAsset: 'assets/images/jashy_writing.png',
+          ),
           child: ReviewScreen(
             settings: store.storefrontSettings,
             lines: lines,
@@ -240,6 +262,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Widget _checkoutScaffold({
     required BuildContext routeContext,
     required Widget child,
+    required JashyTourStep assistantStep,
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -272,7 +295,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                   quoteQuantity: store.cartQuantity,
                   onSelect: leaveCheckout,
                 ),
-          floatingActionButton: _assistantHelpButton(routeContext),
+          floatingActionButton: _assistantHelpButton(assistantStep),
         );
       },
     );
@@ -386,29 +409,125 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (_guideCheckScheduled) return;
     _guideCheckScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final muted = await _guidePreferences.isAssistantMuted();
       final shouldShow = await _guidePreferences.shouldShowOnboarding();
-      if (!mounted || !shouldShow) return;
-      await _showAssistantGuide(context, showDoNotShowAgain: true);
-      await _guidePreferences.markOnboardingSeen();
+      if (!mounted) return;
+      setState(() {
+        _assistantReady = true;
+        _assistantMuted = muted;
+      });
+      if (muted || !shouldShow) return;
+      await WidgetsBinding.instance.endOfFrame;
+      if (mounted) {
+        await _showTour(context, steps: _fullTourSteps(), remember: true);
+      }
     });
   }
 
-  Future<void> _showAssistantGuide(
-    BuildContext guideContext, {
-    bool showDoNotShowAgain = false,
-  }) async {
-    await showAssistantGuideSheet(
-      context: guideContext,
-      title: assistantGuideTitle,
-      message: assistantGuideMessage,
-      steps: assistantGuideSteps,
-      showDoNotShowAgain: showDoNotShowAgain,
+  List<JashyTourStep> _fullTourSteps() => [
+    const JashyTourStep(
+      title: '¡Hola! Soy Jashy',
+      message: 'Te enseñaré cómo cotizar.',
+      imageAsset: 'assets/images/jashy_assistant.png',
+    ),
+    JashyTourStep(
+      title: 'Inicio',
+      message: 'Busca materiales aquí.',
+      targetKey: _navigationKeys[0],
+      imageAsset: 'assets/images/jashy_assistant.png',
+    ),
+    JashyTourStep(
+      title: 'Catálogo',
+      message: 'Mira productos, colores y precios.',
+      targetKey: _navigationKeys[1],
+      imageAsset: 'assets/images/jashy_book.png',
+    ),
+    JashyTourStep(
+      title: 'Carrito',
+      message: 'Revisa productos y cantidades.',
+      targetKey: _navigationKeys[2],
+      imageAsset: 'assets/images/jashy_writing.png',
+    ),
+    JashyTourStep(
+      title: 'Ayuda',
+      message: 'Encuentra respuestas o escríbenos.',
+      targetKey: _navigationKeys[3],
+      imageAsset: 'assets/images/jashy_question.png',
+    ),
+    JashyTourStep(
+      title: 'Aquí estaré',
+      message: 'Tócame cuando necesites ayuda.',
+      targetKey: _assistantButtonKey,
+      imageAsset: 'assets/images/jashy_bouquet.png',
+    ),
+  ];
+
+  JashyTourStep _sectionGuideStep({required bool hasQuote}) {
+    final messages = [
+      'Busca por nombre, color o código.',
+      'Toca un producto, elige y agrega.',
+      hasQuote
+          ? 'Cambia cantidades y toca Continuar.'
+          : 'Agrega productos desde Catálogo.',
+      'Abre una pregunta o escríbenos.',
+    ];
+    final titles = ['Inicio', 'Catálogo', 'Carrito', 'Ayuda'];
+    final assets = [
+      'assets/images/jashy_assistant.png',
+      'assets/images/jashy_book.png',
+      'assets/images/jashy_writing.png',
+      'assets/images/jashy_question.png',
+    ];
+    return JashyTourStep(
+      title: titles[_index],
+      message: messages[_index],
+      targetKey: _navigationKeys[_index],
+      imageAsset: assets[_index],
     );
   }
 
-  Widget _assistantHelpButton(BuildContext guideContext) {
+  Future<void> _showTour(
+    BuildContext guideContext, {
+    required List<JashyTourStep> steps,
+    bool remember = false,
+  }) async {
+    final result = await showJashyTour(context: guideContext, steps: steps);
+    if (remember) await _guidePreferences.markOnboardingSeen();
+    if (result == JashyTourResult.doNotDisturb) {
+      await _guidePreferences.muteAssistant();
+      if (mounted) setState(() => _assistantMuted = true);
+    }
+  }
+
+  Future<void> _showContextGuide(
+    BuildContext guideContext,
+    JashyTourStep step,
+  ) => _showTour(guideContext, steps: [step]);
+
+  Future<void> _repeatAssistantTour(BuildContext guideContext) async {
+    if (_assistantMuted) {
+      await _guidePreferences.unmuteAssistant();
+      if (!mounted) return;
+      setState(() => _assistantMuted = false);
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    if (mounted && guideContext.mounted) {
+      await _showTour(guideContext, steps: _fullTourSteps());
+    }
+  }
+
+  Widget? _assistantHelpButton(
+    JashyTourStep step, {
+    Key? key,
+    double bottomOffset = 0.0,
+  }) {
+    if (!_assistantReady || _assistantMuted) return null;
     return AssistantHelpButton(
-      onPressed: () => _showAssistantGuide(guideContext),
+      key: key,
+      title: step.title,
+      message: step.message,
+      imageAsset: step.imageAsset,
+      bottomOffset: bottomOffset,
     );
   }
 
@@ -460,6 +579,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         ),
         onPrivacy: _openPrivacy,
         onAdminLogin: () => unawaited(_openAdminPortal()),
+        assistantMuted: _assistantMuted,
+        onAssistantGuide: () => _repeatAssistantTour(context),
       ),
     };
 
@@ -476,6 +597,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     currentIndex: _index,
                     quoteQuantity: store.cartQuantity,
                     onSelect: _selectDestination,
+                    itemKeys: _navigationKeys,
                   ),
                 Expanded(
                   child: AnimatedSwitcher(
@@ -496,8 +618,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                   selectedIndex: _index,
                   quoteQuantity: store.cartQuantity,
                   onSelect: _selectDestination,
+                  itemKeys: _navigationKeys,
                 ),
-          floatingActionButton: _assistantHelpButton(context),
+          floatingActionButton: _assistantHelpButton(
+            _sectionGuideStep(hasQuote: store.hasQuote),
+            key: _assistantButtonKey,
+            bottomOffset: _index == 1 ? 64.0 : 0.0,
+          ),
         );
       },
     );
@@ -516,11 +643,13 @@ class _MobileNavigation extends StatelessWidget {
     required this.selectedIndex,
     required this.quoteQuantity,
     required this.onSelect,
+    this.itemKeys,
   });
 
   final int selectedIndex;
   final int quoteQuantity;
   final ValueChanged<int> onSelect;
+  final List<GlobalKey>? itemKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -528,17 +657,20 @@ class _MobileNavigation extends StatelessWidget {
       selectedIndex: selectedIndex,
       onDestinationSelected: onSelect,
       destinations: [
-        const NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home_rounded),
+        NavigationDestination(
+          key: itemKeys?[0],
+          icon: const Icon(Icons.home_outlined),
+          selectedIcon: const Icon(Icons.home_rounded),
           label: 'Inicio',
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.grid_view_outlined),
-          selectedIcon: Icon(Icons.grid_view_rounded),
+        NavigationDestination(
+          key: itemKeys?[1],
+          icon: const Icon(Icons.grid_view_outlined),
+          selectedIcon: const Icon(Icons.grid_view_rounded),
           label: 'Catálogo',
         ),
         NavigationDestination(
+          key: itemKeys?[2],
           icon: Badge.count(
             count: quoteQuantity,
             isLabelVisible: quoteQuantity > 0,
@@ -551,9 +683,10 @@ class _MobileNavigation extends StatelessWidget {
           ),
           label: 'Carrito',
         ),
-        const NavigationDestination(
-          icon: Icon(Icons.help_outline_rounded),
-          selectedIcon: Icon(Icons.help_rounded),
+        NavigationDestination(
+          key: itemKeys?[3],
+          icon: const Icon(Icons.help_outline_rounded),
+          selectedIcon: const Icon(Icons.help_rounded),
           label: 'Ayuda',
         ),
       ],
@@ -567,12 +700,14 @@ class _DesktopNavigation extends StatelessWidget {
     required this.currentIndex,
     required this.quoteQuantity,
     required this.onSelect,
+    this.itemKeys,
   });
 
   final StorefrontSettings settings;
   final int currentIndex;
   final int quoteQuantity;
   final ValueChanged<int> onSelect;
+  final List<GlobalKey>? itemKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -634,6 +769,7 @@ class _DesktopNavigation extends StatelessWidget {
             const SizedBox(height: 30),
             for (var index = 0; index < destinations.length; index++) ...[
               _DesktopNavigationItem(
+                key: itemKeys?[index],
                 icon: currentIndex == index
                     ? destinations[index].selectedIcon
                     : destinations[index].icon,
@@ -678,6 +814,7 @@ class _DesktopNavigation extends StatelessWidget {
 
 class _DesktopNavigationItem extends StatelessWidget {
   const _DesktopNavigationItem({
+    super.key,
     required this.icon,
     required this.label,
     required this.selected,
