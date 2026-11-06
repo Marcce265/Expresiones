@@ -54,11 +54,8 @@ enum StockStatus {
 
 /// A quantity threshold and its effective unit price.
 class PriceTier {
-  const PriceTier({
-    required this.minQuantity,
-    required this.unitPrice,
-    this.label,
-  });
+  PriceTier({required this.minQuantity, required this.unitPrice, String? label})
+    : label = label?.toUpperCase();
 
   /// Builds the persisted per-unit tier from the total price merchants use.
   factory PriceTier.fromPresentationTotal({
@@ -117,10 +114,10 @@ class PriceTier {
 
 /// A selectable presentation, size, color or model of a product.
 class ProductVariant {
-  const ProductVariant({
+  ProductVariant({
     required this.id,
-    required this.name,
-    this.sku,
+    required String name,
+    String? sku,
     this.colorHex,
     this.imageUrl,
     this.thumbnailUrl,
@@ -128,11 +125,11 @@ class ProductVariant {
     this.priceTiers = const [],
     this.stock,
     this.stockStatus = StockStatus.checkAvailability,
-    this.leadDays,
     this.productionPoints,
     this.isActive = true,
     this.attributes = const {},
-  });
+  }) : name = name.toUpperCase(),
+       sku = sku?.toUpperCase();
 
   final String id;
   final String name;
@@ -150,7 +147,6 @@ class ProductVariant {
   /// Null means the catalog does not publish an exact count.
   final int? stock;
   final StockStatus stockStatus;
-  final int? leadDays;
   final int? productionPoints;
   final bool isActive;
   final Map<String, String> attributes;
@@ -206,9 +202,6 @@ class ProductVariant {
         _first(map, const ['stockStatus', 'stock_status', 'availability']),
         stock: stock,
       ),
-      leadDays: _asNullableInt(
-        _first(map, const ['leadDays', 'lead_days', 'diasPreparacion']),
-      ),
       productionPoints: _asNullableInt(
         _first(map, const [
           'productionPoints',
@@ -235,7 +228,6 @@ class ProductVariant {
     'priceTiers': priceTiers.map((tier) => tier.toMap()).toList(),
     if (stock != null) 'stock': stock,
     'stockStatus': stockStatus.key,
-    if (leadDays != null) 'leadDays': leadDays,
     if (productionPoints != null) 'productionPoints': productionPoints,
     'isActive': isActive,
     if (attributes.isNotEmpty) 'attributes': attributes,
@@ -257,32 +249,39 @@ String variantDisplayName(ProductVariant variant) {
 
 /// Backend-neutral catalog entity used by the UI and quote calculator.
 class CatalogProduct {
-  const CatalogProduct({
+  CatalogProduct({
     required this.id,
-    required this.name,
+    required String name,
     required this.category,
     required this.basePrice,
-    this.description = '',
-    this.sku,
-    this.unitLabel = 'unidad',
+    String description = '',
+    String? sku,
+    String unitLabel = 'unidad',
     this.startingAt = false,
     this.priceIsEstimate = false,
     this.priceTiers = const [],
     this.variants = const [],
     this.stock,
     this.stockStatus = StockStatus.checkAvailability,
-    this.leadDays = 0,
     this.productionPoints = 0,
     this.isActive = true,
     this.isFeatured = false,
     this.sortOrder = 0,
     this.imageUrl,
     this.thumbnailUrl,
-    this.tags = const [],
-    this.attributes = const {},
+    List<String> tags = const [],
+    Map<String, String> attributes = const {},
     this.createdAt,
     this.updatedAt,
-  });
+  }) : name = name.toUpperCase(),
+       description = description.toUpperCase(),
+       sku = sku?.toUpperCase(),
+       unitLabel = unitLabel.toUpperCase(),
+       tags = List.unmodifiable(tags.map((tag) => tag.toUpperCase())),
+       attributes = Map.unmodifiable({
+         for (final entry in attributes.entries)
+           entry.key: entry.value.toUpperCase(),
+       });
 
   final String id;
   final String name;
@@ -300,8 +299,7 @@ class CatalogProduct {
   final int? stock;
   final StockStatus stockStatus;
 
-  /// Preparation time and workload let the ordering flow check capacity.
-  final int leadDays;
+  /// Workload points can be used by the capacity planner.
   final int productionPoints;
   final bool isActive;
   final bool isFeatured;
@@ -344,9 +342,6 @@ class CatalogProduct {
     final safeQuantity = quantity < 1 ? 1 : quantity;
     return unitPriceFor(safeQuantity, variantId: variantId) * safeQuantity;
   }
-
-  int leadDaysFor(String? variantId) =>
-      variantById(variantId)?.leadDays ?? leadDays;
 
   int productionPointsFor(String? variantId) =>
       variantById(variantId)?.productionPoints ?? productionPoints;
@@ -429,10 +424,6 @@ class CatalogProduct {
         _first(map, const ['stockStatus', 'stock_status', 'availability']),
         stock: stock,
       ),
-      leadDays: _asInt(
-        _first(map, const ['leadDays', 'lead_days', 'diasPreparacion']),
-        minimum: 0,
-      ),
       productionPoints: _asInt(
         _first(map, const [
           'productionPoints',
@@ -484,7 +475,6 @@ class CatalogProduct {
     'variants': variants.map((variant) => variant.toMap()).toList(),
     if (stock != null) 'stock': stock,
     'stockStatus': stockStatus.key,
-    'leadDays': leadDays,
     'productionPoints': productionPoints,
     'isActive': isActive,
     'isFeatured': isFeatured,

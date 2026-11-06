@@ -27,7 +27,7 @@ void main() {
       method: SimulatedPaymentMethod.demoYape,
       amount: 54,
     )).withMethodLabel('Billetera de demostración');
-    const product = CatalogProduct(
+    final product = CatalogProduct(
       id: 'cinta',
       name: 'Cinta satinada',
       category: ProductCategory.materials,
@@ -36,13 +36,13 @@ void main() {
       variants: [ProductVariant(id: 'rojo', name: 'Rojo', sku: 'SAT-17')],
       priceTiers: [PriceTier(minQuantity: 12, unitPrice: 4.5)],
     );
-    const line = ResolvedQuoteLine(
+    final line = ResolvedQuoteLine(
       line: QuoteLine(productId: 'cinta', variantId: 'rojo', quantity: 12),
       product: product,
     );
     final order = CheckoutOrder.fromQuote(
       id: orderId,
-      lines: const [line],
+      lines: [line],
       details: const CoordinationDetails(name: 'María', phone: '999999999'),
       payment: payment,
       createdAt: payment.processedAt,
@@ -56,7 +56,7 @@ void main() {
     expect(restored?.payment.reference, 'SIM-20261024-163001-042');
     expect(restored?.payment.isApproved, isTrue);
     expect(restored?.payment.methodLabel, 'Billetera de demostración');
-    expect(restored?.items.single.displayName, 'Cinta satinada · Rojo');
+    expect(restored?.items.single.displayName, 'CINTA SATINADA · ROJO');
     expect(restored?.productsSubtotal, 54);
     final serialized = (await SharedPreferences.getInstance()).getString(
       LocalCheckoutReceiptStore.storageKey,

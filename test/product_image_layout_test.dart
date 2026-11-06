@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  const product = CatalogProduct(
+  final product = CatalogProduct(
     id: 'limpiapipas-premium-8mm',
     name: 'Limpiapipas premium 8 mm',
     category: ProductCategory.materials,
@@ -19,7 +19,7 @@ void main() {
       ),
     ],
   );
-  const variant = ProductVariant(
+  final variant = ProductVariant(
     id: 'amarillo-mostaza',
     name: 'Amarillo mostaza',
     sku: 'XS-34',
@@ -62,7 +62,7 @@ void main() {
     'la tarjeta familiar muestra la portada administrada más reciente',
     (tester) async {
       const managedCover = 'https://cdn.example/catalog/new-cover.webp';
-      const updatedProduct = CatalogProduct(
+      final updatedProduct = CatalogProduct(
         id: 'limpiapipas-premium-8mm',
         name: 'Limpiapipas premium 8 mm',
         category: ProductCategory.materials,
@@ -137,7 +137,7 @@ void main() {
   testWidgets('el detalle de otros productos conserva su proporción', (
     tester,
   ) async {
-    const otherProduct = CatalogProduct(
+    final otherProduct = CatalogProduct(
       id: 'otro-material',
       name: 'Otro material',
       category: ProductCategory.materials,
@@ -175,7 +175,7 @@ void main() {
   testWidgets('las variantes usan botones con nombres públicos limpios', (
     tester,
   ) async {
-    const ribbon = CatalogProduct(
+    final ribbon = CatalogProduct(
       id: 'cinta-satinada-100m',
       name: 'Cinta satinada 100 m',
       category: ProductCategory.materials,
@@ -214,8 +214,8 @@ void main() {
 
     expect(find.byType(ChoiceChip), findsNWidgets(2));
     expect(find.byType(DropdownButtonFormField<String>), findsNothing);
-    expect(find.text('Blanco perla'), findsWidgets);
-    expect(find.text('Marfil'), findsOneWidget);
+    expect(find.text('BLANCO PERLA'), findsWidgets);
+    expect(find.text('MARFIL'), findsOneWidget);
     expect(find.textContaining('N.º'), findsNothing);
     expect(find.text('Color'), findsNothing);
   });

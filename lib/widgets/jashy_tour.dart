@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-const _jashyAsset = 'assets/images/jashy_assistant.png';
-
 enum JashyTourResult { completed, dismissed, doNotDisturb }
 
 class JashyTourStep {
@@ -11,7 +9,7 @@ class JashyTourStep {
     required this.title,
     required this.message,
     this.targetKey,
-    this.imageAsset = 'assets/images/jashy_assistant.png',
+    this.imageAsset = 'assets/images/jashy_chibi_assistant.png',
   });
 
   final String title;
@@ -157,7 +155,7 @@ class _JashySpeechCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.sizeOf(context);
-    final portraitWidth = mobile ? 78.0 : 124.0;
+    final portraitWidth = mobile ? 96.0 : 136.0;
     final maxWidth = mobile ? screen.width - 24 : 520.0;
     final maxHeight = screen.height * (mobile ? .56 : .62);
 
@@ -250,7 +248,7 @@ class _JashySpeechCard extends StatelessWidget {
             ),
             SizedBox(
               width: portraitWidth,
-              height: portraitWidth * 1.5,
+              height: portraitWidth,
               child: Semantics(
                 image: true,
                 label: 'Jashy, asistente de Expresiones',

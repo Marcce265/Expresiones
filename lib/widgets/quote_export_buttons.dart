@@ -29,19 +29,11 @@ class _QuoteExportButtonsState extends State<QuoteExportButtons> {
     if (_exporting != null) return;
     setState(() => _exporting = format);
     try {
-      if (format == 'PDF') {
-        await QuoteExportService.savePdf(
-          quoteId: widget.quoteId,
-          lines: widget.lines,
-          details: widget.details,
-        );
-      } else {
-        await QuoteExportService.saveXlsx(
-          quoteId: widget.quoteId,
-          lines: widget.lines,
-          details: widget.details,
-        );
-      }
+      await QuoteExportService.savePdf(
+        quoteId: widget.quoteId,
+        lines: widget.lines,
+        details: widget.details,
+      );
       if (mounted) {
         showAppNotice(context, 'Cotización $format guardada.');
       }
@@ -71,36 +63,6 @@ class _QuoteExportButtonsState extends State<QuoteExportButtons> {
           : const Icon(Icons.picture_as_pdf_outlined),
       label: const Text('Guardar PDF'),
     );
-    final excel = OutlinedButton.icon(
-      onPressed: disabled ? null : () => _export('Excel'),
-      icon: _exporting == 'Excel'
-          ? const SizedBox.square(
-              dimension: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.table_view_outlined),
-      label: const Text('Guardar Excel'),
-    );
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 350) {
-          return Column(
-            children: [
-              SizedBox(width: double.infinity, child: pdf),
-              const SizedBox(height: 8),
-              SizedBox(width: double.infinity, child: excel),
-            ],
-          );
-        }
-        return Row(
-          children: [
-            Expanded(child: pdf),
-            const SizedBox(width: 10),
-            Expanded(child: excel),
-          ],
-        );
-      },
-    );
+    return SizedBox(width: double.infinity, child: pdf);
   }
 }

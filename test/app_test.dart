@@ -98,8 +98,8 @@ void main() {
     );
 
     expect(cinta.variants, hasLength(80));
-    expect(cinta.variants.first.name, 'N.º 01 · Blanco perla');
-    expect(cinta.variants.last.name, 'N.º 80 · Verde neón');
+    expect(cinta.variants.first.name, 'N.º 01 · BLANCO PERLA');
+    expect(cinta.variants.last.name, 'N.º 80 · VERDE NEÓN');
     expect(
       cinta.variants.map((variant) => variant.imageUrl).toSet(),
       hasLength(80),
@@ -141,13 +141,13 @@ void main() {
   test(
     'la portada administrada tiene prioridad sobre el recurso editorial',
     () {
-      const withoutManagedCover = CatalogProduct(
+      final withoutManagedCover = CatalogProduct(
         id: 'limpiapipas-premium-8mm',
         name: 'Limpiapipas premium 8 mm',
         category: ProductCategory.materials,
         basePrice: 5,
       );
-      const updated = CatalogProduct(
+      final updated = CatalogProduct(
         id: 'limpiapipas-premium-8mm',
         name: 'Limpiapipas premium 8 mm',
         category: ProductCategory.materials,
@@ -214,7 +214,7 @@ void main() {
     );
 
     expect(message, contains('COT-PRUEBA'));
-    expect(message, contains('Morado uva'));
+    expect(message, contains('MORADO UVA'));
     expect(message, contains('S/ 54.00'));
     expect(message, contains('Recojo en Huancayo'));
   });
@@ -361,7 +361,7 @@ void main() {
 
     expect(find.textContaining(' productos'), findsNothing);
 
-    await tester.tap(find.text('Limpiapipas premium 8 mm'));
+    await tester.tap(find.text('LIMPIAPIPAS PREMIUM 8 MM'));
     await tester.pumpAndSettle();
 
     expect(

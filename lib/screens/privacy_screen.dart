@@ -94,18 +94,24 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 24),
-                for (
-                  var index = 1;
-                  index <= (FeatureFlags.demoPayment ? 8 : 7);
-                  index++
-                )
+                for (final index
+                    in FeatureFlags.customerAccounts
+                        ? List.generate(
+                            FeatureFlags.demoPayment ? 8 : 7,
+                            (index) => index + 1,
+                          )
+                        : const [1, 3, 4, 5, 6, 7])
                   _PrivacySection(
                     title: widget.settings.text(
                       StorefrontText.privacySectionTitle(index),
                     ),
-                    body: widget.settings.text(
-                      StorefrontText.privacySectionBody(index),
-                    ),
+                    body: !FeatureFlags.customerAccounts && index == 3
+                        ? 'Supabase almacena el catálogo y los días de entrega para mantener la información actualizada.'
+                        : !FeatureFlags.customerAccounts && index == 7
+                        ? 'Los datos locales pueden borrarse desde esta pantalla. Para otras solicitudes, comunícate con Expresiones.'
+                        : widget.settings.text(
+                            StorefrontText.privacySectionBody(index),
+                          ),
                   ),
                 const SizedBox(height: 8),
                 Container(

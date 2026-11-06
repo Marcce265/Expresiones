@@ -260,25 +260,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
             ],
           ),
         ),
-        ResponsivePage(
-          maxWidth: 1180,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-          child: LayoutBuilder(
-            builder: (context, constraints) => Align(
-              alignment: constraints.maxWidth >= 720
-                  ? Alignment.centerRight
-                  : Alignment.center,
-              child: SizedBox(
-                width: constraints.maxWidth >= 720 ? 360 : double.infinity,
-                child: FilledButton.icon(
-                  onPressed: widget.onOpenQuote,
-                  icon: const Icon(Icons.shopping_bag_outlined, size: 19),
-                  label: const Text('Ver mi carrito'),
-                ),
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }

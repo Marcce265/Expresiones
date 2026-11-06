@@ -8,7 +8,7 @@ import '../widgets/app_components.dart';
 class HelpScreen extends StatelessWidget {
   const HelpScreen({
     super.key,
-    required this.onContact,
+    this.onContact,
     required this.onPrivacy,
     required this.onAdminLogin,
     required this.onAssistantGuide,
@@ -16,7 +16,7 @@ class HelpScreen extends StatelessWidget {
     this.settings = const StorefrontSettings(),
   });
 
-  final VoidCallback onContact;
+  final VoidCallback? onContact;
   final VoidCallback onPrivacy;
   final VoidCallback onAdminLogin;
   final VoidCallback onAssistantGuide;
@@ -29,7 +29,9 @@ class HelpScreen extends StatelessWidget {
       (
         icon: Icons.receipt_long_outlined,
         title: settings.text(StorefrontText.helpFaqTitle(1)),
-        body: settings.text(StorefrontText.helpFaqBody(1)),
+        body: FeatureFlags.demoPayment
+            ? settings.text(StorefrontText.helpFaqBody(1))
+            : 'Elige productos y cantidades. La app calcula el subtotal y prepara tu cotización.',
       ),
       (
         icon: Icons.inventory_2_outlined,
@@ -79,8 +81,12 @@ class HelpScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             InfoBanner(
-              title: settings.text(StorefrontText.helpBannerTitle),
-              message: settings.text(StorefrontText.helpBannerBody),
+              title: FeatureFlags.customerAccounts
+                  ? settings.text(StorefrontText.helpBannerTitle)
+                  : 'Cotización sin registro',
+              message: FeatureFlags.customerAccounts
+                  ? settings.text(StorefrontText.helpBannerBody)
+                  : 'Puedes explorar, calcular cantidades y preparar tu cotización sin iniciar sesión.',
               icon: Icons.lock_open_rounded,
             ),
             const SizedBox(height: 24),
@@ -123,12 +129,10 @@ class HelpScreen extends StatelessWidget {
               builder: (context, constraints) => _HelpActions(
                 horizontal: constraints.maxWidth >= 620,
                 onPrivacy: onPrivacy,
-                onContact: onContact,
                 onAdminLogin: onAdminLogin,
                 onAssistantGuide: onAssistantGuide,
                 assistantMuted: assistantMuted,
                 privacyLabel: settings.text(StorefrontText.helpPrivacyButton),
-                contactLabel: settings.text(StorefrontText.helpContactButton),
               ),
             ),
           ],
@@ -180,22 +184,18 @@ class _HelpActions extends StatelessWidget {
   const _HelpActions({
     required this.horizontal,
     required this.onPrivacy,
-    required this.onContact,
     required this.onAdminLogin,
     required this.onAssistantGuide,
     required this.assistantMuted,
     required this.privacyLabel,
-    required this.contactLabel,
   });
 
   final bool horizontal;
   final VoidCallback onPrivacy;
-  final VoidCallback onContact;
   final VoidCallback onAdminLogin;
   final VoidCallback onAssistantGuide;
   final bool assistantMuted;
   final String privacyLabel;
-  final String contactLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -204,31 +204,12 @@ class _HelpActions extends StatelessWidget {
       icon: const Icon(Icons.privacy_tip_outlined),
       label: Text(privacyLabel),
     );
-    final contact = FilledButton.icon(
-      onPressed: onContact,
-      style: FilledButton.styleFrom(backgroundColor: AppColors.whatsapp),
-      icon: const Icon(Icons.chat_outlined),
-      label: Text(contactLabel),
-    );
-    final primaryActions = horizontal
-        ? Row(
-            children: [
-              Expanded(child: privacy),
-              const SizedBox(width: 12),
-              Expanded(child: contact),
-            ],
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [privacy, const SizedBox(height: 10), contact],
-          );
-
     return Column(
       crossAxisAlignment: horizontal
           ? CrossAxisAlignment.center
           : CrossAxisAlignment.stretch,
       children: [
-        primaryActions,
+        SizedBox(width: horizontal ? 440 : double.infinity, child: privacy),
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: onAssistantGuide,
@@ -238,20 +219,24 @@ class _HelpActions extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Semantics(
-          button: true,
-          label: 'Acceso exclusivo para la administración de Expresiones',
-          child: TextButton.icon(
-            key: const ValueKey('admin-login-button'),
-            onPressed: onAdminLogin,
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.muted,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        if (FeatureFlags.customerAccounts)
+          Semantics(
+            button: true,
+            label: 'Acceso exclusivo para la administración de Expresiones',
+            child: TextButton.icon(
+              key: const ValueKey('admin-login-button'),
+              onPressed: onAdminLogin,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.muted,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
+              ),
+              icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
+              label: const Text('Iniciar sesión administrativa'),
             ),
-            icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
-            label: const Text('Iniciar sesión administrativa'),
           ),
-        ),
       ],
     );
   }

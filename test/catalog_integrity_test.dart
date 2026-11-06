@@ -40,19 +40,19 @@ void main() {
       products.any((product) => product.id == 'cinta-organza-tornasol'),
       isFalse,
     );
-    expect(ribbon.name, 'Cinta organza tornasol 4 cm × 7 m');
+    expect(ribbon.name, 'CINTA ORGANZA TORNASOL 4 CM × 7 M');
     expect(ribbon.basePrice, 8);
     expect(ribbon.variants, hasLength(9));
     expect(ribbon.variants.map((variant) => variant.name), [
-      'Perla',
-      'Melón',
-      'Rosa bebé',
-      'Blanco',
-      'Amarillo tornasol',
-      'Rojo coral',
-      'Turquesa',
-      'Celeste',
-      'Lila',
+      'PERLA',
+      'MELÓN',
+      'ROSA BEBÉ',
+      'BLANCO',
+      'AMARILLO TORNASOL',
+      'ROJO CORAL',
+      'TURQUESA',
+      'CELESTE',
+      'LILA',
     ]);
     expect(
       ribbon.priceTiers.map((tier) => (tier.minQuantity, tier.unitPrice)),

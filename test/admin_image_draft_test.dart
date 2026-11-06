@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('AdminImageDraft', () {
     test('muestra la misma portada que la tarjeta sin perder el detalle', () {
-      const product = CatalogProduct(
+      final product = CatalogProduct(
         id: 'limpiapipas',
         name: 'Limpiapipas',
         category: ProductCategory.materials,
@@ -48,7 +48,7 @@ void main() {
     });
 
     test('una imagen elegida reemplaza vista previa y valor persistido', () {
-      const variant = ProductVariant(
+      final variant = ProductVariant(
         id: 'verde-militar',
         name: 'Verde militar',
         imageUrl: 'https://cdn.example/old-detail.webp',
@@ -86,7 +86,7 @@ void main() {
     });
 
     test('usa la miniatura como valor persistido cuando no hay detalle', () {
-      const product = CatalogProduct(
+      final product = CatalogProduct(
         id: 'producto',
         name: 'Producto',
         category: ProductCategory.materials,

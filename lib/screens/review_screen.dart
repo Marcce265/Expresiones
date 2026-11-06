@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/feature_flags.dart';
 import '../models/coordination_details.dart';
 import '../models/quote_line.dart';
 import '../models/storefront_settings.dart';
@@ -16,7 +17,7 @@ class ReviewScreen extends StatefulWidget {
     required this.details,
     required this.quoteId,
     required this.message,
-    required this.onSendWhatsapp,
+    this.onSendWhatsapp,
     required this.onCopyMessage,
     required this.onEditQuote,
     this.onContinueToPayment,
@@ -27,7 +28,7 @@ class ReviewScreen extends StatefulWidget {
   final CoordinationDetails details;
   final String quoteId;
   final String message;
-  final Future<void> Function() onSendWhatsapp;
+  final Future<void> Function()? onSendWhatsapp;
   final VoidCallback onCopyMessage;
   final VoidCallback onEditQuote;
   final VoidCallback? onContinueToPayment;
@@ -44,10 +45,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
       widget.lines.fold(0, (sum, resolved) => sum + resolved.total);
 
   Future<void> _send() async {
-    if (_sending) return;
+    final send = widget.onSendWhatsapp;
+    if (_sending || send == null) return;
     setState(() => _sending = true);
     try {
-      await widget.onSendWhatsapp();
+      await send();
     } catch (_) {
       if (mounted) {
         _showNotice(
@@ -101,7 +103,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
             Padding(
               padding: const EdgeInsets.only(left: 52),
               child: Text(
-                widget.settings.text(StorefrontText.reviewBody),
+                FeatureFlags.demoPayment
+                    ? widget.settings.text(StorefrontText.reviewBody)
+                    : 'Comprueba los productos, tus datos y la entrega antes de finalizar.',
                 style: Theme.of(context).textTheme.bodyMedium
                     ?.copyWith(color: AppColors.muted),
               ),
@@ -128,7 +132,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   lines: widget.lines,
                   details: widget.details,
                   sending: _sending,
-                  onSend: _send,
+                  onSend: widget.onSendWhatsapp == null ? null : _send,
                   onCopy: _copy,
                   onEdit: widget.onEditQuote,
                   onContinueToPayment: widget.onContinueToPayment,
@@ -449,7 +453,7 @@ class _SendPanel extends StatelessWidget {
   final List<ResolvedQuoteLine> lines;
   final CoordinationDetails details;
   final bool sending;
-  final VoidCallback onSend;
+  final VoidCallback? onSend;
   final VoidCallback onCopy;
   final VoidCallback onEdit;
   final VoidCallback? onContinueToPayment;
@@ -474,7 +478,9 @@ class _SendPanel extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
-                        settings.text(StorefrontText.reviewMessageBody),
+                        FeatureFlags.customerAccounts
+                            ? settings.text(StorefrontText.reviewMessageBody)
+                            : 'Detalle listo para guardar, copiar o exportar',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -522,34 +528,24 @@ class _SendPanel extends StatelessWidget {
                 child: FilledButton.icon(
                   onPressed: onContinueToPayment,
                   icon: const Icon(Icons.lock_outline_rounded, size: 19),
-                  label: const Text('Continuar al pago de prueba'),
+                  label: const Text('Continuar al pago simulado'),
                 ),
               ),
               const SizedBox(height: 10),
             ],
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: sending ? null : onSend,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.whatsapp,
-                  side: const BorderSide(color: AppColors.whatsapp),
-                ),
-                icon: sending
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.whatsapp,
-                        ),
-                      )
-                    : const Icon(Icons.chat_outlined),
-                label: Text(
-                  sending ? 'Abriendo WhatsApp…' : 'Enviar por WhatsApp',
+            if (onSend != null)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: sending ? null : onSend,
+                  icon: const Icon(Icons.chat_outlined),
+                  label: const Text('Enviar por WhatsApp'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.whatsapp,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
               ),
-            ),
             if (onContinueToPayment != null) ...[
               const SizedBox(height: 10),
               Center(

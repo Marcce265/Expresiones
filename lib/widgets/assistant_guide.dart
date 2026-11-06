@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-const _jashyDefaultAsset = 'assets/images/jashy_assistant.png';
+const _jashyDefaultAsset = 'assets/images/jashy_chibi_assistant.png';
 
 class AssistantHelpButton extends StatefulWidget {
   const AssistantHelpButton({
@@ -126,8 +126,7 @@ class _JashyToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = expanded ? (mobile ? 76.0 : 96.0) : (mobile ? 58.0 : 70.0);
-    final height = expanded ? (mobile ? 102.0 : 128.0) : (mobile ? 76.0 : 92.0);
+    final size = expanded ? (mobile ? 102.0 : 128.0) : (mobile ? 76.0 : 92.0);
     final tooltip = expanded ? 'Cerrar ayuda de Jashy' : 'Abrir ayuda de Jashy';
 
     return Semantics(
@@ -143,41 +142,15 @@ class _JashyToggle extends StatelessWidget {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
-              width: width,
-              height: height,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned.fill(
-                    child: Image.asset(
-                      imageAsset,
-                      fit: BoxFit.contain,
-                      alignment: Alignment.bottomCenter,
-                      excludeFromSemantics: true,
-                      errorBuilder: (_, _, _) =>
-                          const Icon(Icons.support_agent_rounded, size: 38),
-                    ),
-                  ),
-                  if (expanded)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        width: 22,
-                        height: 22,
-                        alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          color: AppColors.pinkStrong,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close_rounded,
-                          size: 14,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                ],
+              width: size,
+              height: size,
+              child: Image.asset(
+                imageAsset,
+                fit: BoxFit.contain,
+                alignment: Alignment.bottomCenter,
+                excludeFromSemantics: true,
+                errorBuilder: (_, _, _) =>
+                    const Icon(Icons.support_agent_rounded, size: 38),
               ),
             ),
           ),

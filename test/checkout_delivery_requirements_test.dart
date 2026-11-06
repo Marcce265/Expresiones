@@ -160,6 +160,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('Enviar por WhatsApp'), findsOneWidget);
+    expect(find.text('Guardar PDF'), findsOneWidget);
+    expect(find.text('Guardar Excel'), findsNothing);
     expect(find.text('Continuar al pago de prueba'), findsNothing);
     expect(find.text('Pago'), findsNothing);
     expect(find.text('Listo'), findsNothing);

@@ -13,7 +13,7 @@ import 'package:expresiones/services/quote_export_service.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const product = CatalogProduct(
+  final product = CatalogProduct(
     id: 'cinta-satinada',
     name: 'Cinta satinada',
     category: ProductCategory.materials,
@@ -27,7 +27,7 @@ void main() {
       ProductVariant(id: 'rojo', name: 'Rojo', sku: 'SAT-17', priceOverride: 5),
     ],
   );
-  const line = ResolvedQuoteLine(
+  final line = ResolvedQuoteLine(
     line: QuoteLine(
       productId: 'cinta-satinada',
       variantId: 'rojo',
@@ -49,7 +49,7 @@ void main() {
   test('genera un PDF válido con contenido', () async {
     final bytes = await QuoteExportService.buildPdf(
       quoteId: 'COT-TEST-0001',
-      lines: const [line],
+      lines: [line],
       details: details,
       generatedAt: DateTime(2026, 10, 15, 10, 30),
     );
@@ -61,7 +61,7 @@ void main() {
   test('genera un XLSX legible con los valores de la cotización', () {
     final bytes = QuoteExportService.buildXlsx(
       quoteId: 'COT-TEST-0001',
-      lines: const [line],
+      lines: [line],
       details: details,
       generatedAt: DateTime(2026, 10, 15, 10, 30),
     );
@@ -75,7 +75,7 @@ void main() {
     );
     expect(
       sheet.cell(CellIndex.indexByString('A5')).value?.toString(),
-      contains('Cinta satinada'),
+      contains('CINTA SATINADA'),
     );
     expect(sheet.cell(CellIndex.indexByString('C5')).value?.toString(), '12');
   });

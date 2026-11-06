@@ -24,7 +24,7 @@ abstract final class QuoteMessageBuilder {
         ? 'Expresiones'
         : brandName.trim();
     final buffer = StringBuffer()
-      ..writeln('Hola, $safeBrandName. Quisiera solicitar esta cotización:')
+      ..writeln('Resumen de cotización · $safeBrandName')
       ..writeln()
       ..writeln(id)
       ..writeln();
@@ -57,12 +57,6 @@ abstract final class QuoteMessageBuilder {
         ..writeln('Agencia Shalom: ${details.shalomAgencyName}')
         ..writeln('Ubicación: ${details.shalomAgencyLocality}')
         ..writeln('Dirección: ${details.shalomAgencyAddress}');
-      if (details.shalomAgencyLatitude != null &&
-          details.shalomAgencyLongitude != null) {
-        buffer.writeln(
-          'Mapa: https://www.google.com/maps/search/?api=1&query=${details.shalomAgencyLatitude},${details.shalomAgencyLongitude}',
-        );
-      }
     }
 
     if (details.desiredDate != null) {
@@ -84,7 +78,7 @@ abstract final class QuoteMessageBuilder {
     buffer
       ..writeln()
       ..write(
-        'Entiendo que stock, precio final y fecha serán confirmados por WhatsApp.',
+        'Stock, tarifa de envío y disponibilidad final están sujetos a confirmación.',
       );
     return buffer.toString();
   }
@@ -98,7 +92,7 @@ abstract final class QuoteMessageBuilder {
         ? 'Expresiones'
         : brandName.trim();
     final buffer = StringBuffer()
-      ..writeln('Hola, $safeBrandName. Quisiera coordinar este pedido:')
+      ..writeln('Compra simulada · $safeBrandName')
       ..writeln()
       ..writeln(order.id)
       ..writeln();
@@ -153,7 +147,7 @@ abstract final class QuoteMessageBuilder {
       ..writeln('Referencia: ${order.payment.reference}')
       ..writeln()
       ..write(
-        'IMPORTANTE: esta fue una simulación. No se realizó ningún cobro real. Stock, envío y fecha final se confirmarán por WhatsApp.',
+        'IMPORTANTE: esta fue una simulación. No se realizó ningún cobro real.',
       );
     return buffer.toString();
   }

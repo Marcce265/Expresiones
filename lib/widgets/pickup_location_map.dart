@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -6,8 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
-import 'google_map_element.dart'
-    if (dart.library.js_interop) 'google_map_element_web.dart';
 
 /// In-app pickup map. It mirrors the Shalom map experience and does not send
 /// the customer to another browser or application.
@@ -53,27 +50,6 @@ class _PickupLocationMapState extends State<PickupLocationMap> {
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb) {
-      final query = Uri.encodeComponent(widget.location.address);
-      final source = 'https://www.google.com/maps?q=$query&output=embed&z=17';
-      return Semantics(
-        label: 'Mapa de ${widget.location.name}. ${widget.location.address}',
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: SizedBox(
-            height: widget.height,
-            width: double.infinity,
-            child: HtmlElementView.fromTagName(
-              key: ValueKey(source),
-              tagName: 'iframe',
-              onElementCreated: (element) =>
-                  configureGoogleMapElement(element, source),
-            ),
-          ),
-        ),
-      );
-    }
-
     if (!widget.location.hasCoordinates) {
       return Container(
         height: widget.height,

@@ -35,6 +35,7 @@ void main() {
     expect(find.text('Busca tu material'), findsOneWidget);
     expect(find.text('Escribe un nombre o color.'), findsOneWidget);
     expect(find.byTooltip('Cerrar ayuda de Jashy'), findsOneWidget);
+    expect(find.byIcon(Icons.close_rounded), findsOneWidget);
 
     await tester.tap(find.byTooltip('Cerrar ayuda de Jashy'));
     await tester.pumpAndSettle();

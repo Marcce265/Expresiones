@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../config/feature_flags.dart';
 import '../models/coordination_details.dart';
 import '../models/production_capacity.dart';
 import '../models/shalom_agency.dart';
@@ -335,9 +336,11 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                 title: widget.settings.text(
                   StorefrontText.coordinationContactTitle,
                 ),
-                description: widget.settings.text(
-                  StorefrontText.coordinationContactBody,
-                ),
+                description: FeatureFlags.customerAccounts
+                    ? widget.settings.text(
+                        StorefrontText.coordinationContactBody,
+                      )
+                    : 'Usaremos estos datos solo para coordinar tu cotización.',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -751,8 +754,8 @@ class _PickupDestinationSection extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             location.hasCoordinates
-                ? 'Revisa la ubicación directamente en el mapa. El horario exacto se confirma por WhatsApp.'
-                : 'La dirección y el horario exactos se confirmarán por WhatsApp.',
+                ? 'Revisa la ubicación directamente en el mapa y elige un horario disponible.'
+                : 'La dirección y el horario se mostrarán antes de finalizar.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
@@ -859,7 +862,7 @@ class _ShalomDestinationSection extends StatelessWidget {
           ),
           const SizedBox(height: 9),
           Text(
-            'El envío y la disponibilidad se confirman contigo por WhatsApp.',
+            'La agencia y la fecha quedarán incluidas en tu resumen.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
@@ -1328,7 +1331,7 @@ class _SubmitArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hint = Text(
-      'Revisa tus datos antes de preparar el mensaje de WhatsApp.',
+      'Revisa tus datos antes de continuar al resumen.',
       textAlign: TextAlign.center,
       style: Theme.of(context).textTheme.bodySmall,
     );

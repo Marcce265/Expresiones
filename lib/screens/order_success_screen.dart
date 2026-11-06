@@ -14,7 +14,7 @@ class OrderSuccessScreen extends StatefulWidget {
   const OrderSuccessScreen({
     super.key,
     required this.order,
-    required this.onSendWhatsapp,
+    this.onSendWhatsapp,
     required this.onCopySummary,
     required this.onHome,
     required this.onNewOrder,
@@ -22,7 +22,7 @@ class OrderSuccessScreen extends StatefulWidget {
   });
 
   final CheckoutOrder order;
-  final OrderSuccessAction onSendWhatsapp;
+  final OrderSuccessAction? onSendWhatsapp;
   final OrderSuccessAction onCopySummary;
   final VoidCallback onHome;
   final VoidCallback onNewOrder;
@@ -37,10 +37,11 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen> {
   bool _copying = false;
 
   Future<void> _sendWhatsapp() async {
-    if (_sending) return;
+    final send = widget.onSendWhatsapp;
+    if (_sending || send == null) return;
     setState(() => _sending = true);
     try {
-      await widget.onSendWhatsapp();
+      await send();
     } catch (_) {
       if (mounted) {
         showAppNotice(
@@ -100,7 +101,9 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen> {
                   settings: widget.settings,
                   sending: _sending,
                   copying: _copying,
-                  onSendWhatsapp: _sendWhatsapp,
+                  onSendWhatsapp: widget.onSendWhatsapp == null
+                      ? null
+                      : _sendWhatsapp,
                   onCopySummary: _copySummary,
                   onHome: widget.onHome,
                   onNewOrder: widget.onNewOrder,
@@ -191,7 +194,7 @@ class _SuccessHero extends StatelessWidget {
               width: compact ? 74 : 92,
               height: compact ? 104 : 128,
               child: Image.asset(
-                'assets/images/jashy_bouquet.png',
+                'assets/images/jashy_chibi_bouquet.png',
                 fit: BoxFit.contain,
                 alignment: Alignment.bottomCenter,
                 excludeFromSemantics: true,
@@ -255,7 +258,7 @@ class _OrderReceiptCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Resumen de tu pedido',
+                        'Resumen de tu compra',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
@@ -517,7 +520,7 @@ class _ActionsCard extends StatelessWidget {
   final StorefrontSettings settings;
   final bool sending;
   final bool copying;
-  final VoidCallback onSendWhatsapp;
+  final VoidCallback? onSendWhatsapp;
   final VoidCallback onCopySummary;
   final VoidCallback onHome;
   final VoidCallback onNewOrder;
@@ -579,31 +582,17 @@ class _ActionsCard extends StatelessWidget {
               icon: Icons.shield_outlined,
             ),
             const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: sending ? null : onSendWhatsapp,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.whatsapp,
-                  foregroundColor: Colors.white,
-                ),
-                icon: sending
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.chat_outlined),
-                label: Text(
-                  sending
-                      ? 'Abriendo WhatsApp…'
-                      : settings.text(StorefrontText.successWhatsappButton),
+            if (onSendWhatsapp != null) ...[
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: sending ? null : onSendWhatsapp,
+                  icon: const Icon(Icons.chat_outlined),
+                  label: const Text('Enviar por WhatsApp'),
                 ),
               ),
-            ),
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
+            ],
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(

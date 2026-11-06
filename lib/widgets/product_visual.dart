@@ -64,6 +64,7 @@ class ProductVisual extends StatelessWidget {
     this.fit = BoxFit.cover,
     this.cropBottomFraction = 0,
     this.alignment = Alignment.center,
+    this.filterQuality = FilterQuality.medium,
   });
 
   final String label;
@@ -73,6 +74,7 @@ class ProductVisual extends StatelessWidget {
   final BoxFit fit;
   final double cropBottomFraction;
   final Alignment alignment;
+  final FilterQuality filterQuality;
 
   Color get accent {
     final normalized = colorHex?.replaceAll('#', '');
@@ -106,7 +108,10 @@ class ProductVisual extends StatelessWidget {
           asset,
           fit: fit,
           alignment: alignment,
-          filterQuality: FilterQuality.high,
+          // Medium keeps product textures crisper than the high-quality
+          // bicubic filter when a large photo is scaled down on screen.
+          filterQuality: filterQuality,
+          gaplessPlayback: true,
           width: double.infinity,
           height: double.infinity,
           errorBuilder: (_, _, _) =>
@@ -117,7 +122,8 @@ class ProductVisual extends StatelessWidget {
           asset,
           fit: fit,
           alignment: alignment,
-          filterQuality: FilterQuality.high,
+          filterQuality: filterQuality,
+          gaplessPlayback: true,
           width: double.infinity,
           height: double.infinity,
           errorBuilder: (_, _, _) =>

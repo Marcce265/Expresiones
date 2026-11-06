@@ -21,9 +21,7 @@ void main() {
       description: 'Descripción',
       unitLabel: 'unidad',
       basePrice: 4,
-      priceTiers: const [
-        PriceTier(minQuantity: 12, unitPrice: 2.5, label: 'Docena'),
-      ],
+      priceTiers: [PriceTier(minQuantity: 12, unitPrice: 2.5, label: 'Docena')],
     );
 
     await tester.pumpWidget(
@@ -44,7 +42,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Precios por cantidad'), findsNothing);
-    expect(find.text('Docena (12)'), findsOneWidget);
+    expect(find.text('Docena'), findsOneWidget);
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -80,7 +78,7 @@ void main() {
     tester.state<FormState>(find.byType(Form)).validate();
     await tester.pump();
 
-    final addHundred = find.text('Ciento (100)');
+    final addHundred = find.text('Ciento');
     await tester.ensureVisible(addHundred);
     await tester.pumpAndSettle();
     await tester.tap(addHundred);

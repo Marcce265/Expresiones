@@ -60,7 +60,6 @@ class ResolvedQuoteLine {
   String get displayName =>
       variant == null ? product.name : '${product.name} · ${variant!.name}';
   String? get code => variant?.sku ?? product.sku;
-  int get leadDays => product.leadDaysFor(line.variantId);
   int get productionPoints =>
       product.productionPointsFor(line.variantId) * line.quantity;
 

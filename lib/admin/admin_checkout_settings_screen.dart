@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
 import '../widgets/checkout_field_icons.dart';
+import '../widgets/confirm_cancel_dialog.dart';
 import '../widgets/pickup_location_map.dart';
 import 'admin_operations_repository.dart';
 import 'admin_site_settings_repository.dart';
@@ -907,6 +908,32 @@ class _InlineCheckoutFieldEditorState
     );
   }
 
+  Future<void> _requestCancel() async {
+    final initial = widget.initial;
+    final changed = initial == null
+        ? _label.text.isNotEmpty ||
+              _hint.text.isNotEmpty ||
+              _icon != CheckoutFieldIcons.fallbackKey ||
+              _scope != CheckoutFieldScope.shalom ||
+              _multiline ||
+              !_enabled
+        : _label.text != initial.label ||
+              _hint.text != initial.hint ||
+              _icon != initial.icon ||
+              _scope != initial.scope ||
+              _multiline != initial.multiline ||
+              _enabled != initial.enabled;
+    if (!changed) {
+      widget.onCancel();
+      return;
+    }
+    final confirmed = await confirmCancelAction(
+      context,
+      message: 'Se descartará este campo y los cambios que no hayas aplicado.',
+    );
+    if (confirmed && mounted) widget.onCancel();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -1038,7 +1065,7 @@ class _InlineCheckoutFieldEditorState
               LayoutBuilder(
                 builder: (context, constraints) {
                   final cancel = TextButton(
-                    onPressed: widget.onCancel,
+                    onPressed: _requestCancel,
                     child: const Text('Cancelar'),
                   );
                   final apply = FilledButton(

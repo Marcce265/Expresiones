@@ -523,7 +523,7 @@ class _QuoteNextStep extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
-                        'Elige cómo recibir tu pedido y la fecha que prefieres.',
+                        'Elige cómo recibir tu cotización y la fecha que prefieres.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],

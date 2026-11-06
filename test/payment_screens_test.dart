@@ -13,14 +13,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  const product = CatalogProduct(
+  final product = CatalogProduct(
     id: 'cinta',
     name: 'Cinta satinada',
     category: ProductCategory.materials,
     basePrice: 10,
     unitLabel: 'rollo',
   );
-  const line = ResolvedQuoteLine(
+  final line = ResolvedQuoteLine(
     line: QuoteLine(productId: 'cinta', quantity: 1),
     product: product,
   );
@@ -39,7 +39,7 @@ void main() {
           theme: AppTheme.light,
           home: Scaffold(
             body: PaymentScreen(
-              lines: const [line],
+              lines: [line],
               details: details,
               onBack: () {},
               onProcessPayment: (method) async {
@@ -85,7 +85,7 @@ void main() {
                 MaterialPageRoute<void>(
                   builder: (_) => Scaffold(
                     body: PaymentScreen(
-                      lines: const [line],
+                      lines: [line],
                       details: details,
                       onBack: () => Navigator.of(context).pop(),
                       onProcessPayment: (_) => payment.future,
@@ -145,7 +145,7 @@ void main() {
     );
     final order = CheckoutOrder.fromQuote(
       id: 'PED-PRUEBA',
-      lines: const [line],
+      lines: [line],
       details: details,
       payment: payment,
       createdAt: payment.processedAt,
@@ -168,10 +168,10 @@ void main() {
 
     expect(find.text('SIM-20261024-120000-000'), findsOneWidget);
     expect(find.text('No se realizó ningún cobro'), findsOneWidget);
-    expect(find.text('Enviar cotización por WhatsApp'), findsOneWidget);
+    expect(find.text('Enviar por WhatsApp'), findsOneWidget);
     expect(find.text('Copiar resumen'), findsOneWidget);
     expect(find.text('Guardar PDF'), findsOneWidget);
-    expect(find.text('Guardar Excel'), findsOneWidget);
+    expect(find.text('Guardar Excel'), findsNothing);
   });
 
   testWidgets('conserva el nombre administrado del método elegido', (
@@ -187,7 +187,7 @@ void main() {
         theme: AppTheme.light,
         home: Scaffold(
           body: PaymentScreen(
-            lines: const [line],
+            lines: [line],
             details: details,
             settings: const StorefrontSettings(
               texts: {

@@ -11,7 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 void main() {
   test('usa la caché cuando catalog_metadata conserva la versión', () async {
     const cacheKey = 'catalog.version-test';
-    const cachedProduct = CatalogProduct(
+    final cachedProduct = CatalogProduct(
       id: 'cinta',
       name: 'Cinta satinada',
       category: ProductCategory.materials,
@@ -78,7 +78,7 @@ void main() {
 
   test('agrupa varios cambios seguidos en una sola recarga', () async {
     const cacheKey = 'catalog.version-debounce-test';
-    const cachedProduct = CatalogProduct(
+    final cachedProduct = CatalogProduct(
       id: 'limpiapipas',
       name: 'Limpiapipas',
       category: ProductCategory.materials,

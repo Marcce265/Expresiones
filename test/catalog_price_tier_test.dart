@@ -15,7 +15,7 @@ void main() {
       expect(tier.toMap(), {
         'minQuantity': 12,
         'unitPrice': 2.5,
-        'label': 'Docena',
+        'label': 'DOCENA',
       });
     });
 
@@ -53,15 +53,15 @@ void main() {
   });
 
   test('oculta el número de paleta solo en el nombre público', () {
-    const variant = ProductVariant(
+    final variant = ProductVariant(
       id: 'satin-01',
       name: 'N.º 01 · Blanco perla',
       sku: 'SAT-01',
       attributes: {'paletteNumber': '01'},
     );
 
-    expect(variantDisplayName(variant), 'Blanco perla');
-    expect(variant.name, 'N.º 01 · Blanco perla');
+    expect(variantDisplayName(variant), 'BLANCO PERLA');
+    expect(variant.name, 'N.º 01 · BLANCO PERLA');
     expect(variant.sku, 'SAT-01');
   });
 }

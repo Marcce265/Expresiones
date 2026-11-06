@@ -59,7 +59,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    const family = CatalogProduct(
+    final family = CatalogProduct(
       id: 'limpiapipas',
       name: 'Limpiapipas premium 8 mm',
       category: ProductCategory.materials,
@@ -76,8 +76,8 @@ void main() {
         theme: AppTheme.light,
         home: Scaffold(
           body: HomeScreen(
-            products: const [family],
-            popularProducts: const [family],
+            products: [family],
+            popularProducts: [family],
             onBrowse: (_) {},
             onProduct: (_, variantId) => openedVariant = variantId,
             onOpenQuote: () {},
@@ -88,12 +88,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Verde militar'), findsOneWidget);
-    expect(find.text('Morado uva'), findsOneWidget);
-    expect(find.text('Limpiapipas premium 8 mm'), findsNothing);
+    expect(find.text('VERDE MILITAR'), findsOneWidget);
+    expect(find.text('MORADO UVA'), findsOneWidget);
+    expect(find.text('LIMPIAPIPAS PREMIUM 8 MM'), findsNothing);
 
-    await tester.ensureVisible(find.text('Verde militar'));
-    await tester.tap(find.text('Verde militar'));
+    await tester.ensureVisible(find.text('VERDE MILITAR'));
+    await tester.tap(find.text('VERDE MILITAR'));
     expect(openedVariant, 'verde-militar');
     expect(tester.takeException(), isNull);
   });

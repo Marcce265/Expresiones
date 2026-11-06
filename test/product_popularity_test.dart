@@ -9,19 +9,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  const first = CatalogProduct(
+  final first = CatalogProduct(
     id: 'primero',
     name: 'Primero',
     category: ProductCategory.materials,
     basePrice: 4,
   );
-  const second = CatalogProduct(
+  final second = CatalogProduct(
     id: 'segundo',
     name: 'Segundo',
     category: ProductCategory.materials,
     basePrice: 5,
   );
-  const third = CatalogProduct(
+  final third = CatalogProduct(
     id: 'tercero',
     name: 'Tercero',
     category: ProductCategory.materials,
@@ -36,7 +36,7 @@ void main() {
         topProductIds: const ['tercero', 'primero', 'producto-eliminado'],
       );
       final store = AppStore(
-        () async => const [first, second, third],
+        () async => [first, second, third],
         popularityRepository: popularity,
       );
       addTearDown(store.dispose);
@@ -55,7 +55,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final popularity = _FakePopularityRepository();
     final store = AppStore(
-      () async => const [first],
+      () async => [first],
       popularityRepository: popularity,
     );
     addTearDown(store.dispose);
@@ -70,7 +70,7 @@ void main() {
 
     final order = CheckoutOrder.fromQuote(
       id: 'PED-POPULARIDAD',
-      lines: const [
+      lines: [
         ResolvedQuoteLine(
           line: QuoteLine(productId: 'primero', quantity: 5),
           product: first,

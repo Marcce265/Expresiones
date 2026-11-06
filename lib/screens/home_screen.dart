@@ -219,7 +219,7 @@ class _LastOrderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tu último pedido',
+                  'Tu última compra simulada',
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
                 const SizedBox(height: 2),

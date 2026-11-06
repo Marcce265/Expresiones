@@ -115,6 +115,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       colorHex: variant?.colorHex,
                       categoryKey: product.category.key,
                       fit: imageFit,
+                      // The detail URL is the original upload, never the card
+                      // thumbnail. Medium filtering avoids softening textures.
+                      filterQuality: FilterQuality.medium,
                       cropBottomFraction: productImageCropBottom(
                         product,
                         variant: variant,
@@ -436,7 +439,8 @@ class _ProductInformation extends StatelessWidget {
           const SizedBox(height: 16),
           const InfoBanner(
             title: 'Precio referencial',
-            message: 'Expresiones confirmará el acabado y la disponibilidad por WhatsApp.',
+            message:
+                'Revisa el acabado y la disponibilidad antes de finalizar.',
           ),
         ],
       ],

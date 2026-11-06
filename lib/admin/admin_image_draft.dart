@@ -6,8 +6,8 @@ import '../models/catalog_models.dart';
 /// Supabase can store a detail image and a smaller thumbnail for the same
 /// product. Opening the editor should show the same thumbnail customers see,
 /// while an unchanged save must preserve the detail image value. Selecting a
-/// replacement intentionally unifies both values so the new asset is visible
-/// immediately and can be persisted by the backend for every presentation.
+/// replacement tracks both the original and its thumbnail so previews stay
+/// light without ever replacing the full-resolution detail image.
 class AdminImageDraft {
   AdminImageDraft({String? persistedValue, String? previewValue})
     : _persistedValue = canonicalStorageValue(persistedValue),
@@ -31,15 +31,18 @@ class AdminImageDraft {
   final String _initialPersistedValue;
   String _persistedValue;
   String _previewValue;
+  String? _replacementThumbnailValue;
 
   String get persistedValue => _persistedValue;
   String get previewValue => _previewValue;
   bool get changed => _persistedValue != _initialPersistedValue;
 
-  void replaceWith(String value) {
+  void replaceWith(String value, {String? thumbnailValue}) {
     final clean = canonicalStorageValue(value);
     _persistedValue = clean;
-    _previewValue = clean;
+    final cleanThumbnail = canonicalStorageValue(thumbnailValue);
+    _replacementThumbnailValue = cleanThumbnail.isEmpty ? null : cleanThumbnail;
+    _previewValue = _replacementThumbnailValue ?? clean;
   }
 
   /// Adds the image to a CRUD payload only after the administrator selected a
@@ -51,7 +54,12 @@ class AdminImageDraft {
     String key = 'imageUrl',
   }) {
     payload.remove(key);
-    if (changed) payload[key] = _persistedValue;
+    payload.remove('thumbnailUrl');
+    if (changed) {
+      payload[key] = _persistedValue;
+      final thumbnail = _replacementThumbnailValue;
+      if (thumbnail != null) payload['thumbnailUrl'] = thumbnail;
+    }
   }
 
   /// Converts this project's public Supabase Storage URLs back to the

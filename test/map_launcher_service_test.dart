@@ -72,7 +72,7 @@ void main() {
     test(
       'QuoteMessageBuilder incluye link a Google Maps si hay coordenadas',
       () {
-        const product = CatalogProduct(
+        final product = CatalogProduct(
           id: 'mat_01',
           name: 'Limpiapipas',
           category: ProductCategory.materials,
@@ -80,7 +80,7 @@ void main() {
         );
 
         final lines = [
-          const ResolvedQuoteLine(
+          ResolvedQuoteLine(
             line: QuoteLine(productId: 'mat_01', quantity: 10),
             product: product,
           ),
@@ -104,12 +104,7 @@ void main() {
 
         expect(message, contains('COT-TEST-GEO'));
         expect(message, contains('Agencia Shalom: Agencia Huancayo Real'));
-        expect(
-          message,
-          contains(
-            'Mapa: https://www.google.com/maps/search/?api=1&query=-12.0673,-75.2049',
-          ),
-        );
+        expect(message, isNot(contains('google.com/maps')));
       },
     );
   });

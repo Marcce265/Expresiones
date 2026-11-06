@@ -19,7 +19,7 @@ void main() {
     () async {
       SharedPreferences.setMockInitialValues({});
       final updates = StreamController<List<CatalogProduct>>();
-      const original = CatalogProduct(
+      final original = CatalogProduct(
         id: 'familia',
         name: 'Familia',
         category: ProductCategory.materials,
@@ -27,7 +27,7 @@ void main() {
         imageUrl: 'https://cdn.example/old-cover.webp',
         thumbnailUrl: 'https://cdn.example/old-cover.webp',
       );
-      const updated = CatalogProduct(
+      final updated = CatalogProduct(
         id: 'familia',
         name: 'Familia',
         category: ProductCategory.materials,
@@ -36,7 +36,7 @@ void main() {
         thumbnailUrl: 'https://cdn.example/new-cover.webp',
       );
       final store = AppStore(
-        () async => const [original],
+        () async => [original],
         catalogStreamLoader: () => updates.stream,
       );
       addTearDown(() async {
@@ -47,7 +47,7 @@ void main() {
       await store.initialize();
       expect(store.products.single.previewImageUrl, original.previewImageUrl);
 
-      updates.add(const [updated]);
+      updates.add([updated]);
       await Future<void>.delayed(Duration.zero);
       expect(store.products.single.previewImageUrl, updated.previewImageUrl);
 
@@ -147,21 +147,21 @@ void main() {
     'completa la compra, vacía el carrito y restaura el comprobante',
     () async {
       SharedPreferences.setMockInitialValues({});
-      const product = CatalogProduct(
+      final product = CatalogProduct(
         id: 'cinta',
         name: 'Cinta satinada',
         category: ProductCategory.materials,
         basePrice: 5,
         unitLabel: 'rollo',
       );
-      final store = AppStore(() async => const [product]);
+      final store = AppStore(() async => [product]);
       await store.initialize();
       store.addProduct(product, quantity: 2);
       const details = CoordinationDetails(name: 'María', phone: '999999999');
       store.updateDetails(details);
       final order = CheckoutOrder.fromQuote(
         id: 'PED-PRUEBA',
-        lines: const [
+        lines: [
           ResolvedQuoteLine(
             line: QuoteLine(productId: 'cinta', quantity: 2),
             product: product,
@@ -182,7 +182,7 @@ void main() {
       expect(store.hasQuote, isFalse);
       expect(store.lastOrder?.id, 'PED-PRUEBA');
 
-      final restored = AppStore(() async => const [product]);
+      final restored = AppStore(() async => [product]);
       await restored.initialize();
       expect(restored.lastOrder?.payment.reference, 'SIM-PRUEBA');
 

@@ -102,13 +102,7 @@ class AppStore extends ChangeNotifier {
   int get cartQuantity =>
       _cart.values.fold(0, (sum, line) => sum + line.quantity);
   double get subtotal => resolvedLines.fold(0, (sum, item) => sum + item.total);
-  int get maximumLeadDays => resolvedLines.fold(
-    0,
-    (maximum, item) => item.leadDays > maximum ? item.leadDays : maximum,
-  );
-
-  DateTime get earliestDesiredDate =>
-      dateOnly(DateTime.now()).add(Duration(days: maximumLeadDays));
+  DateTime get earliestDesiredDate => dateOnly(DateTime.now());
 
   Set<int> deliveryWeekdaysFor(DeliveryMethod method) =>
       _capacitySnapshot.weekdaysForDelivery(method.name);

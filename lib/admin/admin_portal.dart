@@ -1,24 +1,30 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/feature_flags.dart';
 import '../models/catalog_models.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
+import '../widgets/confirm_cancel_dialog.dart';
 import '../widgets/product_card.dart';
 import 'admin_image_draft.dart';
 import '../widgets/product_visual.dart';
 import 'admin_audit_log_screen.dart';
+import 'admin_customer_orders_screen.dart';
 import 'admin_analytics_screen.dart';
 import 'admin_catalog_repository.dart';
 import 'admin_checkout_settings_screen.dart';
 import 'admin_operations_repository.dart';
 import 'admin_site_settings_repository.dart';
 import 'admin_site_settings_screen.dart';
+import '../data/customer_account_repository.dart';
 import 'admin_ui.dart';
 
 class AdminPortalApp extends StatelessWidget {
@@ -467,6 +473,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     if (query.contains('historial') ||
         query.contains('auditoria') ||
         query.contains('registro administrativo')) {
+      setState(() => _sectionIndex = 4);
+      return;
+    }
+    if (query.contains('compra') ||
+        query.contains('venta') ||
+        query.contains('pago')) {
       setState(() => _sectionIndex = 3);
       return;
     }
@@ -552,6 +564,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             repository: AdminSiteSettingsRepository(client: widget.client),
             operations: widget.operations,
           ),
+          3 when FeatureFlags.demoPayment => AdminCustomerOrdersScreen(
+            repository: CustomerAccountRepository(client: widget.client),
+          ),
           _ => AdminAuditLogScreen(repository: widget.operations),
         };
 
@@ -613,10 +628,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       selectedIcon: Icon(Icons.shopping_bag_rounded),
                       label: 'Carrito',
                     ),
+                    if (FeatureFlags.demoPayment)
+                      NavigationDestination(
+                        icon: Icon(Icons.receipt_long_outlined),
+                        selectedIcon: Icon(Icons.receipt_long_rounded),
+                        label: 'Compras',
+                      ),
                     NavigationDestination(
                       icon: Icon(Icons.history_outlined),
                       selectedIcon: Icon(Icons.history_rounded),
-                      label: 'Historial',
+                      label: 'Auditoría',
                     ),
                   ],
                 ),
@@ -819,7 +840,9 @@ class _AdminNavigation extends StatelessWidget {
       (Icons.home_outlined, Icons.home_rounded, 'Inicio'),
       (Icons.grid_view_outlined, Icons.grid_view_rounded, 'Catálogo'),
       (Icons.shopping_bag_outlined, Icons.shopping_bag_rounded, 'Carrito'),
-      (Icons.history_outlined, Icons.history_rounded, 'Historial'),
+      if (FeatureFlags.demoPayment)
+        (Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Compras'),
+      (Icons.history_outlined, Icons.history_rounded, 'Auditoría'),
     ];
     return Container(
       width: 256,
@@ -854,17 +877,16 @@ class _AdminNavigation extends StatelessWidget {
                     children: [
                       Text(
                         'Expresiones',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
                               fontFamily: 'PlayfairDisplay',
                               fontWeight: FontWeight.w700,
                             ),
                       ),
                       Text(
                         'Modo administrador',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.muted,
-                              fontSize: 11,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: AppColors.muted, fontSize: 11),
                       ),
                     ],
                   ),
@@ -895,7 +917,11 @@ class _AdminNavigation extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.shield_outlined, size: 20, color: AppColors.muted),
+                const Icon(
+                  Icons.shield_outlined,
+                  size: 20,
+                  color: AppColors.muted,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -903,18 +929,15 @@ class _AdminNavigation extends StatelessWidget {
                     children: [
                       Text(
                         'Sesión protegida',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                        style: Theme.of(context).textTheme.labelSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       Text(
                         email,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontSize: 11,
-                              color: AppColors.muted,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(fontSize: 11, color: AppColors.muted),
                       ),
                     ],
                   ),
@@ -963,9 +986,9 @@ class _AdminNavigationItem extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: selected ? Colors.white : AppColors.ink,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                    ),
+                  color: selected ? Colors.white : AppColors.ink,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -1363,6 +1386,16 @@ class _AdminHeroEditorDialogState extends State<_AdminHeroEditorDialog> {
   bool _saving = false;
   String? _error;
 
+  bool get _hasChanges =>
+      _adminDescription.text !=
+          widget.initialSettings.text(StorefrontText.adminHomeDescription) ||
+      _eyebrow.text !=
+          widget.initialSettings.text(StorefrontText.homeEyebrow) ||
+      _title.text != widget.initialSettings.text(StorefrontText.homeTitle) ||
+      _subtitle.text !=
+          widget.initialSettings.text(StorefrontText.homeSubtitle) ||
+      _imageBytes != null;
+
   @override
   void initState() {
     super.initState();
@@ -1387,6 +1420,16 @@ class _AdminHeroEditorDialogState extends State<_AdminHeroEditorDialog> {
     _title.dispose();
     _subtitle.dispose();
     super.dispose();
+  }
+
+  Future<void> _requestCancel() async {
+    if (_saving) return;
+    if (!_hasChanges) {
+      Navigator.pop(context);
+      return;
+    }
+    final confirmed = await confirmCancelAction(context);
+    if (confirmed && mounted) Navigator.pop(context);
   }
 
   Future<void> _pickImage() async {
@@ -1488,7 +1531,7 @@ class _AdminHeroEditorDialogState extends State<_AdminHeroEditorDialog> {
                   ),
                   IconButton(
                     tooltip: 'Cerrar',
-                    onPressed: _saving ? null : () => Navigator.pop(context),
+                    onPressed: _saving ? null : _requestCancel,
                     icon: const Icon(Icons.close_rounded),
                   ),
                 ],
@@ -1560,28 +1603,21 @@ class _AdminHeroEditorDialogState extends State<_AdminHeroEditorDialog> {
                 ),
               ],
               const SizedBox(height: 22),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: _saving ? null : () => Navigator.pop(context),
-                    child: const Text('Cancelar'),
-                  ),
-                  const SizedBox(width: 10),
-                  FilledButton.icon(
-                    onPressed: _saving ? null : _save,
-                    icon: _saving
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.save_outlined),
-                    label: const Text('Guardar cambios'),
-                  ),
-                ],
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton.icon(
+                  onPressed: _saving ? null : _save,
+                  icon: _saving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.save_outlined),
+                  label: const Text('Guardar cambios'),
+                ),
               ),
             ],
           ),
@@ -1780,6 +1816,16 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
     super.dispose();
   }
 
+  Future<void> _requestCancel() async {
+    if (_busy) return;
+    if (_password.text.isEmpty && _confirmation.text.isEmpty) {
+      Navigator.pop(context, false);
+      return;
+    }
+    final confirmed = await confirmCancelAction(context);
+    if (confirmed && mounted) Navigator.pop(context, false);
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate() || _busy) return;
     setState(() {
@@ -1865,7 +1911,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _busy ? null : () => Navigator.pop(context, false),
+          onPressed: _busy ? null : _requestCancel,
           child: const Text('Cancelar'),
         ),
         FilledButton(
@@ -1928,6 +1974,122 @@ class _EditableProductCard extends StatelessWidget {
 
 enum _ProductEditorResult { created, updated, deleted }
 
+const _adminStockStatuses = <StockStatus>[
+  StockStatus.inStock,
+  StockStatus.lowStock,
+  StockStatus.outOfStock,
+];
+
+class _VariantStatusSelector extends StatelessWidget {
+  const _VariantStatusSelector({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final StockStatus value;
+  final ValueChanged<StockStatus> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth >= 430;
+        final choices = Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            for (final status in _adminStockStatuses)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: _buildChoice(context, status),
+                ),
+              ),
+          ],
+        );
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: compact ? 4 : 7,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: compact
+              ? Row(
+                  children: [
+                    Text(
+                      'Disponibilidad',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(child: SizedBox(height: 38, child: choices)),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 3, bottom: 5),
+                      child: Text(
+                        'Disponibilidad',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 38, child: choices),
+                  ],
+                ),
+        );
+      },
+    );
+  }
+
+  Widget _buildChoice(BuildContext context, StockStatus status) {
+    final selected = status == value;
+    return Tooltip(
+      message: status.label,
+      child: Material(
+        color: selected ? AppColors.ink : AppColors.canvas,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => onChanged(status),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 34),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+              child: Center(
+                child: Text(
+                  status.label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: selected ? Colors.white : AppColors.ink,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 11,
+                    height: 1.05,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class AdminProductEditorDialog extends StatefulWidget {
   const AdminProductEditorDialog({
     super.key,
@@ -1951,13 +2113,10 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
   late final AdminImageDraft _image;
   late final TextEditingController _unitLabel;
   late final TextEditingController _basePrice;
-  late final TextEditingController _stock;
-  late final TextEditingController _leadDays;
   late final TextEditingController _sortOrder;
   late final List<_PriceTierDraft> _priceTiers;
   late final List<_VariantDraft> _variants;
-  late ProductCategory _category;
-  late StockStatus _stockStatus;
+  late final String _initialDraftSnapshot;
   late bool _isActive;
   late bool _isFeatured;
   late bool _priceIsEstimate;
@@ -1977,15 +2136,11 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     _basePrice = TextEditingController(
       text: product == null ? '' : product.basePrice.toStringAsFixed(2),
     );
-    _stock = TextEditingController(text: product?.stock?.toString() ?? '');
-    _leadDays = TextEditingController(text: '${product?.leadDays ?? 0}');
     _sortOrder = TextEditingController(text: '${product?.sortOrder ?? 0}');
     _priceTiers = [
       for (final tier in product?.priceTiers ?? const <PriceTier>[])
         _PriceTierDraft.fromTier(tier),
     ];
-    _category = product?.category ?? ProductCategory.materials;
-    _stockStatus = product?.stockStatus ?? StockStatus.inStock;
     _isActive = product?.isActive ?? true;
     _isFeatured = product?.isFeatured ?? false;
     _priceIsEstimate = product?.priceIsEstimate ?? false;
@@ -1993,6 +2148,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       for (final variant in product?.variants ?? const <ProductVariant>[])
         if (variant.isActive) _VariantDraft(variant),
     ];
+    _initialDraftSnapshot = _draftSnapshot();
   }
 
   @override
@@ -2003,8 +2159,6 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       _description,
       _unitLabel,
       _basePrice,
-      _stock,
-      _leadDays,
       _sortOrder,
     ]) {
       controller.dispose();
@@ -2017,6 +2171,54 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     }
     super.dispose();
   }
+
+  Future<void> _requestCancel() async {
+    if (_saving || _uploadingImage) return;
+    if (_draftSnapshot() == _initialDraftSnapshot) {
+      Navigator.pop(context);
+      return;
+    }
+    final confirmed = await confirmCancelAction(
+      context,
+      message: widget.product == null
+          ? 'Se descartará el producto nuevo y todos sus cambios.'
+          : 'Se descartarán los cambios que todavía no guardaste.',
+    );
+    if (confirmed && mounted) Navigator.pop(context);
+  }
+
+  String _draftSnapshot() => jsonEncode({
+    'name': _name.text,
+    'sku': _sku.text,
+    'description': _description.text,
+    'unitLabel': _unitLabel.text,
+    'basePrice': _basePrice.text,
+    'sortOrder': _sortOrder.text,
+    'isActive': _isActive,
+    'isFeatured': _isFeatured,
+    'priceIsEstimate': _priceIsEstimate,
+    'imageChanged': _image.changed,
+    'priceTiers': [
+      for (final tier in _priceTiers)
+        {
+          'quantity': tier.quantity.text,
+          'totalPrice': tier.totalPrice.text,
+          'label': tier.label,
+          'initialQuantity': tier.initialQuantity,
+        },
+    ],
+    'variants': [
+      for (final variant in _variants)
+        {
+          'id': variant.variant.id,
+          'name': variant.name.text,
+          'sku': variant.sku.text,
+          'status': variant.status.key,
+          'active': variant.active,
+          'imageChanged': variant.image.changed,
+        },
+    ],
+  });
 
   Future<void> _save() async {
     if (_saving || _uploadingImage) {
@@ -2033,22 +2235,34 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       _error = null;
     });
     try {
-      final stock = _optionalInt(_stock.text);
+      final activeVariants = _variants.where((variant) => variant.active);
+      final familyStockStatus =
+          activeVariants.isEmpty ||
+              activeVariants.every(
+                (variant) => variant.status == StockStatus.outOfStock,
+              )
+          ? StockStatus.outOfStock
+          : activeVariants.any(
+              (variant) => variant.status == StockStatus.inStock,
+            )
+          ? StockStatus.inStock
+          : StockStatus.lowStock;
       final data = <String, dynamic>{
-        'name': _name.text.trim(),
-        'category': _category.key,
-        'description': _description.text.trim(),
-        'sku': _sku.text.trim(),
+        'name': _name.text.trim().toUpperCase(),
+        'category':
+            widget.product?.category.key ?? ProductCategory.materials.key,
+        'description': _description.text.trim().toUpperCase(),
+        'sku': _sku.text.trim().toUpperCase(),
         'unitLabel': _unitLabel.text.trim().isEmpty
-            ? 'unidad'
-            : _unitLabel.text.trim(),
+            ? 'UNIDAD'
+            : _unitLabel.text.trim().toUpperCase(),
         'basePrice': _decimal(_basePrice.text),
         'startingAt': widget.product?.startingAt ?? false,
         'priceIsEstimate': _priceIsEstimate,
         'priceTiers': [for (final tier in _priceTiers) tier.toMap()],
         'variants': [for (final variant in _variants) variant.toMap()],
-        'stockStatus': _stockStatus.key,
-        'leadDays': int.parse(_leadDays.text.trim()),
+        'stock': null,
+        'stockStatus': familyStockStatus.key,
         'isActive': _isActive,
         'isFeatured': _isFeatured,
         'sortOrder': int.parse(_sortOrder.text.trim()),
@@ -2056,12 +2270,6 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
         'attributes': widget.product?.attributes ?? const <String, String>{},
       };
       _image.writeReplacementTo(data);
-      if (stock != null) {
-        data['stock'] = stock;
-      } else if (widget.product != null) {
-        data['stock'] = null;
-      }
-
       final product = widget.product;
       if (product == null) {
         await widget.repository.createProduct(
@@ -2086,11 +2294,27 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     }
   }
 
-  void _addVariant() {
+  void _addVariant({bool atEnd = false}) {
     final draft = _VariantDraft.create(
       id: 'variante-${DateTime.now().microsecondsSinceEpoch}',
     );
-    setState(() => _variants.add(draft));
+    setState(() {
+      if (atEnd) {
+        _variants.add(draft);
+      } else {
+        _variants.insert(0, draft);
+      }
+    });
+  }
+
+  void _reorderVariant(_VariantDraft dragged, _VariantDraft target) {
+    final from = _variants.indexOf(dragged);
+    final to = _variants.indexOf(target);
+    if (from < 0 || to < 0 || from == to) return;
+    setState(() {
+      final moved = _variants.removeAt(from);
+      _variants.insert(to, moved);
+    });
   }
 
   void _addPriceTier(List<_PriceTierDraft> tiers, [int? preset]) {
@@ -2112,6 +2336,20 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
   }
 
   String? _pricingError() {
+    final skuOwners = <String, String>{};
+    for (final variant in _variants) {
+      final sku = variant.sku.text.trim();
+      if (sku.isEmpty) continue;
+      final normalized = sku.toLowerCase();
+      final previousOwner = skuOwners[normalized];
+      if (previousOwner != null) {
+        return 'El código $sku está repetido en “$previousOwner” y '
+            '“${variant.name.text.trim()}”. Cada opción necesita un código distinto.';
+      }
+      skuOwners[normalized] = variant.name.text.trim().isEmpty
+          ? 'una opción sin nombre'
+          : variant.name.text.trim();
+    }
     final productError = _priceTierListError(_priceTiers, owner: 'el producto');
     if (productError != null) return productError;
     return null;
@@ -2205,7 +2443,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       final folderId =
           widget.product?.id ??
           AdminCatalogRepository.normalizedDocumentId(_name.text);
-      final path = await widget.repository.uploadCatalogImage(
+      final upload = await widget.repository.uploadCatalogImageSet(
         bytes: await file.readAsBytes(),
         fileName: file.name,
         contentType: contentType,
@@ -2216,9 +2454,15 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       if (!mounted) return;
       setState(() {
         if (variant == null) {
-          _image.replaceWith(path);
+          _image.replaceWith(
+            upload.detailPath,
+            thumbnailValue: upload.thumbnailPath,
+          );
         } else {
-          variant.image.replaceWith(path);
+          variant.image.replaceWith(
+            upload.detailPath,
+            thumbnailValue: upload.thumbnailPath,
+          );
         }
       });
     } catch (error) {
@@ -2248,14 +2492,18 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
 
     return Dialog(
       backgroundColor: AppColors.canvas,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(isMobile ? 22 : 20),
+      ),
       insetPadding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 8 : 24,
-        vertical: isMobile ? 8 : 20,
+        horizontal: isMobile ? 6 : 12,
+        vertical: isMobile ? 6 : 12,
       ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: 1360,
-          maxHeight: media.height - (isMobile ? 16 : 40),
+          maxWidth: 1680,
+          maxHeight: media.height - (isMobile ? 12 : 24),
         ),
         child: Column(
           children: [
@@ -2272,7 +2520,8 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                           widget.product == null
                               ? 'CREAR EN EL CATÁLOGO'
                               : 'EDITAR EN EL CATÁLOGO',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
                                 color: AppColors.muted,
                                 letterSpacing: 1.05,
                                 fontWeight: FontWeight.w600,
@@ -2285,15 +2534,16 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                               : widget.product!.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    onPressed: _saving ? null : () => Navigator.pop(context),
+                    onPressed: _saving || _uploadingImage
+                        ? null
+                        : _requestCancel,
                     icon: const Icon(Icons.close_rounded),
                     tooltip: 'Cerrar',
                   ),
@@ -2311,7 +2561,8 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                     final imageCard = _cardContainer(
                       context: context,
                       title: 'Imagen principal',
-                      subtitle: 'Foto de portada que se mostrará en el catálogo',
+                      subtitle:
+                          'Foto de portada que se mostrará en el catálogo',
                       children: [
                         _ImageEditor(
                           label: _name.text.trim().isEmpty
@@ -2331,6 +2582,10 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                       children: [
                         TextFormField(
                           controller: _name,
+                          textCapitalization: TextCapitalization.characters,
+                          inputFormatters: const [
+                            UppercaseTextInputFormatter(),
+                          ],
                           decoration: const InputDecoration(
                             labelText: 'Nombre del producto *',
                             hintText: 'Ej. Limpiapipas premium 8 mm',
@@ -2341,46 +2596,40 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                         LayoutBuilder(
                           builder: (context, c) {
                             final stack = c.maxWidth < 460;
-                            final categoryField = DropdownButtonFormField<ProductCategory>(
-                              initialValue: _category,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Categoría',
-                              ),
-                              items: [
-                                for (final category in ProductCategory.values)
-                                  DropdownMenuItem(
-                                    value: category,
-                                    child: Text(category.label),
-                                  ),
-                              ],
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() => _category = value);
-                                }
-                              },
-                            );
                             final skuField = TextFormField(
                               controller: _sku,
+                              textCapitalization: TextCapitalization.characters,
+                              inputFormatters: const [
+                                UppercaseTextInputFormatter(),
+                              ],
                               decoration: const InputDecoration(
                                 labelText: 'Código / SKU',
                                 hintText: 'Ej. XS',
                               ),
                             );
+                            final orderField = TextFormField(
+                              controller: _sortOrder,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Orden en catálogo',
+                                prefixIcon: Icon(Icons.sort_rounded, size: 18),
+                              ),
+                              validator: _nonNegativeInt,
+                            );
                             if (stack) {
                               return Column(
                                 children: [
-                                  categoryField,
-                                  const SizedBox(height: 14),
                                   skuField,
+                                  const SizedBox(height: 12),
+                                  orderField,
                                 ],
                               );
                             }
                             return Row(
                               children: [
-                                Expanded(flex: 3, child: categoryField),
-                                const SizedBox(width: 12),
                                 Expanded(flex: 2, child: skuField),
+                                const SizedBox(width: 12),
+                                Expanded(child: orderField),
                               ],
                             );
                           },
@@ -2389,6 +2638,10 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                         TextFormField(
                           controller: _description,
                           maxLines: 3,
+                          textCapitalization: TextCapitalization.characters,
+                          inputFormatters: const [
+                            UppercaseTextInputFormatter(),
+                          ],
                           decoration: const InputDecoration(
                             labelText: 'Descripción',
                             hintText: 'Detalles, material, dimensiones o uso recomendado...',
@@ -2399,93 +2652,38 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
 
                     final pricingCard = _cardContainer(
                       context: context,
-                      title: 'Precios e Inventario',
-                      subtitle: 'Precio unitario, stock y descuentos al por mayor',
+                      title: 'Precios',
                       children: [
                         LayoutBuilder(
                           builder: (context, c) {
-                            final stack = c.maxWidth < 560;
-                            final basePriceField = TextFormField(
-                              controller: _basePrice,
-                              keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
-                              decoration: const InputDecoration(
-                                labelText: 'Precio base (S/) *',
-                                prefixText: 'S/ ',
-                                hintText: '0.00',
-                              ),
-                              validator: _nonNegativeDecimal,
-                            );
-                            final stockField = TextFormField(
-                              controller: _stock,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Stock exacto',
-                                hintText: 'Vacío si es ilimitado',
-                              ),
-                              validator: _optionalNonNegativeInt,
-                            );
-                            final statusField = DropdownButtonFormField<StockStatus>(
-                              initialValue: _stockStatus,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Disponibilidad',
-                              ),
-                              items: [
-                                for (final status in StockStatus.values)
-                                  DropdownMenuItem(
-                                    value: status,
-                                    child: Text(status.label),
+                            return Align(
+                              alignment: Alignment.centerLeft,
+                              child: SizedBox(
+                                width: c.maxWidth < 280 ? c.maxWidth : 280,
+                                child: TextFormField(
+                                  controller: _basePrice,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Precio base (S/) *',
+                                    prefixText: 'S/ ',
+                                    hintText: '0.00',
                                   ),
-                              ],
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() => _stockStatus = value);
-                                }
-                              },
-                            );
-                            if (stack) {
-                              return Column(
-                                children: [
-                                  basePriceField,
-                                  const SizedBox(height: 12),
-                                  stockField,
-                                  const SizedBox(height: 12),
-                                  statusField,
-                                ],
-                              );
-                            }
-                            return Row(
-                              children: [
-                                Expanded(flex: 3, child: basePriceField),
-                                const SizedBox(width: 12),
-                                Expanded(flex: 3, child: stockField),
-                                const SizedBox(width: 12),
-                                Expanded(flex: 4, child: statusField),
-                              ],
+                                  validator: _nonNegativeDecimal,
+                                ),
+                              ),
                             );
                           },
                         ),
-                        const SizedBox(height: 18),
-                        Text(
-                          'Precios por mayor (Docena / Ciento)',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Aplica para el producto base y para todas sus variantes.',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.muted,
-                              ),
-                        ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 14),
                         _PriceTiersEditor(
                           tiers: _priceTiers,
-                          onAdd: (quantity) => _addPriceTier(_priceTiers, quantity),
-                          onRemove: (tier) => _removePriceTier(_priceTiers, tier),
+                          onAdd: (quantity) =>
+                              _addPriceTier(_priceTiers, quantity),
+                          onRemove: (tier) =>
+                              _removePriceTier(_priceTiers, tier),
                           onChanged: () => setState(() {}),
                         ),
                       ],
@@ -2498,71 +2696,65 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                       children: [
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: const Text('Publicado en catálogo', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                          subtitle: const Text('Visible para los clientes en la tienda', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                          title: const Text(
+                            'Publicado en catálogo',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: const Text(
+                            'Visible para los clientes en la tienda',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.muted,
+                            ),
+                          ),
                           value: _isActive,
-                          onChanged: (value) => setState(() => _isActive = value),
+                          onChanged: (value) =>
+                              setState(() => _isActive = value),
                         ),
                         const Divider(height: 14, color: AppColors.border),
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: const Text('Producto destacado', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                          subtitle: const Text('Aparece en inicio y recomendaciones destacadas', style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                          title: const Text(
+                            'Producto destacado',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: const Text(
+                            'Aparece en inicio y recomendaciones destacadas',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.muted,
+                            ),
+                          ),
                           value: _isFeatured,
-                          onChanged: (value) => setState(() => _isFeatured = value),
+                          onChanged: (value) =>
+                              setState(() => _isFeatured = value),
                         ),
                         const Divider(height: 14, color: AppColors.border),
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: const Text('Precio por revisar', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                          subtitle: const Text("Muestra etiqueta 'A consultar' en vez del precio fijo", style: TextStyle(fontSize: 12, color: AppColors.muted)),
+                          title: const Text(
+                            'Precio por revisar',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: const Text(
+                            "Muestra etiqueta 'A consultar' en vez del precio fijo",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.muted,
+                            ),
+                          ),
                           value: _priceIsEstimate,
-                          onChanged: (value) => setState(() => _priceIsEstimate = value),
-                        ),
-                      ],
-                    );
-
-                    final logisticsCard = _cardContainer(
-                      context: context,
-                      title: 'Logística y Catálogo',
-                      subtitle: 'Tiempo de preparación y posición de orden',
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _leadDays,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  labelText: 'Días de preparación',
-                                  hintText: '0',
-                                  prefixIcon: Icon(Icons.schedule_rounded, size: 18),
-                                ),
-                                validator: _nonNegativeInt,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _sortOrder,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  labelText: 'Orden de lista',
-                                  hintText: '0',
-                                  prefixIcon: Icon(Icons.sort_rounded, size: 18),
-                                ),
-                                validator: _nonNegativeInt,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Días requeridos antes de despachar y orden numérico en el catálogo.',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.muted,
-                                fontSize: 11,
-                              ),
+                          onChanged: (value) =>
+                              setState(() => _priceIsEstimate = value),
                         ),
                       ],
                     );
@@ -2570,12 +2762,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                     final variantsCard = _cardContainer(
                       context: context,
                       title: 'Variantes (${_variants.length})',
-                      subtitle: 'Opciones de color o presentación. Todas comparten los mismos precios.',
-                      trailing: FilledButton.tonalIcon(
-                        onPressed: _addVariant,
-                        icon: const Icon(Icons.add_rounded, size: 18),
-                        label: const Text('Agregar opción'),
-                      ),
+                      subtitle: 'Arrastra la foto de una opción para cambiar su orden.',
                       children: [
                         if (_variants.isEmpty)
                           const InfoBanner(
@@ -2584,55 +2771,87 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                             message: 'Agrégalas cuando el producto se venda en diferentes opciones o colores.',
                           )
                         else
-                          for (final variant in _variants)
-                            _VariantEditorTile(
-                              draft: variant,
-                              imageUrl: _previewUrl(variant.image.previewValue),
-                              uploading: _uploadingImage,
-                              onPickImage: () => _pickImage(variant: variant),
-                              onDelete: () => _removeVariant(variant),
-                              onChanged: () => setState(() {}),
-                            ),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              const gap = 14.0;
+                              final columns = constraints.maxWidth >= 980
+                                  ? 2
+                                  : 1;
+                              final width = columns == 1
+                                  ? constraints.maxWidth
+                                  : (constraints.maxWidth - gap) / 2;
+                              return Wrap(
+                                spacing: gap,
+                                runSpacing: gap,
+                                children: [
+                                  for (final variant in _variants)
+                                    SizedBox(
+                                      width: width,
+                                      child: _VariantEditorTile(
+                                        draft: variant,
+                                        imageUrl: _previewUrl(
+                                          variant.image.previewValue,
+                                        ),
+                                        uploading: _uploadingImage,
+                                        onPickImage: () =>
+                                            _pickImage(variant: variant),
+                                        onDelete: () => _removeVariant(variant),
+                                        onChanged: () => setState(() {}),
+                                        onReorder: _reorderVariant,
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
+                          ),
+                        if (_variants.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          OutlinedButton.icon(
+                            onPressed: () => _addVariant(atEnd: true),
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Agregar otra opción'),
+                          ),
+                        ],
                       ],
                     );
 
                     return ListView(
                       padding: EdgeInsets.all(isMobile ? 12 : 24),
                       children: [
-                        if (isWide)
+                        if (isWide) ...[
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                flex: 60,
+                                flex: 62,
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     infoCard,
                                     const SizedBox(height: 18),
                                     pricingCard,
-                                    const SizedBox(height: 18),
-                                    variantsCard,
                                   ],
                                 ),
                               ),
                               const SizedBox(width: 20),
                               Expanded(
-                                flex: 40,
+                                flex: 38,
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     imageCard,
                                     const SizedBox(height: 18),
                                     visibilityCard,
-                                    const SizedBox(height: 18),
-                                    logisticsCard,
                                   ],
                                 ),
                               ),
                             ],
-                          )
-                        else
+                          ),
+                          const SizedBox(height: 18),
+                          variantsCard,
+                        ] else
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -2644,8 +2863,6 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                               const SizedBox(height: 14),
                               visibilityCard,
                               const SizedBox(height: 14),
-                              logisticsCard,
-                              const SizedBox(height: 14),
                               variantsCard,
                             ],
                           ),
@@ -2654,13 +2871,17 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.errorContainer,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .errorContainer,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               _error!,
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.onErrorContainer,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onErrorContainer,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -2690,12 +2911,10 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                           )
                         : const Icon(Icons.save_outlined),
                     label: Text(
-                      _uploadingImage ? 'Subiendo imagen...' : 'Guardar cambios',
+                      _uploadingImage
+                          ? 'Subiendo imagen...'
+                          : 'Guardar cambios',
                     ),
-                  );
-                  final cancelButton = TextButton(
-                    onPressed: _saving ? null : () => Navigator.pop(context),
-                    child: const Text('Cancelar'),
                   );
                   final deleteButton = TextButton.icon(
                     onPressed: _saving ? null : _deleteProduct,
@@ -2710,8 +2929,6 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         saveButton,
-                        const SizedBox(height: 4),
-                        cancelButton,
                         if (widget.product != null) ...[
                           const SizedBox(height: 2),
                           deleteButton,
@@ -2723,8 +2940,6 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                     children: [
                       if (widget.product != null) deleteButton,
                       const Spacer(),
-                      cancelButton,
-                      const SizedBox(width: 8),
                       saveButton,
                     ],
                   );
@@ -2765,17 +2980,15 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                     children: [
                       Text(
                         title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       if (subtitle != null) ...[
                         const SizedBox(height: 3),
                         Text(
                           subtitle,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.muted,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppColors.muted),
                         ),
                       ],
                     ],
@@ -2854,53 +3067,48 @@ class _PriceTiersEditor extends StatelessWidget {
         .map((tier) => int.tryParse(tier.quantity.text.trim()))
         .whereType<int>()
         .toSet();
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              OutlinedButton.icon(
-                onPressed: quantities.contains(12) ? null : () => onAdd(12),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Docena (12)'),
-              ),
-              OutlinedButton.icon(
-                onPressed: quantities.contains(100) ? null : () => onAdd(100),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Ciento (100)'),
-              ),
-              TextButton.icon(
-                onPressed: () => onAdd(null),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Otra cantidad'),
-              ),
-            ],
-          ),
-          if (tiers.isEmpty) ...[
-            const SizedBox(height: 8),
-            const Text('Sin precios especiales por cantidad.'),
-          ] else ...[
-            const SizedBox(height: 10),
-            for (final tier in tiers) ...[
-              _PriceTierRow(
-                tier: tier,
-                onChanged: onChanged,
-                onRemove: () => onRemove(tier),
-              ),
-              if (tier != tiers.last) const SizedBox(height: 10),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Por cantidad',
+          style: Theme.of(context).textTheme.labelLarge
+              ?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: [
+            OutlinedButton.icon(
+              onPressed: quantities.contains(12) ? null : () => onAdd(12),
+              icon: const Icon(Icons.add_rounded, size: 17),
+              label: const Text('Docena'),
+            ),
+            OutlinedButton.icon(
+              onPressed: quantities.contains(100) ? null : () => onAdd(100),
+              icon: const Icon(Icons.add_rounded, size: 17),
+              label: const Text('Ciento'),
+            ),
+            TextButton.icon(
+              onPressed: () => onAdd(null),
+              icon: const Icon(Icons.add_rounded, size: 17),
+              label: const Text('Otra cantidad'),
+            ),
+          ],
+        ),
+        if (tiers.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          for (final tier in tiers) ...[
+            _PriceTierRow(
+              tier: tier,
+              onChanged: onChanged,
+              onRemove: () => onRemove(tier),
+            ),
+            if (tier != tiers.last) const SizedBox(height: 8),
           ],
         ],
-      ),
+      ],
     );
   }
 }
@@ -3011,8 +3219,9 @@ class _VariantDraft {
     : name = TextEditingController(text: variant.name),
       sku = TextEditingController(text: variant.sku ?? ''),
       image = AdminImageDraft.fromVariant(variant),
-      stock = TextEditingController(text: variant.stock?.toString() ?? ''),
-      status = variant.stockStatus,
+      status = _adminStockStatuses.contains(variant.stockStatus)
+          ? variant.stockStatus
+          : StockStatus.inStock,
       active = variant.isActive;
 
   factory _VariantDraft.create({required String id}) => _VariantDraft(
@@ -3027,25 +3236,18 @@ class _VariantDraft {
   final TextEditingController name;
   final TextEditingController sku;
   final AdminImageDraft image;
-  final TextEditingController stock;
   StockStatus status;
   bool active;
 
   Map<String, dynamic> toMap() {
     final data = Map<String, dynamic>.from(variant.toMap());
-    data['name'] = name.text.trim();
-    data['sku'] = sku.text.trim();
+    data['name'] = name.text.trim().toUpperCase();
+    data['sku'] = sku.text.trim().toUpperCase();
     data.remove('colorHex');
     data.remove('priceOverride');
     data.remove('priceTiers');
     image.writeReplacementTo(data);
-    data.remove('thumbnailUrl');
-    final parsedStock = _optionalInt(stock.text);
-    if (parsedStock == null) {
-      data.remove('stock');
-    } else {
-      data['stock'] = parsedStock;
-    }
+    data.remove('stock');
     data['stockStatus'] = status.key;
     data['isActive'] = active;
     return data;
@@ -3054,7 +3256,6 @@ class _VariantDraft {
   void dispose() {
     name.dispose();
     sku.dispose();
-    stock.dispose();
   }
 }
 
@@ -3066,6 +3267,7 @@ class _VariantEditorTile extends StatelessWidget {
     required this.onPickImage,
     required this.onDelete,
     required this.onChanged,
+    required this.onReorder,
   });
 
   final _VariantDraft draft;
@@ -3074,200 +3276,284 @@ class _VariantEditorTile extends StatelessWidget {
   final VoidCallback onPickImage;
   final VoidCallback onDelete;
   final VoidCallback onChanged;
+  final void Function(_VariantDraft dragged, _VariantDraft target) onReorder;
 
   @override
   Widget build(BuildContext context) {
-    final hasImg = imageUrl != null && imageUrl!.trim().isNotEmpty;
-    return Card(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
+    return DragTarget<_VariantDraft>(
+      onWillAcceptWithDetails: (details) => details.data != draft,
+      onAcceptWithDetails: (details) => onReorder(details.data, draft),
+      builder: (context, candidates, rejected) => Card(
+        key: ValueKey('variant-editor-${draft.variant.id}'),
+        color: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: candidates.isEmpty ? AppColors.border : AppColors.ink,
+            width: candidates.isEmpty ? 1 : 2,
+          ),
+        ),
+        margin: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final narrow = constraints.maxWidth < 560;
+              final nameField = TextFormField(
+                key: ValueKey('variant-name-${draft.variant.id}'),
+                controller: draft.name,
+                textCapitalization: TextCapitalization.characters,
+                inputFormatters: const [UppercaseTextInputFormatter()],
+                decoration: const InputDecoration(
+                  labelText: 'Nombre *',
+                  hintText: 'Ej. Verde militar',
+                ),
+                validator: _required,
+                onChanged: (_) => onChanged(),
+              );
+              final skuField = TextFormField(
+                key: ValueKey('variant-sku-${draft.variant.id}'),
+                controller: draft.sku,
+                textCapitalization: TextCapitalization.characters,
+                inputFormatters: const [UppercaseTextInputFormatter()],
+                decoration: const InputDecoration(
+                  labelText: 'Código / SKU',
+                  hintText: 'Ej. XS-1',
+                ),
+                onChanged: (_) => onChanged(),
+              );
+              final statusField = _VariantStatusSelector(
+                key: ValueKey('variant-status-${draft.variant.id}'),
+                value: draft.status,
+                onChanged: (value) {
+                  draft.status = value;
+                  onChanged();
+                },
+              );
+              final image = Draggable<_VariantDraft>(
+                data: draft,
+                feedback: Material(
+                  color: Colors.transparent,
+                  elevation: 10,
+                  borderRadius: BorderRadius.circular(14),
+                  child: SizedBox.square(
+                    dimension: 190,
+                    child: _VariantImage(
+                      label: draft.name.text,
+                      imageUrl: imageUrl,
+                    ),
+                  ),
+                ),
+                childWhenDragging: Opacity(
+                  opacity: .3,
+                  child: _VariantImage(
+                    label: draft.name.text,
+                    imageUrl: imageUrl,
+                  ),
+                ),
+                child: Tooltip(
+                  message: 'Arrastra la foto para cambiar el orden',
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.grab,
+                    child: _VariantImage(
+                      label: draft.name.text,
+                      imageUrl: imageUrl,
+                    ),
+                  ),
+                ),
+              );
+              final controls = _VariantImageActions(
+                label: draft.name.text,
+                visible: draft.active,
+                uploading: uploading,
+                onPickImage: onPickImage,
+                onDelete: onDelete,
+                onVisibilityChanged: () {
+                  draft.active = !draft.active;
+                  onChanged();
+                },
+              );
+              final fields = Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: nameField),
+                      const SizedBox(width: 10),
+                      Expanded(child: skuField),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  statusField,
+                ],
+              );
+              final media = Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  controls,
+                  const SizedBox(width: 10),
+                  if (narrow)
+                    Expanded(child: image)
+                  else
+                    SizedBox.square(dimension: 250, child: image),
+                ],
+              );
+              if (narrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [media, const SizedBox(height: 12), fields],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  media,
+                  const SizedBox(width: 14),
+                  Expanded(child: fields),
+                ],
+              );
+            },
+          ),
+        ),
       ),
-      margin: const EdgeInsets.only(bottom: 12),
-      clipBehavior: Clip.antiAlias,
-      child: ExpansionTile(
-        shape: const Border(),
-        collapsedShape: const Border(),
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 44,
-          height: 44,
-          clipBehavior: Clip.antiAlias,
+    );
+  }
+}
+
+class _VariantImage extends StatelessWidget {
+  const _VariantImage({required this.label, required this.imageUrl});
+
+  final String label;
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      key: ValueKey('variant-image-${label.trim()}'),
+      aspectRatio: 1,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: DecoratedBox(
           decoration: BoxDecoration(
             color: AppColors.canvas,
-            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(14),
           ),
-          child: hasImg
-              ? ProductVisual(
-                  label: draft.name.text,
-                  imageAsset: imageUrl,
+          child: ProductVisual(label: label, imageAsset: imageUrl),
+        ),
+      ),
+    );
+  }
+}
+
+class _VariantImageActions extends StatelessWidget {
+  const _VariantImageActions({
+    required this.label,
+    required this.visible,
+    required this.uploading,
+    required this.onPickImage,
+    required this.onDelete,
+    required this.onVisibilityChanged,
+  });
+
+  final String label;
+  final bool visible;
+  final bool uploading;
+  final VoidCallback onPickImage;
+  final VoidCallback onDelete;
+  final VoidCallback onVisibilityChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _VariantActionButton(
+          key: ValueKey('edit-variant-image-${label.trim()}'),
+          onPressed: uploading ? null : onPickImage,
+          tooltip: 'Cambiar foto',
+          backgroundColor: AppColors.ink,
+          foregroundColor: Colors.white,
+          icon: uploading
+              ? const SizedBox.square(
+                  dimension: 13,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
-              : const Icon(Icons.photo_outlined, size: 22, color: AppColors.muted),
+              : const Icon(Icons.photo_camera_rounded, size: 16),
         ),
-        title: Text(
-          draft.name.text.trim().isEmpty ? 'Opción / color sin nombre' : draft.name.text,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+        const SizedBox(height: 6),
+        _VariantActionButton(
+          key: ValueKey('toggle-variant-visibility-${label.trim()}'),
+          onPressed: onVisibilityChanged,
+          tooltip: visible ? 'Ocultar del catálogo' : 'Mostrar en el catálogo',
+          backgroundColor: visible
+              ? AppColors.ink
+              : AppColors.ink.withValues(alpha: .32),
+          foregroundColor: Colors.white,
+          icon: Icon(
+            visible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+            size: 16,
+          ),
         ),
-        subtitle: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              draft.sku.text.trim().isEmpty ? draft.variant.id : draft.sku.text,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: draft.active ? const Color(0xFFE8F5E9) : const Color(0xFFEEEEEE),
-                borderRadius: BorderRadius.circular(99),
-              ),
-              child: Text(
-                draft.active ? 'Visible' : 'Oculta',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: draft.active ? const Color(0xFF2E7D32) : AppColors.muted,
-                ),
-              ),
-            ),
-          ],
+        const SizedBox(height: 18),
+        _VariantActionButton(
+          key: ValueKey('delete-variant-${label.trim()}'),
+          onPressed: onDelete,
+          tooltip: 'Quitar esta opción',
+          backgroundColor: Colors.white,
+          foregroundColor: Theme.of(context).colorScheme.error,
+          borderColor: Theme.of(context).colorScheme.error
+              .withValues(alpha: .5),
+          icon: const Icon(Icons.delete_outline_rounded, size: 16),
         ),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        children: [
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: 14),
-          _ImageEditor(
-            label: draft.name.text,
-            imageUrl: imageUrl,
-            uploading: uploading,
-            onPick: onPickImage,
-            compact: true,
-          ),
-          const SizedBox(height: 14),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final fields = <Widget>[
-                TextFormField(
-                  controller: draft.name,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre de la opción *',
-                    hintText: 'Ej. Verde militar, Rojo perla...',
-                  ),
-                  validator: _required,
-                  onChanged: (_) => onChanged(),
-                ),
-                TextFormField(
-                  controller: draft.sku,
-                  decoration: const InputDecoration(
-                    labelText: 'Código / SKU',
-                    hintText: 'Ej. XS-1',
-                  ),
-                  onChanged: (_) => onChanged(),
-                ),
-              ];
-              if (constraints.maxWidth < 650) {
-                return Column(
-                  children: [
-                    for (var index = 0; index < fields.length; index++) ...[
-                      fields[index],
-                      if (index < fields.length - 1) const SizedBox(height: 12),
-                    ],
-                  ],
-                );
-              }
-              return Row(
-                children: [
-                  for (var index = 0; index < fields.length; index++) ...[
-                    Expanded(child: fields[index]),
-                    if (index < fields.length - 1) const SizedBox(width: 12),
-                  ],
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final fields = <Widget>[
-                TextFormField(
-                  controller: draft.stock,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Stock exacto',
-                    hintText: 'Vacío si no se controla',
-                  ),
-                  validator: _optionalNonNegativeInt,
-                ),
-                DropdownButtonFormField<StockStatus>(
-                  initialValue: draft.status,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Disponibilidad',
-                  ),
-                  items: [
-                    for (final status in StockStatus.values)
-                      DropdownMenuItem(
-                        value: status,
-                        child: Text(status.label),
-                      ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      draft.status = value;
-                      onChanged();
-                    }
-                  },
-                ),
-              ];
-              if (constraints.maxWidth < 650) {
-                return Column(
-                  children: [
-                    for (var index = 0; index < fields.length; index++) ...[
-                      fields[index],
-                      if (index < fields.length - 1) const SizedBox(height: 12),
-                    ],
-                  ],
-                );
-              }
-              return Row(
-                children: [
-                  for (var index = 0; index < fields.length; index++) ...[
-                    Expanded(child: fields[index]),
-                    if (index < fields.length - 1) const SizedBox(width: 12),
-                  ],
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          SwitchListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-            title: const Text('Visible en el catálogo'),
-            subtitle: const Text('Si lo desactivas, los clientes no podrán elegir este color/opción'),
-            value: draft.active,
-            onChanged: (value) {
-              draft.active = value;
-              onChanged();
-            },
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: onDelete,
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error,
-              ),
-              icon: const Icon(Icons.delete_outline_rounded),
-              label: const Text('Quitar esta variante'),
-            ),
-          ),
-        ],
+      ],
+    );
+  }
+}
+
+class _VariantActionButton extends StatelessWidget {
+  const _VariantActionButton({
+    super.key,
+    required this.onPressed,
+    required this.tooltip,
+    required this.backgroundColor,
+    required this.foregroundColor,
+    required this.icon,
+    this.borderColor,
+  });
+
+  final VoidCallback? onPressed;
+  final String tooltip;
+  final Color backgroundColor;
+  final Color foregroundColor;
+  final Color? borderColor;
+  final Widget icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 32,
+      child: IconButton(
+        onPressed: onPressed,
+        tooltip: tooltip,
+        padding: EdgeInsets.zero,
+        style: IconButton.styleFrom(
+          minimumSize: const Size.square(32),
+          maximumSize: const Size.square(32),
+          backgroundColor: backgroundColor,
+          foregroundColor: foregroundColor,
+          disabledBackgroundColor: AppColors.ink.withValues(alpha: .45),
+          disabledForegroundColor: Colors.white,
+          shape: const CircleBorder(),
+          side: borderColor == null ? null : BorderSide(color: borderColor!),
+        ),
+        icon: icon,
       ),
     );
   }
@@ -3279,107 +3565,95 @@ class _ImageEditor extends StatelessWidget {
     required this.imageUrl,
     required this.uploading,
     required this.onPick,
-    this.compact = false,
   });
 
   final String label;
   final String? imageUrl;
   final bool uploading;
   final VoidCallback onPick;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    if (!compact) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            height: 190,
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: ProductVisual(
-              label: label,
-              imageAsset: imageUrl,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'JPG, PNG o WebP. Máximo 8 MB.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                ),
-          ),
-          const SizedBox(height: 10),
-          FilledButton.tonalIcon(
-            onPressed: uploading ? null : onPick,
-            icon: uploading
-                ? const SizedBox.square(
-                    dimension: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.photo_camera_outlined, size: 18),
-            label: Text(uploading ? 'Subiendo imagen...' : 'Cambiar imagen'),
-          ),
-        ],
-      );
-    }
-    const size = 76.0;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          width: size,
-          height: size,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: ProductVisual(
-            label: label,
-            imageAsset: imageUrl,
-          ),
+    return AspectRatio(
+      aspectRatio: 1.35,
+      child: _EditableImage(
+        label: label,
+        imageUrl: imageUrl,
+        uploading: uploading,
+        onPick: onPick,
+        radius: 16,
+      ),
+    );
+  }
+}
+
+class _EditableImage extends StatelessWidget {
+  const _EditableImage({
+    required this.label,
+    required this.imageUrl,
+    required this.uploading,
+    required this.onPick,
+    required this.radius,
+  });
+
+  final String label;
+  final String? imageUrl;
+  final bool uploading;
+  final VoidCallback onPick;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      key: ValueKey('edit-image-$label'),
+      button: true,
+      label: 'Cambiar foto de $label',
+      child: Material(
+        color: Colors.white,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius),
+          side: const BorderSide(color: AppColors.border),
         ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: InkWell(
+          onTap: uploading ? null : onPick,
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              Text(
-                'Imagen de esta opción',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'JPG, PNG o WebP hasta 8 MB',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.muted,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: uploading ? null : onPick,
-                icon: uploading
-                    ? const SizedBox.square(
-                        dimension: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.image_outlined, size: 16),
-                label: Text(uploading ? 'Subiendo...' : 'Cambiar foto'),
+              ProductVisual(label: label, imageAsset: imageUrl),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: AppColors.ink,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Color(0x33000000), blurRadius: 8),
+                    ],
+                  ),
+                  child: uploading
+                      ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.edit_rounded,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                ),
               ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -3951,6 +4225,37 @@ class _AdminError extends StatelessWidget {
   }
 }
 
+/// Converts catalog text as it is entered while preserving the caret position.
+class UppercaseTextInputFormatter extends TextInputFormatter {
+  const UppercaseTextInputFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final upperText = newValue.text.toUpperCase();
+    if (upperText == newValue.text) return newValue;
+
+    int uppercaseOffset(int offset) {
+      if (offset < 0) return offset;
+      final safeOffset = offset.clamp(0, newValue.text.length).toInt();
+      return newValue.text.substring(0, safeOffset).toUpperCase().length;
+    }
+
+    return newValue.copyWith(
+      text: upperText,
+      selection: TextSelection(
+        baseOffset: uppercaseOffset(newValue.selection.baseOffset),
+        extentOffset: uppercaseOffset(newValue.selection.extentOffset),
+        affinity: newValue.selection.affinity,
+        isDirectional: newValue.selection.isDirectional,
+      ),
+      composing: TextRange.empty,
+    );
+  }
+}
+
 String? _required(String? value) =>
     value == null || value.trim().isEmpty ? 'Este campo es obligatorio.' : null;
 
@@ -3960,11 +4265,6 @@ double _decimal(String value) =>
 double? _optionalDecimal(String value) {
   final text = value.trim();
   return text.isEmpty ? null : double.tryParse(text.replaceAll(',', '.'));
-}
-
-int? _optionalInt(String value) {
-  final text = value.trim();
-  return text.isEmpty ? null : int.tryParse(text);
 }
 
 String? _nonNegativeDecimal(String? value) {
@@ -4021,9 +4321,3 @@ String _presentationName(int quantity) => switch (quantity) {
   100 => 'Ciento',
   _ => '$quantity unidades',
 };
-
-String? _optionalNonNegativeInt(String? value) {
-  if (value == null || value.trim().isEmpty) return null;
-  final parsed = int.tryParse(value.trim());
-  return parsed == null || parsed < 0 ? 'Ingresa un número válido.' : null;
-}

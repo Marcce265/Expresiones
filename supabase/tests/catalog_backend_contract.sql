@@ -38,6 +38,21 @@ begin
     raise exception 'admin_save_catalog_family has an invalid execute grant';
   end if;
 
+  if not exists (
+    select 1
+    from pg_trigger
+    where tgrelid = 'public.families'::regclass
+      and tgname = 'families_serialize_writes'
+      and not tgisinternal
+  ) or position(
+    'pg_advisory_xact_lock'
+    in pg_get_functiondef(
+      'public.serialize_catalog_family_write()'::regprocedure
+    )
+  ) = 0 then
+    raise exception 'catalog family writes must be serialized per slug';
+  end if;
+
   select pg_get_functiondef(
     'public.admin_save_catalog_family(jsonb)'::regprocedure
   ) into v_function_definition;
