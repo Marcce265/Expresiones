@@ -35,6 +35,9 @@ class ProductCard extends StatefulWidget {
     this.showCategory = false,
     this.showPrice = true,
     this.showUnavailableOverlay = true,
+    this.homePresentation = false,
+    this.showSkuBadge = false,
+    this.trailingIcon = Icons.arrow_forward_rounded,
   });
 
   final CatalogProduct product;
@@ -45,6 +48,9 @@ class ProductCard extends StatefulWidget {
   final bool showCategory;
   final bool showPrice;
   final bool showUnavailableOverlay;
+  final bool homePresentation;
+  final bool showSkuBadge;
+  final IconData trailingIcon;
 
   @override
   State<ProductCard> createState() => _ProductCardState();
@@ -74,6 +80,13 @@ class _ProductCardState extends State<ProductCard> {
     final price = widget.product.unitPriceFor(1, variantId: variantId);
     final pricePrefix = widget.product.startingAt ? 'Desde ' : '';
     final imageFit = productImageFit(widget.product, variant: widget.variant);
+    final content = widget.product.attributes['contenido']?.trim();
+    final detailLine = widget.homePresentation
+        ? 'Por ${widget.product.unitLabel}${content == null || content.isEmpty ? '' : ' ($content)'}'
+        : sku == null
+        ? 'Por ${widget.product.unitLabel}'
+        : 'Código $sku · por ${widget.product.unitLabel}';
+    final cardRadius = widget.homePresentation ? 14.0 : 18.0;
 
     return Semantics(
       button: true,
@@ -87,7 +100,11 @@ class _ProductCardState extends State<ProductCard> {
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
         child: AnimatedScale(
-          scale: _hovered && !unavailable ? 1.012 : 1,
+          scale: _hovered && !unavailable
+              ? widget.homePresentation
+                    ? 1.008
+                    : 1.012
+              : 1,
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOut,
           child: AnimatedContainer(
@@ -96,19 +113,27 @@ class _ProductCardState extends State<ProductCard> {
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(cardRadius),
               border: Border.all(
-                color: _hovered ? AppColors.border : const Color(0xFFF0EDE8),
+                color: widget.homePresentation
+                    ? _hovered
+                          ? AppColors.pinkStrong.withValues(alpha: .45)
+                          : AppColors.border
+                    : _hovered
+                    ? AppColors.border
+                    : const Color(0xFFF0EDE8),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(
-                    alpha: _hovered && !unavailable ? .11 : .055,
-                  ),
-                  blurRadius: _hovered ? 22 : 12,
-                  offset: Offset(0, _hovered ? 9 : 5),
-                ),
-              ],
+              boxShadow: widget.homePresentation
+                  ? const <BoxShadow>[]
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: _hovered && !unavailable ? .11 : .055,
+                        ),
+                        blurRadius: _hovered ? 22 : 12,
+                        offset: Offset(0, _hovered ? 9 : 5),
+                      ),
+                    ],
             ),
             child: Material(
               color: Colors.transparent,
@@ -141,6 +166,36 @@ class _ProductCardState extends State<ProductCard> {
                               alignment: productImageAlignment(widget.product),
                             ),
                           ),
+                          if (widget.showSkuBadge && sku != null)
+                            Positioned(
+                              top: 8,
+                              left: 8,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface.withValues(
+                                    alpha: .94,
+                                  ),
+                                  borderRadius: BorderRadius.circular(99),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  child: Text(
+                                    sku,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          fontSize: 8.5,
+                                          letterSpacing: 0,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           if (unavailable && widget.showUnavailableOverlay)
                             Positioned.fill(
                               child: ColoredBox(
@@ -153,10 +208,26 @@ class _ProductCardState extends State<ProductCard> {
                     ),
                     Padding(
                       padding: EdgeInsets.fromLTRB(
-                        widget.compact ? 12 : 15,
-                        widget.compact ? 10 : 12,
-                        widget.compact ? 12 : 15,
-                        widget.compact ? 12 : 15,
+                        widget.homePresentation
+                            ? 10
+                            : widget.compact
+                            ? 12
+                            : 15,
+                        widget.homePresentation
+                            ? 9
+                            : widget.compact
+                            ? 10
+                            : 12,
+                        widget.homePresentation
+                            ? 10
+                            : widget.compact
+                            ? 12
+                            : 15,
+                        widget.homePresentation
+                            ? 9
+                            : widget.compact
+                            ? 12
+                            : 15,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,22 +258,34 @@ class _ProductCardState extends State<ProductCard> {
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.labelLarge
                                 ?.copyWith(
-                                  fontSize: widget.compact ? 13 : 14,
+                                  fontSize: widget.homePresentation
+                                      ? 11.5
+                                      : widget.compact
+                                      ? 13
+                                      : 14,
                                   height: 1.22,
                                 ),
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            sku == null
-                                ? 'Por ${widget.product.unitLabel}'
-                                : 'Código $sku · por ${widget.product.unitLabel}',
+                            detailLine,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(fontSize: widget.compact ? 10 : 11),
+                                ?.copyWith(
+                                  fontSize: widget.homePresentation
+                                      ? 9
+                                      : widget.compact
+                                      ? 10
+                                      : 11,
+                                ),
                           ),
                           if (widget.showPrice) ...[
-                            const SizedBox(height: 5),
+                            SizedBox(height: widget.homePresentation ? 7 : 5),
+                            if (widget.homePresentation) ...[
+                              const Divider(),
+                              const SizedBox(height: 7),
+                            ],
                             Row(
                               children: [
                                 Expanded(
@@ -214,16 +297,21 @@ class _ProductCardState extends State<ProductCard> {
                                         .textTheme
                                         .titleMedium
                                         ?.copyWith(
-                                          fontSize: widget.compact ? 16 : 17,
+                                          fontSize: widget.homePresentation
+                                              ? 13
+                                              : widget.compact
+                                              ? 16
+                                              : 17,
                                         ),
                                   ),
                                 ),
-                                if (!widget.compact) ...[
+                                if (!widget.compact ||
+                                    widget.homePresentation) ...[
                                   const SizedBox(width: 8),
                                   AnimatedContainer(
                                     duration: const Duration(milliseconds: 160),
-                                    width: 28,
-                                    height: 28,
+                                    width: widget.homePresentation ? 24 : 28,
+                                    height: widget.homePresentation ? 24 : 28,
                                     decoration: BoxDecoration(
                                       color: _hovered
                                           ? AppColors.ink
@@ -231,8 +319,8 @@ class _ProductCardState extends State<ProductCard> {
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: 15,
+                                      widget.trailingIcon,
+                                      size: widget.homePresentation ? 14 : 15,
                                       color: _hovered
                                           ? Colors.white
                                           : AppColors.ink,

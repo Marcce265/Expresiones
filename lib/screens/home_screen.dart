@@ -54,6 +54,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final usesDesktopNavigation = MediaQuery.sizeOf(context).width >= 1024;
+    final showTrustRow = MediaQuery.sizeOf(context).width >= 700;
     final products =
         widget.products
             .where(
@@ -91,19 +93,21 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _TopBar(
-              settings: widget.settings,
-              quoteQuantity: widget.quoteQuantity,
-              onOpenQuote: widget.onOpenQuote,
-            ),
+            if (!usesDesktopNavigation) ...[
+              _TopBar(
+                settings: widget.settings,
+                quoteQuantity: widget.quoteQuantity,
+                onOpenQuote: widget.onOpenQuote,
+              ),
+              const SizedBox(height: 28),
+            ],
             if (widget.lastOrder != null && widget.onOpenLastOrder != null) ...[
-              const SizedBox(height: 18),
               _LastOrderCard(
                 order: widget.lastOrder!,
                 onOpen: () => widget.onOpenLastOrder!(widget.lastOrder!),
               ),
+              const SizedBox(height: 18),
             ],
-            const SizedBox(height: 28),
             _HomeIntro(
               settings: widget.settings,
               searchController: _searchController,
@@ -114,11 +118,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 _searchController.clear();
                 setState(() => _query = '');
               },
-              onBrowse: () => widget.onBrowse(ProductCategory.materials),
               showHero: query.isEmpty,
             ),
-            const SizedBox(height: 30),
             if (query.isNotEmpty) ...[
+              const SizedBox(height: 30),
               Row(
                 children: [
                   Expanded(
@@ -136,9 +139,14 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 12),
               _SearchResults(results: results, onProduct: widget.onProduct),
             ] else ...[
-              SectionHeader(
+              if (showTrustRow) ...[
+                const SizedBox(height: 24),
+                const _HomeTrustRow(),
+                const SizedBox(height: 32),
+              ] else
+                const SizedBox(height: 28),
+              _FeaturedHeader(
                 title: widget.settings.text(StorefrontText.homeFeaturedTitle),
-                actionLabel: 'Ver todo',
                 onAction: () => widget.onBrowse(ProductCategory.materials),
               ),
               const SizedBox(height: 12),
@@ -291,7 +299,6 @@ class _HomeIntro extends StatelessWidget {
     required this.onSearchChanged,
     required this.onSearchSubmitted,
     required this.onClearSearch,
-    required this.onBrowse,
     required this.showHero,
   });
 
@@ -301,67 +308,144 @@ class _HomeIntro extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onSearchSubmitted;
   final VoidCallback onClearSearch;
-  final VoidCallback onBrowse;
   final bool showHero;
 
   @override
   Widget build(BuildContext context) {
     final heroSource = settings.text(StorefrontText.homeHeroImage).trim();
-    final copy = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        Eyebrow(settings.text(StorefrontText.homeEyebrow)),
-        const SizedBox(height: 10),
-        Text(
-          settings.text(StorefrontText.homeTitle),
-          style: Theme.of(context).textTheme.displaySmall,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          settings.text(StorefrontText.homeSubtitle),
-          style: Theme.of(context).textTheme.bodyLarge
-              ?.copyWith(color: AppColors.muted),
-        ),
-        const SizedBox(height: 22),
-        TextField(
-          controller: searchController,
-          onChanged: onSearchChanged,
-          onSubmitted: onSearchSubmitted,
-          textInputAction: TextInputAction.search,
-          decoration: InputDecoration(
-            hintText: settings.text(StorefrontText.homeSearchHint),
-            prefixIcon: const Icon(Icons.search_rounded),
-            suffixIcon: query.isEmpty
-                ? null
-                : IconButton(
-                    tooltip: 'Limpiar búsqueda',
-                    onPressed: onClearSearch,
-                    icon: const Icon(Icons.close_rounded),
-                  ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 940;
+        final copyCard = Container(
+          padding: EdgeInsets.fromLTRB(
+            isWide ? 30 : 22,
+            isWide ? 19 : 22,
+            isWide ? 30 : 22,
+            isWide ? 19 : 24,
           ),
-        ),
-        const SizedBox(height: 18),
-        _CategoryChips(onBrowse: (_) => onBrowse()),
-      ],
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _HeroBadge(label: settings.text(StorefrontText.homeEyebrow)),
+              SizedBox(height: isWide ? 9 : 11),
+              _HomeHeadline(
+                title: settings.text(StorefrontText.homeTitle),
+                compact: !isWide,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                settings.text(StorefrontText.homeSubtitle),
+                maxLines: isWide ? 2 : null,
+                overflow: isWide ? TextOverflow.ellipsis : null,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.muted,
+                  fontSize: isWide ? 13 : 14,
+                  height: 1.42,
+                ),
+              ),
+              SizedBox(height: isWide ? 16 : 18),
+              _HomeSearchField(
+                controller: searchController,
+                query: query,
+                hintText: settings.text(StorefrontText.homeSearchHint),
+                onChanged: onSearchChanged,
+                onSubmitted: onSearchSubmitted,
+                onClear: onClearSearch,
+              ),
+              SizedBox(height: isWide ? 11 : 13),
+              _PopularSearches(
+                controller: searchController,
+                onSelected: onSearchChanged,
+              ),
+            ],
+          ),
+        );
+
+        if (!showHero) return copyCard;
+
+        final hero = ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _HomeHeroImage(source: heroSource),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Color(0x33000000)],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+        if (!isWide) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              copyCard,
+              const SizedBox(height: 16),
+              AspectRatio(aspectRatio: 1.48, child: hero),
+            ],
+          );
+        }
+
+        return SizedBox(
+          height: 334,
+          child: Row(
+            children: [
+              Expanded(flex: 58, child: copyCard),
+              const SizedBox(width: 18),
+              Expanded(flex: 42, child: hero),
+            ],
+          ),
+        );
+      },
     );
+  }
+}
 
-    if (!showHero) return copy;
+class _HeroBadge extends StatelessWidget {
+  const _HeroBadge({required this.label});
 
-    final hero = ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: AspectRatio(
-        aspectRatio: 1.48,
-        child: Stack(
-          fit: StackFit.expand,
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF6E8E4),
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            _HomeHeroImage(source: heroSource),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0x33000000)],
+            const Icon(
+              Icons.auto_awesome_rounded,
+              size: 11,
+              color: Color(0xFFA84B5A),
+            ),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontSize: 10,
+                  letterSpacing: 0,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -369,36 +453,204 @@ class _HomeIntro extends StatelessWidget {
         ),
       ),
     );
+  }
+}
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 760) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [copy, const SizedBox(height: 22), hero],
-          );
-        }
-        if (constraints.maxWidth >= 1180) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 4, child: copy),
-              const SizedBox(width: 28),
-              Expanded(flex: 5, child: hero),
-              const SizedBox(width: 18),
-              const SizedBox(width: 220, child: _HomeTrustRail()),
-            ],
-          );
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(flex: 5, child: copy),
-            const SizedBox(width: 36),
-            Expanded(flex: 6, child: hero),
-          ],
-        );
-      },
+class _HomeHeadline extends StatelessWidget {
+  const _HomeHeadline({required this.title, required this.compact});
+
+  final String title;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    const accentText = 'crear y expresar';
+    final accentStart = title.toLowerCase().indexOf(accentText);
+    final baseStyle = Theme.of(context).textTheme.displaySmall?.copyWith(
+      fontSize: compact ? 32 : 36,
+      height: 1.03,
+      fontWeight: FontWeight.w600,
+      letterSpacing: compact ? -0.45 : -0.7,
+    );
+    if (accentStart < 0) {
+      return Text(
+        title,
+        maxLines: compact ? 4 : 3,
+        overflow: TextOverflow.ellipsis,
+        style: baseStyle,
+      );
+    }
+    final accentEnd = accentStart + accentText.length;
+    return Text.rich(
+      TextSpan(
+        style: baseStyle,
+        children: [
+          TextSpan(text: title.substring(0, accentStart)),
+          TextSpan(
+            text: title.substring(accentStart, accentEnd),
+            style: const TextStyle(
+              color: Color(0xFFA84B5A),
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          TextSpan(text: title.substring(accentEnd)),
+        ],
+      ),
+      maxLines: compact ? 4 : 3,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+}
+
+class _HomeSearchField extends StatelessWidget {
+  const _HomeSearchField({
+    required this.controller,
+    required this.query,
+    required this.hintText,
+    required this.onChanged,
+    required this.onSubmitted,
+    required this.onClear,
+  });
+
+  final TextEditingController controller;
+  final String query;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String> onSubmitted;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 44,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 11),
+          const Icon(Icons.search_rounded, size: 19, color: AppColors.muted),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              onChanged: onChanged,
+              onSubmitted: onSubmitted,
+              textInputAction: TextInputAction.search,
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: AppColors.ink, fontSize: 11),
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: const Color(0xFF99958F), fontSize: 11),
+                isDense: true,
+                filled: false,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+              ),
+            ),
+          ),
+          if (query.isNotEmpty)
+            IconButton(
+              tooltip: 'Limpiar búsqueda',
+              onPressed: onClear,
+              style: IconButton.styleFrom(
+                minimumSize: const Size.square(32),
+                maximumSize: const Size.square(32),
+                padding: EdgeInsets.zero,
+              ),
+              icon: const Icon(Icons.close_rounded, size: 16),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(4),
+            child: SizedBox(
+              width: 66,
+              height: 34,
+              child: FilledButton(
+                onPressed: () => onSubmitted(controller.text),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(66, 34),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                child: const Text('Buscar'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PopularSearches extends StatelessWidget {
+  const _PopularSearches({required this.controller, required this.onSelected});
+
+  final TextEditingController controller;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    const searches = ['Limpiapipas', 'Cintas satinadas', 'Coronitas'];
+    return Wrap(
+      spacing: 7,
+      runSpacing: 7,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          'Popular:',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10),
+        ),
+        for (final search in searches)
+          _PopularChip(
+            label: search,
+            onTap: () {
+              controller.value = TextEditingValue(
+                text: search,
+                selection: TextSelection.collapsed(offset: search.length),
+              );
+              onSelected(search);
+            },
+          ),
+      ],
+    );
+  }
+}
+
+class _PopularChip extends StatelessWidget {
+  const _PopularChip({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.canvas,
+      shape: StadiumBorder(side: BorderSide(color: AppColors.border)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppColors.ink, fontSize: 9.5, height: 1),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -436,6 +688,185 @@ class _HomeHeroImage extends StatelessWidget {
   }
 }
 
+class _HomeTrustRow extends StatelessWidget {
+  const _HomeTrustRow();
+
+  static const _items = [
+    _TrustContent(
+      icon: Icons.check_rounded,
+      iconBackground: Color(0xFFFBECEF),
+      iconColor: Color(0xFFB64D66),
+      title: 'Cotiza sin registro',
+      description: 'Selecciona los productos y coordina directamente sin contraseñas ni registros forzados.',
+    ),
+    _TrustContent(
+      icon: Icons.percent_rounded,
+      iconBackground: Color(0xFFFFF5DE),
+      iconColor: Color(0xFFE28A24),
+      title: 'Precios por volumen',
+      description: 'Escalas automáticas por mayor en limpiapipas, rollos de cinta y accesorios.',
+    ),
+    _TrustContent(
+      icon: Icons.inventory_2_outlined,
+      iconBackground: Color(0xFFEAF6F0),
+      iconColor: Color(0xFF4B8C72),
+      title: 'Recojo local y envíos Shalom',
+      description: 'Recojo en nuestro local de Huancayo o encomienda segura a agencias de todo el país.',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 900) {
+          return Column(
+            children: [
+              for (var index = 0; index < _items.length; index++) ...[
+                _HomeTrustItem(content: _items[index]),
+                if (index != _items.length - 1) const SizedBox(height: 10),
+              ],
+            ],
+          );
+        }
+        return SizedBox(
+          height: 88,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var index = 0; index < _items.length; index++) ...[
+                Expanded(child: _HomeTrustItem(content: _items[index])),
+                if (index != _items.length - 1) const SizedBox(width: 14),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TrustContent {
+  const _TrustContent({
+    required this.icon,
+    required this.iconBackground,
+    required this.iconColor,
+    required this.title,
+    required this.description,
+  });
+
+  final IconData icon;
+  final Color iconBackground;
+  final Color iconColor;
+  final String title;
+  final String description;
+}
+
+class _HomeTrustItem extends StatelessWidget {
+  const _HomeTrustItem({required this.content});
+
+  final _TrustContent content;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: content.iconBackground,
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(content.icon, size: 17, color: content.iconColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  content.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge
+                      ?.copyWith(fontSize: 11.5),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  content.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(fontSize: 9.5, height: 1.35),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeaturedHeader extends StatelessWidget {
+  const _FeaturedHeader({required this.title, required this.onAction});
+
+  final String title;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.headlineMedium
+                    ?.copyWith(fontSize: 22),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Los favoritos de nuestros artesanos y decoradores',
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(fontSize: 10),
+              ),
+            ],
+          ),
+        ),
+        TextButton.icon(
+          onPressed: onAction,
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFFA84B5A),
+            minimumSize: const Size(0, 36),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            textStyle: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          iconAlignment: IconAlignment.end,
+          icon: const Icon(Icons.arrow_forward_rounded, size: 13),
+          label: const Text('Ver todo el catálogo'),
+        ),
+      ],
+    );
+  }
+}
+
 class _FeaturedProducts extends StatelessWidget {
   const _FeaturedProducts({
     required this.products,
@@ -451,14 +882,16 @@ class _FeaturedProducts extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 700;
-        final showBrowseCard = constraints.maxWidth >= 1260;
-        final itemCount = products.length + (showBrowseCard ? 1 : 0);
-        final targetColumns = showBrowseCard
-            ? 7
-            : constraints.maxWidth >= 1040
-            ? 6
-            : constraints.maxWidth >= 700
+        final isDesktop = constraints.maxWidth >= 900;
+        final isTablet = constraints.maxWidth >= 620;
+        final visibleProducts = isDesktop
+            ? products.take(4).toList(growable: false)
+            : products;
+        final showBrowseCard = isDesktop;
+        final itemCount = visibleProducts.length + (showBrowseCard ? 1 : 0);
+        final targetColumns = isDesktop
+            ? 5
+            : isTablet
             ? 3
             : 2;
         final columns = itemCount < targetColumns ? itemCount : targetColumns;
@@ -468,100 +901,31 @@ class _FeaturedProducts extends StatelessWidget {
           itemCount: itemCount,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns == 0 ? 1 : columns,
-            mainAxisExtent: compact ? 250 : 292,
-            crossAxisSpacing: compact ? 12 : 16,
-            mainAxisSpacing: compact ? 12 : 16,
+            mainAxisExtent: isDesktop
+                ? 258
+                : isTablet
+                ? 280
+                : 250,
+            crossAxisSpacing: isDesktop ? 14 : 12,
+            mainAxisSpacing: isDesktop ? 14 : 12,
           ),
           itemBuilder: (context, index) {
-            if (index == products.length) {
+            if (index == visibleProducts.length) {
               return _BrowseCatalogCard(onTap: onBrowse);
             }
-            final tile = products[index];
+            final tile = visibleProducts[index];
             return ProductCard(
               product: tile.product,
               variant: tile.variant,
-              compact: compact,
+              compact: !isTablet,
+              homePresentation: isDesktop,
+              showSkuBadge: isDesktop,
+              trailingIcon: Icons.add_rounded,
               onTap: () => onProduct(tile.product, tile.variant?.id),
             );
           },
         );
       },
-    );
-  }
-}
-
-class _HomeTrustRail extends StatelessWidget {
-  const _HomeTrustRail();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      children: [
-        _HomeTrustItem(
-          icon: Icons.lock_open_rounded,
-          title: 'Sin registro',
-          description: 'Sin cuenta ni contraseña. Solo elige y cotiza.',
-        ),
-        SizedBox(height: 10),
-        _HomeTrustItem(
-          icon: Icons.stacked_line_chart_rounded,
-          title: 'Precios por volumen',
-          description: 'Más unidades, menor precio por unidad.',
-        ),
-        SizedBox(height: 10),
-        _HomeTrustItem(
-          icon: Icons.local_shipping_outlined,
-          title: 'Recojo o envío',
-          description: 'Recoge en Huancayo o envíamos por Shalom.',
-        ),
-      ],
-    );
-  }
-}
-
-class _HomeTrustItem extends StatelessWidget {
-  const _HomeTrustItem({
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
-
-  final IconData icon;
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: AppColors.pinkSoft,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 20),
-          ),
-          const SizedBox(height: 11),
-          Text(title, style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 3),
-          Text(
-            description,
-            style: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(color: AppColors.muted),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -574,103 +938,53 @@ class _BrowseCatalogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.pinkSoft,
-      borderRadius: BorderRadius.circular(18),
+      color: const Color(0xFFFFF5F6),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: Color(0xFFF2BCC7)),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.grid_view_rounded),
-              ),
-              const Spacer(),
-              Text(
-                'Todo el catálogo',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 5),
-              Text(
-                'Explora materiales, colores y acabados.',
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: AppColors.muted),
-              ),
-              const SizedBox(height: 14),
-              const Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Ver productos',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
                   ),
-                  SizedBox(width: 6),
-                  Icon(Icons.arrow_forward_rounded, size: 19),
-                ],
-              ),
-            ],
+                  child: const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 18,
+                    color: Color(0xFFA84B5A),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Ver todo el catálogo',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelLarge
+                      ?.copyWith(color: const Color(0xFFA84B5A), fontSize: 11),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'Más de 200 insumos organizados',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(fontSize: 9.5),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
-  }
-}
-
-class _CategoryChips extends StatelessWidget {
-  const _CategoryChips({required this.onBrowse});
-
-  final ValueChanged<ProductCategory> onBrowse;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        _CategoryButton(
-          label: 'Materiales',
-          selected: true,
-          onTap: () => onBrowse(ProductCategory.materials),
-        ),
-      ],
-    );
-  }
-}
-
-class _CategoryButton extends StatelessWidget {
-  const _CategoryButton({
-    required this.label,
-    required this.onTap,
-    this.selected = false,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    final child = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(label),
-        const SizedBox(width: 8),
-        const Icon(Icons.arrow_forward_rounded, size: 17),
-      ],
-    );
-    return selected
-        ? FilledButton(onPressed: onTap, child: child)
-        : OutlinedButton(onPressed: onTap, child: child);
   }
 }
 

@@ -99,12 +99,11 @@ abstract final class StorefrontText {
   static const defaults = <String, String>{
     brandName: 'Expresiones',
     brandTagline: 'Materiales para crear y expresar más',
-    homeEyebrow: 'Catálogo de materiales',
-    homeTitle: 'Encuentra lo que necesitas',
-    homeSubtitle:
-        'Materiales, colores y acabados para crear detalles que expresan más.',
+    homeEyebrow: 'Catálogo de materiales para manualidades',
+    homeTitle: 'Encuentra lo que necesitas para crear y expresar más.',
+    homeSubtitle: 'Limpiapipas premium, cintas finas, coronas y envolturas seleccionadas. Prepara tu lista y cotiza al instante sin registros engorrosos.',
     homeHeroImage: 'assets/images/catalog_hero.webp',
-    homeSearchHint: 'Buscar por material, color o código',
+    homeSearchHint: 'Buscar por material, color o código (ej: CAT-076)...',
     homeFeaturedTitle: 'Más consultados',
     homeSidebarTitle: 'Cotiza libremente',
     homeSidebarBody:

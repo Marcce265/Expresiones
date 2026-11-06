@@ -29,8 +29,8 @@ void main() {
     await tester.pumpWidget(buildHome());
     await tester.pumpAndSettle();
 
-    expect(find.text('Sin registro'), findsOneWidget);
-    expect(find.text('Todo el catálogo'), findsOneWidget);
+    expect(find.text('Cotiza sin registro'), findsOneWidget);
+    expect(find.text('Ver todo el catálogo'), findsNWidgets(2));
     expect(tester.takeException(), isNull);
   });
 
@@ -43,9 +43,12 @@ void main() {
     await tester.pumpWidget(buildHome());
     await tester.pumpAndSettle();
 
-    expect(find.text('Encuentra lo que necesitas'), findsOneWidget);
-    expect(find.text('Sin registro'), findsNothing);
-    expect(find.text('Todo el catálogo'), findsNothing);
+    expect(
+      find.text('Encuentra lo que necesitas para crear y expresar más.'),
+      findsOneWidget,
+    );
+    expect(find.text('Cotiza sin registro'), findsNothing);
+    expect(find.text('Ver todo el catálogo'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
