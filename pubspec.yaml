@@ -74,6 +74,7 @@ flutter:
     - assets/data/
     - assets/fonts/
     - assets/images/catalog_hero.webp
+    - assets/images/brand_lockup_black.png
     - assets/images/jashy_assistant.png
     - assets/images/jashy_question.png
     - assets/images/jashy_book.png

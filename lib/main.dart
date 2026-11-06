@@ -746,27 +746,21 @@ class _DesktopNavigation extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    settings.text(StorefrontText.brandName),
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontStyle: FontStyle.italic,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    settings.text(StorefrontText.brandTagline),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+            Center(
+              child: Semantics(
+                label: settings.text(StorefrontText.brandName),
+                header: true,
+                child: Image.asset(
+                  'assets/images/brand_lockup_black.png',
+                  width: 162,
+                  height: 162,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  excludeFromSemantics: true,
+                ),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 18),
             for (var index = 0; index < destinations.length; index++) ...[
               _DesktopNavigationItem(
                 key: itemKeys?[index],
