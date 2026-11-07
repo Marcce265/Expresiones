@@ -487,10 +487,6 @@ class CatalogProduct {
     if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
   };
 
-  /// Compatibility alias for old callers while the Firebase migration lands.
-  @Deprecated('Use toDataMap instead.')
-  Map<String, dynamic> toFirestore() => toDataMap();
-
   Map<String, dynamic> toMap() => {'id': id, ...toDataMap()};
 }
 

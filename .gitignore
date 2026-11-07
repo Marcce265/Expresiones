@@ -32,14 +32,12 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
-/firebase_config.json
 /supabase_config.json
 /supabase/.temp/
 /.wrangler/
 /.dev.vars
 /scripts/node_modules/
 service-account*.json
-firebase-adminsdk-*.json
 /android/key.properties
 *.jks
 *.keystore

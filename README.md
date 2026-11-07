@@ -75,9 +75,7 @@ toda escritura exige una sesión administradora con segundo factor TOTP
 (`aal2`). SMS no se usa porque agrega costo y dependencia de un proveedor.
 
 Las migraciones, la carga inicial y la creación segura de administradores están
-documentadas en [`docs/SUPABASE.md`](docs/SUPABASE.md). El modelo anterior de
-Firestore se conserva únicamente como referencia histórica; no es parte del
-flujo nuevo.
+documentadas en [`docs/SUPABASE.md`](docs/SUPABASE.md).
 
 ## Verificación
 
@@ -105,11 +103,3 @@ gratuita `*.pages.dev`.
   empaquetado Android; el alcance actual solo requiere APK.
 - [`docs/shalom_agencies_report.md`](docs/shalom_agencies_report.md): fuente y
   actualización del directorio de Shalom.
-
-## Archivos heredados de Firebase
-
-`firebase.json`, las reglas de Firestore y los scripts con nombres
-`*_firestore*` se mantienen temporalmente para conservar la historia técnica y
-comparar la migración. No deben ejecutarse ni desplegarse en el flujo de
-producción Supabase + Cloudflare. Consulta
-[`docs/legacy_firebase.md`](docs/legacy_firebase.md).
