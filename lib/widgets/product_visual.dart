@@ -65,6 +65,7 @@ class ProductVisual extends StatelessWidget {
     this.cropBottomFraction = 0,
     this.alignment = Alignment.center,
     this.filterQuality = FilterQuality.medium,
+    this.decodeToLayout = false,
   });
 
   final String label;
@@ -75,6 +76,28 @@ class ProductVisual extends StatelessWidget {
   final double cropBottomFraction;
   final Alignment alignment;
   final FilterQuality filterQuality;
+
+  /// Decodes the photo near the size it occupies on screen instead of at its
+  /// full camera resolution.
+  ///
+  /// A 12 MP phone photo needs about 48 MB of graphics memory when decoded in
+  /// full, even if it is drawn 250 px wide. Bounding the decode keeps editors
+  /// with many photos smooth. The stored file is never modified.
+  final bool decodeToLayout;
+
+  /// Longest decoded edge for the current layout, bucketed to 128 px so small
+  /// layout changes reuse the cached decode. `cover` needs headroom because the
+  /// short side of the photo must still fill the box.
+  int? _decodeEdge(BoxConstraints constraints, double devicePixelRatio) {
+    final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 0.0;
+    final height = constraints.maxHeight.isFinite ? constraints.maxHeight : 0.0;
+    final edge = width > height ? width : height;
+    if (edge <= 0) return null;
+    final headroom = fit == BoxFit.cover ? 1.6 : 1.0;
+    final pixels = edge * devicePixelRatio * headroom;
+    final bucketed = ((pixels / 128).ceil() * 128).clamp(256, 2048);
+    return bucketed;
+  }
 
   Color get accent {
     final normalized = colorHex?.replaceAll('#', '');
@@ -102,34 +125,45 @@ class ProductVisual extends StatelessWidget {
   Widget build(BuildContext context) {
     final asset = imageAsset;
     if (asset != null && asset.isNotEmpty) {
-      final Widget image;
-      if (asset.startsWith('http://') || asset.startsWith('https://')) {
-        image = Image.network(
-          asset,
-          fit: fit,
-          alignment: alignment,
-          // Medium keeps product textures crisper than the high-quality
-          // bicubic filter when a large photo is scaled down on screen.
-          filterQuality: filterQuality,
-          gaplessPlayback: true,
-          width: double.infinity,
-          height: double.infinity,
-          errorBuilder: (_, _, _) =>
-              _Fallback(accent: accent, icon: icon, label: label),
-        );
-      } else {
-        image = Image.asset(
-          asset,
-          fit: fit,
-          alignment: alignment,
-          filterQuality: filterQuality,
-          gaplessPlayback: true,
-          width: double.infinity,
-          height: double.infinity,
-          errorBuilder: (_, _, _) =>
-              _Fallback(accent: accent, icon: icon, label: label),
-        );
-      }
+      final ImageProvider provider =
+          asset.startsWith('http://') || asset.startsWith('https://')
+          ? NetworkImage(asset)
+          : AssetImage(asset);
+
+      Widget buildImage(ImageProvider imageProvider) => Image(
+        image: imageProvider,
+        fit: fit,
+        alignment: alignment,
+        // Medium keeps product textures crisper than the high-quality
+        // bicubic filter when a large photo is scaled down on screen.
+        filterQuality: filterQuality,
+        gaplessPlayback: true,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, _, _) =>
+            _Fallback(accent: accent, icon: icon, label: label),
+      );
+
+      final Widget image = decodeToLayout
+          ? LayoutBuilder(
+              builder: (context, constraints) {
+                final edge = _decodeEdge(
+                  constraints,
+                  MediaQuery.devicePixelRatioOf(context),
+                );
+                return buildImage(
+                  edge == null
+                      ? provider
+                      : ResizeImage(
+                          provider,
+                          width: edge,
+                          height: edge,
+                          policy: ResizeImagePolicy.fit,
+                        ),
+                );
+              },
+            )
+          : buildImage(provider);
 
       final visual = cropBottomFraction > 0
           ? LayoutBuilder(

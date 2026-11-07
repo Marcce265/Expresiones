@@ -2507,73 +2507,59 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     final media = MediaQuery.sizeOf(context);
     final isMobile = media.width < 768;
 
-    return Dialog(
-      backgroundColor: AppColors.canvas,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(isMobile ? 22 : 20),
+    final header = Container(
+      color: AppColors.surface,
+      padding: EdgeInsets.fromLTRB(
+        isMobile ? 16 : 24,
+        isMobile ? 14 : 18,
+        16,
+        isMobile ? 14 : 16,
       ),
-      insetPadding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 6 : 12,
-        vertical: isMobile ? 6 : 12,
-      ),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 1680,
-          maxHeight: media.height - (isMobile ? 12 : 24),
-        ),
-        child: Column(
-          children: [
-            Container(
-              color: AppColors.surface,
-              padding: const EdgeInsets.fromLTRB(24, 18, 16, 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.product == null
-                              ? 'CREAR EN EL CATÁLOGO'
-                              : 'EDITAR EN EL CATÁLOGO',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: AppColors.muted,
-                                letterSpacing: 1.05,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          widget.product == null
-                              ? 'Nuevo producto'
-                              : widget.product!.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _saving || _uploadingImage
-                        ? null
-                        : _requestCancel,
-                    icon: const Icon(Icons.close_rounded),
-                    tooltip: 'Cerrar',
-                  ),
-                ],
-              ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.product == null
+                      ? 'CREAR EN EL CATÁLOGO'
+                      : 'EDITAR EN EL CATÁLOGO',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.muted,
+                        letterSpacing: 1.05,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.product == null
+                      ? 'Nuevo producto'
+                      : widget.product!.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: isMobile ? 20 : null,
+                      ),
+                ),
+              ],
             ),
-            const Divider(height: 1, color: AppColors.border),
-            Expanded(
-              child: Form(
-                key: _formKey,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth >= 940;
+          ),
+          IconButton(
+            onPressed: _saving || _uploadingImage ? null : _requestCancel,
+            icon: const Icon(Icons.close_rounded),
+            tooltip: 'Cerrar',
+          ),
+        ],
+      ),
+    );
+
+    final editorBody = Form(
+      key: _formKey,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 940;
 
                     final imageCard = _cardContainer(
                       context: context,
@@ -2599,6 +2585,8 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                       children: [
                         TextFormField(
                           controller: _name,
+                          scrollPadding:
+                              const EdgeInsets.fromLTRB(20, 80, 20, 140),
                           textCapitalization: TextCapitalization.characters,
                           inputFormatters: const [
                             UppercaseTextInputFormatter(),
@@ -2615,6 +2603,8 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                             final stack = c.maxWidth < 460;
                             final skuField = TextFormField(
                               controller: _sku,
+                              scrollPadding:
+                                  const EdgeInsets.fromLTRB(20, 80, 20, 140),
                               textCapitalization: TextCapitalization.characters,
                               inputFormatters: const [
                                 UppercaseTextInputFormatter(),
@@ -2626,6 +2616,8 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                             );
                             final orderField = TextFormField(
                               controller: _sortOrder,
+                              scrollPadding:
+                                  const EdgeInsets.fromLTRB(20, 80, 20, 140),
                               keyboardType: TextInputType.number,
                               decoration: const InputDecoration(
                                 labelText: 'Orden en catálogo',
@@ -2654,6 +2646,8 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                         const SizedBox(height: 14),
                         TextFormField(
                           controller: _description,
+                          scrollPadding:
+                              const EdgeInsets.fromLTRB(20, 80, 20, 140),
                           maxLines: 3,
                           textCapitalization: TextCapitalization.characters,
                           inputFormatters: const [
@@ -2679,6 +2673,8 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                                 width: c.maxWidth < 280 ? c.maxWidth : 280,
                                 child: TextFormField(
                                   controller: _basePrice,
+                                  scrollPadding:
+                                      const EdgeInsets.fromLTRB(20, 80, 20, 140),
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                         decimal: true,
@@ -2701,7 +2697,6 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                               _addPriceTier(_priceTiers, quantity),
                           onRemove: (tier) =>
                               _removePriceTier(_priceTiers, tier),
-                          onChanged: () => setState(() {}),
                         ),
                       ],
                     );
@@ -2968,10 +2963,42 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                     );
                   },
                 ),
-              ),
-            ),
-          ],
+              );
+
+    final dialogContent = Column(
+      children: [
+        header,
+        const Divider(height: 1, color: AppColors.border),
+        Expanded(child: editorBody),
+      ],
+    );
+
+    if (isMobile) {
+      return Dialog.fullscreen(
+        backgroundColor: AppColors.canvas,
+        child: Scaffold(
+          backgroundColor: AppColors.canvas,
+          resizeToAvoidBottomInset: true,
+          body: SafeArea(
+            child: dialogContent,
+          ),
         ),
+      );
+    }
+
+    return Dialog(
+      backgroundColor: AppColors.canvas,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 1680,
+          maxHeight: media.height - 24,
+        ),
+        child: dialogContent,
       ),
     );
   }
@@ -3136,13 +3163,11 @@ class _PriceTiersEditor extends StatelessWidget {
     required this.tiers,
     required this.onAdd,
     required this.onRemove,
-    required this.onChanged,
   });
 
   final List<_PriceTierDraft> tiers;
   final ValueChanged<int?> onAdd;
   final ValueChanged<_PriceTierDraft> onRemove;
-  final VoidCallback onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -3185,7 +3210,6 @@ class _PriceTiersEditor extends StatelessWidget {
           for (final tier in tiers) ...[
             _PriceTierRow(
               tier: tier,
-              onChanged: onChanged,
               onRemove: () => onRemove(tier),
             ),
             if (tier != tiers.last) const SizedBox(height: 8),
@@ -3196,19 +3220,23 @@ class _PriceTiersEditor extends StatelessWidget {
   }
 }
 
-class _PriceTierRow extends StatelessWidget {
+class _PriceTierRow extends StatefulWidget {
   const _PriceTierRow({
     required this.tier,
-    required this.onChanged,
     required this.onRemove,
   });
 
   final _PriceTierDraft tier;
-  final VoidCallback onChanged;
   final VoidCallback onRemove;
 
   @override
+  State<_PriceTierRow> createState() => _PriceTierRowState();
+}
+
+class _PriceTierRowState extends State<_PriceTierRow> {
+  @override
   Widget build(BuildContext context) {
+    final tier = widget.tier;
     final quantity = int.tryParse(tier.quantity.text.trim());
     final total = _optionalDecimal(tier.totalPrice.text);
     final unitPrice = quantity == null || quantity < 1 || total == null
@@ -3231,22 +3259,24 @@ class _PriceTierRow extends StatelessWidget {
           final quantityField = TextFormField(
             controller: tier.quantity,
             keyboardType: TextInputType.number,
+            scrollPadding: const EdgeInsets.fromLTRB(20, 80, 20, 140),
             decoration: const InputDecoration(labelText: 'Cantidad'),
             validator: _positiveInt,
-            onChanged: (_) => onChanged(),
+            onChanged: (_) => setState(() {}),
           );
           final totalField = TextFormField(
             controller: tier.totalPrice,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            scrollPadding: const EdgeInsets.fromLTRB(20, 80, 20, 140),
             decoration: const InputDecoration(
               labelText: 'Precio total (S/)',
               hintText: 'Ej. 30.00',
             ),
             validator: _nonNegativeDecimal,
-            onChanged: (_) => onChanged(),
+            onChanged: (_) => setState(() {}),
           );
           final removeButton = IconButton(
-            onPressed: onRemove,
+            onPressed: widget.onRemove,
             tooltip: 'Quitar precio por cantidad',
             icon: const Icon(Icons.delete_outline_rounded),
           );
@@ -3390,6 +3420,7 @@ class _VariantEditorTileState extends State<_VariantEditorTile> {
               final nameField = TextFormField(
                 key: ValueKey('variant-name-${draft.variant.id}'),
                 controller: draft.name,
+                scrollPadding: const EdgeInsets.fromLTRB(20, 80, 20, 140),
                 textCapitalization: TextCapitalization.characters,
                 inputFormatters: const [UppercaseTextInputFormatter()],
                 decoration: const InputDecoration(
@@ -3401,6 +3432,7 @@ class _VariantEditorTileState extends State<_VariantEditorTile> {
               final skuField = TextFormField(
                 key: ValueKey('variant-sku-${draft.variant.id}'),
                 controller: draft.sku,
+                scrollPadding: const EdgeInsets.fromLTRB(20, 80, 20, 140),
                 textCapitalization: TextCapitalization.characters,
                 inputFormatters: const [UppercaseTextInputFormatter()],
                 decoration: const InputDecoration(
@@ -3415,38 +3447,54 @@ class _VariantEditorTileState extends State<_VariantEditorTile> {
                   setState(() => draft.status = value);
                 },
               );
-              final image = Draggable<_VariantDraft>(
-                data: draft,
-                feedback: Material(
-                  color: Colors.transparent,
-                  elevation: 10,
-                  borderRadius: BorderRadius.circular(14),
-                  child: SizedBox.square(
-                    dimension: 190,
-                    child: _VariantImage(
-                      label: draft.name.text,
-                      imageUrl: widget.imageUrl,
-                    ),
-                  ),
-                ),
-                childWhenDragging: Opacity(
-                  opacity: .3,
+              final isTouch =
+                  Theme.of(context).platform == TargetPlatform.android ||
+                      Theme.of(context).platform == TargetPlatform.iOS;
+              final imageChild = Tooltip(
+                message: isTouch
+                    ? 'Mantén presionado para cambiar el orden'
+                    : 'Arrastra la foto para cambiar el orden',
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.grab,
                   child: _VariantImage(
                     label: draft.name.text,
                     imageUrl: widget.imageUrl,
                   ),
                 ),
-                child: Tooltip(
-                  message: 'Arrastra la foto para cambiar el orden',
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.grab,
-                    child: _VariantImage(
-                      label: draft.name.text,
-                      imageUrl: widget.imageUrl,
-                    ),
+              );
+              final imageFeedback = Material(
+                color: Colors.transparent,
+                elevation: 10,
+                borderRadius: BorderRadius.circular(14),
+                child: SizedBox.square(
+                  dimension: 190,
+                  child: _VariantImage(
+                    label: draft.name.text,
+                    imageUrl: widget.imageUrl,
                   ),
                 ),
               );
+              final imageWhenDragging = Opacity(
+                opacity: .3,
+                child: _VariantImage(
+                  label: draft.name.text,
+                  imageUrl: widget.imageUrl,
+                ),
+              );
+              final image = isTouch
+                  ? LongPressDraggable<_VariantDraft>(
+                      data: draft,
+                      delay: const Duration(milliseconds: 250),
+                      feedback: imageFeedback,
+                      childWhenDragging: imageWhenDragging,
+                      child: imageChild,
+                    )
+                  : Draggable<_VariantDraft>(
+                      data: draft,
+                      feedback: imageFeedback,
+                      childWhenDragging: imageWhenDragging,
+                      child: imageChild,
+                    );
               final controls = _VariantImageActions(
                 label: draft.name.text,
                 visible: draft.active,
@@ -3525,7 +3573,11 @@ class _VariantImage extends StatelessWidget {
             border: Border.all(color: AppColors.border),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: ProductVisual(label: label, imageAsset: imageUrl),
+          child: ProductVisual(
+            label: label,
+            imageAsset: imageUrl,
+            decodeToLayout: true,
+          ),
         ),
       ),
     );
@@ -3703,7 +3755,11 @@ class _EditableImage extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              ProductVisual(label: label, imageAsset: imageUrl),
+              ProductVisual(
+                label: label,
+                imageAsset: imageUrl,
+                decodeToLayout: true,
+              ),
               Positioned(
                 top: 8,
                 right: 8,
@@ -4355,6 +4411,14 @@ class UppercaseTextInputFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
+    // Mobile keyboards (Gboard, iOS) keep the word being typed in a
+    // "composing" region. Rewriting the text mid-composition forces the
+    // keyboard to resynchronise on every keystroke, which felt laggy and broke
+    // suggestions on phones. Wait until the word is committed; the field also
+    // requests uppercase from the keyboard and values are uppercased on save.
+    if (newValue.composing.isValid && !newValue.composing.isCollapsed) {
+      return newValue;
+    }
     final upperText = newValue.text.toUpperCase();
     if (upperText == newValue.text) return newValue;
 

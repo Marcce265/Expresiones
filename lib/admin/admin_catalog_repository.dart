@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
+import 'catalog_thumbnail.dart';
 
 /// Supabase catalog access used exclusively by the authenticated admin portal.
 ///
@@ -241,21 +242,33 @@ class AdminCatalogRepository {
       timestampMicros: timestamp,
     );
 
-    // `image` decodes and encodes pixels in Dart. Running that work while a
-    // browser is handling a file-picker result made the administrative editor
-    // feel frozen on phones. On native targets `compute` puts it in a worker
-    // isolate. On the web we keep the original as the temporary card source:
-    // this avoids a synchronous multi-megabyte conversion on the UI thread and
-    // preserves the uploaded detail photo exactly.
+    // The original photo is always uploaded untouched as the detail image.
+    // `image` decodes pixels in Dart, which froze the editor on phones when run
+    // on the web UI thread. On the web the browser's native canvas builds the
+    // thumbnail instead (fast and asynchronous); native targets use an isolate.
+    // If the browser cannot read the file, the original doubles as thumbnail
+    // so an upload never fails just because the preview could not be made.
     if (kIsWeb) {
-      await _uploadCatalogObject(
-        path: detailPath,
-        bytes: bytes,
+      final thumbnailBytes = await buildBrowserThumbnail(
+        bytes,
         contentType: contentType,
       );
+      await Future.wait([
+        _uploadCatalogObject(
+          path: detailPath,
+          bytes: bytes,
+          contentType: contentType,
+        ),
+        if (thumbnailBytes != null)
+          _uploadCatalogObject(
+            path: thumbnailPath,
+            bytes: thumbnailBytes,
+            contentType: 'image/jpeg',
+          ),
+      ]);
       return CatalogImageUpload(
         detailPath: detailPath,
-        thumbnailPath: detailPath,
+        thumbnailPath: thumbnailBytes == null ? detailPath : thumbnailPath,
       );
     }
 
