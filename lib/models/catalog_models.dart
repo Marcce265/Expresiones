@@ -1,6 +1,8 @@
 /// Sections shown in the public catalog.
 enum ProductCategory {
   materials('materials', 'Materiales'),
+  koreanPaper('korean_paper', 'Papel Coreano'),
+  crowns('crowns', 'Coronas'),
   bouquets('bouquets', 'Ramos'),
   personalizedGifts('personalized_gifts', 'Regalos personalizados');
 
@@ -12,6 +14,15 @@ enum ProductCategory {
   static ProductCategory fromValue(Object? value) {
     final normalized = _normalized(value);
     return switch (normalized) {
+      'koreanpaper' ||
+      'korean_paper' ||
+      'papelcoreano' ||
+      'papel_coreano' ||
+      'papel' => koreanPaper,
+      'crown' ||
+      'crowns' ||
+      'corona' ||
+      'coronas' => crowns,
       'bouquet' || 'bouquets' || 'ramo' || 'ramos' => bouquets,
       'personalizedgift' ||
       'personalizedgifts' ||
@@ -308,6 +319,9 @@ class CatalogProduct {
   final String? thumbnailUrl;
 
   String? get previewImageUrl => thumbnailUrl ?? imageUrl;
+  bool get isKoreanPaper => category == ProductCategory.koreanPaper;
+  bool get isCrowns => category == ProductCategory.crowns;
+  bool get isMaterials => category == ProductCategory.materials;
   final List<String> tags;
   final Map<String, String> attributes;
   final DateTime? createdAt;
@@ -389,12 +403,31 @@ class CatalogProduct {
       _first(map, const ['variants', 'variantes', 'options', 'opciones']),
     ).map(ProductVariant.fromMap).toList();
 
+    final rawAttributes = _stringMap(
+      _first(map, const ['attributes', 'atributos', 'metadata']),
+    );
+    final moduleAttr = (rawAttributes['module'] ??
+            rawAttributes['MODULE'] ??
+            rawAttributes['catalogGroup'] ??
+            rawAttributes['CATALOGGROUP'] ??
+            '')
+        .toLowerCase();
+    final categoryValue = _first(map, const ['category', 'categoryId', 'categoria']);
+    final ProductCategory resolvedCategory;
+    if (moduleAttr.contains('papel_coreano') ||
+        moduleAttr.contains('korean_paper') ||
+        moduleAttr == 'papel coreano') {
+      resolvedCategory = ProductCategory.koreanPaper;
+    } else if (moduleAttr.contains('corona') || moduleAttr.contains('crown')) {
+      resolvedCategory = ProductCategory.crowns;
+    } else {
+      resolvedCategory = ProductCategory.fromValue(categoryValue);
+    }
+
     return CatalogProduct(
       id: resolvedId,
       name: name,
-      category: ProductCategory.fromValue(
-        _first(map, const ['category', 'categoryId', 'categoria']),
-      ),
+      category: resolvedCategory,
       description: _asString(
         map['description'] ?? map['descripcion'],
         fallback: '',

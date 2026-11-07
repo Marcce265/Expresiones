@@ -367,6 +367,8 @@ String _visualCategory(ProductCategory category) => switch (category) {
   ProductCategory.bouquets => 'bouquets',
   ProductCategory.personalizedGifts => 'gifts',
   ProductCategory.materials => 'materials',
+  ProductCategory.koreanPaper => 'materials',
+  ProductCategory.crowns => 'materials',
 };
 
 String _priceLabel(double value) => 'S/ ${value.toStringAsFixed(2)}';

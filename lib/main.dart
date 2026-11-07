@@ -648,6 +648,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         key: ValueKey(_catalogCategory),
         products: store.products,
         initialCategory: _catalogCategory,
+        onCategoryChanged: (category) =>
+            setState(() => _catalogCategory = category),
         onProduct: _openProduct,
         onBack: () => setState(() => _index = 0),
         onOpenQuote: _showQuote,
@@ -685,8 +687,20 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                   _DesktopNavigation(
                     settings: store.storefrontSettings,
                     currentIndex: _index,
+                    catalogCategory: _catalogCategory,
                     quoteQuantity: store.cartQuantity,
                     onSelect: _selectDestination,
+                    onSelectCatalogCategory: _showCatalog,
+                    onCoronasComingSoon: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            '👑 Coronas estará disponible próximamente.',
+                          ),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
                     itemKeys: _navigationKeys,
                   ),
                 Expanded(
@@ -721,7 +735,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   void _selectDestination(int value) {
     setState(() {
-      if (value == 1) _catalogCategory = null;
+      if (value == 1 && _catalogCategory == null) {
+        _catalogCategory = ProductCategory.materials;
+      }
       _index = value;
     });
   }
@@ -791,52 +807,66 @@ class _MobileNavigation extends StatelessWidget {
   }
 }
 
+class _NavSectionDivider extends StatelessWidget {
+  const _NavSectionDivider({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+      child: Row(
+        children: [
+          const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.1,
+              ),
+            ),
+          ),
+          const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+        ],
+      ),
+    );
+  }
+}
+
 class _DesktopNavigation extends StatelessWidget {
   const _DesktopNavigation({
     required this.settings,
     required this.currentIndex,
     required this.quoteQuantity,
     required this.onSelect,
+    this.catalogCategory,
+    this.onSelectCatalogCategory,
+    this.onCoronasComingSoon,
     this.itemKeys,
   });
 
   final StorefrontSettings settings;
   final int currentIndex;
+  final ProductCategory? catalogCategory;
   final int quoteQuantity;
   final ValueChanged<int> onSelect;
+  final ValueChanged<ProductCategory>? onSelectCatalogCategory;
+  final VoidCallback? onCoronasComingSoon;
   final List<GlobalKey>? itemKeys;
 
   @override
   Widget build(BuildContext context) {
-    final destinations =
-        <({IconData icon, IconData selectedIcon, String label})>[
-          (
-            icon: Icons.home_outlined,
-            selectedIcon: Icons.home_rounded,
-            label: 'Inicio',
-          ),
-          (
-            icon: Icons.grid_view_outlined,
-            selectedIcon: Icons.grid_view_rounded,
-            label: 'Catálogo',
-          ),
-          (
-            icon: Icons.shopping_bag_outlined,
-            selectedIcon: Icons.shopping_bag_rounded,
-            label: 'Carrito',
-          ),
-          if (FeatureFlags.customerAccounts)
-            (
-              icon: Icons.person_outline_rounded,
-              selectedIcon: Icons.person_rounded,
-              label: 'Cuenta',
-            ),
-          (
-            icon: Icons.help_outline_rounded,
-            selectedIcon: Icons.help_rounded,
-            label: 'Ayuda',
-          ),
-        ];
+    final helpIndex = FeatureFlags.customerAccounts ? 4 : 3;
+    final isMaterialsSelected = currentIndex == 1 &&
+        (catalogCategory == ProductCategory.materials ||
+            catalogCategory == null);
+    final isKoreanPaperSelected =
+        currentIndex == 1 && catalogCategory == ProductCategory.koreanPaper;
 
     return Container(
       width: 248,
@@ -845,7 +875,7 @@ class _DesktopNavigation extends StatelessWidget {
         border: Border(right: BorderSide(color: AppColors.border)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 28, 18, 20),
+        padding: const EdgeInsets.fromLTRB(16, 22, 16, 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -855,29 +885,131 @@ class _DesktopNavigation extends StatelessWidget {
                 header: true,
                 child: Image.asset(
                   'assets/images/brand_lockup_black.png',
-                  width: 162,
-                  height: 162,
+                  width: 140,
+                  height: 140,
                   fit: BoxFit.contain,
                   filterQuality: FilterQuality.high,
                   excludeFromSemantics: true,
                 ),
               ),
             ),
-            const SizedBox(height: 18),
-            for (var index = 0; index < destinations.length; index++) ...[
-              _DesktopNavigationItem(
-                key: itemKeys?[index],
-                icon: currentIndex == index
-                    ? destinations[index].selectedIcon
-                    : destinations[index].icon,
-                label: destinations[index].label,
-                selected: currentIndex == index,
-                badgeCount: index == 2 ? quoteQuantity : 0,
-                onTap: () => onSelect(index),
+            const SizedBox(height: 12),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _DesktopNavigationItem(
+                      key: itemKeys?[0],
+                      icon: currentIndex == 0
+                          ? Icons.home_rounded
+                          : Icons.home_outlined,
+                      label: 'Inicio',
+                      selected: currentIndex == 0,
+                      onTap: () => onSelect(0),
+                    ),
+                    const SizedBox(height: 6),
+                    const _NavSectionDivider(label: 'PARA EMPRENDER'),
+                    const SizedBox(height: 4),
+                    _DesktopNavigationItem(
+                      key: itemKeys?[1],
+                      icon: isMaterialsSelected
+                          ? Icons.auto_awesome_rounded
+                          : Icons.auto_awesome_outlined,
+                      label: 'Materiales',
+                      selected: isMaterialsSelected,
+                      onTap: () => onSelectCatalogCategory != null
+                          ? onSelectCatalogCategory!(ProductCategory.materials)
+                          : onSelect(1),
+                    ),
+                    const SizedBox(height: 4),
+                    _DesktopNavigationItem(
+                      icon: isKoreanPaperSelected
+                          ? Icons.layers_rounded
+                          : Icons.layers_outlined,
+                      label: 'Papel Coreano',
+                      selected: isKoreanPaperSelected,
+                      onTap: () => onSelectCatalogCategory != null
+                          ? onSelectCatalogCategory!(ProductCategory.koreanPaper)
+                          : onSelect(1),
+                    ),
+                    const SizedBox(height: 4),
+                    _DesktopNavigationItem(
+                      icon: Icons.military_tech_outlined,
+                      label: 'Coronas',
+                      selected: false,
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.pinkSoft,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'Próx.',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.pinkStrong,
+                          ),
+                        ),
+                      ),
+                      onTap: onCoronasComingSoon ??
+                          () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  '👑 Coronas estará disponible próximamente.',
+                                ),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                    ),
+                    const SizedBox(height: 6),
+                    const _NavSectionDivider(label: 'MI PEDIDO'),
+                    const SizedBox(height: 4),
+                    _DesktopNavigationItem(
+                      key: itemKeys?[2],
+                      icon: currentIndex == 2
+                          ? Icons.shopping_bag_rounded
+                          : Icons.shopping_bag_outlined,
+                      label: 'Carrito',
+                      selected: currentIndex == 2,
+                      badgeCount: quoteQuantity,
+                      onTap: () => onSelect(2),
+                    ),
+                    if (FeatureFlags.customerAccounts) ...[
+                      const SizedBox(height: 4),
+                      _DesktopNavigationItem(
+                        key: itemKeys?[3],
+                        icon: currentIndex == 3
+                            ? Icons.person_rounded
+                            : Icons.person_outline_rounded,
+                        label: 'Cuenta',
+                        selected: currentIndex == 3,
+                        onTap: () => onSelect(3),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    const _NavSectionDivider(label: 'SOPORTE'),
+                    const SizedBox(height: 4),
+                    _DesktopNavigationItem(
+                      key: itemKeys?[helpIndex],
+                      icon: currentIndex == helpIndex
+                          ? Icons.help_rounded
+                          : Icons.help_outline_rounded,
+                      label: 'Ayuda',
+                      selected: currentIndex == helpIndex,
+                      onTap: () => onSelect(helpIndex),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 6),
-            ],
-            const Spacer(),
+            ),
+            const SizedBox(height: 8),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
@@ -926,6 +1058,7 @@ class _DesktopNavigationItem extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.badgeCount = 0,
+    this.trailing,
   });
 
   final IconData icon;
@@ -933,6 +1066,7 @@ class _DesktopNavigationItem extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final int badgeCount;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -952,7 +1086,7 @@ class _DesktopNavigationItem extends StatelessWidget {
               ? Colors.white.withValues(alpha: .12)
               : AppColors.pinkSoft,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 Badge.count(
@@ -961,19 +1095,21 @@ class _DesktopNavigationItem extends StatelessWidget {
                   backgroundColor: AppColors.pinkStrong,
                   child: Icon(
                     icon,
-                    size: 21,
+                    size: 20,
                     color: selected ? Colors.white : AppColors.ink,
                   ),
                 ),
-                const SizedBox(width: 13),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     label,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: selected ? Colors.white : AppColors.ink,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
                 ),
+                ?trailing,
               ],
             ),
           ),

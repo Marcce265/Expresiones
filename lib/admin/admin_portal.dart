@@ -2151,6 +2151,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
   late final List<_PriceTierDraft> _priceTiers;
   late final List<_VariantDraft> _variants;
   late final String _initialDraftSnapshot;
+  late ProductCategory _category;
   late bool _isActive;
   late bool _isFeatured;
   late bool _priceIsEstimate;
@@ -2175,6 +2176,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       for (final tier in product?.priceTiers ?? const <PriceTier>[])
         _PriceTierDraft.fromTier(tier),
     ];
+    _category = product?.category ?? ProductCategory.materials;
     _isActive = product?.isActive ?? true;
     _isFeatured = product?.isFeatured ?? false;
     _priceIsEstimate = product?.priceIsEstimate ?? false;
@@ -2223,6 +2225,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
 
   String _draftSnapshot() => jsonEncode({
     'name': _name.text,
+    'category': _category.key,
     'sku': _sku.text,
     'description': _description.text,
     'unitLabel': _unitLabel.text,
@@ -2283,8 +2286,10 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
           : StockStatus.lowStock;
       final data = <String, dynamic>{
         'name': _name.text.trim().toUpperCase(),
-        'category':
-            widget.product?.category.key ?? ProductCategory.materials.key,
+        'category': _category == ProductCategory.koreanPaper ||
+                _category == ProductCategory.crowns
+            ? ProductCategory.materials.key
+            : _category.key,
         'description': _description.text.trim().toUpperCase(),
         'sku': _sku.text.trim().toUpperCase(),
         'unitLabel': _unitLabel.text.trim().isEmpty
@@ -2301,7 +2306,13 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
         'isFeatured': _isFeatured,
         'sortOrder': int.parse(_sortOrder.text.trim()),
         'tags': widget.product?.tags ?? const <String>[],
-        'attributes': widget.product?.attributes ?? const <String, String>{},
+        'attributes': {
+          ...widget.product?.attributes ?? const <String, String>{},
+          'module': _category.key,
+          if (_category == ProductCategory.koreanPaper)
+            'catalogGroup': 'Papel Coreano',
+          if (_category == ProductCategory.crowns) 'catalogGroup': 'Coronas',
+        },
       };
       _image.writeReplacementTo(data);
       final product = widget.product;
@@ -2613,6 +2624,41 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                             hintText: 'Ej. Limpiapipas premium 8 mm',
                           ),
                           validator: _required,
+                        ),
+                        const SizedBox(height: 14),
+                        DropdownButtonFormField<ProductCategory>(
+                          initialValue: _category,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Módulo / Categoría *',
+                            prefixIcon: Icon(Icons.category_outlined, size: 20),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: ProductCategory.materials,
+                              child: Text(
+                                'Materiales',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: ProductCategory.koreanPaper,
+                              child: Text(
+                                'Papel Coreano',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: ProductCategory.crowns,
+                              child: Text(
+                                'Coronas (Próximamente)',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                          onChanged: (cat) {
+                            if (cat != null) setState(() => _category = cat);
+                          },
                         ),
                         const SizedBox(height: 14),
                         LayoutBuilder(

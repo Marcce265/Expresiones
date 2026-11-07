@@ -70,7 +70,9 @@ class AppStore extends ChangeNotifier {
     final materials = _products
         .where(
           (product) =>
-              product.isActive && product.category == ProductCategory.materials,
+              product.isActive &&
+              (product.category == ProductCategory.materials ||
+                  product.category == ProductCategory.koreanPaper),
         )
         .toList(growable: false);
     final byId = {for (final product in materials) product.id: product};

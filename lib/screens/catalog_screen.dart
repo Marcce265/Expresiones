@@ -18,11 +18,13 @@ class CatalogScreen extends StatefulWidget {
     required this.onOpenQuote,
     this.settings = const StorefrontSettings(),
     this.initialCategory,
+    this.onCategoryChanged,
     this.onZeroResultSearch,
   });
 
   final List<CatalogProduct> products;
   final ProductCategory? initialCategory;
+  final ValueChanged<ProductCategory>? onCategoryChanged;
   final ProductSelected onProduct;
   final VoidCallback onBack;
   final VoidCallback onOpenQuote;
@@ -37,9 +39,16 @@ class _CatalogScreenState extends State<CatalogScreen> {
   final _searchController = TextEditingController();
   final Set<String> _reportedEmptySearches = {};
   Timer? _searchDebounce;
+  late ProductCategory _selectedCategory;
   String? _selectedFamilyId;
   String _query = '';
   String _filter = 'Todos';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCategory = widget.initialCategory ?? ProductCategory.materials;
+  }
 
   @override
   void dispose() {
@@ -51,12 +60,40 @@ class _CatalogScreenState extends State<CatalogScreen> {
   @override
   void didUpdateWidget(covariant CatalogScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_selectedFamilyId != null && _selectedFamily == null) {
+    if (widget.initialCategory != null &&
+        widget.initialCategory != oldWidget.initialCategory &&
+        widget.initialCategory != _selectedCategory) {
+      _selectedCategory = widget.initialCategory!;
+      _selectedFamilyId = null;
+      _query = '';
+      _filter = 'Todos';
+      _searchController.clear();
+    } else if (_selectedFamilyId != null && _selectedFamily == null) {
       _selectedFamilyId = null;
       _query = '';
       _filter = 'Todos';
       _searchController.clear();
     }
+  }
+
+  void _switchCategory(ProductCategory category) {
+    if (category == ProductCategory.crowns) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('👑 Coronas estará disponible próximamente.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _selectedCategory = category;
+      _selectedFamilyId = null;
+      _query = '';
+      _filter = 'Todos';
+      _searchController.clear();
+    });
+    widget.onCategoryChanged?.call(category);
   }
 
   @override
@@ -66,7 +103,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final sharedPricing = family != null && usesSharedFamilyPricing(family);
     final availableProducts = widget.products.where(
       (product) =>
-          product.isActive && product.category == ProductCategory.materials,
+          product.isActive && product.category == _selectedCategory,
     );
     final baseTiles = family == null
         ? [
@@ -77,18 +114,44 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final tiles = baseTiles.where((tile) {
       return _matches(tile, query) && _matchesFilter(tile, _filter);
     }).toList();
-    final filters = family != null
-        ? const <String>[]
-        : const [
-            'Todos',
-            'Limpiapipas',
-            'Cintas satinadas',
-            'Cintas especiales',
-            'Envolturas',
-            'Accesorios',
-            'Herramientas',
-            'Frases',
-          ];
+    final List<String> filters;
+    if (family != null) {
+      filters = const <String>[];
+    } else if (_selectedCategory == ProductCategory.materials) {
+      filters = const [
+        'Todos',
+        'Limpiapipas',
+        'Cintas satinadas',
+        'Cintas especiales',
+        'Envolturas',
+        'Accesorios',
+        'Herramientas',
+        'Frases',
+      ];
+    } else {
+      final dynamicGroups = availableProducts
+          .map((p) => p.attributes['catalogGroup'])
+          .whereType<String>()
+          .where((g) => g.isNotEmpty && g != 'Todos')
+          .toSet()
+          .toList();
+      if (dynamicGroups.isNotEmpty) {
+        filters = ['Todos', ...dynamicGroups];
+      } else {
+        filters = const [
+          'Todos',
+          'Lisos',
+          'Bicolor',
+          'Tornasol',
+          'Estampados',
+          'Borde dorado',
+        ];
+      }
+    }
+
+    final catalogTitle = family != null
+        ? familyDisplayName(family)
+        : _selectedCategory.label;
 
     return Column(
       children: [
@@ -112,9 +175,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              family == null
-                                  ? 'Materiales'
-                                  : familyDisplayName(family),
+                              catalogTitle,
                               style: Theme.of(context).textTheme.headlineMedium,
                             ),
                           ),
@@ -129,8 +190,14 @@ class _CatalogScreenState extends State<CatalogScreen> {
                         const SizedBox(height: 18),
                         Eyebrow(_familyOptionLabel(family)),
                         const SizedBox(height: 8),
-                      ] else
+                      ] else ...[
                         const SizedBox(height: 10),
+                        _ModuleSelectorBar(
+                          selectedCategory: _selectedCategory,
+                          onSelectCategory: _switchCategory,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       TextField(
                         controller: _searchController,
                         onChanged: _onSearchChanged,
@@ -167,15 +234,37 @@ class _CatalogScreenState extends State<CatalogScreen> {
               if (tiles.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
-                  child: EmptyState(
-                    icon: Icons.search_off_rounded,
-                    title: widget.settings.text(
-                      StorefrontText.catalogEmptyTitle,
-                    ),
-                    message: widget.settings.text(
-                      StorefrontText.catalogEmptyBody,
-                    ),
-                  ),
+                  child: _selectedCategory == ProductCategory.koreanPaper &&
+                          _query.isEmpty
+                      ? _UpcomingModuleEmptyState(
+                          icon: Icons.layers_outlined,
+                          title: 'Papel Coreano muy pronto',
+                          message:
+                              'Estamos preparando los pliegos más hermosos y exclusivos para tus ramos y manualidades. ¡Muy pronto disponibles para cotizar!',
+                          actionLabel: 'Ver Materiales',
+                          onAction: () =>
+                              _switchCategory(ProductCategory.materials),
+                        )
+                      : _selectedCategory == ProductCategory.crowns &&
+                              _query.isEmpty
+                          ? _UpcomingModuleEmptyState(
+                              icon: Icons.military_tech_outlined,
+                              title: 'Coronas próximamente',
+                              message:
+                                  'Muy pronto podrás cotizar coronas para reinas, quinceañeras y eventos especiales.',
+                              actionLabel: 'Ver Materiales',
+                              onAction: () =>
+                                  _switchCategory(ProductCategory.materials),
+                            )
+                          : EmptyState(
+                              icon: Icons.search_off_rounded,
+                              title: widget.settings.text(
+                                StorefrontText.catalogEmptyTitle,
+                              ),
+                              message: widget.settings.text(
+                                StorefrontText.catalogEmptyBody,
+                              ),
+                            ),
                 )
               else ...[
                 SliverPadding(
@@ -225,7 +314,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     },
                   ),
                 ),
-                if (family == null)
+                if (family == null &&
+                    _selectedCategory == ProductCategory.materials)
                   SliverToBoxAdapter(
                     child: ResponsivePage(
                       maxWidth: 1180,
@@ -270,7 +360,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
     for (final product in widget.products) {
       if (product.id == selectedId &&
           product.isActive &&
-          product.category == ProductCategory.materials) {
+          product.category == _selectedCategory) {
         return product;
       }
     }
@@ -298,7 +388,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
     if (query.length < 2 || _reportedEmptySearches.contains(query)) return;
     final availableProducts = widget.products.where(
       (product) =>
-          product.isActive && product.category == ProductCategory.materials,
+          product.isActive && product.category == _selectedCategory,
     );
     final family = _selectedFamily;
     final baseTiles = family == null
@@ -665,6 +755,217 @@ class _PriceRow extends StatelessWidget {
         const SizedBox(width: 12),
         priceText,
       ],
+    );
+  }
+}
+
+class _ModuleSelectorBar extends StatelessWidget {
+  const _ModuleSelectorBar({
+    required this.selectedCategory,
+    required this.onSelectCategory,
+  });
+
+  final ProductCategory selectedCategory;
+  final ValueChanged<ProductCategory> onSelectCategory;
+
+  @override
+  Widget build(BuildContext context) {
+    final modules = [
+      (
+        category: ProductCategory.materials,
+        emoji: '✨',
+        label: 'Materiales',
+        isComingSoon: false,
+      ),
+      (
+        category: ProductCategory.koreanPaper,
+        emoji: '🌸',
+        label: 'Papel Coreano',
+        isComingSoon: false,
+      ),
+      (
+        category: ProductCategory.crowns,
+        emoji: '👑',
+        label: 'Coronas',
+        isComingSoon: true,
+      ),
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        children: [
+          for (var i = 0; i < modules.length; i++) ...[
+            _ModuleChip(
+              emoji: modules[i].emoji,
+              label: modules[i].label,
+              isComingSoon: modules[i].isComingSoon,
+              isSelected: selectedCategory == modules[i].category,
+              onTap: () => onSelectCategory(modules[i].category),
+            ),
+            if (i < modules.length - 1) const SizedBox(width: 8),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ModuleChip extends StatelessWidget {
+  const _ModuleChip({
+    required this.emoji,
+    required this.label,
+    required this.isSelected,
+    required this.isComingSoon,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final String label;
+  final bool isSelected;
+  final bool isComingSoon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: isSelected ? AppColors.ink : AppColors.surface,
+      borderRadius: BorderRadius.circular(20),
+      elevation: isSelected ? 1 : 0,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8.5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.ink
+                  : isComingSoon
+                      ? AppColors.border.withValues(alpha: 0.7)
+                      : AppColors.border,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                emoji,
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                  color: isSelected
+                      ? Colors.white
+                      : isComingSoon
+                          ? AppColors.muted
+                          : AppColors.ink,
+                ),
+              ),
+              if (isComingSoon) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: AppColors.pinkSoft,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: const Text(
+                    'Próx.',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.pinkStrong,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UpcomingModuleEmptyState extends StatelessWidget {
+  const _UpcomingModuleEmptyState({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                color: AppColors.pinkSoft,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 36, color: AppColors.pinkStrong),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.muted,
+                      height: 1.45,
+                    ),
+              ),
+            ),
+            const SizedBox(height: 22),
+            FilledButton.icon(
+              onPressed: onAction,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.ink,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              icon: const Icon(Icons.arrow_back_rounded, size: 18),
+              label: Text(actionLabel),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

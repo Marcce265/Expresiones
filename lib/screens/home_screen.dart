@@ -61,7 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
             .where(
               (product) =>
                   product.isActive &&
-                  product.category == ProductCategory.materials,
+                  (product.category == ProductCategory.materials ||
+                      product.category == ProductCategory.koreanPaper),
             )
             .toList()
           ..sort((a, b) {
@@ -78,7 +79,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final rankedProducts = widget.popularProducts
         .where(
           (product) =>
-              product.isActive && product.category == ProductCategory.materials,
+              product.isActive &&
+              (product.category == ProductCategory.materials ||
+                  product.category == ProductCategory.koreanPaper),
         )
         .toList(growable: false);
     final featured = _featuredProductTiles(
@@ -184,7 +187,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (query.length < 2 || _reportedEmptySearches.contains(query)) return;
     final products = widget.products.where(
       (product) =>
-          product.isActive && product.category == ProductCategory.materials,
+          product.isActive &&
+          (product.category == ProductCategory.materials ||
+              product.category == ProductCategory.koreanPaper),
     );
     final hasResult = expandCatalogTiles(products)
         .any((tile) => _matches(tile, query));
