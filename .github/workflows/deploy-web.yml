@@ -31,6 +31,10 @@ jobs:
       - name: Preparar configuración de Supabase
         run: |
           if [ -n "${{ secrets.SUPABASE_URL }}" ] && [ -n "${{ secrets.SUPABASE_PUBLISHABLE_KEY }}" ]; then
+            if ! [[ "${{ secrets.SUPABASE_URL }}" =~ ^https://[^[:space:]]+$ ]]; then
+              echo "::error::SUPABASE_URL debe comenzar con https://"
+              exit 1
+            fi
             echo "Generando supabase_config.json desde GitHub Secrets..."
             cat <<EOF > supabase_config.json
           {
@@ -38,9 +42,9 @@ jobs:
             "SUPABASE_PUBLISHABLE_KEY": "${{ secrets.SUPABASE_PUBLISHABLE_KEY }}"
           }
           EOF
-          elif [ ! -f supabase_config.json ]; then
-            echo "Usando configuración semilla por defecto (fallback local)..."
-            cp supabase_config.example.json supabase_config.json
+          else
+            echo "::error::Faltan SUPABASE_URL o SUPABASE_PUBLISHABLE_KEY en GitHub Secrets."
+            exit 1
           fi
 
       - name: Instalar dependencias de Flutter

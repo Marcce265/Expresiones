@@ -37,6 +37,16 @@ abstract final class SupabaseBootstrap {
       );
     }
 
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
+      return const SupabaseBootstrapResult(
+        connected: false,
+        message:
+            'La dirección de Supabase no es válida. Revisa la configuración '
+            'de publicación antes de volver a abrir el panel.',
+      );
+    }
+
     try {
       await Supabase.initialize(url: url, publishableKey: key);
       return SupabaseBootstrapResult(

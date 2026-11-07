@@ -44,29 +44,41 @@ class AdminPortalApp extends StatelessWidget {
 }
 
 /// Authenticates staff and requires both an admin allowlist entry and TOTP.
-class AdminPortal extends StatelessWidget {
+class AdminPortal extends StatefulWidget {
   const AdminPortal({super.key, required this.client});
 
   final SupabaseClient client;
 
   @override
+  State<AdminPortal> createState() => _AdminPortalState();
+}
+
+class _AdminPortalState extends State<AdminPortal> {
+  int _sessionAttempt = 0;
+
+  void _retrySession() => setState(() => _sessionAttempt++);
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<AuthState>(
-      stream: client.auth.onAuthStateChange,
+      key: ValueKey(_sessionAttempt),
+      stream: widget.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _AdminError(
             title: 'No se pudo comprobar la sesión',
-            message: '${snapshot.error}',
+            message: _friendlyAuthMessage(snapshot.error),
+            onRetry: _retrySession,
           );
         }
-        final user = snapshot.data?.session?.user ?? client.auth.currentUser;
+        final user =
+            snapshot.data?.session?.user ?? widget.client.auth.currentUser;
         if (snapshot.connectionState == ConnectionState.waiting &&
             user == null) {
           return const _AdminLoading();
         }
-        if (user == null) return AdminLoginScreen(client: client);
-        return _AdminSecurityGate(client: client, user: user);
+        if (user == null) return AdminLoginScreen(client: widget.client);
+        return _AdminSecurityGate(client: widget.client, user: user);
       },
     );
   }
@@ -128,7 +140,8 @@ class _AdminSecurityGateState extends State<_AdminSecurityGate> {
         if (snapshot.hasError) {
           return _AdminError(
             title: 'No se pudo comprobar el acceso',
-            message: '${snapshot.error}',
+            message: _friendlyAuthMessage(snapshot.error),
+            onRetry: _retry,
           );
         }
         final access = snapshot.data;
@@ -220,7 +233,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         final message = error.message.toLowerCase();
         _error = message.contains('invalid login')
             ? 'Correo o contraseña incorrectos.'
-            : 'No se pudo iniciar sesión. ${error.message}';
+            : _friendlyAuthMessage(error);
+      });
+    } catch (error) {
+      setState(() {
+        _error = _friendlyAuthMessage(error);
       });
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -4266,29 +4283,67 @@ class _AdminLoading extends StatelessWidget {
 }
 
 class _AdminError extends StatelessWidget {
-  const _AdminError({required this.title, required this.message});
+  const _AdminError({required this.title, required this.message, this.onRetry});
 
   final String title;
   final String message;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline_rounded, size: 48),
-            const SizedBox(height: 12),
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 6),
-            SelectableText(message, textAlign: TextAlign.center),
-          ],
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.cloud_off_outlined, size: 48),
+                    const SizedBox(height: 16),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    if (onRetry != null) ...[
+                      const SizedBox(height: 22),
+                      OutlinedButton.icon(
+                        onPressed: onRetry,
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('Reintentar'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
+}
+
+String _friendlyAuthMessage(Object? error) {
+  final detail = '$error'.toLowerCase();
+  if (detail.contains('failed to fetch') ||
+      detail.contains('network') ||
+      detail.contains('socket')) {
+    return 'No se pudo conectar con Supabase. Revisa tu conexión e '
+        'inténtalo otra vez.';
+  }
+  return 'No se pudo validar el acceso en este momento. Inténtalo otra vez.';
 }
 
 /// Converts catalog text as it is entered while preserving the caret position.
