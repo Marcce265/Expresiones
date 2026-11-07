@@ -1,5 +1,4 @@
 import 'package:expresiones/models/catalog_models.dart';
-import 'package:expresiones/models/storefront_settings.dart';
 import 'package:expresiones/screens/catalog_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
