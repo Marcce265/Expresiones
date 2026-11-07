@@ -111,9 +111,61 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
     super.initState();
     final location = widget.initial.pickupLocation;
     _locationAddress = TextEditingController(text: location.address);
-    _fields = widget.initial.checkoutFields
+    final existing = widget.initial.checkoutFields
         .where((field) => !CheckoutCustomField.isReservedLabel(field.label))
         .toList();
+    final hasName = existing.any((f) =>
+        f.id == 'field_name' ||
+        f.id == 'name' ||
+        f.label.trim().toLowerCase().contains('nombre'));
+    final hasPhone = existing.any((f) =>
+        f.id == 'field_phone' ||
+        f.id == 'phone' ||
+        f.label.trim().toLowerCase().contains('teléfono') ||
+        f.label.trim().toLowerCase().contains('telefono'));
+    final hasDni = existing.any((f) =>
+        f.id == 'field_dni' ||
+        f.id == 'dni' ||
+        f.label.trim().toLowerCase().contains('dni'));
+
+    final defaults = <CheckoutCustomField>[];
+    if (!hasName) {
+      defaults.add(const CheckoutCustomField(
+        id: 'field_name',
+        label: 'Nombre completo',
+        icon: 'person',
+        hint: 'Obligatorio',
+        required: true,
+        multiline: false,
+        enabled: true,
+        scope: CheckoutFieldScope.both,
+      ));
+    }
+    if (!hasPhone) {
+      defaults.add(const CheckoutCustomField(
+        id: 'field_phone',
+        label: 'Teléfono',
+        icon: 'phone',
+        hint: 'Obligatorio',
+        required: true,
+        multiline: false,
+        enabled: true,
+        scope: CheckoutFieldScope.both,
+      ));
+    }
+    if (!hasDni) {
+      defaults.add(const CheckoutCustomField(
+        id: 'field_dni',
+        label: 'DNI',
+        icon: 'badge',
+        hint: '8 dígitos · titular mayor de edad',
+        required: true,
+        multiline: false,
+        enabled: true,
+        scope: CheckoutFieldScope.shalom,
+      ));
+    }
+    _fields = [...defaults, ...existing];
     _pickupWeekdays = Set.of(
       widget.initialSchedule.weekdaysForDelivery('pickup'),
     );
@@ -227,7 +279,7 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
     if (CheckoutCustomField.isReservedLabel(result.label)) {
       showAppNotice(
         context,
-        'DNI y horario de recojo ya están incluidos en el formulario.',
+        'Ese nombre está reservado para el sistema.',
         tone: AppNoticeTone.error,
       );
       return;
@@ -263,6 +315,15 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
       final item = _fields.removeAt(index);
       _fields.insert(target, item);
     });
+  }
+
+  bool _isEssentialField(CheckoutCustomField field) {
+    return field.id == 'field_name' ||
+        field.id == 'name' ||
+        field.id == 'field_phone' ||
+        field.id == 'phone' ||
+        field.id == 'field_dni' ||
+        field.id == 'dni';
   }
 
   @override
@@ -685,56 +746,12 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
                 );
               },
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
             Text(
-              'Recojo en Huancayo',
+              'Campos del formulario (puedes ordenarlos y editarlos)',
               style: Theme.of(context).textTheme.labelLarge,
             ),
             const SizedBox(height: 8),
-            const Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _FixedContactField(
-                  icon: Icons.person_outline_rounded,
-                  label: 'Nombre',
-                  hint: 'Obligatorio',
-                ),
-                _FixedContactField(
-                  icon: Icons.phone_outlined,
-                  label: 'Teléfono',
-                  hint: 'Obligatorio',
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Envío por Shalom',
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            const SizedBox(height: 8),
-            const Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _FixedContactField(
-                  icon: Icons.person_outline_rounded,
-                  label: 'Nombre completo',
-                  hint: 'Obligatorio',
-                ),
-                _FixedContactField(
-                  icon: Icons.phone_outlined,
-                  label: 'Teléfono',
-                  hint: 'Obligatorio',
-                ),
-                _FixedContactField(
-                  icon: Icons.badge_outlined,
-                  label: 'DNI',
-                  hint: '8 dígitos · titular mayor de edad',
-                ),
-              ],
-            ),
-            const Divider(height: 32),
             if (_fieldEditorIndex != null) ...[
               _InlineCheckoutFieldEditor(
                 key: ValueKey('field-editor-$_fieldEditorIndex'),
@@ -786,8 +803,10 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
                               );
                             }),
                             onEdit: () => _editField(index),
-                            onDelete: () =>
-                                setState(() => _fields.removeAt(index)),
+                            onDelete: _isEssentialField(_fields[index])
+                                ? null
+                                : () =>
+                                    setState(() => _fields.removeAt(index)),
                             onMoveUp: () => _moveField(index, -1),
                             onMoveDown: () => _moveField(index, 1),
                           ),
@@ -798,48 +817,6 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
               ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _FixedContactField extends StatelessWidget {
-  const _FixedContactField({
-    required this.icon,
-    required this.label,
-    required this.hint,
-  });
-
-  final IconData icon;
-  final String label;
-  final String hint;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 280,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.canvas,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: Theme.of(context).textTheme.labelMedium),
-                const SizedBox(height: 2),
-                Text(hint, style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-          ),
-          const Icon(Icons.lock_outline_rounded, size: 16),
-        ],
       ),
     );
   }
@@ -878,7 +855,7 @@ class _InlineCheckoutFieldEditorState
     _label = TextEditingController(text: widget.initial?.label ?? '');
     _hint = TextEditingController(text: widget.initial?.hint ?? '');
     _icon = widget.initial?.icon ?? CheckoutFieldIcons.fallbackKey;
-    _scope = widget.initial?.scope ?? CheckoutFieldScope.shalom;
+    _scope = widget.initial?.scope ?? CheckoutFieldScope.both;
     _multiline = widget.initial?.multiline ?? false;
     _enabled = widget.initial?.enabled ?? true;
   }
@@ -914,7 +891,7 @@ class _InlineCheckoutFieldEditorState
         ? _label.text.isNotEmpty ||
               _hint.text.isNotEmpty ||
               _icon != CheckoutFieldIcons.fallbackKey ||
-              _scope != CheckoutFieldScope.shalom ||
+              _scope != CheckoutFieldScope.both ||
               _multiline ||
               !_enabled
         : _label.text != initial.label ||
@@ -1102,7 +1079,7 @@ class _CheckoutFieldTile extends StatelessWidget {
     required this.canMoveDown,
     required this.onToggle,
     required this.onEdit,
-    required this.onDelete,
+    this.onDelete,
     required this.onMoveUp,
     required this.onMoveDown,
   });
@@ -1112,7 +1089,7 @@ class _CheckoutFieldTile extends StatelessWidget {
   final bool canMoveDown;
   final ValueChanged<bool> onToggle;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
   final VoidCallback onMoveUp;
   final VoidCallback onMoveDown;
 
@@ -1200,13 +1177,14 @@ class _CheckoutFieldTile extends StatelessWidget {
                 onPressed: onEdit,
                 icon: const Icon(Icons.edit_outlined),
               ),
-              IconButton(
-                tooltip: 'Quitar campo',
-                visualDensity: VisualDensity.compact,
-                onPressed: onDelete,
-                color: AppColors.error,
-                icon: const Icon(Icons.delete_outline),
-              ),
+              if (onDelete != null)
+                IconButton(
+                  tooltip: 'Quitar campo',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onDelete,
+                  color: AppColors.error,
+                  icon: const Icon(Icons.delete_outline),
+                ),
             ],
           ),
         ],

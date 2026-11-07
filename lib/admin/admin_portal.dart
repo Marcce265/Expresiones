@@ -441,7 +441,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   void _selectSection(int index) {
     if (_sectionIndex == index) return;
-    setState(() => _sectionIndex = index);
+    setState(() {
+      _sectionIndex = index;
+      if (index == 1) {
+        _productsStream = widget.repository.watchProducts();
+      }
+    });
   }
 
   String _normalizeSearch(String value) => value
@@ -511,6 +516,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     _search.text = rawQuery.trim();
     setState(() {
       _sectionIndex = 1;
+      _productsStream = widget.repository.watchProducts();
       _catalogGroup = 'Todos';
       _query = rawQuery.trim().toLowerCase();
     });
@@ -671,6 +677,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           return _AdminError(
             title: 'No se pudo leer el catálogo',
             message: '${snapshot.error}',
+            onRetry: () {
+              setState(() {
+                _productsStream = widget.repository.watchProducts();
+              });
+            },
           );
         }
         if (!snapshot.hasData) return const _AdminLoading();
@@ -1040,11 +1051,12 @@ class _AdminHomeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cached = AdminSiteSettingsRepository.cachedSettings;
     return StreamBuilder<StorefrontSettings>(
       stream: settingsRepository.watch(),
-      initialData: const StorefrontSettings(),
+      initialData: cached,
       builder: (context, settingsSnapshot) {
-        final settings = settingsSnapshot.data ?? const StorefrontSettings();
+        final settings = settingsSnapshot.data ?? cached ?? const StorefrontSettings();
         return StreamBuilder<List<CatalogProduct>>(
           stream: repository.watchProducts(),
           builder: (context, productsSnapshot) {
@@ -1285,12 +1297,17 @@ class _AdminConfiguredImage extends StatelessWidget {
       return Image.network(
         clean,
         fit: BoxFit.cover,
+        filterQuality: FilterQuality.high,
         errorBuilder: (_, _, _) => _fallback(),
       );
     }
+    if (clean.isEmpty) {
+      return _fallback();
+    }
     return Image.asset(
-      clean.isEmpty ? 'assets/images/catalog_hero.webp' : clean,
+      clean,
       fit: BoxFit.cover,
+      filterQuality: FilterQuality.high,
       errorBuilder: (_, _, _) => _fallback(),
     );
   }

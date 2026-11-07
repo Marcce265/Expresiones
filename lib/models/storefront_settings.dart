@@ -309,8 +309,7 @@ class CheckoutCustomField {
 
   static bool isReservedLabel(String label) {
     final normalized = label.trim().toLowerCase();
-    return normalized == 'dni' ||
-        normalized == 'fecha de nacimiento' ||
+    return normalized == 'fecha de nacimiento' ||
         normalized == 'horario de recojo';
   }
 

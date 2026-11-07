@@ -103,11 +103,81 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     }
   }
 
+  static bool _isStandardField(CheckoutCustomField field) {
+    final lowerId = field.id.toLowerCase();
+    final lowerLabel = field.label.toLowerCase();
+    return lowerId == 'field_name' ||
+        lowerId == 'name' ||
+        lowerId == 'field_phone' ||
+        lowerId == 'phone' ||
+        lowerId == 'field_dni' ||
+        lowerId == 'dni' ||
+        lowerLabel == 'nombre' ||
+        lowerLabel == 'nombre completo' ||
+        lowerLabel == 'teléfono' ||
+        lowerLabel == 'telefono' ||
+        lowerLabel == 'dni';
+  }
+
+  List<CheckoutCustomField> get _orderedFields {
+    final configured = widget.settings.checkoutFields
+        .where((field) => !CheckoutCustomField.isReservedLabel(field.label))
+        .toList();
+    final hasName = configured.any((f) =>
+        f.id == 'field_name' ||
+        f.id == 'name' ||
+        f.label.trim().toLowerCase().contains('nombre'));
+    final hasPhone = configured.any((f) =>
+        f.id == 'field_phone' ||
+        f.id == 'phone' ||
+        f.label.trim().toLowerCase().contains('teléfono') ||
+        f.label.trim().toLowerCase().contains('telefono'));
+    final hasDni = configured.any((f) =>
+        f.id == 'field_dni' ||
+        f.id == 'dni' ||
+        f.label.trim().toLowerCase().contains('dni'));
+
+    final defaults = <CheckoutCustomField>[];
+    if (!hasName) {
+      defaults.add(const CheckoutCustomField(
+        id: 'field_name',
+        label: 'Nombre',
+        icon: 'person',
+        hint: '¿Cómo te llamas?',
+        required: true,
+        scope: CheckoutFieldScope.both,
+      ));
+    }
+    if (!hasPhone) {
+      defaults.add(const CheckoutCustomField(
+        id: 'field_phone',
+        label: 'Teléfono',
+        icon: 'phone',
+        hint: '+51 999 999 999',
+        required: true,
+        scope: CheckoutFieldScope.both,
+      ));
+    }
+    if (!hasDni) {
+      defaults.add(const CheckoutCustomField(
+        id: 'field_dni',
+        label: 'DNI',
+        icon: 'badge',
+        hint: '8 dígitos · titular mayor de edad',
+        required: true,
+        scope: CheckoutFieldScope.shalom,
+      ));
+    }
+    return [...defaults, ...configured];
+  }
+
   void _syncCustomControllers({required Map<String, String> initialValues}) {
     final activeIds = <String>{};
-    for (final field in widget.settings.checkoutFields.where(
+    for (final field in _orderedFields.where(
       (field) =>
-          field.enabled && !CheckoutCustomField.isReservedLabel(field.label),
+          field.enabled &&
+          !_isStandardField(field) &&
+          !CheckoutCustomField.isReservedLabel(field.label),
     )) {
       activeIds.add(field.id);
       _customControllers.putIfAbsent(
@@ -178,12 +248,11 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     });
   }
 
-  List<CheckoutCustomField> get _activeCheckoutFields => widget
-      .settings
-      .checkoutFields
+  List<CheckoutCustomField> get _activeCheckoutFields => _orderedFields
       .where(
         (field) =>
             field.enabled &&
+            !_isStandardField(field) &&
             !CheckoutCustomField.isReservedLabel(field.label) &&
             field.appliesTo(_deliveryMethod.name),
       )
@@ -310,6 +379,181 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     );
   }
 
+  Widget _buildUnifiedContactFields() {
+    final activeFields = _orderedFields
+        .where(
+          (field) =>
+              field.enabled && field.appliesTo(_deliveryMethod.name),
+        )
+        .toList(growable: false);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final half = constraints.maxWidth >= 650
+            ? (constraints.maxWidth - 18) / 2
+            : constraints.maxWidth;
+
+        return Wrap(
+          spacing: 18,
+          runSpacing: 18,
+          children: [
+            for (final field in activeFields)
+              SizedBox(
+                width: field.multiline ? constraints.maxWidth : half,
+                child: _buildSingleContactField(field),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSingleContactField(CheckoutCustomField field) {
+    final lowerId = field.id.toLowerCase();
+    final lowerLabel = field.label.toLowerCase();
+
+    if (lowerId == 'field_name' ||
+        lowerId == 'name' ||
+        lowerLabel.contains('nombre')) {
+      final isFullName = _deliveryMethod == DeliveryMethod.shalom;
+      final label = isFullName
+          ? (field.label.toLowerCase().contains('completo')
+              ? '${field.label} *'
+              : 'Nombre completo *')
+          : (field.label.isNotEmpty ? '${field.label} *' : 'Nombre *');
+      final hint = isFullName
+          ? 'Nombres y apellidos'
+          : (field.hint.isNotEmpty ? field.hint : '¿Cómo te llamas?');
+
+      return _LabeledField(
+        label: label,
+        child: TextFormField(
+          controller: _nameController,
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.next,
+          autofillHints: const [AutofillHints.name],
+          maxLength: 80,
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixIcon: Icon(CheckoutFieldIcons.resolve(
+                field.icon.isNotEmpty ? field.icon : 'person')),
+            counterText: '',
+          ),
+          validator: _validateName,
+        ),
+      );
+    }
+
+    if (lowerId == 'field_phone' ||
+        lowerId == 'phone' ||
+        lowerLabel.contains('teléfono') ||
+        lowerLabel.contains('telefono')) {
+      return _LabeledField(
+        label: '${field.label} *',
+        child: TextFormField(
+          controller: _phoneController,
+          keyboardType: TextInputType.phone,
+          textInputAction: TextInputAction.next,
+          autofillHints: const [AutofillHints.telephoneNumber],
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ()-]')),
+            LengthLimitingTextInputFormatter(18),
+          ],
+          decoration: InputDecoration(
+            hintText: field.hint.isNotEmpty ? field.hint : '+51 999 999 999',
+            prefixIcon: Icon(CheckoutFieldIcons.resolve(
+                field.icon.isNotEmpty ? field.icon : 'phone')),
+            counterText: '',
+          ),
+          validator: _validatePhone,
+        ),
+      );
+    }
+
+    if (lowerId == 'field_dni' ||
+        lowerId == 'dni' ||
+        lowerLabel.contains('dni')) {
+      final dniField = _LabeledField(
+        label: '${field.label} *',
+        child: TextFormField(
+          controller: _dniController,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          maxLength: 8,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(8),
+          ],
+          decoration: InputDecoration(
+            hintText: field.hint.isNotEmpty &&
+                    !field.hint.contains('8 dígitos')
+                ? field.hint
+                : '8 dígitos',
+            prefixIcon: Icon(CheckoutFieldIcons.resolve(
+                field.icon.isNotEmpty ? field.icon : 'badge')),
+            counterText: '',
+          ),
+          validator: _validateDni,
+        ),
+      );
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          dniField,
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.pinkSoft,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline_rounded, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'La agencia entregará el envío únicamente a la persona indicada. El nombre, teléfono y DNI deben coincidir, y el DNI debe pertenecer a una persona mayor de edad.',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    final controller = _customControllers[field.id];
+    return _LabeledField(
+      label: '${field.label} *',
+      child: TextFormField(
+        controller: controller,
+        minLines: field.multiline ? 2 : 1,
+        maxLines: field.multiline ? 4 : 1,
+        maxLength: field.multiline ? 300 : 80,
+        textCapitalization: TextCapitalization.sentences,
+        textInputAction: field.multiline
+            ? TextInputAction.newline
+            : TextInputAction.next,
+        decoration: InputDecoration(
+          hintText: field.hint.isEmpty ? null : field.hint,
+          prefixIcon: Icon(CheckoutFieldIcons.resolve(field.icon)),
+          counterText: '',
+          alignLabelWithHint: field.multiline,
+        ),
+        validator: (value) {
+          if (value?.trim().isEmpty ?? true) {
+            return 'Completa este campo.';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -341,32 +585,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                         StorefrontText.coordinationContactBody,
                       )
                     : 'Usaremos estos datos solo para coordinar tu cotización.',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _ContactFields(
-                      nameController: _nameController,
-                      phoneController: _phoneController,
-                      fullName: _deliveryMethod == DeliveryMethod.shalom,
-                      validateName: _validateName,
-                      validatePhone: _validatePhone,
-                    ),
-                    if (_deliveryMethod == DeliveryMethod.shalom) ...[
-                      const Divider(height: 34),
-                      _ShalomIdentityFields(
-                        dniController: _dniController,
-                        validateDni: _validateDni,
-                      ),
-                    ],
-                    if (_activeCheckoutFields.isNotEmpty) ...[
-                      const Divider(height: 34),
-                      _CustomCheckoutFields(
-                        fields: _activeCheckoutFields,
-                        controllers: _customControllers,
-                      ),
-                    ],
-                  ],
-                ),
+                child: _buildUnifiedContactFields(),
               ),
               const SizedBox(height: 18),
               _FormSectionCard(
@@ -871,59 +1090,6 @@ class _ShalomDestinationSection extends StatelessWidget {
   }
 }
 
-class _CustomCheckoutFields extends StatelessWidget {
-  const _CustomCheckoutFields({
-    required this.fields,
-    required this.controllers,
-  });
-
-  final List<CheckoutCustomField> fields;
-  final Map<String, TextEditingController> controllers;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final half = constraints.maxWidth >= 650
-            ? (constraints.maxWidth - 18) / 2
-            : constraints.maxWidth;
-        return Wrap(
-          spacing: 18,
-          runSpacing: 18,
-          children: [
-            for (final field in fields)
-              SizedBox(
-                width: field.multiline ? constraints.maxWidth : half,
-                child: _LabeledField(
-                  label: '${field.label} *',
-                  child: TextFormField(
-                    controller: controllers[field.id],
-                    minLines: field.multiline ? 3 : 1,
-                    maxLines: field.multiline ? 5 : 1,
-                    maxLength: field.multiline ? 500 : 160,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: InputDecoration(
-                      hintText: field.hint.isEmpty ? null : field.hint,
-                      prefixIcon: Icon(CheckoutFieldIcons.resolve(field.icon)),
-                      counterText: field.multiline ? null : '',
-                      alignLabelWithHint: field.multiline,
-                    ),
-                    validator: (value) {
-                      if (value?.trim().isEmpty ?? true) {
-                        return 'Completa este campo.';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
 class _AgencySelectionCard extends StatelessWidget {
   const _AgencySelectionCard({
     required this.hasAgency,
@@ -1098,134 +1264,6 @@ class _AgencyDetail extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ContactFields extends StatelessWidget {
-  const _ContactFields({
-    required this.nameController,
-    required this.phoneController,
-    required this.fullName,
-    required this.validateName,
-    required this.validatePhone,
-  });
-
-  final TextEditingController nameController;
-  final TextEditingController phoneController;
-  final bool fullName;
-  final FormFieldValidator<String> validateName;
-  final FormFieldValidator<String> validatePhone;
-
-  @override
-  Widget build(BuildContext context) {
-    final name = _LabeledField(
-      label: fullName ? 'Nombre completo *' : 'Nombre *',
-      child: TextFormField(
-        controller: nameController,
-        textCapitalization: TextCapitalization.words,
-        textInputAction: TextInputAction.next,
-        autofillHints: const [AutofillHints.name],
-        maxLength: 80,
-        decoration: InputDecoration(
-          hintText: fullName ? 'Nombres y apellidos' : '¿Cómo te llamas?',
-          prefixIcon: const Icon(Icons.person_outline_rounded),
-          counterText: '',
-        ),
-        validator: validateName,
-      ),
-    );
-    final phone = _LabeledField(
-      label: 'Teléfono *',
-      child: TextFormField(
-        controller: phoneController,
-        keyboardType: TextInputType.phone,
-        textInputAction: TextInputAction.next,
-        autofillHints: const [AutofillHints.telephoneNumber],
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ()-]')),
-          LengthLimitingTextInputFormatter(18),
-        ],
-        decoration: const InputDecoration(
-          hintText: '+51 999 999 999',
-          prefixIcon: Icon(Icons.phone_outlined),
-        ),
-        validator: validatePhone,
-      ),
-    );
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 650) {
-          return Column(children: [name, const SizedBox(height: 18), phone]);
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: name),
-            const SizedBox(width: 18),
-            Expanded(child: phone),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _ShalomIdentityFields extends StatelessWidget {
-  const _ShalomIdentityFields({
-    required this.dniController,
-    required this.validateDni,
-  });
-
-  final TextEditingController dniController;
-  final FormFieldValidator<String> validateDni;
-
-  @override
-  Widget build(BuildContext context) {
-    final dni = _LabeledField(
-      label: 'DNI *',
-      child: TextFormField(
-        controller: dniController,
-        keyboardType: TextInputType.number,
-        textInputAction: TextInputAction.next,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-          LengthLimitingTextInputFormatter(8),
-        ],
-        decoration: const InputDecoration(
-          hintText: '8 dígitos',
-          prefixIcon: Icon(Icons.badge_outlined),
-          counterText: '',
-        ),
-        validator: validateDni,
-      ),
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        dni,
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: AppColors.pinkSoft,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.info_outline_rounded, size: 19),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'La agencia entregará el envío únicamente a la persona indicada. El nombre, teléfono y DNI deben coincidir, y el DNI debe pertenecer a una persona mayor de edad.',
-                ),
-              ),
-            ],
           ),
         ),
       ],
