@@ -31,9 +31,6 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
   intl: ^0.20.2
   provider: ^6.1.5+1
   shared_preferences: ^2.5.3
@@ -77,11 +74,11 @@ flutter:
     - assets/fonts/
     - assets/images/catalog_hero.webp
     - assets/images/brand_lockup_black.png
-    - assets/images/jashy_chibi_assistant.png
-    - assets/images/jashy_chibi_question.png
-    - assets/images/jashy_chibi_book.png
-    - assets/images/jashy_chibi_writing.png
-    - assets/images/jashy_chibi_bouquet.png
+    - assets/images/jashy_chibi_assistant.webp
+    - assets/images/jashy_chibi_question.webp
+    - assets/images/jashy_chibi_book.webp
+    - assets/images/jashy_chibi_writing.webp
+    - assets/images/jashy_chibi_bouquet.webp
     # Dos portadas editoriales pequeñas forman parte de la interfaz; las 221
     # fotos dinámicas del catálogo se sirven desde Supabase Storage.
     - assets/images/family_heroes/

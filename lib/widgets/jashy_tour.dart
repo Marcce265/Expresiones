@@ -9,7 +9,7 @@ class JashyTourStep {
     required this.title,
     required this.message,
     this.targetKey,
-    this.imageAsset = 'assets/images/jashy_chibi_assistant.png',
+    this.imageAsset = 'assets/images/jashy_chibi_assistant.webp',
   });
 
   final String title;

@@ -197,7 +197,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 const JashyTourStep(
                   title: 'Elige y agrega',
                   message: 'Elige una opción y la cantidad.',
-                  imageAsset: 'assets/images/jashy_chibi_book.png',
+                  imageAsset: 'assets/images/jashy_chibi_book.webp',
                 ),
               ),
               onAdd: ({required quantity, variantId, required customization}) {
@@ -234,7 +234,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           assistantStep: const JashyTourStep(
             title: 'Completa tus datos',
             message: 'Llena los campos y elige entrega y fecha.',
-            imageAsset: 'assets/images/jashy_chibi_writing.png',
+            imageAsset: 'assets/images/jashy_chibi_writing.webp',
           ),
           child: CoordinationScreen(
             settings: store.storefrontSettings,
@@ -281,7 +281,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             message: FeatureFlags.demoPayment
                 ? 'Verifica todo y finaliza la simulación.'
                 : 'Verifica todo y guarda tu cotización.',
-            imageAsset: 'assets/images/jashy_chibi_writing.png',
+            imageAsset: 'assets/images/jashy_chibi_writing.webp',
           ),
           child: ReviewScreen(
             settings: store.storefrontSettings,
@@ -488,44 +488,44 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     const JashyTourStep(
       title: '¡Hola! Soy Jashy',
       message: 'Te enseñaré cómo cotizar.',
-      imageAsset: 'assets/images/jashy_chibi_assistant.png',
+      imageAsset: 'assets/images/jashy_chibi_assistant.webp',
     ),
     JashyTourStep(
       title: 'Inicio',
       message: 'Busca materiales aquí.',
       targetKey: _navigationKeys[0],
-      imageAsset: 'assets/images/jashy_chibi_assistant.png',
+      imageAsset: 'assets/images/jashy_chibi_assistant.webp',
     ),
     JashyTourStep(
       title: 'Catálogo',
       message: 'Mira productos, colores y precios.',
       targetKey: _navigationKeys[1],
-      imageAsset: 'assets/images/jashy_chibi_book.png',
+      imageAsset: 'assets/images/jashy_chibi_book.webp',
     ),
     JashyTourStep(
       title: 'Carrito',
       message: 'Revisa productos y cantidades.',
       targetKey: _navigationKeys[2],
-      imageAsset: 'assets/images/jashy_chibi_writing.png',
+      imageAsset: 'assets/images/jashy_chibi_writing.webp',
     ),
     if (FeatureFlags.customerAccounts)
       JashyTourStep(
         title: 'Cuenta',
         message: 'Revisa tus compras guardadas.',
         targetKey: _navigationKeys[3],
-        imageAsset: 'assets/images/jashy_chibi_writing.png',
+        imageAsset: 'assets/images/jashy_chibi_writing.webp',
       ),
     JashyTourStep(
       title: 'Ayuda',
       message: 'Encuentra respuestas o escríbenos.',
       targetKey: _navigationKeys[FeatureFlags.customerAccounts ? 4 : 3],
-      imageAsset: 'assets/images/jashy_chibi_question.png',
+      imageAsset: 'assets/images/jashy_chibi_question.webp',
     ),
     JashyTourStep(
       title: 'Aquí estaré',
       message: 'Tócame cuando necesites ayuda.',
       targetKey: _assistantButtonKey,
-      imageAsset: 'assets/images/jashy_chibi_bouquet.png',
+      imageAsset: 'assets/images/jashy_chibi_bouquet.webp',
     ),
   ];
 
@@ -547,12 +547,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       'Ayuda',
     ];
     final assets = <String>[
-      'assets/images/jashy_chibi_assistant.png',
-      'assets/images/jashy_chibi_book.png',
-      'assets/images/jashy_chibi_writing.png',
+      'assets/images/jashy_chibi_assistant.webp',
+      'assets/images/jashy_chibi_book.webp',
+      'assets/images/jashy_chibi_writing.webp',
       if (FeatureFlags.customerAccounts)
-        'assets/images/jashy_chibi_writing.png',
-      'assets/images/jashy_chibi_question.png',
+        'assets/images/jashy_chibi_writing.webp',
+      'assets/images/jashy_chibi_question.webp',
     ];
     return JashyTourStep(
       title: titles[_index],

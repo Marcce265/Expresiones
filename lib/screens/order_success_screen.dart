@@ -194,7 +194,7 @@ class _SuccessHero extends StatelessWidget {
               width: compact ? 74 : 92,
               height: compact ? 104 : 128,
               child: Image.asset(
-                'assets/images/jashy_chibi_bouquet.png',
+                'assets/images/jashy_chibi_bouquet.webp',
                 fit: BoxFit.contain,
                 alignment: Alignment.bottomCenter,
                 excludeFromSemantics: true,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-const _jashyDefaultAsset = 'assets/images/jashy_chibi_assistant.png';
+const _jashyDefaultAsset = 'assets/images/jashy_chibi_assistant.webp';
 
 class AssistantHelpButton extends StatefulWidget {
   const AssistantHelpButton({
