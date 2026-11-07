@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show compute, kIsWeb;
 import 'package:image/image.dart' as image_lib;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -226,32 +227,6 @@ class AdminCatalogRepository {
     String folder = 'uploads',
   }) async {
     validateCatalogImageUpload(bytes: bytes, contentType: contentType);
-    final decoded = image_lib.decodeImage(bytes);
-    if (decoded == null) {
-      throw const FormatException('No se pudo leer la imagen seleccionada.');
-    }
-    final oriented = image_lib.bakeOrientation(decoded);
-    const maximumThumbnailEdge = 640;
-    final image_lib.Image thumbnail;
-    if (oriented.width <= maximumThumbnailEdge &&
-        oriented.height <= maximumThumbnailEdge) {
-      thumbnail = oriented;
-    } else if (oriented.width >= oriented.height) {
-      thumbnail = image_lib.copyResize(
-        oriented,
-        width: maximumThumbnailEdge,
-        interpolation: image_lib.Interpolation.average,
-      );
-    } else {
-      thumbnail = image_lib.copyResize(
-        oriented,
-        height: maximumThumbnailEdge,
-        interpolation: image_lib.Interpolation.average,
-      );
-    }
-    final thumbnailBytes = Uint8List.fromList(
-      image_lib.encodeJpg(thumbnail, quality: 84),
-    );
     final timestamp = DateTime.now().microsecondsSinceEpoch;
     final detailPath = buildCatalogImagePath(
       folder: folder,
@@ -265,6 +240,26 @@ class AdminCatalogRepository {
       contentType: 'image/jpeg',
       timestampMicros: timestamp,
     );
+
+    // `image` decodes and encodes pixels in Dart. Running that work while a
+    // browser is handling a file-picker result made the administrative editor
+    // feel frozen on phones. On native targets `compute` puts it in a worker
+    // isolate. On the web we keep the original as the temporary card source:
+    // this avoids a synchronous multi-megabyte conversion on the UI thread and
+    // preserves the uploaded detail photo exactly.
+    if (kIsWeb) {
+      await _uploadCatalogObject(
+        path: detailPath,
+        bytes: bytes,
+        contentType: contentType,
+      );
+      return CatalogImageUpload(
+        detailPath: detailPath,
+        thumbnailPath: detailPath,
+      );
+    }
+
+    final thumbnailBytes = await compute(_buildCatalogThumbnail, bytes);
     await Future.wait([
       _uploadCatalogObject(
         path: detailPath,
@@ -359,6 +354,34 @@ class AdminCatalogRepository {
         .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
         .replaceAll(RegExp(r'^-+|-+$'), '');
   }
+}
+
+/// Top-level so Flutter can run it in a background isolate on native builds.
+Uint8List _buildCatalogThumbnail(Uint8List bytes) {
+  final decoded = image_lib.decodeImage(bytes);
+  if (decoded == null) {
+    throw const FormatException('No se pudo leer la imagen seleccionada.');
+  }
+  final oriented = image_lib.bakeOrientation(decoded);
+  const maximumThumbnailEdge = 640;
+  final image_lib.Image thumbnail;
+  if (oriented.width <= maximumThumbnailEdge &&
+      oriented.height <= maximumThumbnailEdge) {
+    thumbnail = oriented;
+  } else if (oriented.width >= oriented.height) {
+    thumbnail = image_lib.copyResize(
+      oriented,
+      width: maximumThumbnailEdge,
+      interpolation: image_lib.Interpolation.average,
+    );
+  } else {
+    thumbnail = image_lib.copyResize(
+      oriented,
+      height: maximumThumbnailEdge,
+      interpolation: image_lib.Interpolation.average,
+    );
+  }
+  return Uint8List.fromList(image_lib.encodeJpg(thumbnail, quality: 84));
 }
 
 class CatalogImageUpload {

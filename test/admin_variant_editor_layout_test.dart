@@ -145,4 +145,81 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'las variantes se cargan al desplazarse y las acciones quedan al final',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final client = SupabaseClient(
+        'https://example.supabase.co',
+        'public-anon-key',
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+      );
+      final product = CatalogProduct(
+        id: 'muchas-variantes',
+        name: 'Muchas variantes',
+        category: ProductCategory.materials,
+        description: 'Material',
+        unitLabel: 'paquete',
+        basePrice: 5,
+        variants: [
+          for (var index = 0; index < 20; index++)
+            ProductVariant(
+              id: 'opcion-$index',
+              name: 'Opción $index',
+              sku: 'OP-$index',
+              stockStatus: StockStatus.inStock,
+            ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AdminProductEditorDialog(
+              repository: AdminCatalogRepository(client: client),
+              product: product,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final scrollable = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(
+        find.text('Variantes (20)'),
+        500,
+        scrollable: scrollable,
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('variant-editor-opcion-19')),
+        findsNothing,
+      );
+      expect(find.text('Guardar cambios'), findsNothing);
+
+      final firstName = find.byKey(const ValueKey('variant-name-opcion-0'));
+      await tester.ensureVisible(firstName);
+      await tester.enterText(firstName, 'verde bosque');
+      await tester.pump();
+      expect(
+        tester.widget<TextFormField>(firstName).controller!.text,
+        'VERDE BOSQUE',
+      );
+
+      await tester.scrollUntilVisible(
+        find.text('Guardar cambios'),
+        600,
+        scrollable: scrollable,
+      );
+      expect(find.text('Guardar cambios'), findsOneWidget);
+      expect(find.text('Eliminar producto'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

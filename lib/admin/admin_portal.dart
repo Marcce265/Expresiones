@@ -2769,57 +2769,12 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                             icon: Icons.layers_outlined,
                             title: 'Este producto aún no tiene variantes',
                             message: 'Agrégalas cuando el producto se venda en diferentes opciones o colores.',
-                          )
-                        else
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              const gap = 14.0;
-                              final columns = constraints.maxWidth >= 980
-                                  ? 2
-                                  : 1;
-                              final width = columns == 1
-                                  ? constraints.maxWidth
-                                  : (constraints.maxWidth - gap) / 2;
-                              return Wrap(
-                                spacing: gap,
-                                runSpacing: gap,
-                                children: [
-                                  for (final variant in _variants)
-                                    SizedBox(
-                                      width: width,
-                                      child: _VariantEditorTile(
-                                        draft: variant,
-                                        imageUrl: _previewUrl(
-                                          variant.image.previewValue,
-                                        ),
-                                        uploading: _uploadingImage,
-                                        onPickImage: () =>
-                                            _pickImage(variant: variant),
-                                        onDelete: () => _removeVariant(variant),
-                                        onChanged: () => setState(() {}),
-                                        onReorder: _reorderVariant,
-                                      ),
-                                    ),
-                                ],
-                              );
-                            },
                           ),
-                        if (_variants.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          OutlinedButton.icon(
-                            onPressed: () => _addVariant(atEnd: true),
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Agregar otra opción'),
-                          ),
-                        ],
                       ],
                     );
 
-                    return ListView(
-                      padding: EdgeInsets.all(isMobile ? 12 : 24),
-                      children: [
-                        if (isWide) ...[
-                          Row(
+                    final topContent = isWide
+                        ? Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
@@ -2848,11 +2803,8 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                                 ),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 18),
-                          variantsCard,
-                        ] else
-                          Column(
+                          )
+                        : Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               imageCard,
@@ -2862,91 +2814,205 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                               pricingCard,
                               const SizedBox(height: 14),
                               visibilityCard,
-                              const SizedBox(height: 14),
-                              variantsCard,
                             ],
+                          );
+                    final padding = isMobile ? 12.0 : 24.0;
+                    // A variant uses a horizontal media/fields layout only
+                    // when it has enough room. Keeping one column below this
+                    // breakpoint prevents a compact desktop dialog from
+                    // clipping the taller mobile-style tile.
+                    final twoVariantColumns = constraints.maxWidth >= 1180;
+
+                    Widget buildVariant(int index) {
+                      final variant = _variants[index];
+                      return RepaintBoundary(
+                        child: _VariantEditorTile(
+                          draft: variant,
+                          imageUrl: _previewUrl(variant.image.previewValue),
+                          uploading: _uploadingImage,
+                          onPickImage: () => _pickImage(variant: variant),
+                          onDelete: () => _removeVariant(variant),
+                          onReorder: _reorderVariant,
+                        ),
+                      );
+                    }
+
+                    return CustomScrollView(
+                      key: const PageStorageKey('admin-product-editor-scroll'),
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      slivers: [
+                        SliverPadding(
+                          padding: EdgeInsets.fromLTRB(
+                            padding,
+                            padding,
+                            padding,
+                            0,
                           ),
-                        if (_error != null) ...[
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .errorContainer,
-                              borderRadius: BorderRadius.circular(12),
+                          sliver: SliverToBoxAdapter(child: topContent),
+                        ),
+                        SliverPadding(
+                          padding: EdgeInsets.fromLTRB(padding, 18, padding, 0),
+                          sliver: SliverToBoxAdapter(child: variantsCard),
+                        ),
+                        if (_variants.isNotEmpty)
+                          SliverPadding(
+                            padding: EdgeInsets.fromLTRB(
+                              padding,
+                              14,
+                              padding,
+                              0,
                             ),
-                            child: Text(
-                              _error!,
-                              style: TextStyle(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onErrorContainer,
-                                fontWeight: FontWeight.w600,
+                            sliver: twoVariantColumns
+                                ? SliverGrid(
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
+                                          crossAxisSpacing: 14,
+                                          mainAxisSpacing: 14,
+                                          mainAxisExtent: 282,
+                                        ),
+                                    delegate: SliverChildBuilderDelegate(
+                                      (context, index) => buildVariant(index),
+                                      childCount: _variants.length,
+                                    ),
+                                  )
+                                : SliverList(
+                                    delegate: SliverChildBuilderDelegate(
+                                      (context, index) => Padding(
+                                        padding: EdgeInsets.only(
+                                          bottom: index == _variants.length - 1
+                                              ? 0
+                                              : 14,
+                                        ),
+                                        child: buildVariant(index),
+                                      ),
+                                      childCount: _variants.length,
+                                    ),
+                                  ),
+                          ),
+                        if (_variants.isNotEmpty)
+                          SliverPadding(
+                            padding: EdgeInsets.fromLTRB(
+                              padding,
+                              14,
+                              padding,
+                              0,
+                            ),
+                            sliver: SliverToBoxAdapter(
+                              child: OutlinedButton.icon(
+                                onPressed: () => _addVariant(atEnd: true),
+                                icon: const Icon(Icons.add_rounded),
+                                label: const Text('Agregar otra opción'),
                               ),
                             ),
                           ),
-                        ],
+                        if (_error != null)
+                          SliverPadding(
+                            padding: EdgeInsets.fromLTRB(
+                              padding,
+                              16,
+                              padding,
+                              0,
+                            ),
+                            sliver: SliverToBoxAdapter(
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .errorContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  _error!,
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onErrorContainer,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        SliverPadding(
+                          padding: EdgeInsets.fromLTRB(
+                            padding,
+                            22,
+                            padding,
+                            MediaQuery.paddingOf(context).bottom + 28,
+                          ),
+                          sliver: SliverToBoxAdapter(
+                            child: _editorActions(context),
+                          ),
+                        ),
                       ],
                     );
                   },
                 ),
               ),
             ),
-            const Divider(height: 1, color: AppColors.border),
-            Container(
-              color: AppColors.surface,
-              padding: EdgeInsets.all(isMobile ? 12 : 16),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final saveButton = FilledButton.icon(
-                    onPressed: _saving || _uploadingImage ? null : _save,
-                    icon: _saving || _uploadingImage
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.save_outlined),
-                    label: Text(
-                      _uploadingImage
-                          ? 'Subiendo imagen...'
-                          : 'Guardar cambios',
-                    ),
-                  );
-                  final deleteButton = TextButton.icon(
-                    onPressed: _saving ? null : _deleteProduct,
-                    style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error,
-                    ),
-                    icon: const Icon(Icons.delete_outline_rounded),
-                    label: const Text('Eliminar producto'),
-                  );
-                  if (constraints.maxWidth < 560) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        saveButton,
-                        if (widget.product != null) ...[
-                          const SizedBox(height: 2),
-                          deleteButton,
-                        ],
-                      ],
-                    );
-                  }
-                  return Row(
-                    children: [
-                      if (widget.product != null) deleteButton,
-                      const Spacer(),
-                      saveButton,
-                    ],
-                  );
-                },
-              ),
-            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _editorActions(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final saveButton = FilledButton.icon(
+              onPressed: _saving || _uploadingImage ? null : _save,
+              icon: _saving || _uploadingImage
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.save_outlined),
+              label: Text(
+                _uploadingImage ? 'Subiendo imagen...' : 'Guardar cambios',
+              ),
+            );
+            final deleteButton = TextButton.icon(
+              onPressed: _saving ? null : _deleteProduct,
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              icon: const Icon(Icons.delete_outline_rounded),
+              label: const Text('Eliminar producto'),
+            );
+            if (constraints.maxWidth < 560) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  saveButton,
+                  if (widget.product != null) ...[
+                    const SizedBox(height: 4),
+                    deleteButton,
+                  ],
+                ],
+              );
+            }
+            return Row(
+              children: [
+                if (widget.product != null) deleteButton,
+                const Spacer(),
+                saveButton,
+              ],
+            );
+          },
         ),
       ),
     );
@@ -3259,14 +3325,13 @@ class _VariantDraft {
   }
 }
 
-class _VariantEditorTile extends StatelessWidget {
+class _VariantEditorTile extends StatefulWidget {
   const _VariantEditorTile({
     required this.draft,
     required this.imageUrl,
     required this.uploading,
     required this.onPickImage,
     required this.onDelete,
-    required this.onChanged,
     required this.onReorder,
   });
 
@@ -3275,14 +3340,19 @@ class _VariantEditorTile extends StatelessWidget {
   final bool uploading;
   final VoidCallback onPickImage;
   final VoidCallback onDelete;
-  final VoidCallback onChanged;
   final void Function(_VariantDraft dragged, _VariantDraft target) onReorder;
 
   @override
+  State<_VariantEditorTile> createState() => _VariantEditorTileState();
+}
+
+class _VariantEditorTileState extends State<_VariantEditorTile> {
+  @override
   Widget build(BuildContext context) {
+    final draft = widget.draft;
     return DragTarget<_VariantDraft>(
       onWillAcceptWithDetails: (details) => details.data != draft,
-      onAcceptWithDetails: (details) => onReorder(details.data, draft),
+      onAcceptWithDetails: (details) => widget.onReorder(details.data, draft),
       builder: (context, candidates, rejected) => Card(
         key: ValueKey('variant-editor-${draft.variant.id}'),
         color: AppColors.surface,
@@ -3310,7 +3380,6 @@ class _VariantEditorTile extends StatelessWidget {
                   hintText: 'Ej. Verde militar',
                 ),
                 validator: _required,
-                onChanged: (_) => onChanged(),
               );
               final skuField = TextFormField(
                 key: ValueKey('variant-sku-${draft.variant.id}'),
@@ -3321,14 +3390,12 @@ class _VariantEditorTile extends StatelessWidget {
                   labelText: 'Código / SKU',
                   hintText: 'Ej. XS-1',
                 ),
-                onChanged: (_) => onChanged(),
               );
               final statusField = _VariantStatusSelector(
                 key: ValueKey('variant-status-${draft.variant.id}'),
                 value: draft.status,
                 onChanged: (value) {
-                  draft.status = value;
-                  onChanged();
+                  setState(() => draft.status = value);
                 },
               );
               final image = Draggable<_VariantDraft>(
@@ -3341,7 +3408,7 @@ class _VariantEditorTile extends StatelessWidget {
                     dimension: 190,
                     child: _VariantImage(
                       label: draft.name.text,
-                      imageUrl: imageUrl,
+                      imageUrl: widget.imageUrl,
                     ),
                   ),
                 ),
@@ -3349,7 +3416,7 @@ class _VariantEditorTile extends StatelessWidget {
                   opacity: .3,
                   child: _VariantImage(
                     label: draft.name.text,
-                    imageUrl: imageUrl,
+                    imageUrl: widget.imageUrl,
                   ),
                 ),
                 child: Tooltip(
@@ -3358,7 +3425,7 @@ class _VariantEditorTile extends StatelessWidget {
                     cursor: SystemMouseCursors.grab,
                     child: _VariantImage(
                       label: draft.name.text,
-                      imageUrl: imageUrl,
+                      imageUrl: widget.imageUrl,
                     ),
                   ),
                 ),
@@ -3366,12 +3433,11 @@ class _VariantEditorTile extends StatelessWidget {
               final controls = _VariantImageActions(
                 label: draft.name.text,
                 visible: draft.active,
-                uploading: uploading,
-                onPickImage: onPickImage,
-                onDelete: onDelete,
+                uploading: widget.uploading,
+                onPickImage: widget.onPickImage,
+                onDelete: widget.onDelete,
                 onVisibilityChanged: () {
-                  draft.active = !draft.active;
-                  onChanged();
+                  setState(() => draft.active = !draft.active);
                 },
               );
               final fields = Column(

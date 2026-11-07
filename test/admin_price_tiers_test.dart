@@ -38,7 +38,7 @@ void main() {
 
     expect(find.text('Unidad de venta *'), findsNothing);
 
-    await tester.drag(find.byType(ListView), const Offset(0, -650));
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -650));
     await tester.pumpAndSettle();
 
     expect(find.text('Precios por cantidad'), findsNothing);
