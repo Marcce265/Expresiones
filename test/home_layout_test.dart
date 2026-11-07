@@ -2,6 +2,7 @@ import 'package:expresiones/data/seed_catalog.dart';
 import 'package:expresiones/models/catalog_models.dart';
 import 'package:expresiones/screens/home_screen.dart';
 import 'package:expresiones/theme/app_theme.dart';
+import 'package:expresiones/widgets/product_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,7 +31,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Cotiza sin registro'), findsOneWidget);
-    expect(find.text('Ver todo el catálogo'), findsNWidgets(2));
+    expect(find.text('Ver todo el catálogo'), findsOneWidget);
+    expect(find.byType(ProductCard), findsNWidgets(6));
+    final cardSize = tester.getSize(find.byType(ProductCard).first);
+    expect(cardSize.height, greaterThan(cardSize.width));
     expect(tester.takeException(), isNull);
   });
 
@@ -90,7 +94,7 @@ void main() {
 
     expect(find.text('VERDE MILITAR'), findsOneWidget);
     expect(find.text('MORADO UVA'), findsOneWidget);
-    expect(find.text('LIMPIAPIPAS PREMIUM 8 MM'), findsNothing);
+    expect(find.text('LIMPIAPIPAS PREMIUM 8 MM'), findsNWidgets(2));
 
     await tester.ensureVisible(find.text('VERDE MILITAR'));
     await tester.tap(find.text('VERDE MILITAR'));

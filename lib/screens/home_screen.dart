@@ -161,7 +161,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 _FeaturedProducts(
                   products: featured,
                   onProduct: widget.onProduct,
-                  onBrowse: () => widget.onBrowse(ProductCategory.materials),
                 ),
             ],
           ],
@@ -868,15 +867,10 @@ class _FeaturedHeader extends StatelessWidget {
 }
 
 class _FeaturedProducts extends StatelessWidget {
-  const _FeaturedProducts({
-    required this.products,
-    required this.onProduct,
-    required this.onBrowse,
-  });
+  const _FeaturedProducts({required this.products, required this.onProduct});
 
   final List<CatalogTile> products;
   final ProductSelected onProduct;
-  final VoidCallback onBrowse;
 
   @override
   Widget build(BuildContext context) {
@@ -884,13 +878,10 @@ class _FeaturedProducts extends StatelessWidget {
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 900;
         final isTablet = constraints.maxWidth >= 620;
-        final visibleProducts = isDesktop
-            ? products.take(4).toList(growable: false)
-            : products;
-        final showBrowseCard = isDesktop;
-        final itemCount = visibleProducts.length + (showBrowseCard ? 1 : 0);
+        final visibleProducts = products.take(6).toList(growable: false);
+        final itemCount = visibleProducts.length;
         final targetColumns = isDesktop
-            ? 5
+            ? 6
             : isTablet
             ? 3
             : 2;
@@ -902,88 +893,25 @@ class _FeaturedProducts extends StatelessWidget {
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns == 0 ? 1 : columns,
             mainAxisExtent: isDesktop
-                ? 258
+                ? 304
                 : isTablet
-                ? 280
+                ? 304
                 : 250,
             crossAxisSpacing: isDesktop ? 14 : 12,
             mainAxisSpacing: isDesktop ? 14 : 12,
           ),
           itemBuilder: (context, index) {
-            if (index == visibleProducts.length) {
-              return _BrowseCatalogCard(onTap: onBrowse);
-            }
             final tile = visibleProducts[index];
             return ProductCard(
               product: tile.product,
               variant: tile.variant,
               compact: !isTablet,
-              homePresentation: isDesktop,
-              showSkuBadge: isDesktop,
-              trailingIcon: Icons.add_rounded,
+              showCategory: true,
               onTap: () => onProduct(tile.product, tile.variant?.id),
             );
           },
         );
       },
-    );
-  }
-}
-
-class _BrowseCatalogCard extends StatelessWidget {
-  const _BrowseCatalogCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFFFF5F6),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: Color(0xFFF2BCC7)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: const BoxDecoration(
-                    color: AppColors.surface,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 18,
-                    color: Color(0xFFA84B5A),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Ver todo el catálogo',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelLarge
-                      ?.copyWith(color: const Color(0xFFA84B5A), fontSize: 11),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Más de 200 insumos organizados',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(fontSize: 9.5),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
