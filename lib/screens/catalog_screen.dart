@@ -75,15 +75,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 
   void _switchCategory(ProductCategory category) {
-    if (category == ProductCategory.crowns) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Coronas estará disponible próximamente.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
     setState(() {
       _selectedCategory = category;
       _selectedFamilyId = null;
@@ -187,44 +178,21 @@ class _CatalogScreenState extends State<CatalogScreen> {
               if (tiles.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
-                  child: _selectedCategory == ProductCategory.koreanPaper &&
-                          _query.isEmpty
-                      ? _UpcomingModuleEmptyState(
-                          icon: const Icon(
-                            Icons.layers_outlined,
-                            size: 36,
-                            color: AppColors.pinkStrong,
+                  child:
+                      _query.isEmpty &&
+                          (_selectedCategory ==
+                                  ProductCategory.koreanPaper ||
+                              _selectedCategory == ProductCategory.crowns)
+                      ? _ConstructionModuleState(category: _selectedCategory)
+                      : EmptyState(
+                          icon: Icons.search_off_rounded,
+                          title: widget.settings.text(
+                            StorefrontText.catalogEmptyTitle,
                           ),
-                          title: 'Papel Coreano muy pronto',
-                          message:
-                              'Estamos preparando los pliegos más hermosos y exclusivos para tus ramos y manualidades. ¡Muy pronto disponibles para cotizar!',
-                          actionLabel: 'Ver Materiales',
-                          onAction: () =>
-                              _switchCategory(ProductCategory.materials),
-                        )
-                      : _selectedCategory == ProductCategory.crowns &&
-                              _query.isEmpty
-                          ? _UpcomingModuleEmptyState(
-                              icon: const CrownIcon(
-                                size: 36,
-                                color: AppColors.pinkStrong,
-                              ),
-                              title: 'Coronas próximamente',
-                              message:
-                                  'Muy pronto podrás cotizar coronas para reinas, quinceañeras y eventos especiales.',
-                              actionLabel: 'Ver Materiales',
-                              onAction: () =>
-                                  _switchCategory(ProductCategory.materials),
-                            )
-                          : EmptyState(
-                              icon: Icons.search_off_rounded,
-                              title: widget.settings.text(
-                                StorefrontText.catalogEmptyTitle,
-                              ),
-                              message: widget.settings.text(
-                                StorefrontText.catalogEmptyBody,
-                              ),
-                            ),
+                          message: widget.settings.text(
+                            StorefrontText.catalogEmptyBody,
+                          ),
+                        ),
                 )
               else ...[
                 SliverPadding(
@@ -649,7 +617,6 @@ class _ModuleSelectorBar extends StatelessWidget {
           _ModuleChip(
             category: ProductCategory.materials,
             label: 'Materiales',
-            isComingSoon: false,
             isSelected: selectedCategory == ProductCategory.materials,
             onTap: () => onSelectCategory(ProductCategory.materials),
           ),
@@ -657,7 +624,6 @@ class _ModuleSelectorBar extends StatelessWidget {
           _ModuleChip(
             category: ProductCategory.koreanPaper,
             label: 'Papel Coreano',
-            isComingSoon: false,
             isSelected: selectedCategory == ProductCategory.koreanPaper,
             onTap: () => onSelectCategory(ProductCategory.koreanPaper),
           ),
@@ -665,7 +631,6 @@ class _ModuleSelectorBar extends StatelessWidget {
           _ModuleChip(
             category: ProductCategory.crowns,
             label: 'Coronas',
-            isComingSoon: true,
             isSelected: selectedCategory == ProductCategory.crowns,
             onTap: () => onSelectCategory(ProductCategory.crowns),
           ),
@@ -680,14 +645,12 @@ class _ModuleChip extends StatelessWidget {
     required this.category,
     required this.label,
     required this.isSelected,
-    required this.isComingSoon,
     required this.onTap,
   });
 
   final ProductCategory category;
   final String label;
   final bool isSelected;
-  final bool isComingSoon;
   final VoidCallback onTap;
 
   Widget _icon(Color color) => switch (category) {
@@ -707,11 +670,7 @@ class _ModuleChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected
-        ? Colors.white
-        : isComingSoon
-            ? AppColors.muted
-            : AppColors.ink;
+    final color = isSelected ? Colors.white : AppColors.ink;
 
     return Material(
       color: isSelected ? AppColors.ink : AppColors.surface,
@@ -725,11 +684,7 @@ class _ModuleChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isSelected
-                  ? AppColors.ink
-                  : isComingSoon
-                      ? AppColors.border.withValues(alpha: 0.7)
-                      : AppColors.border,
+              color: isSelected ? AppColors.ink : AppColors.border,
             ),
           ),
           child: Row(
@@ -745,25 +700,6 @@ class _ModuleChip extends StatelessWidget {
                   color: color,
                 ),
               ),
-              if (isComingSoon) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                  decoration: BoxDecoration(
-                    color: AppColors.pinkSoft,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: const Text(
-                    'Próx.',
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.pinkStrong,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -772,72 +708,96 @@ class _ModuleChip extends StatelessWidget {
   }
 }
 
-class _UpcomingModuleEmptyState extends StatelessWidget {
-  const _UpcomingModuleEmptyState({
-    required this.icon,
-    required this.title,
-    required this.message,
-    required this.actionLabel,
-    required this.onAction,
-  });
+class _ConstructionModuleState extends StatelessWidget {
+  const _ConstructionModuleState({required this.category});
 
-  final Widget icon;
-  final String title;
-  final String message;
-  final String actionLabel;
-  final VoidCallback onAction;
+  final ProductCategory category;
 
   @override
   Widget build(BuildContext context) {
+    final isKoreanPaper = category == ProductCategory.koreanPaper;
+    final message = isKoreanPaper
+        ? 'Estamos preparando los pliegos más hermosos y exclusivos para tus ramos y manualidades. ¡Muy pronto disponibles para cotizar!'
+        : 'Estamos preparando las coronas más hermosas y exclusivas para tus reinas, quinceañeras y eventos especiales. ¡Muy pronto disponibles para cotizar!';
+    final media = MediaQuery.sizeOf(context);
+    final compact = media.width < 700;
+    final availableHeight = media.height - (compact ? 300 : 320);
+    final imageHeight = (availableHeight * (compact ? 0.42 : 0.46))
+        .clamp(compact ? 150.0 : 180.0, compact ? 240.0 : 320.0);
+    final haloSize = imageHeight * 0.92;
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+        padding: EdgeInsets.fromLTRB(
+          compact ? 20 : 32,
+          12,
+          compact ? 20 : 32,
+          20,
+        ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                color: AppColors.pinkSoft,
-                shape: BoxShape.circle,
-              ),
-              child: icon,
-            ),
-            const SizedBox(height: 18),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+            SizedBox(
+              height: imageHeight,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: haloSize,
+                    height: haloSize,
+                    decoration: BoxDecoration(
+                      color: AppColors.pinkSoft.withValues(alpha: .6),
+                      shape: BoxShape.circle,
+                    ),
                   ),
+                  Image.asset(
+                    'assets/images/jashy_constructora.webp',
+                    height: imageHeight,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                    semanticLabel:
+                        'Jashy con casco y herramientas de construcción',
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: compact ? 10 : 14),
+            Text(
+              'SECCIÓN EN CONSTRUCCIÓN',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: compact ? 13 : 15,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 2.2,
+                color: AppColors.pinkStrong,
+              ),
+            ),
+            SizedBox(height: compact ? 6 : 8),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: Text(
+                '¡${category.label} muy pronto!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: compact ? 28 : 38,
+                  height: 1.08,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                ),
+              ),
+            ),
+            SizedBox(height: compact ? 8 : 12),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
               child: Text(
                 message,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.muted,
-                      height: 1.45,
-                    ),
-              ),
-            ),
-            const SizedBox(height: 22),
-            FilledButton.icon(
-              onPressed: onAction,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.ink,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  color: AppColors.muted,
+                  height: 1.5,
+                  fontSize: compact ? 13.5 : 15,
                 ),
               ),
-              icon: const Icon(Icons.arrow_back_rounded, size: 18),
-              label: Text(actionLabel),
             ),
           ],
         ),

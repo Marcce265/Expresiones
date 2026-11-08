@@ -79,6 +79,7 @@ flutter:
     - assets/images/jashy_chibi_book.webp
     - assets/images/jashy_chibi_writing.webp
     - assets/images/jashy_chibi_bouquet.webp
+    - assets/images/jashy_constructora.webp
     # Dos portadas editoriales pequeñas forman parte de la interfaz; las 221
     # fotos dinámicas del catálogo se sirven desde Supabase Storage.
     - assets/images/family_heroes/

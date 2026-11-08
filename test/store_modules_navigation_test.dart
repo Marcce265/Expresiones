@@ -72,7 +72,7 @@ void main() {
       expect(find.text('Materiales'), findsWidgets);
       expect(find.text('Papel Coreano'), findsWidgets);
       expect(find.text('Coronas'), findsOneWidget);
-      expect(find.text('Próx.'), findsOneWidget);
+      expect(find.text('Próx.'), findsNothing);
 
       // Initially shows Materiales product
       expect(find.text('LIMPIAPIPAS PREMIUM 8 MM'), findsOneWidget);
@@ -119,14 +119,49 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Papel Coreano muy pronto'), findsOneWidget);
-      expect(find.text('Ver Materiales'), findsOneWidget);
+      expect(find.text('SECCIÓN EN CONSTRUCCIÓN'), findsOneWidget);
+      expect(find.text('¡Papel Coreano muy pronto!'), findsOneWidget);
+      expect(
+        find.textContaining('pliegos más hermosos y exclusivos'),
+        findsOneWidget,
+      );
 
-      // Tap Ver Materiales button
-      await tester.tap(find.text('Ver Materiales'));
+      // Tap Materiales chip to go back to the products
+      await tester.tap(find.text('Materiales').first);
       await tester.pumpAndSettle();
 
       expect(find.text('LIMPIAPIPAS PREMIUM 8 MM'), findsOneWidget);
+    });
+
+    testWidgets('CatalogScreen shows construction state for Coronas', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CatalogScreen(
+              products: const <CatalogProduct>[],
+              initialCategory: ProductCategory.crowns,
+              onProduct: (_, _) {},
+              onBack: () {},
+              onOpenQuote: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('SECCIÓN EN CONSTRUCCIÓN'), findsOneWidget);
+      expect(find.text('¡Coronas muy pronto!'), findsOneWidget);
+      expect(
+        find.textContaining('coronas más hermosas y exclusivas'),
+        findsOneWidget,
+      );
     });
   });
 }

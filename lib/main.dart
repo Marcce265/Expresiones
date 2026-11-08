@@ -693,16 +693,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     quoteQuantity: store.cartQuantity,
                     onSelect: _selectDestination,
                     onSelectCatalogCategory: _showCatalog,
-                    onCoronasComingSoon: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Coronas estará disponible próximamente.',
-                          ),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
                     itemKeys: _navigationKeys,
                   ),
                 Expanded(
@@ -848,7 +838,6 @@ class _DesktopNavigation extends StatelessWidget {
     required this.onSelect,
     this.catalogCategory,
     this.onSelectCatalogCategory,
-    this.onCoronasComingSoon,
     this.itemKeys,
   });
 
@@ -858,7 +847,6 @@ class _DesktopNavigation extends StatelessWidget {
   final int quoteQuantity;
   final ValueChanged<int> onSelect;
   final ValueChanged<ProductCategory>? onSelectCatalogCategory;
-  final VoidCallback? onCoronasComingSoon;
   final List<GlobalKey>? itemKeys;
 
   @override
@@ -869,6 +857,8 @@ class _DesktopNavigation extends StatelessWidget {
             catalogCategory == null);
     final isKoreanPaperSelected =
         currentIndex == 1 && catalogCategory == ProductCategory.koreanPaper;
+    final isCrownsSelected =
+        currentIndex == 1 && catalogCategory == ProductCategory.crowns;
 
     return Container(
       width: 248,
@@ -937,41 +927,15 @@ class _DesktopNavigation extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     _DesktopNavigationItem(
-                      iconWidget: const CrownIcon(
+                      iconWidget: CrownIcon(
                         size: 20,
-                        color: AppColors.ink,
+                        color: isCrownsSelected ? Colors.white : AppColors.ink,
                       ),
                       label: 'Coronas',
-                      selected: false,
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.pinkSoft,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'Próx.',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.pinkStrong,
-                          ),
-                        ),
-                      ),
-                      onTap: onCoronasComingSoon ??
-                          () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Coronas estará disponible próximamente.',
-                                ),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          },
+                      selected: isCrownsSelected,
+                      onTap: () => onSelectCatalogCategory != null
+                          ? onSelectCatalogCategory!(ProductCategory.crowns)
+                          : onSelect(1),
                     ),
                     const SizedBox(height: 6),
                     const _NavSectionDivider(label: 'MI PEDIDO'),
@@ -1064,7 +1028,6 @@ class _DesktopNavigationItem extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.badgeCount = 0,
-    this.trailing,
   }) : assert(icon != null || iconWidget != null);
 
   final IconData? icon;
@@ -1073,7 +1036,6 @@ class _DesktopNavigationItem extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final int badgeCount;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -1118,7 +1080,6 @@ class _DesktopNavigationItem extends StatelessWidget {
                     ),
                   ),
                 ),
-                ?trailing,
               ],
             ),
           ),

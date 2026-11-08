@@ -2617,7 +2617,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                             DropdownMenuItem(
                               value: ProductCategory.crowns,
                               child: Text(
-                                'Coronas (Próximamente)',
+                                'Coronas',
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
