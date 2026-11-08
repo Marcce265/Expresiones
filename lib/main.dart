@@ -695,7 +695,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                            '👑 Coronas estará disponible próximamente.',
+                            'Coronas estará disponible próximamente.',
                           ),
                           duration: Duration(seconds: 2),
                         ),
@@ -961,7 +961,7 @@ class _DesktopNavigation extends StatelessWidget {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(
-                                  '👑 Coronas estará disponible próximamente.',
+                                  'Coronas estará disponible próximamente.',
                                 ),
                                 duration: Duration(seconds: 2),
                               ),

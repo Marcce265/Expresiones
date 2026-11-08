@@ -42,7 +42,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
   late ProductCategory _selectedCategory;
   String? _selectedFamilyId;
   String _query = '';
-  String _filter = 'Todos';
 
   @override
   void initState() {
@@ -66,12 +65,10 @@ class _CatalogScreenState extends State<CatalogScreen> {
       _selectedCategory = widget.initialCategory!;
       _selectedFamilyId = null;
       _query = '';
-      _filter = 'Todos';
       _searchController.clear();
     } else if (_selectedFamilyId != null && _selectedFamily == null) {
       _selectedFamilyId = null;
       _query = '';
-      _filter = 'Todos';
       _searchController.clear();
     }
   }
@@ -80,7 +77,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
     if (category == ProductCategory.crowns) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('👑 Coronas estará disponible próximamente.'),
+          content: Text('Coronas estará disponible próximamente.'),
           duration: Duration(seconds: 2),
         ),
       );
@@ -90,7 +87,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
       _selectedCategory = category;
       _selectedFamilyId = null;
       _query = '';
-      _filter = 'Todos';
       _searchController.clear();
     });
     widget.onCategoryChanged?.call(category);
@@ -111,43 +107,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
               (product: product, variant: null),
           ]
         : expandCatalogTiles([family]);
-    final tiles = baseTiles.where((tile) {
-      return _matches(tile, query) && _matchesFilter(tile, _filter);
-    }).toList();
-    final List<String> filters;
-    if (family != null) {
-      filters = const <String>[];
-    } else if (_selectedCategory == ProductCategory.materials) {
-      filters = const [
-        'Todos',
-        'Limpiapipas',
-        'Cintas satinadas',
-        'Cintas especiales',
-        'Envolturas',
-        'Accesorios',
-        'Herramientas',
-        'Frases',
-      ];
-    } else {
-      final dynamicGroups = availableProducts
-          .map((p) => p.attributes['catalogGroup'])
-          .whereType<String>()
-          .where((g) => g.isNotEmpty && g != 'Todos')
-          .toSet()
-          .toList();
-      if (dynamicGroups.isNotEmpty) {
-        filters = ['Todos', ...dynamicGroups];
-      } else {
-        filters = const [
-          'Todos',
-          'Lisos',
-          'Bicolor',
-          'Tornasol',
-          'Estampados',
-          'Borde dorado',
-        ];
-      }
-    }
+    final tiles = baseTiles.where((tile) => _matches(tile, query)).toList();
 
     final catalogTitle = family != null
         ? familyDisplayName(family)
@@ -219,14 +179,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                 ),
                         ),
                       ),
-                      if (filters.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        _CatalogFilters(
-                          filters: filters,
-                          selected: _filter,
-                          onSelected: _selectFilter,
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -367,12 +319,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
     return null;
   }
 
-  void _selectFilter(String filter) {
-    setState(() {
-      _filter = filter;
-    });
-  }
-
   void _onSearchChanged(String value) {
     setState(() => _query = value);
     _searchDebounce?.cancel();
@@ -397,9 +343,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
               (product: product, variant: null),
           ]
         : expandCatalogTiles([family]);
-    final hasResult = baseTiles.any(
-      (tile) => _matches(tile, query) && _matchesFilter(tile, _filter),
-    );
+    final hasResult = baseTiles.any((tile) => _matches(tile, query));
     if (hasResult) return;
     _reportedEmptySearches.add(query);
     widget.onZeroResultSearch!(query);
@@ -414,7 +358,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
       setState(() {
         _selectedFamilyId = tile.product.id;
         _query = '';
-        _filter = 'Todos';
       });
       return;
     }
@@ -430,51 +373,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
     setState(() {
       _selectedFamilyId = null;
       _query = '';
-      _filter = 'Todos';
     });
-  }
-}
-
-class _CatalogFilters extends StatelessWidget {
-  const _CatalogFilters({
-    required this.filters,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  final List<String> filters;
-  final String selected;
-  final ValueChanged<String> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final chips = [
-      for (final filter in filters)
-        ChoiceChip(
-          label: Text(filter),
-          selected: selected == filter,
-          onSelected: (_) => onSelected(filter),
-        ),
-    ];
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= 820) {
-          return Wrap(spacing: 8, runSpacing: 8, children: chips);
-        }
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.only(bottom: 2),
-          child: Row(
-            children: [
-              for (var index = 0; index < chips.length; index++) ...[
-                chips[index],
-                if (index != chips.length - 1) const SizedBox(width: 8),
-              ],
-            ],
-          ),
-        );
-      },
-    );
   }
 }
 
@@ -494,11 +393,6 @@ bool _matches(CatalogTile tile, String query) {
     if (variant == null)
       for (final option in product.variants) ...[option.name, option.sku ?? ''],
   ].any((value) => value.toLowerCase().contains(query));
-}
-
-bool _matchesFilter(CatalogTile tile, String filter) {
-  if (filter == 'Todos') return true;
-  return tile.product.attributes['catalogGroup'] == filter;
 }
 
 bool usesSharedFamilyPricing(CatalogProduct product) {
@@ -773,19 +667,19 @@ class _ModuleSelectorBar extends StatelessWidget {
     final modules = [
       (
         category: ProductCategory.materials,
-        emoji: '✨',
+        icon: Icons.auto_awesome_rounded,
         label: 'Materiales',
         isComingSoon: false,
       ),
       (
         category: ProductCategory.koreanPaper,
-        emoji: '🌸',
+        icon: Icons.layers_rounded,
         label: 'Papel Coreano',
         isComingSoon: false,
       ),
       (
         category: ProductCategory.crowns,
-        emoji: '👑',
+        icon: Icons.military_tech_rounded,
         label: 'Coronas',
         isComingSoon: true,
       ),
@@ -799,7 +693,7 @@ class _ModuleSelectorBar extends StatelessWidget {
         children: [
           for (var i = 0; i < modules.length; i++) ...[
             _ModuleChip(
-              emoji: modules[i].emoji,
+              icon: modules[i].icon,
               label: modules[i].label,
               isComingSoon: modules[i].isComingSoon,
               isSelected: selectedCategory == modules[i].category,
@@ -815,14 +709,14 @@ class _ModuleSelectorBar extends StatelessWidget {
 
 class _ModuleChip extends StatelessWidget {
   const _ModuleChip({
-    required this.emoji,
+    required this.icon,
     required this.label,
     required this.isSelected,
     required this.isComingSoon,
     required this.onTap,
   });
 
-  final String emoji;
+  final IconData icon;
   final String label;
   final bool isSelected;
   final bool isComingSoon;
@@ -852,9 +746,14 @@ class _ModuleChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                emoji,
-                style: const TextStyle(fontSize: 14),
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected
+                    ? Colors.white
+                    : isComingSoon
+                        ? AppColors.muted
+                        : AppColors.ink,
               ),
               const SizedBox(width: 6),
               Text(
