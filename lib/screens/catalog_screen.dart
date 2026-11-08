@@ -6,6 +6,7 @@ import '../models/catalog_models.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/crown_icon.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_visual.dart';
 
@@ -189,7 +190,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   child: _selectedCategory == ProductCategory.koreanPaper &&
                           _query.isEmpty
                       ? _UpcomingModuleEmptyState(
-                          icon: Icons.layers_outlined,
+                          icon: const Icon(
+                            Icons.layers_outlined,
+                            size: 36,
+                            color: AppColors.pinkStrong,
+                          ),
                           title: 'Papel Coreano muy pronto',
                           message:
                               'Estamos preparando los pliegos más hermosos y exclusivos para tus ramos y manualidades. ¡Muy pronto disponibles para cotizar!',
@@ -200,7 +205,10 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       : _selectedCategory == ProductCategory.crowns &&
                               _query.isEmpty
                           ? _UpcomingModuleEmptyState(
-                              icon: Icons.military_tech_outlined,
+                              icon: const CrownIcon(
+                                size: 36,
+                                color: AppColors.pinkStrong,
+                              ),
                               title: 'Coronas próximamente',
                               message:
                                   'Muy pronto podrás cotizar coronas para reinas, quinceañeras y eventos especiales.',
@@ -266,38 +274,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     },
                   ),
                 ),
-                if (family == null &&
-                    _selectedCategory == ProductCategory.materials)
-                  SliverToBoxAdapter(
-                    child: ResponsivePage(
-                      maxWidth: 1180,
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 17,
-                          vertical: 13,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.pinkSoft,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Precio por volumen disponible',
-                              style: Theme.of(context).textTheme.labelLarge,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Cotiza por docena, medio cajón o cajón completo.',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ],
           ),
@@ -664,43 +640,35 @@ class _ModuleSelectorBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final modules = [
-      (
-        category: ProductCategory.materials,
-        icon: Icons.auto_awesome_rounded,
-        label: 'Materiales',
-        isComingSoon: false,
-      ),
-      (
-        category: ProductCategory.koreanPaper,
-        icon: Icons.layers_rounded,
-        label: 'Papel Coreano',
-        isComingSoon: false,
-      ),
-      (
-        category: ProductCategory.crowns,
-        icon: Icons.military_tech_rounded,
-        label: 'Coronas',
-        isComingSoon: true,
-      ),
-    ];
-
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 2),
       child: Row(
         children: [
-          for (var i = 0; i < modules.length; i++) ...[
-            _ModuleChip(
-              icon: modules[i].icon,
-              label: modules[i].label,
-              isComingSoon: modules[i].isComingSoon,
-              isSelected: selectedCategory == modules[i].category,
-              onTap: () => onSelectCategory(modules[i].category),
-            ),
-            if (i < modules.length - 1) const SizedBox(width: 8),
-          ],
+          _ModuleChip(
+            category: ProductCategory.materials,
+            label: 'Materiales',
+            isComingSoon: false,
+            isSelected: selectedCategory == ProductCategory.materials,
+            onTap: () => onSelectCategory(ProductCategory.materials),
+          ),
+          const SizedBox(width: 8),
+          _ModuleChip(
+            category: ProductCategory.koreanPaper,
+            label: 'Papel Coreano',
+            isComingSoon: false,
+            isSelected: selectedCategory == ProductCategory.koreanPaper,
+            onTap: () => onSelectCategory(ProductCategory.koreanPaper),
+          ),
+          const SizedBox(width: 8),
+          _ModuleChip(
+            category: ProductCategory.crowns,
+            label: 'Coronas',
+            isComingSoon: true,
+            isSelected: selectedCategory == ProductCategory.crowns,
+            onTap: () => onSelectCategory(ProductCategory.crowns),
+          ),
         ],
       ),
     );
@@ -709,21 +677,42 @@ class _ModuleSelectorBar extends StatelessWidget {
 
 class _ModuleChip extends StatelessWidget {
   const _ModuleChip({
-    required this.icon,
+    required this.category,
     required this.label,
     required this.isSelected,
     required this.isComingSoon,
     required this.onTap,
   });
 
-  final IconData icon;
+  final ProductCategory category;
   final String label;
   final bool isSelected;
   final bool isComingSoon;
   final VoidCallback onTap;
 
+  Widget _icon(Color color) => switch (category) {
+    ProductCategory.materials => Icon(
+      Icons.auto_awesome_rounded,
+      size: 16,
+      color: color,
+    ),
+    ProductCategory.koreanPaper => Icon(
+      Icons.layers_rounded,
+      size: 16,
+      color: color,
+    ),
+    ProductCategory.crowns => CrownIcon(size: 16, color: color),
+    _ => Icon(Icons.local_florist_rounded, size: 16, color: color),
+  };
+
   @override
   Widget build(BuildContext context) {
+    final color = isSelected
+        ? Colors.white
+        : isComingSoon
+            ? AppColors.muted
+            : AppColors.ink;
+
     return Material(
       color: isSelected ? AppColors.ink : AppColors.surface,
       borderRadius: BorderRadius.circular(20),
@@ -746,26 +735,14 @@ class _ModuleChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected
-                    ? Colors.white
-                    : isComingSoon
-                        ? AppColors.muted
-                        : AppColors.ink,
-              ),
+              _icon(color),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  color: isSelected
-                      ? Colors.white
-                      : isComingSoon
-                          ? AppColors.muted
-                          : AppColors.ink,
+                  color: color,
                 ),
               ),
               if (isComingSoon) ...[
@@ -804,7 +781,7 @@ class _UpcomingModuleEmptyState extends StatelessWidget {
     required this.onAction,
   });
 
-  final IconData icon;
+  final Widget icon;
   final String title;
   final String message;
   final String actionLabel;
@@ -825,7 +802,7 @@ class _UpcomingModuleEmptyState extends StatelessWidget {
                 color: AppColors.pinkSoft,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 36, color: AppColors.pinkStrong),
+              child: icon,
             ),
             const SizedBox(height: 18),
             Text(

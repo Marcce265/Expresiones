@@ -378,19 +378,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final Set<String> _hiddenProductIds = {};
   late Stream<List<CatalogProduct>> _productsStream;
   String _query = '';
-  String _catalogGroup = 'Todos';
   int _sectionIndex = 0;
-
-  static const _catalogGroups = [
-    'Todos',
-    'Limpiapipas',
-    'Cintas satinadas',
-    'Cintas especiales',
-    'Envolturas',
-    'Accesorios',
-    'Herramientas',
-    'Frases',
-  ];
 
   @override
   void initState() {
@@ -517,7 +505,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     setState(() {
       _sectionIndex = 1;
       _productsStream = widget.repository.watchProducts();
-      _catalogGroup = 'Todos';
       _query = rawQuery.trim().toLowerCase();
     });
   }
@@ -693,10 +680,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             )
             .toList(growable: false);
         final products = allProducts.where((product) {
-          if (_catalogGroup != 'Todos' &&
-              product.attributes['catalogGroup'] != _catalogGroup) {
-            return false;
-          }
           if (_query.isEmpty) return true;
           final haystack = [
             product.name,
@@ -781,23 +764,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             ],
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              for (final group in _catalogGroups) ...[
-                                ChoiceChip(
-                                  label: Text(group),
-                                  selected: _catalogGroup == group,
-                                  onSelected: (_) =>
-                                      setState(() => _catalogGroup = group),
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                            ],
-                          ),
-                        ),
                         if (compact) ...[
                           const SizedBox(height: 10),
                           Text(
@@ -814,7 +780,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     hasScrollBody: false,
                     child: _AdminError(
                       title: 'No hay resultados',
-                      message: 'Prueba con otra búsqueda o categoría.',
+                      message: 'Prueba con otra búsqueda.',
                     ),
                   )
                 else

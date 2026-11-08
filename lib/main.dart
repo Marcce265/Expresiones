@@ -37,6 +37,7 @@ import 'state/app_store.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_notice.dart';
 import 'widgets/assistant_guide.dart';
+import 'widgets/crown_icon.dart';
 import 'widgets/jashy_tour.dart';
 
 Future<void> main() async {
@@ -498,7 +499,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     ),
     JashyTourStep(
       title: 'Catálogo',
-      message: 'Mira productos, colores y precios.',
+      message:
+          'Mira productos, colores y precios. Precio por volumen: docena, medio cajón o cajón completo.',
       targetKey: _navigationKeys[1],
       imageAsset: 'assets/images/jashy_chibi_book.webp',
     ),
@@ -532,7 +534,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   JashyTourStep _sectionGuideStep({required bool hasQuote}) {
     final messages = <String>[
       'Busca por nombre, color o código.',
-      'Toca un producto, elige y agrega.',
+      'Toca un producto, elige y agrega. Precio por volumen: docena, medio cajón o cajón completo.',
       hasQuote
           ? 'Cambia cantidades y toca Continuar.'
           : 'Agrega productos desde Catálogo.',
@@ -935,7 +937,10 @@ class _DesktopNavigation extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     _DesktopNavigationItem(
-                      icon: Icons.military_tech_outlined,
+                      iconWidget: const CrownIcon(
+                        size: 20,
+                        color: AppColors.ink,
+                      ),
                       label: 'Coronas',
                       selected: false,
                       trailing: Container(
@@ -1053,15 +1058,17 @@ class _DesktopNavigation extends StatelessWidget {
 class _DesktopNavigationItem extends StatelessWidget {
   const _DesktopNavigationItem({
     super.key,
-    required this.icon,
+    this.icon,
+    this.iconWidget,
     required this.label,
     required this.selected,
     required this.onTap,
     this.badgeCount = 0,
     this.trailing,
-  });
+  }) : assert(icon != null || iconWidget != null);
 
-  final IconData icon;
+  final IconData? icon;
+  final Widget? iconWidget;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -1093,11 +1100,13 @@ class _DesktopNavigationItem extends StatelessWidget {
                   count: badgeCount,
                   isLabelVisible: badgeCount > 0,
                   backgroundColor: AppColors.pinkStrong,
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: selected ? Colors.white : AppColors.ink,
-                  ),
+                  child:
+                      iconWidget ??
+                      Icon(
+                        icon,
+                        size: 20,
+                        color: selected ? Colors.white : AppColors.ink,
+                      ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
