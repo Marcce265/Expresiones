@@ -518,6 +518,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       builder: (context) => AdminProductEditorDialog(
         repository: widget.repository,
         product: product,
+        initialCategory: product == null ? _moduleFilter : null,
       ),
     );
     if (result == null || !mounted) return;
@@ -2123,10 +2124,12 @@ class AdminProductEditorDialog extends StatefulWidget {
     super.key,
     required this.repository,
     this.product,
+    this.initialCategory,
   });
 
   final AdminCatalogRepository repository;
   final CatalogProduct? product;
+  final ProductCategory? initialCategory;
 
   @override
   State<AdminProductEditorDialog> createState() =>
@@ -2170,7 +2173,8 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       for (final tier in product?.priceTiers ?? const <PriceTier>[])
         _PriceTierDraft.fromTier(tier),
     ];
-    _category = product?.category ?? ProductCategory.materials;
+    _category =
+        product?.category ?? widget.initialCategory ?? ProductCategory.materials;
     _isActive = product?.isActive ?? true;
     _isFeatured = product?.isFeatured ?? false;
     _priceIsEstimate = product?.priceIsEstimate ?? false;
