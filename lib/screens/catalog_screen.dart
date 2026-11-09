@@ -721,9 +721,9 @@ class _ConstructionModuleState extends StatelessWidget {
         : 'Estamos preparando las coronas más hermosas y exclusivas para tus reinas, quinceañeras y eventos especiales. ¡Muy pronto disponibles para cotizar!';
     final media = MediaQuery.sizeOf(context);
     final compact = media.width < 700;
-    final availableHeight = media.height - (compact ? 300 : 320);
-    final imageHeight = (availableHeight * (compact ? 0.42 : 0.46))
-        .clamp(compact ? 150.0 : 180.0, compact ? 240.0 : 320.0);
+    final availableHeight = media.height - (compact ? 290 : 310);
+    final imageHeight = (availableHeight * (compact ? 0.50 : 0.55))
+        .clamp(compact ? 160.0 : 200.0, compact ? 280.0 : 360.0);
     final haloSize = imageHeight * 0.92;
 
     return Center(
