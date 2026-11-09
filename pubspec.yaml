@@ -85,6 +85,8 @@ flutter:
     - assets/images/family_heroes/
     # Portadas editoriales agrupadas de módulos con muchas opciones.
     - assets/images/module_covers/
+    # Logotipos e insignias de formas de pago
+    - assets/images/payments/
     # Las fotos de productos ya se sirven directamente desde Supabase Storage:
     # https://wxoaedvqeuynzinzazsj.supabase.co/storage/v1/object/public/catalog/images/
 

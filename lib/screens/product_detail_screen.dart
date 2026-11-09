@@ -126,6 +126,53 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
+  Widget _buildTrustItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Icon(icon, size: 18, color: AppColors.ink),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.muted,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   void _handleAdd() {
     widget.onAdd(
       quantity: _quantity,
@@ -312,121 +359,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       AspectRatio(aspectRatio: 1, child: visualWidget)
                     else
                       SizedBox(height: 520, child: visualWidget),
-                    if (activeVariants.length > 1) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.palette_outlined,
-                                  size: 16,
-                                  color: AppColors.ink,
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: RichText(
-                                    text: TextSpan(
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(color: AppColors.ink),
-                                      children: [
-                                        const TextSpan(
-                                          text: 'Tono seleccionado: ',
-                                          style: TextStyle(color: AppColors.muted),
-                                        ),
-                                        TextSpan(
-                                          text: title.toUpperCase(),
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  '${activeVariants.length} opciones',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
-                                      ?.copyWith(
-                                        color: AppColors.muted,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 6,
-                              children: [
-                                for (final option in activeVariants)
-                                  ChoiceChip(
-                                    label: Text(
-                                      variantDisplayName(option).toUpperCase(),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: _variantId == option.id
-                                            ? Colors.white
-                                            : AppColors.ink,
-                                      ),
-                                    ),
-                                    avatar: option.colorHex != null &&
-                                            option.colorHex!.isNotEmpty
-                                        ? Container(
-                                            width: 10,
-                                            height: 10,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: _parseHexColor(
-                                                option.colorHex!,
-                                              ),
-                                              border: Border.all(
-                                                color: Colors.black12,
-                                                width: 0.5,
-                                              ),
-                                            ),
-                                          )
-                                        : null,
-                                    selected: _variantId == option.id,
-                                    visualDensity: VisualDensity.compact,
-                                    materialTapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                    selectedColor: AppColors.ink,
-                                    backgroundColor: AppColors.canvas,
-                                    side: BorderSide(
-                                      color: _variantId == option.id
-                                          ? AppColors.ink
-                                          : AppColors.border,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    onSelected: (_) => setState(() {
-                                      _variantId = option.id;
-                                      _quantity = 1;
-                                    }),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
                 );
 
@@ -588,46 +520,79 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         const SizedBox(height: 18),
                       ],
 
-                      // Indicador limpio de opción seleccionada (las opciones completas se eligen junto a la imagen)
+                      // Selector compacto de variante / tono sin bulto
                       if (activeVariants.length > 1) ...[
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
-                            vertical: 10,
+                            vertical: 2,
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.canvas,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: AppColors.border),
                           ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.check_circle_outline_rounded,
-                                size: 18,
-                                color: AppColors.whatsapp,
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: activeVariants.any((v) => v.id == _variantId)
+                                  ? _variantId
+                                  : activeVariants.first.id,
+                              isExpanded: true,
+                              icon: const Icon(
+                                Icons.unfold_more_rounded,
+                                color: AppColors.ink,
+                                size: 20,
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Seleccionado: ${title.toUpperCase()}',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.ink,
+                              items: [
+                                for (final option in activeVariants)
+                                  DropdownMenuItem<String>(
+                                    value: option.id,
+                                    child: Row(
+                                      children: [
+                                        if (option.colorHex != null &&
+                                            option.colorHex!.isNotEmpty) ...[
+                                          Container(
+                                            width: 12,
+                                            height: 12,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: _parseHexColor(
+                                                option.colorHex!,
+                                              ),
+                                              border: Border.all(
+                                                color: Colors.black26,
+                                                width: 0.5,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                        ],
+                                        Expanded(
+                                          child: Text(
+                                            variantDisplayName(option)
+                                                .toUpperCase(),
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.ink,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Text(
-                                '${activeVariants.length} tonos',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.muted,
-                                ),
-                              ),
-                            ],
+                              ],
+                              onChanged: (newId) {
+                                if (newId != null) {
+                                  setState(() {
+                                    _variantId = newId;
+                                    _quantity = 1;
+                                  });
+                                }
+                              },
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -766,62 +731,116 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
           ),
 
-          // SECCIÓN 2: Franja de Sellos de Confianza (Estilo Rosatel - Imagen 2)
+          // SECCIÓN 2: Descripción a la izquierda y Sellos de Confianza a la derecha (Ahorro de espacio)
           ResponsivePage(
             maxWidth: 1200,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TrustBadgesStrip(
-              whatsappNumber: widget.settings?.normalizedWhatsappNumber,
-            ),
-          ),
-          const SizedBox(height: 36),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isStacked = constraints.maxWidth < 800;
 
-          // SECCIÓN 3: Descripción del Producto (Estilo Rosatel - Imagen 2)
-          ResponsivePage(
-            maxWidth: 1200,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Descripción del producto',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontFamily: 'PlayfairDisplay',
-                          fontWeight: FontWeight.w700,
-                        ),
+                final descriptionCard = Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.border),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Línea ${product.category.label} · Expresiones',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: AppColors.muted,
-                          fontWeight: FontWeight.w600,
-                        ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Descripción del producto',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontFamily: 'PlayfairDisplay',
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Línea ${product.category.label} · Expresiones',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: AppColors.muted,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        product.description.isNotEmpty
+                            ? product.description
+                            : 'Elaborado artesanalmente con materiales seleccionados de la más alta calidad para garantizar acabados impecables.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.ink,
+                              height: 1.55,
+                            ),
+                      ),
+                      if (product.attributes.isNotEmpty) ...[
+                        const SizedBox(height: 18),
+                        _buildAttributeBadges(product.attributes),
+                      ],
+                    ],
                   ),
-                  const SizedBox(height: 14),
-                  Text(
-                    product.description.isNotEmpty
-                        ? product.description
-                        : 'Elaborado artesanalmente con materiales seleccionados de la más alta calidad para garantizar acabados impecables.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.ink,
-                          height: 1.55,
-                        ),
+                );
+
+                final trustBadgesCard = Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.pinkSoft,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.border),
                   ),
-                  if (product.attributes.isNotEmpty) ...[
-                    const SizedBox(height: 18),
-                    _buildAttributeBadges(product.attributes),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildTrustItem(
+                        icon: Icons.verified_outlined,
+                        title: 'Calidad premium',
+                        subtitle: 'Artesanía y acabados impecables',
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        child: Divider(color: Colors.black12, height: 1),
+                      ),
+                      _buildTrustItem(
+                        icon: Icons.inventory_2_outlined,
+                        title: 'Productos seleccionados',
+                        subtitle: 'Insumos importados duraderos',
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        child: Divider(color: Colors.black12, height: 1),
+                      ),
+                      _buildTrustItem(
+                        icon: Icons.chat_bubble_outline_rounded,
+                        title: 'Atención personalizada',
+                        subtitle: 'Escríbenos directamente',
+                      ),
+                    ],
+                  ),
+                );
+
+                if (isStacked) {
+                  return Column(
+                    children: [
+                      descriptionCard,
+                      const SizedBox(height: 18),
+                      trustBadgesCard,
+                    ],
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 7, child: descriptionCard),
+                    const SizedBox(width: 24),
+                    Expanded(flex: 5, child: trustBadgesCard),
                   ],
-                ],
-              ),
+                );
+              },
             ),
           ),
           const SizedBox(height: 40),

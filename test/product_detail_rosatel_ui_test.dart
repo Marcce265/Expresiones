@@ -90,12 +90,11 @@ void main() {
       findsOneWidget,
     );
 
-    // 5. Franja de confianza con los 3 pilares
-    expect(find.byType(TrustBadgesStrip), findsOneWidget);
+    // 5. Sellos de confianza integrados a la derecha de la descripción (sin botón contáctanos)
     expect(find.text('Calidad premium'), findsOneWidget);
     expect(find.text('Productos seleccionados'), findsOneWidget);
     expect(find.text('Atención personalizada'), findsOneWidget);
-    expect(find.widgetWithText(OutlinedButton, 'Contáctanos'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Contáctanos'), findsNothing);
 
     // 6. Sección "Descripción del producto"
     expect(find.text('Descripción del producto'), findsOneWidget);
@@ -113,7 +112,7 @@ void main() {
     expect(find.text('¿Buscas un diseño o pedido a medida?'), findsNothing);
     expect(find.byType(StoreFooter), findsOneWidget);
     expect(find.text('FORMAS DE PAGO'), findsOneWidget);
-    expect(find.text('Yape'), findsOneWidget);
+    expect(find.byTooltip('Yape'), findsOneWidget);
 
     // 9. Jashy presente en la pantalla de detalle
     expect(find.byType(AssistantHelpButton), findsOneWidget);

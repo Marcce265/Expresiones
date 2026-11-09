@@ -399,6 +399,9 @@ class StoreFooter extends StatelessWidget {
   }
 
   Widget _brandBlock(BuildContext context) {
+    final number = whatsappNumber ?? StorefrontSettings.defaultWhatsappNumber;
+    final cleanPhone = number.replaceAll(RegExp(r'\D'), '');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -418,7 +421,7 @@ class StoreFooter extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'Detalles y rosas eternas elaboradas con dedicación. Materiales de primera calidad para emprender y regalar.',
+          'Taller artesanal de rosas eternas, ramos de listón y materiales de alta calidad para manualidades y emprendedores en Huancayo. Envíos locales y a todo el Perú.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.muted,
                 height: 1.45,
@@ -427,29 +430,63 @@ class StoreFooter extends StatelessWidget {
         const SizedBox(height: 14),
         Row(
           children: [
-            _socialCircle(Icons.chat_outlined, 'WhatsApp'),
+            _socialCircle(
+              Icons.chat_outlined,
+              'WhatsApp: Coordinaciones y pedidos',
+              'https://wa.me/$cleanPhone?text=Hola%20Expresiones%2C%20quisiera%20hacer%20una%20consulta',
+            ),
             const SizedBox(width: 8),
-            _socialCircle(Icons.photo_camera_outlined, 'Instagram'),
+            _socialCircle(
+              Icons.photo_camera_outlined,
+              'Instagram: @expresiones_huancayo',
+              'https://instagram.com/expresiones_huancayo',
+            ),
             const SizedBox(width: 8),
-            _socialCircle(Icons.music_note_outlined, 'TikTok'),
+            _socialCircle(
+              Icons.music_note_outlined,
+              'TikTok: @expresiones_huancayo',
+              'https://tiktok.com/@expresiones_huancayo',
+            ),
+            const SizedBox(width: 8),
+            _socialCircle(
+              Icons.facebook_outlined,
+              'Facebook: Expresiones Huancayo',
+              'https://facebook.com/expresioneshuancayo',
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _socialCircle(IconData icon, String tooltip) {
+  Widget _socialCircle(IconData icon, String tooltip, String url) {
     return Tooltip(
       message: tooltip,
-      child: Container(
-        width: 34,
-        height: 34,
-        decoration: BoxDecoration(
-          color: AppColors.canvas,
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColors.border),
+      child: Material(
+        color: AppColors.canvas,
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: () async {
+            final uri = Uri.parse(url);
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(
+                uri,
+                mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+              );
+            }
+          },
+          customBorder: const CircleBorder(),
+          hoverColor: AppColors.pinkSoft,
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.ink),
+          ),
         ),
-        child: Icon(icon, size: 16, color: AppColors.ink),
       ),
     );
   }
@@ -470,8 +507,6 @@ class StoreFooter extends StatelessWidget {
         _footerLink('✨ Materiales', () => onSelectCategory?.call(ProductCategory.materials)),
         const SizedBox(height: 8),
         _footerLink('🌸 Papel Coreano', () => onSelectCategory?.call(ProductCategory.koreanPaper)),
-        const SizedBox(height: 8),
-        _footerLink('👑 Coronas', () => onSelectCategory?.call(ProductCategory.crowns)),
       ],
     );
   }
@@ -489,9 +524,12 @@ class StoreFooter extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 12),
-        const Text('Lun a Sáb: 9:00 AM - 7:00 PM', style: TextStyle(fontSize: 13, color: AppColors.ink)),
+        const Text(
+          'Lun a Sáb: 11:00 AM - 5:00 PM',
+          style: TextStyle(fontSize: 13, color: AppColors.ink, fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 4),
-        const Text('Huancayo · Envíos nacionales', style: TextStyle(fontSize: 13, color: AppColors.muted)),
+        const Text('Huancayo · Envíos a todo el Perú', style: TextStyle(fontSize: 13, color: AppColors.muted)),
         const SizedBox(height: 8),
         _footerLink('Recojo en tienda Shalom', null),
       ],
@@ -512,17 +550,47 @@ class StoreFooter extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Wrap(
-          spacing: 6,
-          runSpacing: 6,
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            _paymentBadge('Yape'),
-            _paymentBadge('Plin'),
-            _paymentBadge('BCP'),
-            _paymentBadge('BBVA'),
-            _paymentBadge('Interbank'),
+            _paymentImage('assets/images/payments/yape.png', 'Yape', width: 72, height: 26),
+            _paymentImage('assets/images/payments/plin.png', 'Plin', width: 72, height: 26),
+            _paymentImage('assets/images/payments/interbank.png', 'Interbank', width: 84, height: 26),
+            _paymentImage('assets/images/payments/bcp.png', 'BCP', width: 68, height: 26),
+            _paymentImage('assets/images/payments/bbva.png', 'BBVA', width: 68, height: 26),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _paymentImage(String asset, String label, {double width = 72, double height = 26}) {
+    return Tooltip(
+      message: label,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.asset(
+            asset,
+            width: width,
+            height: height,
+            fit: BoxFit.contain,
+            semanticLabel: label,
+            errorBuilder: (context, error, stackTrace) => _paymentBadge(label),
+          ),
+        ),
+      ),
     );
   }
 

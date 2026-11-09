@@ -37,7 +37,6 @@ import 'state/app_store.dart';
 import 'theme/app_theme.dart';
 import 'widgets/app_notice.dart';
 import 'widgets/assistant_guide.dart';
-import 'widgets/crown_icon.dart';
 import 'widgets/skeleton_loader.dart';
 import 'widgets/jashy_tour.dart';
 
@@ -950,8 +949,6 @@ class _DesktopNavigation extends StatelessWidget {
             catalogCategory == null);
     final isKoreanPaperSelected =
         currentIndex == 1 && catalogCategory == ProductCategory.koreanPaper;
-    final isCrownsSelected =
-        currentIndex == 1 && catalogCategory == ProductCategory.crowns;
 
     return Container(
       width: 248,
@@ -1016,18 +1013,6 @@ class _DesktopNavigation extends StatelessWidget {
                       selected: isKoreanPaperSelected,
                       onTap: () => onSelectCatalogCategory != null
                           ? onSelectCatalogCategory!(ProductCategory.koreanPaper)
-                          : onSelect(1),
-                    ),
-                    const SizedBox(height: 4),
-                    _DesktopNavigationItem(
-                      iconWidget: CrownIcon(
-                        size: 20,
-                        color: isCrownsSelected ? Colors.white : AppColors.ink,
-                      ),
-                      label: 'Coronas',
-                      selected: isCrownsSelected,
-                      onTap: () => onSelectCatalogCategory != null
-                          ? onSelectCatalogCategory!(ProductCategory.crowns)
                           : onSelect(1),
                     ),
                     const SizedBox(height: 6),
@@ -1112,7 +1097,7 @@ class _DesktopNavigation extends StatelessWidget {
   }
 }
 
-class _DesktopNavigationItem extends StatelessWidget {
+class _DesktopNavigationItem extends StatefulWidget {
   const _DesktopNavigationItem({
     super.key,
     this.icon,
@@ -1131,49 +1116,77 @@ class _DesktopNavigationItem extends StatelessWidget {
   final int badgeCount;
 
   @override
+  State<_DesktopNavigationItem> createState() => _DesktopNavigationItemState();
+}
+
+class _DesktopNavigationItemState extends State<_DesktopNavigationItem> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
+    final isSelected = widget.selected;
+    final bgColor = isSelected
+        ? AppColors.ink
+        : (_isHovered
+            ? AppColors.pinkSoft.withValues(alpha: 0.6)
+            : Colors.transparent);
+    final fgColor = isSelected ? Colors.white : AppColors.ink;
+
     return Semantics(
-      selected: selected,
+      selected: isSelected,
       button: true,
-      child: Material(
-        color: selected ? AppColors.ink : Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          hoverColor: selected
-              ? Colors.white.withValues(alpha: .08)
-              : AppColors.pinkSoft,
-          focusColor: selected
-              ? Colors.white.withValues(alpha: .12)
-              : AppColors.pinkSoft,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              children: [
-                Badge.count(
-                  count: badgeCount,
-                  isLabelVisible: badgeCount > 0,
-                  backgroundColor: AppColors.pinkStrong,
-                  child:
-                      iconWidget ??
-                      Icon(
-                        icon,
-                        size: 20,
-                        color: selected ? Colors.white : AppColors.ink,
-                      ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: selected ? Colors.white : AppColors.ink,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        cursor: SystemMouseCursors.click,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              onTap: widget.onTap,
+              canRequestFocus: false,
+              borderRadius: BorderRadius.circular(14),
+              hoverColor: Colors.transparent,
+              focusColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: Row(
+                  children: [
+                    Badge.count(
+                      count: widget.badgeCount,
+                      isLabelVisible: widget.badgeCount > 0,
+                      backgroundColor: AppColors.pinkStrong,
+                      child: widget.iconWidget ??
+                          Icon(
+                            widget.icon,
+                            size: 20,
+                            color: fgColor,
+                          ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.label,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: fgColor,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                            ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

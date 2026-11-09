@@ -71,7 +71,7 @@ void main() {
       // Module selector chips exist
       expect(find.text('Materiales'), findsWidgets);
       expect(find.text('Papel Coreano'), findsWidgets);
-      expect(find.text('Coronas'), findsOneWidget);
+      expect(find.text('Coronas'), findsNothing);
       expect(find.text('Próx.'), findsNothing);
 
       // Initially shows Materiales product

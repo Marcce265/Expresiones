@@ -634,13 +634,6 @@ class _ModuleSelectorBar extends StatelessWidget {
             isSelected: selectedCategory == ProductCategory.koreanPaper,
             onTap: () => onSelectCategory(ProductCategory.koreanPaper),
           ),
-          const SizedBox(width: 8),
-          _ModuleChip(
-            category: ProductCategory.crowns,
-            label: 'Coronas',
-            isSelected: selectedCategory == ProductCategory.crowns,
-            onTap: () => onSelectCategory(ProductCategory.crowns),
-          ),
         ],
       ),
     );
