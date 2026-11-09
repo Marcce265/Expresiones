@@ -224,7 +224,7 @@ void main() {
   );
 
   testWidgets(
-    'un producto sin variantes permite agregar la primera y reutiliza sus datos',
+    'un producto sin variantes permite agregar la primera con casillas y foto vacías para su propia opción',
     (tester) async {
       tester.view.physicalSize = const Size(1440, 1000);
       tester.view.devicePixelRatio = 1;
@@ -288,11 +288,13 @@ void main() {
       );
       expect(nameField, findsOneWidget);
       expect(skuField, findsOneWidget);
+      // Both fields must start completely empty so the user writes the specific variant data
       expect(
         tester.widget<TextFormField>(nameField).controller!.text,
-        'CORONITA',
+        '',
       );
-      expect(tester.widget<TextFormField>(skuField).controller!.text, 'CAT-071');
+      expect(tester.widget<TextFormField>(skuField).controller!.text, '');
+      expect(find.text('Sin foto'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

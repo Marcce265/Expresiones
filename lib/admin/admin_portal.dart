@@ -2345,11 +2345,9 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     }
   }
 
-  void _addVariant({bool atEnd = false, bool prefillFromProduct = false}) {
+  void _addVariant({bool atEnd = false}) {
     final draft = _VariantDraft.create(
       id: 'variante-${DateTime.now().microsecondsSinceEpoch}',
-      name: prefillFromProduct ? _name.text : null,
-      sku: prefillFromProduct ? _sku.text : null,
     );
     setState(() {
       if (atEnd) {
@@ -2870,10 +2868,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: OutlinedButton.icon(
-                              onPressed: () => _addVariant(
-                                atEnd: true,
-                                prefillFromProduct: true,
-                              ),
+                              onPressed: () => _addVariant(atEnd: true),
                               icon: const Icon(Icons.add_rounded),
                               label: const Text('Agregar variante'),
                             ),
@@ -2937,8 +2932,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                       return RepaintBoundary(
                         child: _VariantEditorTile(
                           draft: variant,
-                          imageUrl: _previewUrl(variant.image.previewValue) ??
-                              _previewUrl(_image.previewValue),
+                          imageUrl: _previewUrl(variant.image.previewValue),
                           uploading: _uploadingImage,
                           onPickImage: () => _pickImage(variant: variant),
                           onDelete: () => _removeVariant(variant),
@@ -3445,7 +3439,7 @@ class _VariantDraft {
     return _VariantDraft(
       ProductVariant(
         id: id,
-        name: cleanName.isEmpty ? 'Nueva variante' : cleanName,
+        name: cleanName,
         sku: cleanSku.isEmpty ? null : cleanSku,
         stockStatus: StockStatus.inStock,
       ),
@@ -3669,6 +3663,8 @@ class _VariantImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cleanUrl = imageUrl?.trim() ?? '';
+    final hasImage = cleanUrl.isNotEmpty;
     return AspectRatio(
       key: ValueKey('variant-image-${label.trim()}'),
       aspectRatio: 1,
@@ -3680,11 +3676,48 @@ class _VariantImage extends StatelessWidget {
             border: Border.all(color: AppColors.border),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: ProductVisual(
-            label: label,
-            imageAsset: imageUrl,
-            decodeToLayout: true,
-          ),
+          child: hasImage
+              ? ProductVisual(
+                  label: label,
+                  imageAsset: cleanUrl,
+                  decodeToLayout: true,
+                )
+              : Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: const Icon(
+                          Icons.add_a_photo_outlined,
+                          size: 26,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Sin foto',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Toca la cámara',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                              fontSize: 10,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
         ),
       ),
     );
