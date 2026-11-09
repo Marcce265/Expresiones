@@ -373,13 +373,6 @@ class CatalogProduct {
     return availableStock == null || availableStock >= quantity;
   }
 
-  factory CatalogProduct.fromFirestore(
-    Map<String, dynamic> data, {
-    String? id,
-  }) {
-    return CatalogProduct.fromMap(data, id: id);
-  }
-
   factory CatalogProduct.fromMap(Map<String, dynamic> map, {String? id}) {
     final name = _asString(
       _first(map, const ['name', 'nombre', 'title', 'titulo']),

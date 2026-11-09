@@ -2152,6 +2152,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
   late bool _isActive;
   late bool _isFeatured;
   late bool _priceIsEstimate;
+  late StockStatus _stockStatus;
   bool _saving = false;
   bool _uploadingImage = false;
   String? _error;
@@ -2178,6 +2179,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     _isActive = product?.isActive ?? true;
     _isFeatured = product?.isFeatured ?? false;
     _priceIsEstimate = product?.priceIsEstimate ?? false;
+    _stockStatus = product?.stockStatus ?? StockStatus.inStock;
     _variants = [
       for (final variant in product?.variants ?? const <ProductVariant>[])
         if (variant.isActive) _VariantDraft(variant),
@@ -2232,6 +2234,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     'isActive': _isActive,
     'isFeatured': _isFeatured,
     'priceIsEstimate': _priceIsEstimate,
+    'stockStatus': _stockStatus.key,
     'imageChanged': _image.changed,
     'priceTiers': [
       for (final tier in _priceTiers)
@@ -2271,17 +2274,22 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     });
     try {
       final activeVariants = _variants.where((variant) => variant.active);
-      final familyStockStatus =
-          activeVariants.isEmpty ||
-              activeVariants.every(
-                (variant) => variant.status == StockStatus.outOfStock,
+      final StockStatus familyStockStatus;
+      if (_variants.isEmpty) {
+        familyStockStatus = _stockStatus;
+      } else {
+        familyStockStatus =
+            activeVariants.isEmpty ||
+                activeVariants.every(
+                  (variant) => variant.status == StockStatus.outOfStock,
+                )
+            ? StockStatus.outOfStock
+            : activeVariants.any(
+                (variant) => variant.status == StockStatus.inStock,
               )
-          ? StockStatus.outOfStock
-          : activeVariants.any(
-              (variant) => variant.status == StockStatus.inStock,
-            )
-          ? StockStatus.inStock
-          : StockStatus.lowStock;
+            ? StockStatus.inStock
+            : StockStatus.lowStock;
+      }
       final data = <String, dynamic>{
         'name': _name.text.trim().toUpperCase(),
         'category': _category == ProductCategory.koreanPaper ||
@@ -2789,6 +2797,16 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                           onChanged: (value) =>
                               setState(() => _isActive = value),
                         ),
+                        if (_variants.isEmpty) ...[
+                          const Divider(height: 14, color: AppColors.border),
+                          const SizedBox(height: 4),
+                          _VariantStatusSelector(
+                            value: _stockStatus,
+                            onChanged: (status) =>
+                                setState(() => _stockStatus = status),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
                         const Divider(height: 14, color: AppColors.border),
                         SwitchListTile(
                           contentPadding: EdgeInsets.zero,
@@ -2838,14 +2856,15 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                       context: context,
                       title: 'Variantes (${_variants.length})',
                       subtitle: _variants.isEmpty
-                          ? 'Opcional: úsalas solo si el producto tiene colores, tamaños o modelos.'
+                          ? 'Opcional: déjalo vacío si es un producto único como una corona o artículo individual.'
                           : 'Arrastra la foto de una opción para cambiar su orden.',
                       children: [
                         if (_variants.isEmpty) ...[
                           const InfoBanner(
                             icon: Icons.layers_outlined,
                             title: 'Producto sin variantes',
-                            message: 'Si se vende tal cual, se usa su nombre, precio e imagen principal. No necesitas crear una variante ni volver a subir la foto.',
+                            message:
+                                'Si se vende tal cual (como una corona única), se guarda directamente con su foto, precio y código principal. No necesitas crear variantes a menos que tenga varios colores o presentaciones.',
                           ),
                           const SizedBox(height: 12),
                           Align(
