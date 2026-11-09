@@ -59,8 +59,18 @@ Future<Uint8List?> buildBrowserThumbnail(
 
     final encoded = Completer<web.Blob?>();
     canvas.toBlob(
-      ((web.Blob? result) => encoded.complete(result)).toJS,
-      'image/jpeg',
+      ((web.Blob? webpBlob) {
+        if (webpBlob != null) {
+          encoded.complete(webpBlob);
+        } else {
+          canvas.toBlob(
+            ((web.Blob? jpegBlob) => encoded.complete(jpegBlob)).toJS,
+            'image/jpeg',
+            quality.toJS,
+          );
+        }
+      }).toJS,
+      'image/webp',
       quality.toJS,
     );
     final thumbnail = await encoded.future;

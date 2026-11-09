@@ -38,6 +38,7 @@ import 'theme/app_theme.dart';
 import 'widgets/app_notice.dart';
 import 'widgets/assistant_guide.dart';
 import 'widgets/crown_icon.dart';
+import 'widgets/skeleton_loader.dart';
 import 'widgets/jashy_tour.dart';
 
 Future<void> main() async {
@@ -693,7 +694,25 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       );
     }
     if (store.isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(
+          title: Text(
+            'Expresiones',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ink,
+                ),
+          ),
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+        ),
+        body: const SafeArea(
+          child: SingleChildScrollView(
+            child: CatalogGridSkeleton(itemCount: 8),
+          ),
+        ),
+      );
     }
     _scheduleAssistantOnboarding();
 

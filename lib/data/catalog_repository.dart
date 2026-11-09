@@ -32,11 +32,20 @@ class CatalogRepository {
 
   CatalogDataSource _lastSource = CatalogDataSource.localSeed;
   Object? _lastError;
+  Future<List<CatalogProduct>>? _inFlightLoad;
+  Future<List<CatalogProduct>>? _inFlightFetch;
 
   CatalogDataSource get lastSource => _lastSource;
   Object? get lastError => _lastError;
 
-  Future<List<CatalogProduct>> loadProducts() async {
+  Future<List<CatalogProduct>> loadProducts() {
+    if (_inFlightLoad != null) return _inFlightLoad!;
+    final task = _loadProductsInternal();
+    _inFlightLoad = task;
+    return task.whenComplete(() => _inFlightLoad = null);
+  }
+
+  Future<List<CatalogProduct>> _loadProductsInternal() async {
     _lastError = null;
     final cached = await _loadCache();
     if (cached != null) {
@@ -197,6 +206,15 @@ class CatalogRepository {
 
   Future<List<CatalogProduct>> _fetchRemote({
     required bool includeInactive,
+  }) {
+    if (_inFlightFetch != null) return _inFlightFetch!;
+    final task = _fetchRemoteInternal(includeInactive: includeInactive);
+    _inFlightFetch = task;
+    return task.whenComplete(() => _inFlightFetch = null);
+  }
+
+  Future<List<CatalogProduct>> _fetchRemoteInternal({
+    required bool includeInactive,
   }) async {
     final activeClient = client;
     if (activeClient == null) {
@@ -234,7 +252,15 @@ class CatalogRepository {
     SupabaseClient client,
     String table,
   ) async {
-    final response = await client.from(table).select();
+    final response = await client
+        .from(table)
+        .select()
+        .timeout(
+          const Duration(seconds: 12),
+          onTimeout: () => throw TimeoutException(
+            'Tiempo de espera agotado al consultar $table en Supabase',
+          ),
+        );
     return [for (final row in response) Map<String, dynamic>.from(row)];
   }
 

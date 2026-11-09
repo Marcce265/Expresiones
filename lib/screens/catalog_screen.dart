@@ -153,7 +153,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       TextField(
                         controller: _searchController,
                         onChanged: _onSearchChanged,
-                        onSubmitted: _reportEmptySearch,
+                        onSubmitted: _onSearchSubmitted,
                         decoration: InputDecoration(
                           hintText: widget.settings.text(
                             StorefrontText.catalogSearchHint,
@@ -164,6 +164,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                               : IconButton(
                                   tooltip: 'Limpiar búsqueda',
                                   onPressed: () {
+                                    _searchDebounce?.cancel();
                                     _searchController.clear();
                                     setState(() => _query = '');
                                   },
@@ -264,12 +265,18 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 
   void _onSearchChanged(String value) {
-    setState(() => _query = value);
     _searchDebounce?.cancel();
-    _searchDebounce = Timer(
-      const Duration(milliseconds: 800),
-      () => _reportEmptySearch(value),
-    );
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (!mounted) return;
+      setState(() => _query = value);
+      _reportEmptySearch(value);
+    });
+  }
+
+  void _onSearchSubmitted(String value) {
+    _searchDebounce?.cancel();
+    setState(() => _query = value);
+    _reportEmptySearch(value);
   }
 
   void _reportEmptySearch(String rawQuery) {

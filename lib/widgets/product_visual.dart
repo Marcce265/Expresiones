@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/catalog_models.dart';
 import '../theme/app_theme.dart';
+import 'skeleton_loader.dart';
 
 String? productFamilyHeroAsset(CatalogProduct product) => switch (product.id) {
   'limpiapipas-premium-8mm' => 'assets/images/family_heroes/limpiapipas.webp',
@@ -140,6 +141,10 @@ class ProductVisual extends StatelessWidget {
         gaplessPlayback: true,
         width: double.infinity,
         height: double.infinity,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded || frame != null) return child;
+          return const ProductVisualSkeleton();
+        },
         errorBuilder: (_, _, _) =>
             _Fallback(accent: accent, icon: icon, label: label),
       );

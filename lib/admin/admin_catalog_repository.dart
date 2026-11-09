@@ -235,10 +235,11 @@ class AdminCatalogRepository {
       contentType: contentType,
       timestampMicros: timestamp,
     );
+    final thumbnailContentType = kIsWeb ? 'image/webp' : 'image/jpeg';
     final thumbnailPath = buildCatalogImagePath(
       folder: '$folder/thumbnails',
       fileName: fileName,
-      contentType: 'image/jpeg',
+      contentType: thumbnailContentType,
       timestampMicros: timestamp,
     );
 
@@ -263,7 +264,7 @@ class AdminCatalogRepository {
           _uploadCatalogObject(
             path: thumbnailPath,
             bytes: thumbnailBytes,
-            contentType: 'image/jpeg',
+            contentType: thumbnailContentType,
           ),
       ]);
       return CatalogImageUpload(

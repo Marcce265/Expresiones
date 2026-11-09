@@ -164,6 +164,7 @@ class _ProductCardState extends State<ProductCard> {
                                 variant: widget.variant,
                               ),
                               alignment: productImageAlignment(widget.product),
+                              decodeToLayout: true,
                             ),
                           ),
                           if (widget.showSkuBadge && sku != null)

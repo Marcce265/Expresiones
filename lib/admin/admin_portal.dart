@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -377,6 +378,7 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final _search = TextEditingController();
   final _adminSearch = TextEditingController();
+  Timer? _searchDebounce;
   final Set<String> _hiddenProductIds = {};
   late Stream<List<CatalogProduct>> _productsStream;
   String _query = '';
@@ -392,6 +394,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _search.dispose();
     _adminSearch.dispose();
     super.dispose();
@@ -786,15 +789,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       : IconButton(
                                           tooltip: 'Limpiar búsqueda',
                                           onPressed: () {
+                                            _searchDebounce?.cancel();
                                             _search.clear();
                                             setState(() => _query = '');
                                           },
                                           icon: const Icon(Icons.close_rounded),
                                         ),
                                 ),
-                                onChanged: (value) => setState(
-                                  () => _query = value.trim().toLowerCase(),
-                                ),
+                                onChanged: (value) {
+                                  _searchDebounce?.cancel();
+                                  _searchDebounce = Timer(
+                                    const Duration(milliseconds: 250),
+                                    () {
+                                      if (mounted) {
+                                        setState(
+                                          () => _query = value.trim().toLowerCase(),
+                                        );
+                                      }
+                                    },
+                                  );
+                                },
                               ),
                             ),
                             if (!compact) ...[
