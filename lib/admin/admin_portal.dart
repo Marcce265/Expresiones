@@ -378,6 +378,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final Set<String> _hiddenProductIds = {};
   late Stream<List<CatalogProduct>> _productsStream;
   String _query = '';
+  ProductCategory? _moduleFilter;
   int _sectionIndex = 0;
 
   @override
@@ -504,6 +505,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     _search.text = rawQuery.trim();
     setState(() {
       _sectionIndex = 1;
+      _moduleFilter = null;
       _productsStream = widget.repository.watchProducts();
       _query = rawQuery.trim().toLowerCase();
     });
@@ -680,6 +682,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             )
             .toList(growable: false);
         final products = allProducts.where((product) {
+          if (_moduleFilter != null && product.category != _moduleFilter) {
+            return false;
+          }
           if (_query.isEmpty) return true;
           final haystack = [
             product.name,
@@ -713,10 +718,33 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           description: 'Busca un material o entra por categoría. Cada tarjeta conserva la misma foto, información y estilo del catálogo público.',
                         ),
                         SizedBox(height: compact ? 14 : 18),
-                        const InfoBanner(
-                          icon: Icons.edit_outlined,
-                          title: 'Editar es sencillo',
-                          message: 'Toca el lápiz ✏️ de cualquier producto para cambiar fotos, textos, precio, stock y variantes.',
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              ChoiceChip(
+                                label: const Text('Todos'),
+                                selected: _moduleFilter == null,
+                                onSelected: (_) =>
+                                    setState(() => _moduleFilter = null),
+                              ),
+                              const SizedBox(width: 8),
+                              for (final category in const [
+                                ProductCategory.materials,
+                                ProductCategory.koreanPaper,
+                                ProductCategory.crowns,
+                              ]) ...[
+                                ChoiceChip(
+                                  label: Text(category.label),
+                                  selected: _moduleFilter == category,
+                                  onSelected: (_) => setState(
+                                    () => _moduleFilter = category,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                            ],
+                          ),
                         ),
                         SizedBox(height: compact ? 14 : 18),
                         Row(
@@ -780,7 +808,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     hasScrollBody: false,
                     child: _AdminError(
                       title: 'No hay resultados',
-                      message: 'Prueba con otra búsqueda.',
+                      message: 'Prueba con otra búsqueda o módulo.',
                     ),
                   )
                 else
@@ -2305,9 +2333,11 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     }
   }
 
-  void _addVariant({bool atEnd = false}) {
+  void _addVariant({bool atEnd = false, bool prefillFromProduct = false}) {
     final draft = _VariantDraft.create(
       id: 'variante-${DateTime.now().microsecondsSinceEpoch}',
+      name: prefillFromProduct ? _name.text : null,
+      sku: prefillFromProduct ? _sku.text : null,
     );
     setState(() {
       if (atEnd) {
@@ -2803,14 +2833,29 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                     final variantsCard = _cardContainer(
                       context: context,
                       title: 'Variantes (${_variants.length})',
-                      subtitle: 'Arrastra la foto de una opción para cambiar su orden.',
+                      subtitle: _variants.isEmpty
+                          ? 'Opcional: úsalas solo si el producto tiene colores, tamaños o modelos.'
+                          : 'Arrastra la foto de una opción para cambiar su orden.',
                       children: [
-                        if (_variants.isEmpty)
+                        if (_variants.isEmpty) ...[
                           const InfoBanner(
                             icon: Icons.layers_outlined,
-                            title: 'Este producto aún no tiene variantes',
-                            message: 'Agrégalas cuando el producto se venda en diferentes opciones o colores.',
+                            title: 'Producto sin variantes',
+                            message: 'Si se vende tal cual, se usa su nombre, precio e imagen principal. No necesitas crear una variante ni volver a subir la foto.',
                           ),
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _addVariant(
+                                atEnd: true,
+                                prefillFromProduct: true,
+                              ),
+                              icon: const Icon(Icons.add_rounded),
+                              label: const Text('Agregar variante'),
+                            ),
+                          ),
+                        ],
                       ],
                     );
 
@@ -2869,7 +2914,8 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                       return RepaintBoundary(
                         child: _VariantEditorTile(
                           draft: variant,
-                          imageUrl: _previewUrl(variant.image.previewValue),
+                          imageUrl: _previewUrl(variant.image.previewValue) ??
+                              _previewUrl(_image.previewValue),
                           uploading: _uploadingImage,
                           onPickImage: () => _pickImage(variant: variant),
                           onDelete: () => _removeVariant(variant),
@@ -2944,7 +2990,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                               child: OutlinedButton.icon(
                                 onPressed: () => _addVariant(atEnd: true),
                                 icon: const Icon(Icons.add_rounded),
-                                label: const Text('Agregar otra opción'),
+                                label: const Text('Agregar otra variante'),
                               ),
                             ),
                           ),
@@ -3366,13 +3412,22 @@ class _VariantDraft {
           : StockStatus.inStock,
       active = variant.isActive;
 
-  factory _VariantDraft.create({required String id}) => _VariantDraft(
-    ProductVariant(
-      id: id,
-      name: 'Nueva variante',
-      stockStatus: StockStatus.inStock,
-    ),
-  );
+  factory _VariantDraft.create({
+    required String id,
+    String? name,
+    String? sku,
+  }) {
+    final cleanName = name?.trim() ?? '';
+    final cleanSku = sku?.trim() ?? '';
+    return _VariantDraft(
+      ProductVariant(
+        id: id,
+        name: cleanName.isEmpty ? 'Nueva variante' : cleanName,
+        sku: cleanSku.isEmpty ? null : cleanSku,
+        stockStatus: StockStatus.inStock,
+      ),
+    );
+  }
 
   final ProductVariant variant;
   final TextEditingController name;

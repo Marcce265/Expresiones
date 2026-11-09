@@ -141,7 +141,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Agregar opción'), findsNothing);
-      expect(find.text('Agregar otra opción'), findsOneWidget);
+      expect(find.text('Agregar otra variante'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -219,6 +219,80 @@ void main() {
       );
       expect(find.text('Guardar cambios'), findsOneWidget);
       expect(find.text('Eliminar producto'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'un producto sin variantes permite agregar la primera y reutiliza sus datos',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final client = SupabaseClient(
+        'https://example.supabase.co',
+        'public-anon-key',
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+      );
+      final product = CatalogProduct(
+        id: 'coronita',
+        name: 'Coronita',
+        category: ProductCategory.crowns,
+        description: 'Corona decorativa',
+        unitLabel: 'unidad',
+        basePrice: 4,
+        sku: 'CAT-071',
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AdminProductEditorDialog(
+              repository: AdminCatalogRepository(client: client),
+              product: product,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.text('Variantes (0)'),
+        500,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Producto sin variantes'), findsOneWidget);
+      final addButton = find.text('Agregar variante');
+      expect(addButton, findsOneWidget);
+
+      await tester.tap(addButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Variantes (1)'), findsOneWidget);
+
+      final nameField = find.byWidgetPredicate(
+        (widget) =>
+            widget is TextFormField &&
+            widget.key is ValueKey<String> &&
+            (widget.key! as ValueKey<String>).value.startsWith('variant-name-'),
+      );
+      final skuField = find.byWidgetPredicate(
+        (widget) =>
+            widget is TextFormField &&
+            widget.key is ValueKey<String> &&
+            (widget.key! as ValueKey<String>).value.startsWith('variant-sku-'),
+      );
+      expect(nameField, findsOneWidget);
+      expect(skuField, findsOneWidget);
+      expect(
+        tester.widget<TextFormField>(nameField).controller!.text,
+        'CORONITA',
+      );
+      expect(tester.widget<TextFormField>(skuField).controller!.text, 'CAT-071');
       expect(tester.takeException(), isNull);
     },
   );
