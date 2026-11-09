@@ -191,14 +191,23 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (routeContext) {
-          final related = store.products
-              .where(
-                (p) =>
-                    p.category == product.category &&
-                    p.id != product.id &&
-                    p.isActive,
-              )
-              .toList(growable: false);
+          final currentGroup = product.attributes['catalogGroup']?.toUpperCase().trim();
+          final sameGroup = currentGroup != null && currentGroup.isNotEmpty
+              ? store.products
+                  .where((p) =>
+                      p.id != product.id &&
+                      p.isActive &&
+                      p.attributes['catalogGroup']?.toUpperCase().trim() == currentGroup)
+                  .toList(growable: false)
+              : <CatalogProduct>[];
+          final related = sameGroup.isNotEmpty
+              ? sameGroup
+              : store.products
+                  .where((p) =>
+                      p.id != product.id &&
+                      p.isActive &&
+                      p.category == product.category)
+                  .toList(growable: false);
 
           final detailScreen = ProductDetailScreen(
             product: product,

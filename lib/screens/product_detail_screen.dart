@@ -4,6 +4,7 @@ import '../models/catalog_models.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/assistant_guide.dart';
 import '../widgets/product_visual.dart';
 import '../widgets/quantity_input.dart';
 import '../widgets/store_footer.dart';
@@ -61,6 +62,70 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ? variant!.priceTiers
       : product.priceTiers;
 
+  Color _parseHexColor(String hex) {
+    final clean = hex.replaceAll('#', '').trim();
+    if (clean.length == 6) {
+      final val = int.tryParse(clean, radix: 16);
+      if (val != null) return Color(0xFF000000 | val);
+    } else if (clean.length == 8) {
+      final val = int.tryParse(clean, radix: 16);
+      if (val != null) return Color(val);
+    }
+    return AppColors.ink;
+  }
+
+  Widget _buildAttributeBadges(Map<String, String> attributes) {
+    final entries = attributes.entries.where((e) {
+      final key = e.key.toLowerCase();
+      if (key.startsWith('merged') ||
+          key == 'cropbottom' ||
+          key == 'catalogindex' ||
+          key == 'palettenumber' ||
+          key == 'sourceimage' ||
+          key == 'imagesource') {
+        return false;
+      }
+      return e.value.trim().isNotEmpty;
+    }).toList();
+
+    if (entries.isEmpty) return const SizedBox.shrink();
+
+    String formatBadge(String key, String value) {
+      final k = key.toLowerCase();
+      if (k == 'assetcount') {
+        return 'OPCIONES: $value TONOS';
+      }
+      if (k == 'cataloggroup') {
+        return 'SECCIÓN: ${value.toUpperCase()}';
+      }
+      return '${key.toUpperCase()}: $value';
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final entry in entries)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.canvas,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Text(
+              formatBadge(entry.key, entry.value),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ink,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   void _handleAdd() {
     widget.onAdd(
       quantity: _quantity,
@@ -99,10 +164,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         .where((item) => item.isActive)
         .toList(growable: false);
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // Breadcrumbs y barra superior
           ResponsivePage(
             maxWidth: 1200,
@@ -127,11 +194,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           child: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                             child: Text(
-                              'Inicio',
+                              'INICIO',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 color: AppColors.muted,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.8,
                               ),
                             ),
                           ),
@@ -156,11 +224,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               vertical: 2,
                             ),
                             child: Text(
-                              product.category.label,
+                              product.category.label.toUpperCase(),
                               style: const TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 color: AppColors.muted,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.8,
                               ),
                             ),
                           ),
@@ -176,11 +245,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             vertical: 2,
                           ),
                           child: Text(
-                            product.name,
+                            product.name.toUpperCase(),
                             style: const TextStyle(
-                              fontSize: 13,
+                              fontSize: 12,
                               color: AppColors.ink,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
                             ),
                           ),
                         ),
@@ -243,52 +313,116 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     else
                       SizedBox(height: 520, child: visualWidget),
                     if (activeVariants.length > 1) ...[
-                      const SizedBox(height: 14),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            for (final option in activeVariants) ...[
-                              InkWell(
-                                onTap: () => setState(() {
-                                  _variantId = option.id;
-                                  _quantity = 1;
-                                }),
-                                borderRadius: BorderRadius.circular(14),
-                                child: Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.palette_outlined,
+                                  size: 16,
+                                  color: AppColors.ink,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: RichText(
+                                    text: TextSpan(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(color: AppColors.ink),
+                                      children: [
+                                        const TextSpan(
+                                          text: 'Tono seleccionado: ',
+                                          style: TextStyle(color: AppColors.muted),
+                                        ),
+                                        TextSpan(
+                                          text: title.toUpperCase(),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  '${activeVariants.length} opciones',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: AppColors.muted,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                for (final option in activeVariants)
+                                  ChoiceChip(
+                                    label: Text(
+                                      variantDisplayName(option).toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: _variantId == option.id
+                                            ? Colors.white
+                                            : AppColors.ink,
+                                      ),
+                                    ),
+                                    avatar: option.colorHex != null &&
+                                            option.colorHex!.isNotEmpty
+                                        ? Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: _parseHexColor(
+                                                option.colorHex!,
+                                              ),
+                                              border: Border.all(
+                                                color: Colors.black12,
+                                                width: 0.5,
+                                              ),
+                                            ),
+                                          )
+                                        : null,
+                                    selected: _variantId == option.id,
+                                    visualDensity: VisualDensity.compact,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    selectedColor: AppColors.ink,
+                                    backgroundColor: AppColors.canvas,
+                                    side: BorderSide(
                                       color: _variantId == option.id
                                           ? AppColors.ink
                                           : AppColors.border,
-                                      width: _variantId == option.id ? 2 : 1,
                                     ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    onSelected: (_) => setState(() {
+                                      _variantId = option.id;
+                                      _quantity = 1;
+                                    }),
                                   ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: option.imageUrl != null &&
-                                          option.imageUrl!.isNotEmpty
-                                      ? Image.asset(
-                                          option.imageUrl!,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) => const Icon(
-                                            Icons.image_outlined,
-                                            size: 20,
-                                            color: AppColors.muted,
-                                          ),
-                                        )
-                                      : const Icon(
-                                          Icons.palette_outlined,
-                                          size: 20,
-                                          color: AppColors.muted,
-                                        ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                            ],
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -454,33 +588,49 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         const SizedBox(height: 18),
                       ],
 
-                      // Selector de opciones / variantes (ChoiceChips con texto limpio)
+                      // Indicador limpio de opción seleccionada (las opciones completas se eligen junto a la imagen)
                       if (activeVariants.length > 1) ...[
-                        Text(
-                          'OPCIONES / COLORES',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                letterSpacing: 1.1,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.muted,
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.canvas,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.check_circle_outline_rounded,
+                                size: 18,
+                                color: AppColors.whatsapp,
                               ),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final option in activeVariants)
-                              ChoiceChip(
-                                label: Text(variantDisplayName(option).toUpperCase()),
-                                selected: _variantId == option.id,
-                                onSelected: (_) => setState(() {
-                                  _variantId = option.id;
-                                  _quantity = 1;
-                                }),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Seleccionado: ${title.toUpperCase()}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.ink,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                          ],
+                              Text(
+                                '${activeVariants.length} tonos',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.muted,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 22),
+                        const SizedBox(height: 16),
                       ],
 
                       // Botones de compra estilo Rosatel
@@ -668,34 +818,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   if (product.attributes.isNotEmpty) ...[
                     const SizedBox(height: 18),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final entry in product.attributes.entries)
-                          if (!entry.key.startsWith('merged') &&
-                              entry.value.toString().trim().isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.canvas,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: Text(
-                                '${entry.key.toUpperCase()}: ${entry.value}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.ink,
-                                ),
-                              ),
-                            ),
-                      ],
-                    ),
+                    _buildAttributeBadges(product.attributes),
                   ],
                 ],
               ),
@@ -703,151 +826,277 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
           const SizedBox(height: 40),
 
-          // SECCIÓN 4: Productos en la misma categoría (Estilo Rosatel - Imagen 3)
-          if (widget.relatedProducts.isNotEmpty) ...[
-            ResponsivePage(
-              maxWidth: 1200,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Productos en la misma categoría',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontFamily: 'PlayfairDisplay',
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 310,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: widget.relatedProducts.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 14),
-                      itemBuilder: (context, index) {
-                        final related = widget.relatedProducts[index];
-                        final relatedImage = related.imageUrl ??
-                            related.thumbnailUrl ??
-                            (related.variants.isNotEmpty
-                                ? related.variants.first.imageUrl
-                                : null);
-                        return Container(
-                          width: 210,
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.border),
+          // SECCIÓN 4: Opciones o productos de la misma sección
+          Builder(
+            builder: (context) {
+              final otherVariants = activeVariants
+                  .where((v) => v.id != _variantId)
+                  .toList();
+              final hasVariantOptions = otherVariants.isNotEmpty;
+
+              final sectionTitle = hasVariantOptions
+                  ? 'Más opciones de esta sección'
+                  : 'Productos en la misma sección';
+
+              if (!hasVariantOptions && widget.relatedProducts.isEmpty) {
+                return const SizedBox.shrink();
+              }
+
+              return ResponsivePage(
+                maxWidth: 1200,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sectionTitle,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontFamily: 'PlayfairDisplay',
+                            fontWeight: FontWeight.w700,
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () {
-                              if (widget.onSelectRelated != null) {
-                                widget.onSelectRelated!(related);
-                              }
-                            },
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    color: Colors.white,
-                                    width: double.infinity,
-                                    child: ProductVisual(
-                                      label: related.name,
-                                      imageAsset: relatedImage,
-                                      categoryKey: related.category.key,
-                                      fit: BoxFit.cover,
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 300,
+                      child: hasVariantOptions
+                          ? ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: otherVariants.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(width: 14),
+                              itemBuilder: (context, index) {
+                                final opt = otherVariants[index];
+                                final optImage = opt.imageUrl ??
+                                    opt.thumbnailUrl ??
+                                    image;
+                                final optFit = productImageFit(
+                                  product,
+                                  variant: opt,
+                                );
+                                return Container(
+                                  width: 200,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: InkWell(
+                                    onTap: () => setState(() {
+                                      _variantId = opt.id;
+                                      _quantity = 1;
+                                    }),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Container(
+                                            color: Colors.white,
+                                            width: double.infinity,
+                                            child: ProductVisual(
+                                              label: variantDisplayName(opt),
+                                              imageAsset: optImage,
+                                              colorHex: opt.colorHex,
+                                              categoryKey: product.category.key,
+                                              fit: optFit,
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                variantDisplayName(opt)
+                                                    .toUpperCase(),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 13,
+                                                  color: AppColors.ink,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'S/ ${unitPrice.toStringAsFixed(2)}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 15,
+                                                  color: AppColors.ink,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              SizedBox(
+                                                width: double.infinity,
+                                                height: 34,
+                                                child: OutlinedButton(
+                                                  onPressed: () => setState(() {
+                                                    _variantId = opt.id;
+                                                    _quantity = 1;
+                                                  }),
+                                                  style: OutlinedButton.styleFrom(
+                                                    shape: const StadiumBorder(),
+                                                    padding: EdgeInsets.zero,
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                  ),
+                                                  child: const Text(
+                                                    'Ver opción',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        related.name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13,
-                                          color: AppColors.ink,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'S/ ${related.basePrice.toStringAsFixed(2)}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 15,
-                                          color: AppColors.ink,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      SizedBox(
-                                        width: double.infinity,
-                                        height: 34,
-                                        child: OutlinedButton(
-                                          onPressed: () {
-                                            if (widget.onSelectRelated != null) {
-                                              widget.onSelectRelated!(related);
-                                            }
-                                          },
-                                          style: OutlinedButton.styleFrom(
-                                            shape: const StadiumBorder(),
-                                            padding: EdgeInsets.zero,
-                                            visualDensity:
-                                                VisualDensity.compact,
-                                          ),
-                                          child: const Text(
-                                            'Ver detalle',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                );
+                              },
+                            )
+                          : ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: widget.relatedProducts.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(width: 14),
+                              itemBuilder: (context, index) {
+                                final related = widget.relatedProducts[index];
+                                final relatedImage = related.imageUrl ??
+                                    related.thumbnailUrl ??
+                                    (related.variants.isNotEmpty
+                                        ? related.variants.first.imageUrl
+                                        : null);
+                                return Container(
+                                  width: 200,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: AppColors.border),
                                   ),
-                                ),
-                              ],
+                                  clipBehavior: Clip.antiAlias,
+                                  child: InkWell(
+                                    onTap: () {
+                                      if (widget.onSelectRelated != null) {
+                                        widget.onSelectRelated!(related);
+                                      }
+                                    },
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Container(
+                                            color: Colors.white,
+                                            width: double.infinity,
+                                            child: ProductVisual(
+                                              label: related.name,
+                                              imageAsset: relatedImage,
+                                              categoryKey:
+                                                  related.category.key,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                related.name,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 13,
+                                                  color: AppColors.ink,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'S/ ${related.basePrice.toStringAsFixed(2)}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 15,
+                                                  color: AppColors.ink,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              SizedBox(
+                                                width: double.infinity,
+                                                height: 34,
+                                                child: OutlinedButton(
+                                                  onPressed: () {
+                                                    if (widget.onSelectRelated !=
+                                                        null) {
+                                                      widget.onSelectRelated!(
+                                                        related,
+                                                      );
+                                                    }
+                                                  },
+                                                  style: OutlinedButton.styleFrom(
+                                                    shape: const StadiumBorder(),
+                                                    padding: EdgeInsets.zero,
+                                                    visualDensity:
+                                                        VisualDensity.compact,
+                                                  ),
+                                                  child: const Text(
+                                                    'Ver detalle',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                          ),
-                        );
-                      },
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 40),
-          ],
-
-          // SECCIÓN 5: Banner Informativo y Banner Especial (Estilo Rosatel - Imagen 4)
-          ResponsivePage(
-            maxWidth: 1200,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              children: [
-                const StoreDisclaimerBanner(),
-                const SizedBox(height: 20),
-                StoreSpecialOrderBanner(
-                  whatsappNumber: widget.settings?.normalizedWhatsappNumber,
+                    const SizedBox(height: 40),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
-          const SizedBox(height: 48),
 
-          // SECCIÓN 6: Pie de Página Integral (Estilo Rosatel - Imagen 4)
+          // SECCIÓN 5: Pie de Página Integral (Estilo Rosatel)
           StoreFooter(
             onSelectCategory: widget.onNavigateCategory,
             whatsappNumber: widget.settings?.normalizedWhatsappNumber,
           ),
         ],
       ),
-    );
+    ),
+    const Positioned(
+      right: 18,
+      bottom: 24,
+      child: AssistantHelpButton(
+        title: 'Consejo de Jashy 💕',
+        message:
+            '¡Me parece un excelente producto! Elige la cantidad y aprovecha los descuentos por mayor.',
+        imageAsset: 'assets/images/jashy_chibi_assistant.webp',
+      ),
+    ),
+  ],
+);
   }
 }
 

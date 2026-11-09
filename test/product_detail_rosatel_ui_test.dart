@@ -1,6 +1,7 @@
 import 'package:expresiones/models/catalog_models.dart';
 import 'package:expresiones/screens/product_detail_screen.dart';
 import 'package:expresiones/theme/app_theme.dart';
+import 'package:expresiones/widgets/assistant_guide.dart';
 import 'package:expresiones/widgets/store_footer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -69,14 +70,14 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // 1. Breadcrumbs
-    expect(find.text('Inicio'), findsOneWidget);
-    expect(find.text('Ramos'), findsWidgets);
+    // 1. Breadcrumbs en mayúsculas
+    expect(find.text('INICIO'), findsOneWidget);
+    expect(find.text('RAMOS'), findsWidgets);
     expect(find.textContaining('PRIMAVERAL GIRASOLES'), findsWidgets);
 
     // 2. Buy Box: Título, SKU y Precio
     expect(find.text('SKU: FC-AMA-2-PRI-C'), findsOneWidget);
-    expect(find.text('S/ 95.00'), findsOneWidget);
+    expect(find.text('S/ 95.00'), findsWidgets);
     expect(find.text('por RAMO'), findsOneWidget);
 
     // 3. Botones estilo Rosatel
@@ -101,18 +102,21 @@ void main() {
     expect(find.text('Línea Ramos · Expresiones'), findsOneWidget);
     expect(find.text(product.description), findsOneWidget);
 
-    // 7. Productos en la misma categoría
-    expect(find.text('Productos en la misma categoría'), findsOneWidget);
-    expect(find.text('RAMO PREMIUM 12 ROSAS'), findsOneWidget);
+    // 7. Opciones de esta sección (al tener variantes, muestra las otras variantes de la misma familia)
+    expect(find.text('Más opciones de esta sección'), findsOneWidget);
+    expect(find.textContaining('ESPECIAL CON DEDICATORIA'), findsWidgets);
 
-    // 8. Banners informativos y footer
-    expect(find.byType(StoreDisclaimerBanner), findsOneWidget);
-    expect(find.text('Fotos referenciales'), findsOneWidget);
-    expect(find.byType(StoreSpecialOrderBanner), findsOneWidget);
-    expect(find.text('¿Buscas un diseño o pedido a medida?'), findsOneWidget);
+    // 8. Banners removidos y footer limpio
+    expect(find.byType(StoreDisclaimerBanner), findsNothing);
+    expect(find.text('Fotos referenciales'), findsNothing);
+    expect(find.byType(StoreSpecialOrderBanner), findsNothing);
+    expect(find.text('¿Buscas un diseño o pedido a medida?'), findsNothing);
     expect(find.byType(StoreFooter), findsOneWidget);
     expect(find.text('FORMAS DE PAGO'), findsOneWidget);
     expect(find.text('Yape'), findsOneWidget);
+
+    // 9. Jashy presente en la pantalla de detalle
+    expect(find.byType(AssistantHelpButton), findsOneWidget);
 
     // 9. Acciones interactivas: Añadir al carrito y Comprar ahora
     await tester.tap(find.widgetWithText(FilledButton, 'Añadir al carrito · S/ 95.00'));

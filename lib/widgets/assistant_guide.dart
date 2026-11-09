@@ -44,8 +44,8 @@ class _AssistantHelpButtonState extends State<AssistantHelpButton> {
             if (_expanded) ...[
               Container(
                 key: const ValueKey('jashy_help_bubble'),
-                width: mobile ? 220 : 280,
-                padding: const EdgeInsets.fromLTRB(16, 12, 12, 14),
+                width: mobile ? 180 : 210,
+                padding: const EdgeInsets.fromLTRB(14, 14, 10, 16),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   border: Border.all(color: AppColors.border),
@@ -87,16 +87,18 @@ class _AssistantHelpButtonState extends State<AssistantHelpButton> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         widget.message,
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              height: 1.45,
+                            ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 14),
             ],
             _JashyToggle(
               expanded: _expanded,

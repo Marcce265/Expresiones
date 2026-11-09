@@ -215,7 +215,7 @@ void main() {
     expect(find.byType(ChoiceChip), findsNWidgets(2));
     expect(find.byType(DropdownButtonFormField<String>), findsNothing);
     expect(find.text('BLANCO PERLA'), findsWidgets);
-    expect(find.text('MARFIL'), findsOneWidget);
+    expect(find.text('MARFIL'), findsWidgets);
     expect(find.textContaining('N.º'), findsNothing);
     expect(find.text('Color'), findsNothing);
   });
