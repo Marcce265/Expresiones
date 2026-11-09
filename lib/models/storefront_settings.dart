@@ -283,6 +283,15 @@ enum CheckoutFieldScope {
   };
 }
 
+enum CheckoutFieldInputType {
+  any('Texto libre'),
+  lettersOnly('Solo letras'),
+  numbersOnly('Solo números');
+
+  const CheckoutFieldInputType(this.label);
+  final String label;
+}
+
 class CheckoutCustomField {
   const CheckoutCustomField({
     required this.id,
@@ -293,6 +302,7 @@ class CheckoutCustomField {
     this.multiline = false,
     this.enabled = true,
     this.scope = CheckoutFieldScope.both,
+    this.inputType = CheckoutFieldInputType.any,
   });
 
   final String id;
@@ -303,6 +313,7 @@ class CheckoutCustomField {
   final bool multiline;
   final bool enabled;
   final CheckoutFieldScope scope;
+  final CheckoutFieldInputType inputType;
 
   bool appliesTo(String deliveryMethod) =>
       scope == CheckoutFieldScope.both || scope.name == deliveryMethod;
@@ -326,6 +337,10 @@ class CheckoutCustomField {
         (value) => value.name == map['scope']?.toString(),
         orElse: () => CheckoutFieldScope.both,
       ),
+      inputType: CheckoutFieldInputType.values.firstWhere(
+        (value) => value.name == map['inputType']?.toString(),
+        orElse: () => CheckoutFieldInputType.any,
+      ),
     );
   }
 
@@ -338,6 +353,7 @@ class CheckoutCustomField {
     bool? multiline,
     bool? enabled,
     CheckoutFieldScope? scope,
+    CheckoutFieldInputType? inputType,
   }) => CheckoutCustomField(
     id: id ?? this.id,
     label: label ?? this.label,
@@ -347,6 +363,7 @@ class CheckoutCustomField {
     multiline: multiline ?? this.multiline,
     enabled: enabled ?? this.enabled,
     scope: scope ?? this.scope,
+    inputType: inputType ?? this.inputType,
   );
 
   Map<String, dynamic> toMap() => {
@@ -358,6 +375,7 @@ class CheckoutCustomField {
     'multiline': multiline,
     'enabled': enabled,
     'scope': scope.name,
+    'inputType': inputType.name,
   };
 }
 

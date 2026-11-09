@@ -27,7 +27,8 @@ void main() {
     await tester.tap(find.text('Envío por Shalom').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('NOMBRE COMPLETO *'), findsOneWidget);
+    expect(find.text('NOMBRE *'), findsOneWidget);
+    expect(find.text('APELLIDOS *'), findsOneWidget);
     expect(find.text('DNI *'), findsOneWidget);
     expect(find.text('FECHA DE NACIMIENTO *'), findsNothing);
     expect(find.text('HORARIO DE ATENCIÓN *'), findsNothing);
@@ -37,8 +38,8 @@ void main() {
     );
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'Nombres y apellidos'),
-      'Marcial',
+      find.widgetWithText(TextFormField, '¿Cómo te llamas?'),
+      'M',
     );
     await tester.enterText(
       find.widgetWithText(TextFormField, '+51 999 999 999'),
@@ -53,7 +54,8 @@ void main() {
     await tester.tap(submit);
     await tester.pump();
 
-    expect(find.text('Escribe tu nombre completo.'), findsOneWidget);
+    expect(find.text('Escribe un nombre válido.'), findsOneWidget);
+    expect(find.text('Escribe tus apellidos.'), findsOneWidget);
     expect(find.text('El DNI debe tener 8 dígitos.'), findsOneWidget);
   });
 
@@ -96,6 +98,10 @@ void main() {
       'Ana',
     );
     await tester.enterText(
+      find.widgetWithText(TextFormField, 'Tus apellidos'),
+      'Rojas',
+    );
+    await tester.enterText(
       find.widgetWithText(TextFormField, '+51 999 999 999'),
       '999999999',
     );
@@ -118,6 +124,10 @@ void main() {
     await tester.enterText(
       find.widgetWithText(TextFormField, '¿Cómo te llamas?'),
       'Ana',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Tus apellidos'),
+      'Rojas',
     );
     await tester.enterText(
       find.widgetWithText(TextFormField, '+51 999 999 999'),

@@ -41,6 +41,7 @@ class CoordinationScreen extends StatefulWidget {
 class _CoordinationScreenState extends State<CoordinationScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
+  late final TextEditingController _lastNameController;
   late final TextEditingController _phoneController;
   late final TextEditingController _dniController;
   late final TextEditingController _noteController;
@@ -62,7 +63,25 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   void initState() {
     super.initState();
     final initial = widget.initial;
-    _nameController = TextEditingController(text: initial.name);
+    final savedLastName = _answerForLabel(initial.customFields, 'Apellidos');
+    final savedFirstName = _answerForLabel(initial.customFields, 'Nombre');
+    if (savedLastName.isNotEmpty || savedFirstName.isNotEmpty) {
+      _nameController = TextEditingController(text: savedFirstName);
+      _lastNameController = TextEditingController(text: savedLastName);
+    } else if (initial.name.isNotEmpty) {
+      final parts = initial.name.trim().split(RegExp(r'\s+'));
+      if (parts.length >= 2) {
+        _nameController = TextEditingController(text: parts.first);
+        _lastNameController =
+            TextEditingController(text: parts.sublist(1).join(' '));
+      } else {
+        _nameController = TextEditingController(text: initial.name);
+        _lastNameController = TextEditingController();
+      }
+    } else {
+      _nameController = TextEditingController();
+      _lastNameController = TextEditingController();
+    }
     _phoneController = TextEditingController(text: initial.phone);
     _dniController = TextEditingController(
       text: _answerForLabel(initial.customFields, 'DNI'),
@@ -108,12 +127,17 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     final lowerLabel = field.label.toLowerCase();
     return lowerId == 'field_name' ||
         lowerId == 'name' ||
+        lowerId == 'field_last_name' ||
+        lowerId == 'last_name' ||
         lowerId == 'field_phone' ||
         lowerId == 'phone' ||
         lowerId == 'field_dni' ||
         lowerId == 'dni' ||
         lowerLabel == 'nombre' ||
+        lowerLabel == 'nombres' ||
         lowerLabel == 'nombre completo' ||
+        lowerLabel == 'apellidos' ||
+        lowerLabel == 'apellido' ||
         lowerLabel == 'teléfono' ||
         lowerLabel == 'telefono' ||
         lowerLabel == 'dni';
@@ -126,7 +150,12 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     final hasName = configured.any((f) =>
         f.id == 'field_name' ||
         f.id == 'name' ||
-        f.label.trim().toLowerCase().contains('nombre'));
+        (f.label.trim().toLowerCase().contains('nombre') &&
+            !f.label.trim().toLowerCase().contains('apellido')));
+    final hasLastName = configured.any((f) =>
+        f.id == 'field_last_name' ||
+        f.id == 'last_name' ||
+        f.label.trim().toLowerCase().contains('apellido'));
     final hasPhone = configured.any((f) =>
         f.id == 'field_phone' ||
         f.id == 'phone' ||
@@ -146,6 +175,18 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         hint: '¿Cómo te llamas?',
         required: true,
         scope: CheckoutFieldScope.both,
+        inputType: CheckoutFieldInputType.lettersOnly,
+      ));
+    }
+    if (!hasLastName) {
+      defaults.add(const CheckoutCustomField(
+        id: 'field_last_name',
+        label: 'Apellidos',
+        icon: 'person',
+        hint: 'Tus apellidos',
+        required: true,
+        scope: CheckoutFieldScope.both,
+        inputType: CheckoutFieldInputType.lettersOnly,
       ));
     }
     if (!hasPhone) {
@@ -156,6 +197,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         hint: '+51 999 999 999',
         required: true,
         scope: CheckoutFieldScope.both,
+        inputType: CheckoutFieldInputType.numbersOnly,
       ));
     }
     if (!hasDni) {
@@ -166,6 +208,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         hint: '8 dígitos · titular mayor de edad',
         required: true,
         scope: CheckoutFieldScope.shalom,
+        inputType: CheckoutFieldInputType.numbersOnly,
       ));
     }
     return [...defaults, ...configured];
@@ -197,6 +240,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _lastNameController.dispose();
     _phoneController.dispose();
     _dniController.dispose();
     _noteController.dispose();
@@ -337,9 +381,14 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
       );
       return;
     }
+    final fullName = [
+      _nameController.text.trim(),
+      _lastNameController.text.trim(),
+    ].where((s) => s.isNotEmpty).join(' ');
+
     widget.onSubmit(
       CoordinationDetails(
-        name: _nameController.text.trim(),
+        name: fullName,
         phone: _phoneController.text.trim(),
         deliveryMethod: _deliveryMethod,
         destination: _deliveryMethod == DeliveryMethod.shalom
@@ -366,6 +415,10 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         desiredDate: _desiredDate,
         note: _noteController.text.trim(),
         customFields: Map.unmodifiable({
+          if (_nameController.text.trim().isNotEmpty)
+            'Nombre': _nameController.text.trim(),
+          if (_lastNameController.text.trim().isNotEmpty)
+            'Apellidos': _lastNameController.text.trim(),
           if (_deliveryMethod == DeliveryMethod.shalom) ...{
             'DNI': _dniController.text.trim(),
           },
@@ -414,16 +467,9 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
 
     if (lowerId == 'field_name' ||
         lowerId == 'name' ||
-        lowerLabel.contains('nombre')) {
-      final isFullName = _deliveryMethod == DeliveryMethod.shalom;
-      final label = isFullName
-          ? (field.label.toLowerCase().contains('completo')
-              ? '${field.label} *'
-              : 'Nombre completo *')
-          : (field.label.isNotEmpty ? '${field.label} *' : 'Nombre *');
-      final hint = isFullName
-          ? 'Nombres y apellidos'
-          : (field.hint.isNotEmpty ? field.hint : '¿Cómo te llamas?');
+        (lowerLabel.contains('nombre') && !lowerLabel.contains('apellido'))) {
+      final label = field.label.isNotEmpty ? '${field.label} *' : 'Nombre *';
+      final hint = field.hint.isNotEmpty ? field.hint : '¿Cómo te llamas?';
 
       return _LabeledField(
         label: label,
@@ -431,8 +477,14 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
           controller: _nameController,
           textCapitalization: TextCapitalization.words,
           textInputAction: TextInputAction.next,
-          autofillHints: const [AutofillHints.name],
+          autofillHints: const [AutofillHints.givenName],
           maxLength: 80,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(
+              RegExp(r"[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]"),
+            ),
+            LengthLimitingTextInputFormatter(80),
+          ],
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: Icon(CheckoutFieldIcons.resolve(
@@ -440,6 +492,37 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
             counterText: '',
           ),
           validator: _validateName,
+        ),
+      );
+    }
+
+    if (lowerId == 'field_last_name' ||
+        lowerId == 'last_name' ||
+        lowerLabel.contains('apellido')) {
+      final label = field.label.isNotEmpty ? '${field.label} *' : 'Apellidos *';
+      final hint = field.hint.isNotEmpty ? field.hint : 'Tus apellidos';
+
+      return _LabeledField(
+        label: label,
+        child: TextFormField(
+          controller: _lastNameController,
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.next,
+          autofillHints: const [AutofillHints.familyName],
+          maxLength: 80,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(
+              RegExp(r"[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]"),
+            ),
+            LengthLimitingTextInputFormatter(80),
+          ],
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixIcon: Icon(CheckoutFieldIcons.resolve(
+                field.icon.isNotEmpty ? field.icon : 'person')),
+            counterText: '',
+          ),
+          validator: _validateLastName,
         ),
       );
     }
@@ -527,6 +610,16 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     }
 
     final controller = _customControllers[field.id];
+    final inputFormatters = <TextInputFormatter>[
+      if (field.inputType == CheckoutFieldInputType.lettersOnly)
+        FilteringTextInputFormatter.allow(
+          RegExp(r"[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]"),
+        ),
+      if (field.inputType == CheckoutFieldInputType.numbersOnly)
+        FilteringTextInputFormatter.digitsOnly,
+      LengthLimitingTextInputFormatter(field.multiline ? 300 : 80),
+    ];
+
     return _LabeledField(
       label: '${field.label} *',
       child: TextFormField(
@@ -534,19 +627,30 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         minLines: field.multiline ? 2 : 1,
         maxLines: field.multiline ? 4 : 1,
         maxLength: field.multiline ? 300 : 80,
-        textCapitalization: TextCapitalization.sentences,
+        keyboardType: field.inputType == CheckoutFieldInputType.numbersOnly
+            ? TextInputType.number
+            : (field.multiline ? TextInputType.multiline : TextInputType.text),
+        textCapitalization: field.inputType == CheckoutFieldInputType.lettersOnly
+            ? TextCapitalization.words
+            : TextCapitalization.sentences,
         textInputAction: field.multiline
             ? TextInputAction.newline
             : TextInputAction.next,
+        inputFormatters: inputFormatters,
         decoration: InputDecoration(
-          hintText: field.hint.isEmpty ? null : field.hint,
+          hintText: field.hint.isEmpty ? 'Obligatorio' : field.hint,
           prefixIcon: Icon(CheckoutFieldIcons.resolve(field.icon)),
           counterText: '',
           alignLabelWithHint: field.multiline,
         ),
         validator: (value) {
-          if (value?.trim().isEmpty ?? true) {
+          final text = value?.trim() ?? '';
+          if (text.isEmpty) {
             return 'Completa este campo.';
+          }
+          if (field.inputType == CheckoutFieldInputType.lettersOnly &&
+              RegExp(r'\d').hasMatch(text)) {
+            return 'No se permiten números.';
           }
           return null;
         },
@@ -792,14 +896,23 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
 
   String? _validateName(String? value) {
     final text = value?.trim() ?? '';
-    final letters = RegExp(r'[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]').allMatches(text).length;
     if (text.isEmpty) return 'Escribe tu nombre.';
-    if (letters < 2) return 'Escribe un nombre válido.';
-    if (_deliveryMethod == DeliveryMethod.shalom &&
-        text.split(RegExp(r'\s+')).where((part) => part.length >= 2).length <
-            2) {
-      return 'Escribe tu nombre completo.';
+    if (RegExp(r'\d').hasMatch(text)) {
+      return 'No se permiten números en el nombre.';
     }
+    final letters = RegExp(r'[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]').allMatches(text).length;
+    if (letters < 2) return 'Escribe un nombre válido.';
+    return null;
+  }
+
+  String? _validateLastName(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Escribe tus apellidos.';
+    if (RegExp(r'\d').hasMatch(text)) {
+      return 'No se permiten números en los apellidos.';
+    }
+    final letters = RegExp(r'[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]').allMatches(text).length;
+    if (letters < 2) return 'Escribe un apellido válido.';
     return null;
   }
 

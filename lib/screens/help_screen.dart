@@ -199,44 +199,62 @@ class _HelpActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final privacy = OutlinedButton.icon(
-      onPressed: onPrivacy,
-      icon: const Icon(Icons.privacy_tip_outlined),
-      label: Text(privacyLabel),
-    );
-    return Column(
-      crossAxisAlignment: horizontal
-          ? CrossAxisAlignment.center
-          : CrossAxisAlignment.stretch,
-      children: [
-        SizedBox(width: horizontal ? 440 : double.infinity, child: privacy),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: onAssistantGuide,
-          icon: const Icon(Icons.support_agent_rounded),
-          label: Text(
-            assistantMuted ? 'Activar guía de Jashy' : 'Repetir guía de Jashy',
-          ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: horizontal ? 420 : double.infinity,
         ),
-        const SizedBox(height: 8),
-        Semantics(
-          button: true,
-          label: 'Acceso exclusivo para la administración de Expresiones',
-          child: TextButton.icon(
-            key: const ValueKey('admin-login-button'),
-            onPressed: onAdminLogin,
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.muted,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 12,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            OutlinedButton.icon(
+              onPressed: onPrivacy,
+              icon: const Icon(Icons.privacy_tip_outlined, size: 18),
+              label: Text(privacyLabel),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
-            icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
-            label: const Text('Iniciar sesión administrativa'),
-          ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: onAssistantGuide,
+              icon: const Icon(Icons.support_agent_rounded, size: 18),
+              label: Text(
+                assistantMuted ? 'Activar guía de Jashy' : 'Repetir guía de Jashy',
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: Semantics(
+                button: true,
+                label: 'Acceso exclusivo para la administración de Expresiones',
+                child: TextButton.icon(
+                  key: const ValueKey('admin-login-button'),
+                  onPressed: onAdminLogin,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.muted,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 10,
+                    ),
+                  ),
+                  icon: const Icon(Icons.admin_panel_settings_outlined, size: 16),
+                  label: const Text('Iniciar sesión administrativa'),
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

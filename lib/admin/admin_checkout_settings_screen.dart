@@ -118,6 +118,10 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
         f.id == 'field_name' ||
         f.id == 'name' ||
         f.label.trim().toLowerCase().contains('nombre'));
+    final hasLastName = existing.any((f) =>
+        f.id == 'field_last_name' ||
+        f.id == 'last_name' ||
+        f.label.trim().toLowerCase().contains('apellido'));
     final hasPhone = existing.any((f) =>
         f.id == 'field_phone' ||
         f.id == 'phone' ||
@@ -132,13 +136,27 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
     if (!hasName) {
       defaults.add(const CheckoutCustomField(
         id: 'field_name',
-        label: 'Nombre completo',
+        label: 'Nombre',
         icon: 'person',
         hint: 'Obligatorio',
         required: true,
         multiline: false,
         enabled: true,
         scope: CheckoutFieldScope.both,
+        inputType: CheckoutFieldInputType.lettersOnly,
+      ));
+    }
+    if (!hasLastName) {
+      defaults.add(const CheckoutCustomField(
+        id: 'field_last_name',
+        label: 'Apellidos',
+        icon: 'person',
+        hint: 'Obligatorio',
+        required: true,
+        multiline: false,
+        enabled: true,
+        scope: CheckoutFieldScope.both,
+        inputType: CheckoutFieldInputType.lettersOnly,
       ));
     }
     if (!hasPhone) {
@@ -151,6 +169,7 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
         multiline: false,
         enabled: true,
         scope: CheckoutFieldScope.both,
+        inputType: CheckoutFieldInputType.numbersOnly,
       ));
     }
     if (!hasDni) {
@@ -163,6 +182,7 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
         multiline: false,
         enabled: true,
         scope: CheckoutFieldScope.shalom,
+        inputType: CheckoutFieldInputType.numbersOnly,
       ));
     }
     _fields = [...defaults, ...existing];
@@ -846,6 +866,7 @@ class _InlineCheckoutFieldEditorState
   late final TextEditingController _hint;
   late String _icon;
   late CheckoutFieldScope _scope;
+  late CheckoutFieldInputType _inputType;
   late bool _multiline;
   late bool _enabled;
 
@@ -856,6 +877,7 @@ class _InlineCheckoutFieldEditorState
     _hint = TextEditingController(text: widget.initial?.hint ?? '');
     _icon = widget.initial?.icon ?? CheckoutFieldIcons.fallbackKey;
     _scope = widget.initial?.scope ?? CheckoutFieldScope.both;
+    _inputType = widget.initial?.inputType ?? CheckoutFieldInputType.any;
     _multiline = widget.initial?.multiline ?? false;
     _enabled = widget.initial?.enabled ?? true;
   }
@@ -881,6 +903,7 @@ class _InlineCheckoutFieldEditorState
         multiline: _multiline,
         enabled: _enabled,
         scope: _scope,
+        inputType: _inputType,
       ),
     );
   }
@@ -892,12 +915,14 @@ class _InlineCheckoutFieldEditorState
               _hint.text.isNotEmpty ||
               _icon != CheckoutFieldIcons.fallbackKey ||
               _scope != CheckoutFieldScope.both ||
+              _inputType != CheckoutFieldInputType.any ||
               _multiline ||
               !_enabled
         : _label.text != initial.label ||
               _hint.text != initial.hint ||
               _icon != initial.icon ||
               _scope != initial.scope ||
+              _inputType != initial.inputType ||
               _multiline != initial.multiline ||
               _enabled != initial.enabled;
     if (!changed) {
@@ -987,6 +1012,24 @@ class _InlineCheckoutFieldEditorState
                       label: Text(scope.label),
                       selected: _scope == scope,
                       onSelected: (_) => setState(() => _scope = scope),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Tipo de caracteres permitidos',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final type in CheckoutFieldInputType.values)
+                    ChoiceChip(
+                      label: Text(type.label),
+                      selected: _inputType == type,
+                      onSelected: (_) => setState(() => _inputType = type),
                     ),
                 ],
               ),

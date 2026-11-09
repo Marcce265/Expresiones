@@ -399,9 +399,6 @@ class StoreFooter extends StatelessWidget {
   }
 
   Widget _brandBlock(BuildContext context) {
-    final number = whatsappNumber ?? StorefrontSettings.defaultWhatsappNumber;
-    final cleanPhone = number.replaceAll(RegExp(r'\D'), '');
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -431,27 +428,30 @@ class StoreFooter extends StatelessWidget {
         Row(
           children: [
             _socialCircle(
-              Icons.chat_outlined,
-              'WhatsApp: Coordinaciones y pedidos',
-              'https://wa.me/$cleanPhone?text=Hola%20Expresiones%2C%20quisiera%20hacer%20una%20consulta',
+              CustomPaint(
+                size: const Size(18, 18),
+                painter: FacebookBrandPainter(color: AppColors.ink),
+              ),
+              'Facebook: Expresiones Huancayo',
+              'https://facebook.com/expresioneshuancayo',
             ),
             const SizedBox(width: 8),
             _socialCircle(
-              Icons.photo_camera_outlined,
+              CustomPaint(
+                size: const Size(18, 18),
+                painter: InstagramBrandPainter(color: AppColors.ink),
+              ),
               'Instagram: @expresiones_huancayo',
               'https://instagram.com/expresiones_huancayo',
             ),
             const SizedBox(width: 8),
             _socialCircle(
-              Icons.music_note_outlined,
+              CustomPaint(
+                size: const Size(18, 18),
+                painter: TikTokBrandPainter(color: AppColors.ink),
+              ),
               'TikTok: @expresiones_huancayo',
               'https://tiktok.com/@expresiones_huancayo',
-            ),
-            const SizedBox(width: 8),
-            _socialCircle(
-              Icons.facebook_outlined,
-              'Facebook: Expresiones Huancayo',
-              'https://facebook.com/expresioneshuancayo',
             ),
           ],
         ),
@@ -459,7 +459,7 @@ class StoreFooter extends StatelessWidget {
     );
   }
 
-  Widget _socialCircle(IconData icon, String tooltip, String url) {
+  Widget _socialCircle(Widget iconWidget, String tooltip, String url) {
     return Tooltip(
       message: tooltip,
       child: Material(
@@ -484,7 +484,12 @@ class StoreFooter extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.border),
             ),
-            child: Icon(icon, size: 18, color: AppColors.ink),
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: 18,
+              height: 18,
+              child: iconWidget,
+            ),
           ),
         ),
       ),
@@ -624,4 +629,133 @@ class StoreFooter extends StatelessWidget {
       ),
     );
   }
+}
+
+class FacebookBrandPainter extends CustomPainter {
+  const FacebookBrandPainter({required this.color});
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final scale = size.width / 24.0;
+    canvas.save();
+    canvas.scale(scale, scale);
+    final path = Path()
+      ..moveTo(13.5, 22.0)
+      ..lineTo(13.5, 12.8)
+      ..lineTo(16.4, 12.8)
+      ..lineTo(16.8, 9.4)
+      ..lineTo(13.5, 9.4)
+      ..lineTo(13.5, 7.3)
+      ..cubicTo(13.5, 6.35, 13.8, 5.7, 15.2, 5.7)
+      ..lineTo(16.9, 5.7)
+      ..lineTo(16.9, 2.7)
+      ..cubicTo(16.6, 2.65, 15.6, 2.55, 14.4, 2.55)
+      ..cubicTo(11.9, 2.55, 10.2, 4.05, 10.2, 6.8)
+      ..lineTo(10.2, 9.4)
+      ..lineTo(7.3, 9.4)
+      ..lineTo(7.3, 12.8)
+      ..lineTo(10.2, 12.8)
+      ..lineTo(10.2, 22.0)
+      ..close();
+
+    canvas.drawPath(path, paint);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant FacebookBrandPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+class InstagramBrandPainter extends CustomPainter {
+  const InstagramBrandPainter({required this.color});
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final strokePaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.11
+      ..strokeCap = StrokeCap.round;
+
+    final fillPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        size.width * 0.08,
+        size.height * 0.08,
+        size.width * 0.84,
+        size.height * 0.84,
+      ),
+      Radius.circular(size.width * 0.26),
+    );
+    canvas.drawRRect(rect, strokePaint);
+
+    canvas.drawCircle(
+      Offset(size.width * 0.5, size.height * 0.5),
+      size.width * 0.22,
+      strokePaint,
+    );
+
+    canvas.drawCircle(
+      Offset(size.width * 0.72, size.height * 0.28),
+      size.width * 0.065,
+      fillPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant InstagramBrandPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+class TikTokBrandPainter extends CustomPainter {
+  const TikTokBrandPainter({required this.color});
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final scale = size.width / 24.0;
+    canvas.save();
+    canvas.scale(scale, scale);
+    final path = Path()
+      ..moveTo(19.3, 7.4)
+      ..cubicTo(18.2, 7.4, 17.2, 6.8, 16.5, 6.0)
+      ..cubicTo(15.8, 5.2, 15.4, 4.2, 15.3, 3.0)
+      ..lineTo(12.3, 3.0)
+      ..lineTo(12.3, 15.8)
+      ..cubicTo(12.2, 17.3, 11.0, 18.5, 9.5, 18.5)
+      ..cubicTo(7.9, 18.5, 6.7, 17.2, 6.7, 15.6)
+      ..cubicTo(6.7, 14.1, 8.0, 12.8, 9.5, 12.8)
+      ..cubicTo(9.9, 12.8, 10.3, 12.9, 10.6, 13.1)
+      ..lineTo(10.6, 10.0)
+      ..cubicTo(10.2, 9.9, 9.8, 9.8, 9.5, 9.8)
+      ..cubicTo(6.3, 9.8, 3.7, 12.4, 3.7, 15.6)
+      ..cubicTo(3.7, 18.8, 6.3, 21.4, 9.5, 21.4)
+      ..cubicTo(12.6, 21.4, 15.2, 18.9, 15.3, 15.8)
+      ..lineTo(15.3, 9.9)
+      ..cubicTo(16.7, 10.9, 18.4, 11.4, 20.2, 11.4)
+      ..lineTo(20.2, 8.4)
+      ..cubicTo(19.9, 8.4, 19.6, 8.4, 19.3, 7.4)
+      ..close();
+
+    canvas.drawPath(path, paint);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant TikTokBrandPainter oldDelegate) =>
+      oldDelegate.color != color;
 }

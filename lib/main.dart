@@ -277,7 +277,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                             Navigator.of(routeContext).pop();
                             _showCatalog(category);
                           },
-                          itemKeys: _navigationKeys,
+                          itemKeys: null,
                         ),
                         Expanded(child: detailScreen),
                       ],
