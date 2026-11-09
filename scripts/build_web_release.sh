@@ -74,6 +74,22 @@ fi
 
 rm -rf -- "$admin_destination"
 cp -R -- "$admin_output" "$admin_destination"
+
+# Cache-busting automático para garantizar que los navegadores carguen la última versión sin caché vieja
+build_version="$(date +%s)"
+if [[ -f "$public_output/index.html" ]]; then
+  sed -i "s/flutter_bootstrap\.js/flutter_bootstrap.js?v=$build_version/g" "$public_output/index.html"
+fi
+if [[ -f "$admin_destination/index.html" ]]; then
+  sed -i "s/flutter_bootstrap\.js/flutter_bootstrap.js?v=$build_version/g" "$admin_destination/index.html"
+fi
+if [[ -f "$public_output/flutter_bootstrap.js" ]]; then
+  sed -i "s/\"main\.dart\.js\"/\"main.dart.js?v=$build_version\"/g" "$public_output/flutter_bootstrap.js"
+fi
+if [[ -f "$admin_destination/flutter_bootstrap.js" ]]; then
+  sed -i "s/\"main\.dart\.js\"/\"main.dart.js?v=$build_version\"/g" "$admin_destination/flutter_bootstrap.js"
+fi
+
 cp -- "$project_root/web/_redirects" "$public_output/_redirects"
 cp -- "$project_root/web/_headers" "$public_output/_headers"
 
