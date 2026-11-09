@@ -185,40 +185,105 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   void _openProduct(CatalogProduct product, String? variantId) {
-    context.read<AppStore>().recordProductView(product, variantId);
+    final store = context.read<AppStore>();
+    store.recordProductView(product, variantId);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (routeContext) => Scaffold(
-          body: SafeArea(
-            child: ProductDetailScreen(
-              product: product,
-              initialVariantId: variantId,
-              onHelp: () => _showContextGuide(
-                routeContext,
-                const JashyTourStep(
-                  title: 'Elige y agrega',
-                  message: 'Elige una opción y la cantidad.',
-                  imageAsset: 'assets/images/jashy_chibi_book.webp',
-                ),
+        builder: (routeContext) {
+          final related = store.products
+              .where(
+                (p) =>
+                    p.category == product.category &&
+                    p.id != product.id &&
+                    p.isActive,
+              )
+              .toList(growable: false);
+
+          final detailScreen = ProductDetailScreen(
+            product: product,
+            initialVariantId: variantId,
+            relatedProducts: related,
+            settings: store.storefrontSettings,
+            onSelectRelated: (p) => _openProduct(p, null),
+            onNavigateCategory: (category) {
+              Navigator.of(routeContext).pop();
+              _showCatalog(category);
+            },
+            onNavigateHome: () {
+              Navigator.of(routeContext).pop();
+              setState(() => _index = 0);
+            },
+            onBuyNow: ({required quantity, variantId, required customization}) {
+              store.addProduct(
+                product,
+                quantity: quantity,
+                variantId: variantId,
+                customization: customization,
+              );
+              Navigator.of(routeContext).pop();
+              _openCoordination();
+            },
+            onHelp: () => _showContextGuide(
+              routeContext,
+              const JashyTourStep(
+                title: 'Elige y agrega',
+                message: 'Elige una opción y la cantidad.',
+                imageAsset: 'assets/images/jashy_chibi_book.webp',
               ),
-              onAdd: ({required quantity, variantId, required customization}) {
-                context.read<AppStore>().addProduct(
-                  product,
-                  quantity: quantity,
-                  variantId: variantId,
-                  customization: customization,
-                );
-                Navigator.of(routeContext).pop();
-                showAppNotice(
-                  context,
-                  '$quantity × ${product.name} agregado a tu carrito.',
-                  actionLabel: 'Ver',
-                  onAction: _showQuote,
-                );
-              },
             ),
-          ),
-        ),
+            onAdd: ({required quantity, variantId, required customization}) {
+              store.addProduct(
+                product,
+                quantity: quantity,
+                variantId: variantId,
+                customization: customization,
+              );
+              Navigator.of(routeContext).pop();
+              showAppNotice(
+                context,
+                '$quantity × ${product.name} agregado a tu carrito.',
+                actionLabel: 'Ver',
+                onAction: _showQuote,
+              );
+            },
+          );
+
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final desktop = constraints.maxWidth >= 1024;
+              if (desktop) {
+                return Scaffold(
+                  body: SafeArea(
+                    child: Row(
+                      children: [
+                        _DesktopNavigation(
+                          settings: store.storefrontSettings,
+                          currentIndex: _index,
+                          catalogCategory: product.category,
+                          quoteQuantity: store.cartQuantity,
+                          onSelect: (index) {
+                            Navigator.of(routeContext).pop();
+                            _selectDestination(index);
+                          },
+                          onSelectCatalogCategory: (category) {
+                            Navigator.of(routeContext).pop();
+                            _showCatalog(category);
+                          },
+                          itemKeys: _navigationKeys,
+                        ),
+                        Expanded(child: detailScreen),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return Scaffold(
+                body: SafeArea(child: detailScreen),
+              );
+            },
+          );
+        },
       ),
     );
   }
