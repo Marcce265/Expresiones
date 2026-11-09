@@ -218,25 +218,24 @@ class _HelpActions extends StatelessWidget {
             assistantMuted ? 'Activar guía de Jashy' : 'Repetir guía de Jashy',
           ),
         ),
-        const SizedBox(height: 6),
-        if (FeatureFlags.customerAccounts)
-          Semantics(
-            button: true,
-            label: 'Acceso exclusivo para la administración de Expresiones',
-            child: TextButton.icon(
-              key: const ValueKey('admin-login-button'),
-              onPressed: onAdminLogin,
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.muted,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 12,
-                ),
+        const SizedBox(height: 8),
+        Semantics(
+          button: true,
+          label: 'Acceso exclusivo para la administración de Expresiones',
+          child: TextButton.icon(
+            key: const ValueKey('admin-login-button'),
+            onPressed: onAdminLogin,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.muted,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 12,
               ),
-              icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
-              label: const Text('Iniciar sesión administrativa'),
             ),
+            icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
+            label: const Text('Iniciar sesión administrativa'),
           ),
+        ),
       ],
     );
   }

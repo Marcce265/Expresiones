@@ -101,9 +101,8 @@ void main() {
     expect(find.text('Línea Ramos · Expresiones'), findsOneWidget);
     expect(find.text(product.description), findsOneWidget);
 
-    // 7. Opciones de esta sección (al tener variantes, muestra las otras variantes de la misma familia)
-    expect(find.text('Más opciones de esta sección'), findsOneWidget);
-    expect(find.textContaining('ESPECIAL CON DEDICATORIA'), findsWidgets);
+    // 7. Carrusel pesado removido para evitar congelamientos en web
+    expect(find.text('Más opciones de esta sección'), findsNothing);
 
     // 8. Banners removidos y footer limpio
     expect(find.byType(StoreDisclaimerBanner), findsNothing);

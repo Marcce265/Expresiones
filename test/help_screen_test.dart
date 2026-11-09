@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('oculta el acceso administrativo directo desde Ayuda', (
+  testWidgets('muestra el acceso administrativo directo desde Ayuda', (
     tester,
   ) async {
     var opened = false;
@@ -25,7 +25,9 @@ void main() {
     );
 
     final button = find.byKey(const ValueKey('admin-login-button'));
-    expect(button, findsNothing);
-    expect(opened, isFalse);
+    expect(button, findsOneWidget);
+    await tester.ensureVisible(button);
+    await tester.tap(button);
+    expect(opened, isTrue);
   });
 }

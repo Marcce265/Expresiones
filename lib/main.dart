@@ -98,7 +98,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   int _index = 0;
   ProductCategory? _catalogCategory;
   bool _guideCheckScheduled = false;
-  bool _assistantReady = false;
   bool _assistantMuted = false;
 
   @override
@@ -548,7 +547,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       final shouldShow = await _guidePreferences.shouldShowOnboarding();
       if (!mounted) return;
       setState(() {
-        _assistantReady = true;
         _assistantMuted = muted;
       });
       if (muted || !shouldShow) return;
@@ -673,11 +671,41 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     Key? key,
     double bottomOffset = 0.0,
   }) {
-    if (!_assistantReady || _assistantMuted) return null;
+    if (_assistantMuted) return null;
+    final tipsBySection = <int, List<String>>{
+      0: [
+        '¡Bienvenido a Expresiones! 💕 Encuentra aquí los mejores materiales y rosas eternas.',
+        '🔍 Tip: Escribe un color o código en el buscador para hallarlo al instante.',
+        '🚚 Realizamos envíos diarios a todo el Perú por Shalom y Olva Courier.',
+      ],
+      1: [
+        '🌸 Explora nuestros tonos de limpiapipas y papeles coreanos importados.',
+        '📦 Descuentos por volumen: Precios por mayor automáticos a partir de 12 unidades.',
+        '🎨 Toca cualquier producto para elegir el tono que más te guste.',
+      ],
+      2: [
+        '🛒 Revisa las cantidades de tus materiales antes de enviar tu cotización.',
+        '💬 Al confirmar, tu pedido se enviará ordenado por WhatsApp para coordinar la entrega.',
+        '🚚 Elige recojo local en Huancayo o envío a tu agencia favorita.',
+      ],
+      3: [
+        if (FeatureFlags.customerAccounts)
+          '👤 Revisa tu historial de compras y pedidos registrados.'
+        else
+          '❓ ¿Tienes dudas sobre pagos o envíos? Revisa las preguntas frecuentes.',
+        '📲 Si prefieres atención directa, escríbenos a nuestro WhatsApp.',
+      ],
+      4: [
+        '❓ ¿Tienes dudas sobre pagos o Shalom? Revisa las preguntas frecuentes.',
+        '📲 Si prefieres atención directa, escríbenos a nuestro WhatsApp.',
+      ],
+    };
+
     return AssistantHelpButton(
       key: key,
-      title: step.title,
+      title: 'Consejo de Jashy 💕',
       message: step.message,
+      messages: tipsBySection[_index] ?? [step.message],
       imageAsset: step.imageAsset,
       bottomOffset: bottomOffset,
     );

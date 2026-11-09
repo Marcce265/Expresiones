@@ -557,8 +557,6 @@ class StoreFooter extends StatelessWidget {
             _paymentImage('assets/images/payments/yape.png', 'Yape', width: 72, height: 26),
             _paymentImage('assets/images/payments/plin.png', 'Plin', width: 72, height: 26),
             _paymentImage('assets/images/payments/interbank.png', 'Interbank', width: 84, height: 26),
-            _paymentImage('assets/images/payments/bcp.png', 'BCP', width: 68, height: 26),
-            _paymentImage('assets/images/payments/bbva.png', 'BBVA', width: 68, height: 26),
           ],
         ),
       ],
