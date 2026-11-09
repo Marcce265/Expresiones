@@ -7,31 +7,44 @@ class AdminSectionIntro extends StatelessWidget {
     super.key,
     required this.eyebrow,
     required this.title,
-    required this.description,
+    this.description = '',
+    this.compact = false,
   });
 
   final String eyebrow;
   final String title;
   final String description;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           eyebrow.toUpperCase(),
-          style: Theme.of(context).textTheme.labelMedium
+          style: theme.textTheme.labelMedium
               ?.copyWith(letterSpacing: 1.15, color: AppColors.muted),
         ),
-        const SizedBox(height: 7),
-        Text(title, style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 7),
+        SizedBox(height: compact ? 4 : 7),
         Text(
-          description,
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: AppColors.muted, height: 1.45),
+          title,
+          style: compact
+              ? theme.textTheme.titleLarge?.copyWith(
+                  fontFamily: 'PlayfairDisplay',
+                  fontWeight: FontWeight.w700,
+                )
+              : theme.textTheme.headlineMedium,
         ),
+        if (description.trim().isNotEmpty) ...[
+          SizedBox(height: compact ? 4 : 7),
+          Text(
+            description,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: AppColors.muted, height: 1.45),
+          ),
+        ],
       ],
     );
   }

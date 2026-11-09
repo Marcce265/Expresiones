@@ -360,6 +360,7 @@ class AdminDashboardScreen extends StatefulWidget {
     required this.operations,
     required this.userEmail,
     required this.onSignOut,
+    this.initialSectionIndex = 0,
   });
 
   final SupabaseClient client;
@@ -367,6 +368,7 @@ class AdminDashboardScreen extends StatefulWidget {
   final AdminOperationsRepository operations;
   final String userEmail;
   final Future<void> Function() onSignOut;
+  final int initialSectionIndex;
 
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
@@ -378,12 +380,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final Set<String> _hiddenProductIds = {};
   late Stream<List<CatalogProduct>> _productsStream;
   String _query = '';
-  ProductCategory? _moduleFilter;
-  int _sectionIndex = 0;
+  ProductCategory _activeModule = ProductCategory.materials;
+  late int _sectionIndex;
 
   @override
   void initState() {
     super.initState();
+    _sectionIndex = widget.initialSectionIndex;
     _productsStream = widget.repository.watchProducts();
   }
 
@@ -505,9 +508,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     _search.text = rawQuery.trim();
     setState(() {
       _sectionIndex = 1;
-      _moduleFilter = null;
+      final q = rawQuery.trim().toLowerCase();
+      if (q.contains('corona')) {
+        _activeModule = ProductCategory.crowns;
+      } else if (q.contains('papel') || q.contains('corean')) {
+        _activeModule = ProductCategory.koreanPaper;
+      } else {
+        _activeModule = ProductCategory.materials;
+      }
       _productsStream = widget.repository.watchProducts();
-      _query = rawQuery.trim().toLowerCase();
+      _query = q;
     });
   }
 
@@ -518,7 +528,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       builder: (context) => AdminProductEditorDialog(
         repository: widget.repository,
         product: product,
-        initialCategory: product == null ? _moduleFilter : null,
+        initialCategory: product == null ? _activeModule : null,
       ),
     );
     if (result == null || !mounted) return;
@@ -683,7 +693,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             )
             .toList(growable: false);
         final products = allProducts.where((product) {
-          if (_moduleFilter != null && product.category != _moduleFilter) {
+          if (product.category != _activeModule) {
             return false;
           }
           if (_query.isEmpty) return true;
@@ -706,55 +716,70 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   child: ResponsivePage(
                     padding: EdgeInsets.fromLTRB(
                       compact ? 16 : 28,
-                      compact ? 16 : 26,
+                      compact ? 14 : 22,
                       compact ? 16 : 28,
-                      14,
+                      12,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const AdminSectionIntro(
+                        AdminSectionIntro(
                           eyebrow: 'Catálogo administrativo',
-                          title: 'Edita la tienda tal como la ven tus clientes',
-                          description: 'Busca un material o entra por categoría. Cada tarjeta conserva la misma foto, información y estilo del catálogo público.',
+                          title: 'Catálogo de ${_activeModule.label}',
+                          compact: compact,
                         ),
-                        SizedBox(height: compact ? 14 : 18),
+                        SizedBox(height: compact ? 12 : 16),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             children: [
-                              ChoiceChip(
-                                label: const Text('Todos'),
-                                selected: _moduleFilter == null,
-                                onSelected: (_) =>
-                                    setState(() => _moduleFilter = null),
-                              ),
-                              const SizedBox(width: 8),
                               for (final category in const [
                                 ProductCategory.materials,
                                 ProductCategory.koreanPaper,
                                 ProductCategory.crowns,
                               ]) ...[
                                 ChoiceChip(
-                                  label: Text(category.label),
-                                  selected: _moduleFilter == category,
-                                  onSelected: (_) => setState(
-                                    () => _moduleFilter = category,
+                                  avatar: Icon(
+                                    switch (category) {
+                                      ProductCategory.materials =>
+                                        Icons.auto_awesome_rounded,
+                                      ProductCategory.koreanPaper =>
+                                        Icons.yard_rounded,
+                                      ProductCategory.crowns =>
+                                        Icons.workspace_premium_rounded,
+                                      _ => Icons.category_rounded,
+                                    },
+                                    size: 16,
+                                    color: _activeModule == category
+                                        ? AppColors.surface
+                                        : AppColors.muted,
                                   ),
+                                  label: Text(category.label),
+                                  selected: _activeModule == category,
+                                  onSelected: (selected) {
+                                    if (selected && _activeModule != category) {
+                                      setState(() {
+                                        _activeModule = category;
+                                        _search.clear();
+                                        _query = '';
+                                      });
+                                    }
+                                  },
                                 ),
                                 const SizedBox(width: 8),
                               ],
                             ],
                           ),
                         ),
-                        SizedBox(height: compact ? 14 : 18),
+                        SizedBox(height: compact ? 12 : 16),
                         Row(
                           children: [
                             Expanded(
                               child: TextField(
                                 controller: _search,
                                 decoration: InputDecoration(
-                                  hintText: 'Buscar material, color o código',
+                                  hintText:
+                                      'Buscar en ${_activeModule.label.toLowerCase()}...',
                                   prefixIcon: const Icon(Icons.search_rounded),
                                   suffixIcon: _query.isEmpty
                                       ? null
@@ -786,7 +811,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
-                                  '${products.length} productos',
+                                  _countModuleProducts(
+                                    products.length,
+                                    _activeModule,
+                                  ),
                                   style: Theme.of(context).textTheme.labelLarge,
                                 ),
                               ),
@@ -794,9 +822,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           ],
                         ),
                         if (compact) ...[
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           Text(
-                            '${products.length} productos',
+                            _countModuleProducts(
+                              products.length,
+                              _activeModule,
+                            ),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -805,11 +836,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                 ),
                 if (products.isEmpty)
-                  const SliverFillRemaining(
+                  SliverFillRemaining(
                     hasScrollBody: false,
                     child: _AdminError(
-                      title: 'No hay resultados',
-                      message: 'Prueba con otra búsqueda o módulo.',
+                      title: _query.isEmpty
+                          ? 'Sin ${_activeModule.label.toLowerCase()}'
+                          : 'No hay resultados',
+                      message: _query.isEmpty
+                          ? 'Aún no hay productos en este módulo. Toca "+ Nuevo producto" para crear el primero.'
+                          : 'Prueba con otra búsqueda.',
                     ),
                   )
                 else
@@ -843,6 +878,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         );
       },
     );
+  }
+
+  static String _countModuleProducts(int count, ProductCategory module) {
+    final term = switch (module) {
+      ProductCategory.materials => count == 1 ? 'material' : 'materiales',
+      ProductCategory.koreanPaper =>
+        count == 1 ? 'papel coreano' : 'papeles coreanos',
+      ProductCategory.crowns => count == 1 ? 'corona' : 'coronas',
+      _ => count == 1 ? 'producto' : 'productos',
+    };
+    return '$count $term';
   }
 }
 
@@ -1262,10 +1308,16 @@ class _AdminHeroPreview extends StatelessWidget {
             );
           }
           return SizedBox(
-            height: 310,
+            height: 320,
             child: Row(
               children: [
-                Expanded(flex: 5, child: copy),
+                Expanded(
+                  flex: 5,
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: copy,
+                  ),
+                ),
                 Expanded(flex: 6, child: image),
               ],
             ),
