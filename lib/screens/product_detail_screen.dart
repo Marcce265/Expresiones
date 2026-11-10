@@ -5,6 +5,7 @@ import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/assistant_guide.dart';
+import '../widgets/product_description_card.dart';
 import '../widgets/product_visual.dart';
 import '../widgets/quantity_input.dart';
 import '../widgets/store_footer.dart';
@@ -72,58 +73,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       if (val != null) return Color(val);
     }
     return AppColors.ink;
-  }
-
-  Widget _buildAttributeBadges(Map<String, String> attributes) {
-    final entries = attributes.entries.where((e) {
-      final key = e.key.toLowerCase();
-      if (key.startsWith('merged') ||
-          key == 'cropbottom' ||
-          key == 'catalogindex' ||
-          key == 'palettenumber' ||
-          key == 'sourceimage' ||
-          key == 'imagesource') {
-        return false;
-      }
-      return e.value.trim().isNotEmpty;
-    }).toList();
-
-    if (entries.isEmpty) return const SizedBox.shrink();
-
-    String formatBadge(String key, String value) {
-      final k = key.toLowerCase();
-      if (k == 'assetcount') {
-        return 'OPCIONES: $value TONOS';
-      }
-      if (k == 'cataloggroup') {
-        return 'SECCIÓN: ${value.toUpperCase()}';
-      }
-      return '${key.toUpperCase()}: $value';
-    }
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final entry in entries)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.canvas,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Text(
-              formatBadge(entry.key, entry.value),
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.ink,
-              ),
-            ),
-          ),
-      ],
-    );
   }
 
   Widget _buildTrustItem({
@@ -739,48 +688,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               builder: (context, constraints) {
                 final isStacked = constraints.maxWidth < 800;
 
-                final descriptionCard = Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Descripción del producto',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontFamily: 'PlayfairDisplay',
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Línea ${product.category.label} · Expresiones',
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: AppColors.muted,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        product.description.isNotEmpty
-                            ? product.description
-                            : 'Elaborado artesanalmente con materiales seleccionados de la más alta calidad para garantizar acabados impecables.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.ink,
-                              height: 1.55,
-                            ),
-                      ),
-                      if (product.attributes.isNotEmpty) ...[
-                        const SizedBox(height: 18),
-                        _buildAttributeBadges(product.attributes),
-                      ],
-                    ],
-                  ),
+                final descriptionCard = ProductDescriptionCard(
+                  product: product,
                 );
 
                 final trustBadgesCard = Container(

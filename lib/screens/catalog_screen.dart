@@ -8,6 +8,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/crown_icon.dart';
 import '../widgets/product_card.dart';
+import '../widgets/product_description_card.dart';
 import '../widgets/product_visual.dart';
 
 class CatalogScreen extends StatefulWidget {
@@ -385,23 +386,30 @@ class _FamilyOverview extends StatelessWidget {
 
     return KeyedSubtree(
       key: ValueKey('family-overview-${product.id}'),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 720) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [cover, const SizedBox(height: 12), prices],
-            );
-          }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 3, child: cover),
-              const SizedBox(width: 16),
-              Expanded(flex: 2, child: prices),
-            ],
-          );
-        },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 720) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [cover, const SizedBox(height: 12), prices],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 3, child: cover),
+                  const SizedBox(width: 16),
+                  Expanded(flex: 2, child: prices),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+          ProductDescriptionCard(product: product, compact: true),
+        ],
       ),
     );
   }

@@ -606,7 +606,7 @@ class _PopularSearches extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const searches = ['Limpiapipas', 'Cintas satinadas', 'Coronitas'];
+    const searches = ['Limpiapipas', 'Cintas satinadas'];
     return Wrap(
       spacing: 7,
       runSpacing: 7,
