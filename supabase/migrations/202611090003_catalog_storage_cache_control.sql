@@ -1,16 +1,28 @@
 -- Backfill the Cache-Control metadata of catalog images uploaded before the
 -- admin portal started sending `cacheControl: 31536000`.
 --
--- This only changes object metadata; the files themselves are untouched.
--- Supabase Storage will serve the new header on the next request. Object paths
--- already include a timestamp/hash, so a one-year cache is safe.
+-- On current Supabase Storage the served `Cache-Control` header comes from the
+-- object's S3 metadata. Updating this JSONB keeps the Storage API metadata and
+-- the `/object/info` endpoint in sync, but changing the header itself requires
+-- a server-side copy through the Storage API. That copy was applied to the
+-- production project on 2026-11-10 for all catalog objects.
+--
+-- Object names include a timestamp or content hash, so a one-year cache is
+-- safe. This statement is idempotent.
 update storage.objects
-set cache_control = 'max-age=31536000'
+set metadata = jsonb_set(
+  coalesce(metadata, '{}'::jsonb),
+  '{cacheControl}',
+  to_jsonb('max-age=31536000'::text)
+)
 where bucket_id = 'catalog'
-  and (cache_control is null or cache_control <> 'max-age=31536000');
+  and coalesce(metadata->>'cacheControl', '') not in (
+    'max-age=31536000',
+    'public, max-age=31536000, immutable'
+  );
 
 -- Verify with:
--- select cache_control, count(*)
+-- select coalesce(metadata->>'cacheControl', '(null)'), count(*)
 -- from storage.objects
 -- where bucket_id = 'catalog'
 -- group by 1;
