@@ -4,53 +4,79 @@
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 
+# Assets del build. Una semana reduce descargas repetidas sin dejar una
+# portada antigua pegada durante meses.
 /assets/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=604800, stale-while-revalidate=604800
+
+/admin/assets/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=604800
 
 /canvaskit/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/icons/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=604800
+
+/admin/icons/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=604800
+
+/favicon.png
+  Cache-Control: public, max-age=604800, stale-while-revalidate=604800
+
+/admin/favicon.png
+  Cache-Control: public, max-age=604800, stale-while-revalidate=604800
+
+# El bundle principal cambia con cada deploy y su URL lleva ?v=<build>.
+/main.dart.js
   Cache-Control: public, max-age=31536000, immutable
 
-/*.png
+/admin/main.dart.js
   Cache-Control: public, max-age=31536000, immutable
 
-/*.webp
-  Cache-Control: public, max-age=31536000, immutable
-
-/*.jpg
-  Cache-Control: public, max-age=31536000, immutable
-
-/*.jpeg
-  Cache-Control: public, max-age=31536000, immutable
-
-/*.ttf
-  Cache-Control: public, max-age=31536000, immutable
-
-/*.woff2
-  Cache-Control: public, max-age=31536000, immutable
-
-/*
-  Cache-Control: no-cache, no-store, must-revalidate
+# Shells, manifiestos y service worker: se revalidan con ETag para no servir
+# una versión vieja, pero sin volver a descargar el cuerpo si no cambió.
+/
+  Cache-Control: no-cache, must-revalidate
 
 /index.html
-  Cache-Control: no-cache, no-store, must-revalidate
+  Cache-Control: no-cache, must-revalidate
+
+/privacy.html
+  Cache-Control: no-cache, must-revalidate
 
 /flutter_bootstrap.js
-  Cache-Control: no-cache, no-store, must-revalidate
+  Cache-Control: no-cache, must-revalidate
 
 /flutter.js
-  Cache-Control: no-cache, no-store, must-revalidate
+  Cache-Control: no-cache, must-revalidate
 
 /flutter_service_worker.js
-  Cache-Control: no-cache, no-store, must-revalidate
-
-/main.dart.js
-  Cache-Control: no-cache, no-store, must-revalidate
+  Cache-Control: no-cache, must-revalidate
 
 /version.json
-  Cache-Control: no-cache, no-store, must-revalidate
+  Cache-Control: no-cache, must-revalidate
 
 /manifest.json
-  Cache-Control: no-cache, no-store, must-revalidate
+  Cache-Control: no-cache, must-revalidate
 
-/admin/*
-  Cache-Control: no-cache, no-store, must-revalidate
+/admin/
+  Cache-Control: no-cache, must-revalidate
+
+/admin/index.html
+  Cache-Control: no-cache, must-revalidate
+
+/admin/flutter_bootstrap.js
+  Cache-Control: no-cache, must-revalidate
+
+/admin/flutter.js
+  Cache-Control: no-cache, must-revalidate
+
+/admin/flutter_service_worker.js
+  Cache-Control: no-cache, must-revalidate
+
+/admin/version.json
+  Cache-Control: no-cache, must-revalidate
+
+/admin/manifest.json
+  Cache-Control: no-cache, must-revalidate
