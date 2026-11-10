@@ -21,16 +21,16 @@ void main() {
       .toList(growable: false);
 
   test('conserva el inventario completo y el catálogo público esperado', () {
-    expect(products, hasLength(37));
+    expect(products, hasLength(52));
     expect(
       products.fold<int>(0, (total, item) => total + item.variants.length),
-      239,
+      254,
     );
 
-    expect(published, hasLength(31));
+    expect(published, hasLength(46));
     expect(
       published.fold<int>(0, (total, item) => total + item.variants.length),
-      224,
+      239,
     );
 
     expect(future, hasLength(6));

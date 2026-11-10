@@ -85,6 +85,7 @@ flutter:
     - assets/images/family_heroes/
     # Portadas editoriales agrupadas de módulos con muchas opciones.
     - assets/images/module_covers/
+    - assets/images/korean_paper/
     # Logotipos e insignias de formas de pago
     - assets/images/payments/
     # Las fotos de productos ya se sirven directamente desde Supabase Storage:

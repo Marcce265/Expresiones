@@ -384,9 +384,10 @@ class _FamilyOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isKoreanPaper = product.category == ProductCategory.koreanPaper;
+    final isSquare = product.id == 'limpiapipas-premium-8mm' ||
+        product.category == ProductCategory.koreanPaper;
     final cover = AspectRatio(
-      aspectRatio: isKoreanPaper ? 16 / 10 : 4 / 3,
+      aspectRatio: isSquare ? 1 : 4 / 3,
       child: _FamilyCover(product: product),
     );
     final prices = _FamilyPricePanel(
