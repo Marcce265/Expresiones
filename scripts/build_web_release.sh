@@ -75,19 +75,36 @@ fi
 rm -rf -- "$admin_destination"
 cp -R -- "$admin_output" "$admin_destination"
 
-# Cache-busting automático para garantizar que los navegadores carguen la última versión sin caché vieja
-build_version="$(date +%s)"
+# Cache-busting basado en el contenido del bundle. Si main.dart.js no cambia,
+# la URL se mantiene y los navegadores siguen usando la copia cacheada; así un
+# deploy de headers, documentación o estilos no invalida 1.3 MB de JavaScript.
+hash_file() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}' | cut -c1-12
+  else
+    shasum -a 256 "$1" | awk '{print $1}' | cut -c1-12
+  fi
+}
+
+if [[ ! -f "$public_output/main.dart.js" || ! -f "$admin_destination/main.dart.js" ]]; then
+  echo "No se encontró main.dart.js en la salida del build." >&2
+  exit 1
+fi
+
+public_version="$(hash_file "$public_output/main.dart.js")"
+admin_version="$(hash_file "$admin_destination/main.dart.js")"
+
 if [[ -f "$public_output/index.html" ]]; then
-  sed -i "s/flutter_bootstrap\.js/flutter_bootstrap.js?v=$build_version/g" "$public_output/index.html"
+  sed -i "s/flutter_bootstrap\.js/flutter_bootstrap.js?v=$public_version/g" "$public_output/index.html"
 fi
 if [[ -f "$admin_destination/index.html" ]]; then
-  sed -i "s/flutter_bootstrap\.js/flutter_bootstrap.js?v=$build_version/g" "$admin_destination/index.html"
+  sed -i "s/flutter_bootstrap\.js/flutter_bootstrap.js?v=$admin_version/g" "$admin_destination/index.html"
 fi
 if [[ -f "$public_output/flutter_bootstrap.js" ]]; then
-  sed -i "s/\"main\.dart\.js\"/\"main.dart.js?v=$build_version\"/g" "$public_output/flutter_bootstrap.js"
+  sed -i "s/\"main\.dart\.js\"/\"main.dart.js?v=$public_version\"/g" "$public_output/flutter_bootstrap.js"
 fi
 if [[ -f "$admin_destination/flutter_bootstrap.js" ]]; then
-  sed -i "s/\"main\.dart\.js\"/\"main.dart.js?v=$build_version\"/g" "$admin_destination/flutter_bootstrap.js"
+  sed -i "s/\"main\.dart\.js\"/\"main.dart.js?v=$admin_version\"/g" "$admin_destination/flutter_bootstrap.js"
 fi
 
 cp -- "$project_root/web/_redirects" "$public_output/_redirects"
