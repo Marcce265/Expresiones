@@ -7,24 +7,30 @@ void main() {
   final published = products
       .where(
         (product) =>
-            product.isActive && product.category == ProductCategory.materials,
+            product.isActive &&
+            (product.category == ProductCategory.materials ||
+                product.category == ProductCategory.koreanPaper),
       )
       .toList(growable: false);
   final future = products
-      .where((product) => product.category != ProductCategory.materials)
+      .where(
+        (product) =>
+            product.category == ProductCategory.bouquets ||
+            product.category == ProductCategory.personalizedGifts,
+      )
       .toList(growable: false);
 
   test('conserva el inventario completo y el catálogo público esperado', () {
-    expect(products, hasLength(36));
+    expect(products, hasLength(37));
     expect(
       products.fold<int>(0, (total, item) => total + item.variants.length),
-      238,
+      239,
     );
 
-    expect(published, hasLength(30));
+    expect(published, hasLength(31));
     expect(
       published.fold<int>(0, (total, item) => total + item.variants.length),
-      223,
+      224,
     );
 
     expect(future, hasLength(6));

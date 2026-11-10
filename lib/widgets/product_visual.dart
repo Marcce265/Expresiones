@@ -8,7 +8,11 @@ String? productFamilyHeroAsset(CatalogProduct product) => switch (product.id) {
   'limpiapipas-premium-8mm' => 'assets/images/family_heroes/limpiapipas.webp',
   'cinta-satinada-100m' =>
     'assets/images/family_heroes/cinta_satinada_todos_colores.webp',
-  _ => null,
+  'papel-coreano-impermeable' || 'papel-coreano' =>
+    'assets/images/family_heroes/papel_coreano.webp',
+  _ => product.category == ProductCategory.koreanPaper
+      ? 'assets/images/family_heroes/papel_coreano.webp'
+      : null,
 };
 
 /// Image shown for a family card or overview.
@@ -19,6 +23,10 @@ String? productFamilyCoverImage(CatalogProduct product) =>
     product.previewImageUrl ?? productFamilyHeroAsset(product);
 
 BoxFit productImageFit(CatalogProduct product, {ProductVariant? variant}) {
+  if (product.category == ProductCategory.koreanPaper) {
+    return BoxFit.cover;
+  }
+
   if (product.id == 'limpiapipas-premium-8mm' && variant != null) {
     return BoxFit.cover;
   }

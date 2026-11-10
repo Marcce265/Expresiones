@@ -359,12 +359,21 @@ bool usesSharedFamilyPricing(CatalogProduct product) {
 String familyDisplayName(CatalogProduct product) => switch (product.id) {
   'limpiapipas-premium-8mm' => 'Limpiapipas',
   'cinta-satinada-100m' => 'Cinta satinada',
-  _ => product.name,
+  'papel-coreano-impermeable' || 'papel-coreano' => 'Papel Coreano',
+  _ => product.category == ProductCategory.koreanPaper
+      ? 'Papel Coreano'
+      : product.name,
 };
 
 String _familyOptionLabel(CatalogProduct family) => switch (family.id) {
-  'limpiapipas-premium-8mm' || 'cinta-satinada-100m' => 'Elige un color',
-  _ => 'Elige una opción',
+  'limpiapipas-premium-8mm' ||
+  'cinta-satinada-100m' ||
+  'papel-coreano-impermeable' ||
+  'papel-coreano' =>
+    'Elige un color',
+  _ => family.category == ProductCategory.koreanPaper
+      ? 'Elige un color'
+      : 'Elige una opción',
 };
 
 class _FamilyOverview extends StatelessWidget {
@@ -375,41 +384,58 @@ class _FamilyOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isKoreanPaper = product.category == ProductCategory.koreanPaper;
     final cover = AspectRatio(
-      aspectRatio: 4 / 3,
+      aspectRatio: isKoreanPaper ? 16 / 10 : 4 / 3,
       child: _FamilyCover(product: product),
     );
     final prices = _FamilyPricePanel(
       product: product,
       sharedPricing: sharedPricing,
     );
+    final description = ProductDescriptionCard(
+      product: product,
+      compact: true,
+    );
 
     return KeyedSubtree(
       key: ValueKey('family-overview-${product.id}'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth < 720) {
-                return Column(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 720) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                cover,
+                const SizedBox(height: 12),
+                prices,
+                const SizedBox(height: 12),
+                description,
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 3,
+                child: cover,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                flex: 2,
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [cover, const SizedBox(height: 12), prices],
-                );
-              }
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(flex: 3, child: cover),
-                  const SizedBox(width: 16),
-                  Expanded(flex: 2, child: prices),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 14),
-          ProductDescriptionCard(product: product, compact: true),
-        ],
+                  children: [
+                    prices,
+                    const SizedBox(height: 14),
+                    description,
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

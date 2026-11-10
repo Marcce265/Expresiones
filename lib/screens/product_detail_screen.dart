@@ -274,6 +274,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               builder: (context, constraints) {
                 final mobile = constraints.maxWidth < 760;
                 final squareVisual = product.id == 'limpiapipas-premium-8mm';
+                final isKoreanPaper =
+                    product.category == ProductCategory.koreanPaper;
 
                 final visualWidget = Container(
                   clipBehavior: Clip.antiAlias,
@@ -301,9 +303,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   children: [
                     if (mobile)
                       AspectRatio(
-                        aspectRatio: squareVisual ? 1 : 1.18,
+                        aspectRatio: isKoreanPaper
+                            ? 16 / 10
+                            : squareVisual
+                            ? 1
+                            : 1.18,
                         child: visualWidget,
                       )
+                    else if (isKoreanPaper)
+                      AspectRatio(aspectRatio: 16 / 10, child: visualWidget)
                     else if (squareVisual)
                       AspectRatio(aspectRatio: 1, child: visualWidget)
                     else
