@@ -380,10 +380,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final _adminSearch = TextEditingController();
   Timer? _searchDebounce;
   final Set<String> _hiddenProductIds = {};
+  final Map<String, int> _orderOverrides = {};
   late Stream<List<CatalogProduct>> _productsStream;
   String _query = '';
   ProductCategory _activeModule = ProductCategory.materials;
   late int _sectionIndex;
+  bool _reorderMode = false;
+  bool _savingOrder = false;
 
   @override
   void initState() {
@@ -438,6 +441,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     if (_sectionIndex == index) return;
     setState(() {
       _sectionIndex = index;
+      if (index != 1) _reorderMode = false;
       if (index == 1) {
         _productsStream = widget.repository.watchProducts();
       }
@@ -672,6 +676,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  int _orderFor(CatalogProduct product) =>
+      _orderOverrides[product.id] ?? product.sortOrder;
+
   Widget _buildCatalogSection() {
     return StreamBuilder<List<CatalogProduct>>(
       stream: _productsStream,
@@ -695,24 +702,70 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   !_hiddenProductIds.contains(product.id),
             )
             .toList(growable: false);
-        final products = allProducts.where((product) {
-          if (product.category != _activeModule) {
-            return false;
-          }
-          if (_query.isEmpty) return true;
-          final haystack = [
-            product.name,
-            product.sku ?? '',
-            product.description,
-            ...product.variants.map((variant) => variant.name),
-            ...product.variants.map((variant) => variant.sku ?? ''),
-          ].join(' ').toLowerCase();
-          return haystack.contains(_query);
-        }).toList();
+        if (_orderOverrides.isNotEmpty &&
+            allProducts.every(
+              (product) =>
+                  product.sortOrder ==
+                  (_orderOverrides[product.id] ?? product.sortOrder),
+            )) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _orderOverrides.isNotEmpty) {
+              setState(_orderOverrides.clear);
+            }
+          });
+        }
+        final products =
+            allProducts.where((product) {
+              if (product.category != _activeModule) {
+                return false;
+              }
+              if (_query.isEmpty) return true;
+              final haystack = [
+                product.name,
+                product.sku ?? '',
+                product.description,
+                ...product.variants.map((variant) => variant.name),
+                ...product.variants.map((variant) => variant.sku ?? ''),
+              ].join(' ').toLowerCase();
+              return haystack.contains(_query);
+            }).toList()..sort((a, b) {
+              final order = _orderFor(a).compareTo(_orderFor(b));
+              return order != 0
+                  ? order
+                  : a.name.toLowerCase().compareTo(b.name.toLowerCase());
+            });
 
         return LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxWidth < 600;
+            final reorderButton = SizedBox(
+              height: 56,
+              child: OutlinedButton.icon(
+                onPressed: products.length < 2 || _savingOrder
+                    ? null
+                    : () {
+                        setState(() {
+                          _reorderMode = !_reorderMode;
+                          if (_reorderMode) {
+                            _searchDebounce?.cancel();
+                            _search.clear();
+                            _query = '';
+                          }
+                        });
+                      },
+                icon: _savingOrder
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        _reorderMode
+                            ? Icons.check_rounded
+                            : Icons.swap_vert_rounded,
+                      ),
+                label: Text(_reorderMode ? 'Listo' : 'Reordenar'),
+              ),
+            );
             return CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(
@@ -765,6 +818,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                         _activeModule = category;
                                         _search.clear();
                                         _query = '';
+                                        _reorderMode = false;
                                       });
                                     }
                                   },
@@ -780,9 +834,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             Expanded(
                               child: TextField(
                                 controller: _search,
+                                enabled: !_reorderMode,
                                 decoration: InputDecoration(
-                                  hintText:
-                                      'Buscar en ${_activeModule.label.toLowerCase()}...',
+                                  hintText: _reorderMode
+                                      ? 'Búsqueda desactivada mientras reordenas'
+                                      : 'Buscar en ${_activeModule.label.toLowerCase()}...',
                                   prefixIcon: const Icon(Icons.search_rounded),
                                   suffixIcon: _query.isEmpty
                                       ? null
@@ -803,7 +859,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     () {
                                       if (mounted) {
                                         setState(
-                                          () => _query = value.trim().toLowerCase(),
+                                          () => _query = value
+                                              .trim()
+                                              .toLowerCase(),
                                         );
                                       }
                                     },
@@ -832,17 +890,61 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   style: Theme.of(context).textTheme.labelLarge,
                                 ),
                               ),
+                              const SizedBox(width: 8),
+                              reorderButton,
                             ],
                           ],
                         ),
                         if (compact) ...[
                           const SizedBox(height: 8),
-                          Text(
-                            _countModuleProducts(
-                              products.length,
-                              _activeModule,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _countModuleProducts(
+                                    products.length,
+                                    _activeModule,
+                                  ),
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              reorderButton,
+                            ],
+                          ),
+                        ],
+                        if (_reorderMode) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
                             ),
-                            style: Theme.of(context).textTheme.bodySmall,
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              border: Border.all(color: AppColors.border),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.touch_app_rounded,
+                                  size: 18,
+                                  color: AppColors.muted,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Arrastra una tarjeta o usa las flechas. '
+                                    'El orden se guarda solo y los productos '
+                                    'nuevos van al final.',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ],
@@ -881,7 +983,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         return _EditableProductCard(
                           product: product,
                           compact: compact,
+                          reorderMode: _reorderMode,
+                          busy: _savingOrder,
                           onEdit: () => _openEditor(product),
+                          onMoveUp: index == 0
+                              ? null
+                              : () => _moveProductToIndex(
+                                  products,
+                                  product,
+                                  index - 1,
+                                ),
+                          onMoveDown: index == products.length - 1
+                              ? null
+                              : () => _moveProductToIndex(
+                                  products,
+                                  product,
+                                  index + 1,
+                                ),
+                          onReorder: (dragged, target) =>
+                              _moveProduct(products, dragged, target),
                         );
                       }, childCount: products.length),
                     ),
@@ -892,6 +1012,130 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         );
       },
     );
+  }
+
+  Future<void> _moveProduct(
+    List<CatalogProduct> products,
+    CatalogProduct dragged,
+    CatalogProduct target,
+  ) async {
+    final from = products.indexWhere((product) => product.id == dragged.id);
+    final to = products.indexWhere((product) => product.id == target.id);
+    if (from < 0 || to < 0 || from == to) return;
+    final ordered = [...products];
+    final moved = ordered.removeAt(from);
+    final insertAt = to > ordered.length ? ordered.length : to;
+    ordered.insert(insertAt, moved);
+    await _persistProductOrder(ordered, moved);
+  }
+
+  Future<void> _moveProductToIndex(
+    List<CatalogProduct> products,
+    CatalogProduct product,
+    int index,
+  ) async {
+    final from = products.indexWhere((item) => item.id == product.id);
+    if (from < 0) return;
+    final to = index < 0
+        ? 0
+        : index > products.length - 1
+        ? products.length - 1
+        : index;
+    if (from == to) return;
+    final ordered = [...products];
+    final moved = ordered.removeAt(from);
+    final insertAt = to > ordered.length ? ordered.length : to;
+    ordered.insert(insertAt, moved);
+    await _persistProductOrder(ordered, moved);
+  }
+
+  /// A move only rewrites the moved product, using the midpoint between its
+  /// new neighbours. If the integer gap is exhausted, the visible module is
+  /// renumbered in batches of 8 instead of sending one request per click.
+  Future<void> _persistProductOrder(
+    List<CatalogProduct> ordered,
+    CatalogProduct moved,
+  ) async {
+    if (_savingOrder) return;
+    final index = ordered.indexWhere((product) => product.id == moved.id);
+    if (index < 0) return;
+    final current = _orderFor(moved);
+    final previous = index > 0 ? _orderFor(ordered[index - 1]) : null;
+    final next = index < ordered.length - 1
+        ? _orderFor(ordered[index + 1])
+        : null;
+
+    int? newOrder;
+    if (previous != null && next != null) {
+      final gap = next - previous;
+      if (gap > 1) newOrder = previous + gap ~/ 2;
+    } else if (previous != null) {
+      if (previous <= 999990) newOrder = previous + 10;
+    } else if (next != null) {
+      if (next >= 10) newOrder = next - 10;
+    }
+
+    if (newOrder == null || newOrder == current) {
+      await _rebalanceProductOrder(ordered);
+      return;
+    }
+
+    final overrides = <String, int>{
+      for (final product in ordered) product.id: _orderFor(product),
+    };
+    overrides[moved.id] = newOrder;
+    setState(() {
+      _orderOverrides
+        ..clear()
+        ..addAll(overrides);
+      _savingOrder = true;
+    });
+    try {
+      await widget.repository.updateProductSortOrder(moved.id, newOrder);
+      if (!mounted) return;
+      setState(() {
+        _productsStream = widget.repository.watchProducts();
+      });
+    } catch (error) {
+      if (mounted) {
+        setState(_orderOverrides.clear);
+        _showNotice('No se pudo guardar el orden: $error');
+      }
+    } finally {
+      if (mounted) setState(() => _savingOrder = false);
+    }
+  }
+
+  Future<void> _rebalanceProductOrder(List<CatalogProduct> ordered) async {
+    final overrides = <String, int>{};
+    final changed = <String, int>{};
+    for (var index = 0; index < ordered.length; index++) {
+      final product = ordered[index];
+      final nextOrder = (index + 1) * 10;
+      overrides[product.id] = nextOrder;
+      if (_orderFor(product) != nextOrder) changed[product.id] = nextOrder;
+    }
+    if (changed.isEmpty) return;
+    setState(() {
+      _orderOverrides
+        ..clear()
+        ..addAll(overrides);
+      _savingOrder = true;
+    });
+    try {
+      await widget.repository.updateProductSortOrders(changed);
+      if (!mounted) return;
+      setState(() {
+        _productsStream = widget.repository.watchProducts();
+      });
+    } catch (error) {
+      if (mounted) {
+        setState(_orderOverrides.clear);
+        _showNotice('No se pudo guardar el orden: $error');
+      }
+    } finally {
+      if (mounted) setState(() => _savingOrder = false);
+    }
   }
 
   static String _countModuleProducts(int count, ProductCategory module) {
@@ -1111,7 +1355,8 @@ class _AdminHomeSection extends StatelessWidget {
       stream: settingsRepository.watch(),
       initialData: cached,
       builder: (context, settingsSnapshot) {
-        final settings = settingsSnapshot.data ?? cached ?? const StorefrontSettings();
+        final settings =
+            settingsSnapshot.data ?? cached ?? const StorefrontSettings();
         return StreamBuilder<List<CatalogProduct>>(
           stream: repository.watchProducts(),
           builder: (context, productsSnapshot) {
@@ -2028,41 +2273,201 @@ class _EditableProductCard extends StatelessWidget {
     required this.product,
     required this.compact,
     required this.onEdit,
+    this.reorderMode = false,
+    this.busy = false,
+    this.onMoveUp,
+    this.onMoveDown,
+    this.onReorder,
   });
 
   final CatalogProduct product;
   final bool compact;
   final VoidCallback onEdit;
+  final bool reorderMode;
+  final bool busy;
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
+  final void Function(CatalogProduct dragged, CatalogProduct target)? onReorder;
 
   @override
   Widget build(BuildContext context) {
+    if (!reorderMode) {
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: ProductCard(
+              product: product,
+              compact: compact,
+              showCategory: true,
+              showUnavailableOverlay: false,
+              onTap: onEdit,
+            ),
+          ),
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Material(
+              color: AppColors.ink,
+              shape: const CircleBorder(),
+              elevation: 3,
+              child: IconButton(
+                key: ValueKey('edit-${product.id}'),
+                tooltip: 'Editar ${product.name}',
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_rounded, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return DragTarget<CatalogProduct>(
+      onWillAcceptWithDetails: (details) =>
+          !busy && details.data.id != product.id,
+      onAcceptWithDetails: (details) => onReorder?.call(details.data, product),
+      builder: (context, candidates, rejected) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: candidates.isEmpty ? Colors.transparent : AppColors.ink,
+              width: 2,
+            ),
+          ),
+          child: _buildReorderCard(context),
+        );
+      },
+    );
+  }
+
+  Widget _buildReorderCard(BuildContext context) {
+    final isTouch =
+        Theme.of(context).platform == TargetPlatform.android ||
+        Theme.of(context).platform == TargetPlatform.iOS;
+    final card = ProductCard(
+      product: product,
+      compact: compact,
+      showCategory: true,
+      showUnavailableOverlay: false,
+      onTap: () {},
+    );
+    final whenDragging = Opacity(opacity: .28, child: card);
+    final draggable = isTouch
+        ? LongPressDraggable<CatalogProduct>(
+            data: product,
+            delay: const Duration(milliseconds: 220),
+            feedback: _dragFeedback(),
+            childWhenDragging: whenDragging,
+            child: card,
+          )
+        : Draggable<CatalogProduct>(
+            data: product,
+            feedback: _dragFeedback(),
+            childWhenDragging: whenDragging,
+            child: card,
+          );
+
     return Stack(
       children: [
-        Positioned.fill(
-          child: ProductCard(
-            product: product,
-            compact: compact,
-            showCategory: true,
-            showUnavailableOverlay: false,
-            onTap: onEdit,
-          ),
-        ),
+        Positioned.fill(child: draggable),
         Positioned(
-          top: 10,
-          right: 10,
+          top: 8,
+          left: 8,
           child: Material(
-            color: AppColors.ink,
-            shape: const CircleBorder(),
-            elevation: 3,
-            child: IconButton(
-              key: ValueKey('edit-${product.id}'),
-              tooltip: 'Editar ${product.name}',
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_rounded, color: Colors.white),
+            color: AppColors.ink.withValues(alpha: .88),
+            borderRadius: BorderRadius.circular(999),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ReorderIconButton(
+                  icon: Icons.keyboard_arrow_up_rounded,
+                  tooltip: 'Subir',
+                  onPressed: busy ? null : onMoveUp,
+                ),
+                Container(width: 22, height: 1, color: Colors.white24),
+                _ReorderIconButton(
+                  icon: Icons.keyboard_arrow_down_rounded,
+                  tooltip: 'Bajar',
+                  onPressed: busy ? null : onMoveDown,
+                ),
+              ],
             ),
           ),
         ),
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Tooltip(
+            message: isTouch
+                ? 'Mantén presionado y arrastra'
+                : 'Arrastra para reordenar',
+            child: Material(
+              color: AppColors.ink.withValues(alpha: .88),
+              shape: const CircleBorder(),
+              child: const Padding(
+                padding: EdgeInsets.all(7),
+                child: Icon(
+                  Icons.drag_indicator_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (busy)
+          const Positioned.fill(
+            child: IgnorePointer(child: ColoredBox(color: Color(0x0A000000))),
+          ),
       ],
+    );
+  }
+
+  Widget _dragFeedback() {
+    return Material(
+      color: Colors.transparent,
+      elevation: 12,
+      borderRadius: BorderRadius.circular(20),
+      child: SizedBox(
+        width: compact ? 200 : 240,
+        height: compact ? 240 : 280,
+        child: ProductCard(
+          product: product,
+          compact: compact,
+          showCategory: true,
+          showUnavailableOverlay: false,
+          onTap: () {},
+        ),
+      ),
+    );
+  }
+}
+
+class _ReorderIconButton extends StatelessWidget {
+  const _ReorderIconButton({
+    required this.icon,
+    required this.tooltip,
+    this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      icon: Icon(icon, size: 18),
+      color: Colors.white,
+      disabledColor: Colors.white38,
+      constraints: const BoxConstraints.tightFor(width: 34, height: 30),
+      padding: EdgeInsets.zero,
+      splashRadius: 16,
     );
   }
 }
@@ -2210,7 +2615,6 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
   late final AdminImageDraft _image;
   late final TextEditingController _unitLabel;
   late final TextEditingController _basePrice;
-  late final TextEditingController _sortOrder;
   late final List<_PriceTierDraft> _priceTiers;
   late final List<_VariantDraft> _variants;
   late final String _initialDraftSnapshot;
@@ -2235,13 +2639,14 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     _basePrice = TextEditingController(
       text: product == null ? '' : product.basePrice.toStringAsFixed(2),
     );
-    _sortOrder = TextEditingController(text: '${product?.sortOrder ?? 0}');
     _priceTiers = [
       for (final tier in product?.priceTiers ?? const <PriceTier>[])
         _PriceTierDraft.fromTier(tier),
     ];
     _category =
-        product?.category ?? widget.initialCategory ?? ProductCategory.materials;
+        product?.category ??
+        widget.initialCategory ??
+        ProductCategory.materials;
     _isActive = product?.isActive ?? true;
     _isFeatured = product?.isFeatured ?? false;
     _priceIsEstimate = product?.priceIsEstimate ?? false;
@@ -2261,7 +2666,6 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       _description,
       _unitLabel,
       _basePrice,
-      _sortOrder,
     ]) {
       controller.dispose();
     }
@@ -2296,7 +2700,6 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     'description': _description.text,
     'unitLabel': _unitLabel.text,
     'basePrice': _basePrice.text,
-    'sortOrder': _sortOrder.text,
     'isActive': _isActive,
     'isFeatured': _isFeatured,
     'priceIsEstimate': _priceIsEstimate,
@@ -2306,7 +2709,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       for (final tier in _priceTiers)
         {
           'quantity': tier.quantity.text,
-          'totalPrice': tier.totalPrice.text,
+          'unitPrice': tier.unitPrice.text,
           'label': tier.label,
           'initialQuantity': tier.initialQuantity,
         },
@@ -2358,7 +2761,8 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
       }
       final data = <String, dynamic>{
         'name': _name.text.trim().toUpperCase(),
-        'category': _category == ProductCategory.koreanPaper ||
+        'category':
+            _category == ProductCategory.koreanPaper ||
                 _category == ProductCategory.crowns
             ? ProductCategory.materials.key
             : _category.key,
@@ -2376,7 +2780,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
         'stockStatus': familyStockStatus.key,
         'isActive': _isActive,
         'isFeatured': _isFeatured,
-        'sortOrder': int.parse(_sortOrder.text.trim()),
+        'sortOrder': widget.product?.sortOrder ?? 0,
         'tags': widget.product?.tags ?? const <String>[],
         'attributes': {
           ...widget.product?.attributes ?? const <String, String>{},
@@ -2626,10 +3030,10 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                       ? 'CREAR EN EL CATÁLOGO'
                       : 'EDITAR EN EL CATÁLOGO',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.muted,
-                        letterSpacing: 1.05,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: AppColors.muted,
+                    letterSpacing: 1.05,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -2639,9 +3043,9 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: isMobile ? 20 : null,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    fontSize: isMobile ? 20 : null,
+                  ),
                 ),
               ],
             ),
@@ -2661,467 +3065,405 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
         builder: (context, constraints) {
           final isWide = constraints.maxWidth >= 940;
 
-                    final imageCard = _cardContainer(
-                      context: context,
-                      title: 'Imagen principal',
-                      subtitle:
-                          'Foto de portada que se mostrará en el catálogo',
-                      children: [
-                        _ImageEditor(
-                          label: _name.text.trim().isEmpty
-                              ? 'Imagen del producto'
-                              : _name.text.trim(),
-                          imageUrl: _previewUrl(_image.previewValue),
-                          uploading: _uploadingImage,
-                          onPick: _pickImage,
-                        ),
-                      ],
-                    );
+          final imageCard = _cardContainer(
+            context: context,
+            title: 'Imagen principal',
+            subtitle: 'Foto de portada que se mostrará en el catálogo',
+            children: [
+              _ImageEditor(
+                label: _name.text.trim().isEmpty
+                    ? 'Imagen del producto'
+                    : _name.text.trim(),
+                imageUrl: _previewUrl(_image.previewValue),
+                uploading: _uploadingImage,
+                onPick: _pickImage,
+              ),
+            ],
+          );
 
-                    final infoCard = _cardContainer(
-                      context: context,
-                      title: 'Información básica',
-                      subtitle: 'Datos visibles y clasificación del producto',
-                      children: [
-                        TextFormField(
-                          controller: _name,
-                          scrollPadding:
-                              const EdgeInsets.fromLTRB(20, 80, 20, 140),
-                          textCapitalization: TextCapitalization.characters,
-                          inputFormatters: const [
-                            UppercaseTextInputFormatter(),
-                          ],
-                          decoration: const InputDecoration(
-                            labelText: 'Nombre del producto *',
-                            hintText: 'Ej. Limpiapipas premium 8 mm',
-                          ),
-                          validator: _required,
-                        ),
-                        const SizedBox(height: 14),
-                        DropdownButtonFormField<ProductCategory>(
-                          initialValue: _category,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Módulo / Categoría *',
-                            prefixIcon: Icon(Icons.category_outlined, size: 20),
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                              value: ProductCategory.materials,
-                              child: Text(
-                                'Materiales',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: ProductCategory.koreanPaper,
-                              child: Text(
-                                'Papel Coreano',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: ProductCategory.crowns,
-                              child: Text(
-                                'Coronas',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                          onChanged: (cat) {
-                            if (cat != null) setState(() => _category = cat);
-                          },
-                        ),
-                        const SizedBox(height: 14),
-                        LayoutBuilder(
-                          builder: (context, c) {
-                            final stack = c.maxWidth < 460;
-                            final skuField = TextFormField(
-                              controller: _sku,
-                              scrollPadding:
-                                  const EdgeInsets.fromLTRB(20, 80, 20, 140),
-                              textCapitalization: TextCapitalization.characters,
-                              inputFormatters: const [
-                                UppercaseTextInputFormatter(),
-                              ],
-                              decoration: const InputDecoration(
-                                labelText: 'Código / SKU',
-                                hintText: 'Ej. XS',
-                              ),
-                            );
-                            final orderField = TextFormField(
-                              controller: _sortOrder,
-                              scrollPadding:
-                                  const EdgeInsets.fromLTRB(20, 80, 20, 140),
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Orden en catálogo',
-                                prefixIcon: Icon(Icons.sort_rounded, size: 18),
-                              ),
-                              validator: _nonNegativeInt,
-                            );
-                            if (stack) {
-                              return Column(
-                                children: [
-                                  skuField,
-                                  const SizedBox(height: 12),
-                                  orderField,
-                                ],
-                              );
-                            }
-                            return Row(
-                              children: [
-                                Expanded(flex: 2, child: skuField),
-                                const SizedBox(width: 12),
-                                Expanded(child: orderField),
-                              ],
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 14),
-                        TextFormField(
-                          controller: _description,
-                          scrollPadding:
-                              const EdgeInsets.fromLTRB(20, 80, 20, 140),
-                          maxLines: 3,
-                          textCapitalization: TextCapitalization.characters,
-                          inputFormatters: const [
-                            UppercaseTextInputFormatter(),
-                          ],
-                          decoration: const InputDecoration(
-                            labelText: 'Descripción',
-                            hintText: 'Detalles, material, dimensiones o uso recomendado...',
-                          ),
-                        ),
-                      ],
-                    );
-
-                    final pricingCard = _cardContainer(
-                      context: context,
-                      title: 'Precios',
-                      children: [
-                        LayoutBuilder(
-                          builder: (context, c) {
-                            return Align(
-                              alignment: Alignment.centerLeft,
-                              child: SizedBox(
-                                width: c.maxWidth < 280 ? c.maxWidth : 280,
-                                child: TextFormField(
-                                  controller: _basePrice,
-                                  scrollPadding:
-                                      const EdgeInsets.fromLTRB(20, 80, 20, 140),
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Precio base (S/) *',
-                                    prefixText: 'S/ ',
-                                    hintText: '0.00',
-                                  ),
-                                  validator: _nonNegativeDecimal,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 14),
-                        _PriceTiersEditor(
-                          tiers: _priceTiers,
-                          onAdd: (quantity) =>
-                              _addPriceTier(_priceTiers, quantity),
-                          onRemove: (tier) =>
-                              _removePriceTier(_priceTiers, tier),
-                        ),
-                      ],
-                    );
-
-                    final visibilityCard = _cardContainer(
-                      context: context,
-                      title: 'Visibilidad y Estado',
-                      subtitle: 'Controla si se muestra y cómo se presenta a los clientes',
-                      children: [
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text(
-                            'Publicado en catálogo',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          subtitle: const Text(
-                            'Visible para los clientes en la tienda',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.muted,
-                            ),
-                          ),
-                          value: _isActive,
-                          onChanged: (value) =>
-                              setState(() => _isActive = value),
-                        ),
-                        if (_variants.isEmpty) ...[
-                          const Divider(height: 14, color: AppColors.border),
-                          const SizedBox(height: 4),
-                          _VariantStatusSelector(
-                            value: _stockStatus,
-                            onChanged: (status) =>
-                                setState(() => _stockStatus = status),
-                          ),
-                          const SizedBox(height: 4),
-                        ],
-                        const Divider(height: 14, color: AppColors.border),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text(
-                            'Producto destacado',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          subtitle: const Text(
-                            'Aparece en inicio y recomendaciones destacadas',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.muted,
-                            ),
-                          ),
-                          value: _isFeatured,
-                          onChanged: (value) =>
-                              setState(() => _isFeatured = value),
-                        ),
-                        const Divider(height: 14, color: AppColors.border),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text(
-                            'Precio por revisar',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          subtitle: const Text(
-                            "Muestra etiqueta 'A consultar' en vez del precio fijo",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.muted,
-                            ),
-                          ),
-                          value: _priceIsEstimate,
-                          onChanged: (value) =>
-                              setState(() => _priceIsEstimate = value),
-                        ),
-                      ],
-                    );
-
-                    final variantsCard = _cardContainer(
-                      context: context,
-                      title: 'Variantes (${_variants.length})',
-                      subtitle: _variants.isEmpty
-                          ? 'Opcional: déjalo vacío si es un producto único como una corona o artículo individual.'
-                          : 'Arrastra la foto de una opción para cambiar su orden.',
-                      children: [
-                        if (_variants.isEmpty) ...[
-                          const InfoBanner(
-                            icon: Icons.layers_outlined,
-                            title: 'Producto sin variantes',
-                            message:
-                                'Si se vende tal cual (como una corona única), se guarda directamente con su foto, precio y código principal. No necesitas crear variantes a menos que tenga varios colores o presentaciones.',
-                          ),
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: OutlinedButton.icon(
-                              onPressed: () => _addVariant(atEnd: true),
-                              icon: const Icon(Icons.add_rounded),
-                              label: const Text('Agregar variante'),
-                            ),
-                          ),
-                        ],
-                      ],
-                    );
-
-                    final topContent = isWide
-                        ? Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 62,
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    infoCard,
-                                    const SizedBox(height: 18),
-                                    pricingCard,
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 20),
-                              Expanded(
-                                flex: 38,
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    imageCard,
-                                    const SizedBox(height: 18),
-                                    visibilityCard,
-                                  ],
-                                ),
-                              ),
-                            ],
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              imageCard,
-                              const SizedBox(height: 14),
-                              infoCard,
-                              const SizedBox(height: 14),
-                              pricingCard,
-                              const SizedBox(height: 14),
-                              visibilityCard,
-                            ],
-                          );
-                    final padding = isMobile ? 12.0 : 24.0;
-                    // A variant uses a horizontal media/fields layout only
-                    // when it has enough room. Keeping one column below this
-                    // breakpoint prevents a compact desktop dialog from
-                    // clipping the taller mobile-style tile.
-                    final twoVariantColumns = constraints.maxWidth >= 1180;
-
-                    Widget buildVariant(int index) {
-                      final variant = _variants[index];
-                      return RepaintBoundary(
-                        child: _VariantEditorTile(
-                          draft: variant,
-                          imageUrl: _previewUrl(variant.image.previewValue),
-                          uploading: _uploadingImage,
-                          onPickImage: () => _pickImage(variant: variant),
-                          onDelete: () => _removeVariant(variant),
-                          onReorder: _reorderVariant,
-                        ),
-                      );
-                    }
-
-                    return CustomScrollView(
-                      key: const PageStorageKey('admin-product-editor-scroll'),
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      slivers: [
-                        SliverPadding(
-                          padding: EdgeInsets.fromLTRB(
-                            padding,
-                            padding,
-                            padding,
-                            0,
-                          ),
-                          sliver: SliverToBoxAdapter(child: topContent),
-                        ),
-                        SliverPadding(
-                          padding: EdgeInsets.fromLTRB(padding, 18, padding, 0),
-                          sliver: SliverToBoxAdapter(child: variantsCard),
-                        ),
-                        if (_variants.isNotEmpty)
-                          SliverPadding(
-                            padding: EdgeInsets.fromLTRB(
-                              padding,
-                              14,
-                              padding,
-                              0,
-                            ),
-                            sliver: twoVariantColumns
-                                ? SliverGrid(
-                                    gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: 2,
-                                          crossAxisSpacing: 14,
-                                          mainAxisSpacing: 14,
-                                          mainAxisExtent: 282,
-                                        ),
-                                    delegate: SliverChildBuilderDelegate(
-                                      (context, index) => buildVariant(index),
-                                      childCount: _variants.length,
-                                    ),
-                                  )
-                                : SliverList(
-                                    delegate: SliverChildBuilderDelegate(
-                                      (context, index) => Padding(
-                                        padding: EdgeInsets.only(
-                                          bottom: index == _variants.length - 1
-                                              ? 0
-                                              : 14,
-                                        ),
-                                        child: buildVariant(index),
-                                      ),
-                                      childCount: _variants.length,
-                                    ),
-                                  ),
-                          ),
-                        if (_variants.isNotEmpty)
-                          SliverPadding(
-                            padding: EdgeInsets.fromLTRB(
-                              padding,
-                              14,
-                              padding,
-                              0,
-                            ),
-                            sliver: SliverToBoxAdapter(
-                              child: OutlinedButton.icon(
-                                onPressed: () => _addVariant(atEnd: true),
-                                icon: const Icon(Icons.add_rounded),
-                                label: const Text('Agregar otra variante'),
-                              ),
-                            ),
-                          ),
-                        if (_error != null)
-                          SliverPadding(
-                            padding: EdgeInsets.fromLTRB(
-                              padding,
-                              16,
-                              padding,
-                              0,
-                            ),
-                            sliver: SliverToBoxAdapter(
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .errorContainer,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  _error!,
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onErrorContainer,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        SliverPadding(
-                          padding: EdgeInsets.fromLTRB(
-                            padding,
-                            22,
-                            padding,
-                            MediaQuery.paddingOf(context).bottom + 28,
-                          ),
-                          sliver: SliverToBoxAdapter(
-                            child: _editorActions(context),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+          final infoCard = _cardContainer(
+            context: context,
+            title: 'Información básica',
+            subtitle: 'Datos visibles y clasificación del producto',
+            children: [
+              TextFormField(
+                controller: _name,
+                scrollPadding: const EdgeInsets.fromLTRB(20, 80, 20, 140),
+                textCapitalization: TextCapitalization.characters,
+                inputFormatters: const [UppercaseTextInputFormatter()],
+                decoration: const InputDecoration(
+                  labelText: 'Nombre del producto *',
+                  hintText: 'Ej. Limpiapipas premium 8 mm',
                 ),
-              );
+                validator: _required,
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<ProductCategory>(
+                initialValue: _category,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Módulo / Categoría *',
+                  prefixIcon: Icon(Icons.category_outlined, size: 20),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: ProductCategory.materials,
+                    child: Text('Materiales', overflow: TextOverflow.ellipsis),
+                  ),
+                  DropdownMenuItem(
+                    value: ProductCategory.koreanPaper,
+                    child: Text(
+                      'Papel Coreano',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: ProductCategory.crowns,
+                    child: Text('Coronas', overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+                onChanged: (cat) {
+                  if (cat != null) setState(() => _category = cat);
+                },
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _sku,
+                scrollPadding: const EdgeInsets.fromLTRB(20, 80, 20, 140),
+                textCapitalization: TextCapitalization.characters,
+                inputFormatters: const [UppercaseTextInputFormatter()],
+                decoration: const InputDecoration(
+                  labelText: 'Código / SKU',
+                  hintText: 'Ej. XS',
+                ),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.canvas,
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.swap_vert_rounded,
+                      size: 18,
+                      color: AppColors.muted,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.product == null
+                            ? 'El producto nuevo se agregará al '
+                                  'final del catálogo. Después '
+                                  'podrás moverlo con las flechas '
+                                  'o arrastrándolo desde la grilla.'
+                            : 'Para subir o bajar este producto usa '
+                                  'las flechas o arrástralo desde '
+                                  'la grilla del catálogo. Ya no '
+                                  'necesitas escribir un número.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _description,
+                scrollPadding: const EdgeInsets.fromLTRB(20, 80, 20, 140),
+                maxLines: 3,
+                textCapitalization: TextCapitalization.characters,
+                inputFormatters: const [UppercaseTextInputFormatter()],
+                decoration: const InputDecoration(
+                  labelText: 'Descripción',
+                  hintText:
+                      'Detalles, material, dimensiones o uso recomendado...',
+                ),
+              ),
+            ],
+          );
+
+          final pricingCard = _cardContainer(
+            context: context,
+            title: 'Precios',
+            children: [
+              LayoutBuilder(
+                builder: (context, c) {
+                  return Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: c.maxWidth < 280 ? c.maxWidth : 280,
+                      child: TextFormField(
+                        controller: _basePrice,
+                        scrollPadding: const EdgeInsets.fromLTRB(
+                          20,
+                          80,
+                          20,
+                          140,
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Precio base (S/) *',
+                          prefixText: 'S/ ',
+                          hintText: '0.00',
+                        ),
+                        validator: _nonNegativeDecimal,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 14),
+              _PriceTiersEditor(
+                tiers: _priceTiers,
+                onAdd: (quantity) => _addPriceTier(_priceTiers, quantity),
+                onRemove: (tier) => _removePriceTier(_priceTiers, tier),
+              ),
+            ],
+          );
+
+          final visibilityCard = _cardContainer(
+            context: context,
+            title: 'Visibilidad y Estado',
+            subtitle:
+                'Controla si se muestra y cómo se presenta a los clientes',
+            children: [
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text(
+                  'Publicado en catálogo',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                subtitle: const Text(
+                  'Visible para los clientes en la tienda',
+                  style: TextStyle(fontSize: 12, color: AppColors.muted),
+                ),
+                value: _isActive,
+                onChanged: (value) => setState(() => _isActive = value),
+              ),
+              if (_variants.isEmpty) ...[
+                const Divider(height: 14, color: AppColors.border),
+                const SizedBox(height: 4),
+                _VariantStatusSelector(
+                  value: _stockStatus,
+                  onChanged: (status) => setState(() => _stockStatus = status),
+                ),
+                const SizedBox(height: 4),
+              ],
+              const Divider(height: 14, color: AppColors.border),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text(
+                  'Producto destacado',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                subtitle: const Text(
+                  'Aparece en inicio y recomendaciones destacadas',
+                  style: TextStyle(fontSize: 12, color: AppColors.muted),
+                ),
+                value: _isFeatured,
+                onChanged: (value) => setState(() => _isFeatured = value),
+              ),
+              const Divider(height: 14, color: AppColors.border),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text(
+                  'Precio por revisar',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                subtitle: const Text(
+                  "Muestra etiqueta 'A consultar' en vez del precio fijo",
+                  style: TextStyle(fontSize: 12, color: AppColors.muted),
+                ),
+                value: _priceIsEstimate,
+                onChanged: (value) => setState(() => _priceIsEstimate = value),
+              ),
+            ],
+          );
+
+          final variantsCard = _cardContainer(
+            context: context,
+            title: 'Variantes (${_variants.length})',
+            subtitle: _variants.isEmpty
+                ? 'Opcional: déjalo vacío si es un producto único como una corona o artículo individual.'
+                : 'Arrastra la foto de una opción para cambiar su orden.',
+            children: [
+              if (_variants.isEmpty) ...[
+                const InfoBanner(
+                  icon: Icons.layers_outlined,
+                  title: 'Producto sin variantes',
+                  message: 'Si se vende tal cual (como una corona única), se guarda directamente con su foto, precio y código principal. No necesitas crear variantes a menos que tenga varios colores o presentaciones.',
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _addVariant(atEnd: true),
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('Agregar variante'),
+                  ),
+                ),
+              ],
+            ],
+          );
+
+          final topContent = isWide
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 62,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          infoCard,
+                          const SizedBox(height: 18),
+                          pricingCard,
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      flex: 38,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          imageCard,
+                          const SizedBox(height: 18),
+                          visibilityCard,
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    imageCard,
+                    const SizedBox(height: 14),
+                    infoCard,
+                    const SizedBox(height: 14),
+                    pricingCard,
+                    const SizedBox(height: 14),
+                    visibilityCard,
+                  ],
+                );
+          final padding = isMobile ? 12.0 : 24.0;
+          // A variant uses a horizontal media/fields layout only
+          // when it has enough room. Keeping one column below this
+          // breakpoint prevents a compact desktop dialog from
+          // clipping the taller mobile-style tile.
+          final twoVariantColumns = constraints.maxWidth >= 1180;
+
+          Widget buildVariant(int index) {
+            final variant = _variants[index];
+            return RepaintBoundary(
+              child: _VariantEditorTile(
+                draft: variant,
+                imageUrl: _previewUrl(variant.image.previewValue),
+                uploading: _uploadingImage,
+                onPickImage: () => _pickImage(variant: variant),
+                onDelete: () => _removeVariant(variant),
+                onReorder: _reorderVariant,
+              ),
+            );
+          }
+
+          return CustomScrollView(
+            key: const PageStorageKey('admin-product-editor-scroll'),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(padding, padding, padding, 0),
+                sliver: SliverToBoxAdapter(child: topContent),
+              ),
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(padding, 18, padding, 0),
+                sliver: SliverToBoxAdapter(child: variantsCard),
+              ),
+              if (_variants.isNotEmpty)
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(padding, 14, padding, 0),
+                  sliver: twoVariantColumns
+                      ? SliverGrid(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 14,
+                                mainAxisSpacing: 14,
+                                mainAxisExtent: 282,
+                              ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) => buildVariant(index),
+                            childCount: _variants.length,
+                          ),
+                        )
+                      : SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) => Padding(
+                              padding: EdgeInsets.only(
+                                bottom: index == _variants.length - 1 ? 0 : 14,
+                              ),
+                              child: buildVariant(index),
+                            ),
+                            childCount: _variants.length,
+                          ),
+                        ),
+                ),
+              if (_variants.isNotEmpty)
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(padding, 14, padding, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _addVariant(atEnd: true),
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text('Agregar otra variante'),
+                    ),
+                  ),
+                ),
+              if (_error != null)
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(padding, 16, padding, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  padding,
+                  22,
+                  padding,
+                  MediaQuery.paddingOf(context).bottom + 28,
+                ),
+                sliver: SliverToBoxAdapter(child: _editorActions(context)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
 
     final dialogContent = Column(
       children: [
@@ -3137,9 +3479,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
         child: Scaffold(
           backgroundColor: AppColors.canvas,
           resizeToAvoidBottomInset: true,
-          body: SafeArea(
-            child: dialogContent,
-          ),
+          body: SafeArea(child: dialogContent),
         ),
       );
     }
@@ -3147,9 +3487,7 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
     return Dialog(
       backgroundColor: AppColors.canvas,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: ConstrainedBox(
         constraints: BoxConstraints(
@@ -3277,33 +3615,33 @@ class _AdminProductEditorDialogState extends State<AdminProductEditorDialog> {
 class _PriceTierDraft {
   _PriceTierDraft._({
     required int minQuantity,
-    required double? totalPrice,
+    required double? unitPrice,
     required this.label,
   }) : initialQuantity = minQuantity,
        quantity = TextEditingController(text: '$minQuantity'),
-       totalPrice = TextEditingController(
-         text: totalPrice?.toStringAsFixed(2) ?? '',
+       unitPrice = TextEditingController(
+         text: unitPrice?.toStringAsFixed(2) ?? '',
        );
 
   factory _PriceTierDraft.fromTier(PriceTier tier) => _PriceTierDraft._(
     minQuantity: tier.minQuantity,
-    totalPrice: tier.presentationTotal,
+    unitPrice: tier.unitPrice,
     label: tier.label,
   );
 
   factory _PriceTierDraft.create({required int quantity}) =>
-      _PriceTierDraft._(minQuantity: quantity, totalPrice: null, label: null);
+      _PriceTierDraft._(minQuantity: quantity, unitPrice: null, label: null);
 
   final TextEditingController quantity;
-  final TextEditingController totalPrice;
+  final TextEditingController unitPrice;
   final int initialQuantity;
   final String? label;
 
   Map<String, dynamic> toMap() {
     final minQuantity = int.parse(quantity.text.trim());
-    return PriceTier.fromPresentationTotal(
+    return PriceTier(
       minQuantity: minQuantity,
-      totalPrice: _decimal(totalPrice.text),
+      unitPrice: _decimal(unitPrice.text),
       label: minQuantity == initialQuantity && label != null
           ? label
           : _defaultPriceTierLabel(minQuantity),
@@ -3312,7 +3650,7 @@ class _PriceTierDraft {
 
   void dispose() {
     quantity.dispose();
-    totalPrice.dispose();
+    unitPrice.dispose();
   }
 }
 
@@ -3366,10 +3704,7 @@ class _PriceTiersEditor extends StatelessWidget {
         if (tiers.isNotEmpty) ...[
           const SizedBox(height: 8),
           for (final tier in tiers) ...[
-            _PriceTierRow(
-              tier: tier,
-              onRemove: () => onRemove(tier),
-            ),
+            _PriceTierRow(tier: tier, onRemove: () => onRemove(tier)),
             if (tier != tiers.last) const SizedBox(height: 8),
           ],
         ],
@@ -3379,10 +3714,7 @@ class _PriceTiersEditor extends StatelessWidget {
 }
 
 class _PriceTierRow extends StatefulWidget {
-  const _PriceTierRow({
-    required this.tier,
-    required this.onRemove,
-  });
+  const _PriceTierRow({required this.tier, required this.onRemove});
 
   final _PriceTierDraft tier;
   final VoidCallback onRemove;
@@ -3396,14 +3728,15 @@ class _PriceTierRowState extends State<_PriceTierRow> {
   Widget build(BuildContext context) {
     final tier = widget.tier;
     final quantity = int.tryParse(tier.quantity.text.trim());
-    final total = _optionalDecimal(tier.totalPrice.text);
-    final unitPrice = quantity == null || quantity < 1 || total == null
+    final unitPrice = _optionalDecimal(tier.unitPrice.text);
+    final total = quantity == null || quantity < 1 || unitPrice == null
         ? null
-        : total / quantity;
-    final hint = unitPrice == null
-        ? 'Completa cantidad y precio total.'
+        : unitPrice * quantity;
+    final hint = total == null
+        ? 'Completa cantidad y precio por unidad.'
         : '${_presentationName(quantity!)} · '
-              'S/ ${unitPrice.toStringAsFixed(2)} por unidad de venta';
+              'Total S/ ${total.toStringAsFixed(2)} '
+              '($quantity × S/ ${unitPrice!.toStringAsFixed(2)})';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 12, 8, 10),
@@ -3422,13 +3755,13 @@ class _PriceTierRowState extends State<_PriceTierRow> {
             validator: _positiveInt,
             onChanged: (_) => setState(() {}),
           );
-          final totalField = TextFormField(
-            controller: tier.totalPrice,
+          final unitPriceField = TextFormField(
+            controller: tier.unitPrice,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             scrollPadding: const EdgeInsets.fromLTRB(20, 80, 20, 140),
             decoration: const InputDecoration(
-              labelText: 'Precio total (S/)',
-              hintText: 'Ej. 30.00',
+              labelText: 'Precio por unidad (S/)',
+              hintText: 'Ej. 4.00',
             ),
             validator: _nonNegativeDecimal,
             onChanged: (_) => setState(() {}),
@@ -3448,7 +3781,7 @@ class _PriceTierRowState extends State<_PriceTierRow> {
                   children: [
                     Expanded(child: quantityField),
                     const SizedBox(width: 10),
-                    Expanded(child: totalField),
+                    Expanded(child: unitPriceField),
                     removeButton,
                   ],
                 ),
@@ -3462,7 +3795,7 @@ class _PriceTierRowState extends State<_PriceTierRow> {
             children: [
               SizedBox(width: 130, child: quantityField),
               const SizedBox(width: 10),
-              SizedBox(width: 180, child: totalField),
+              SizedBox(width: 180, child: unitPriceField),
               const SizedBox(width: 12),
               Expanded(
                 child: Padding(
@@ -3616,7 +3949,7 @@ class _VariantEditorTileState extends State<_VariantEditorTile> {
               );
               final isTouch =
                   Theme.of(context).platform == TargetPlatform.android ||
-                      Theme.of(context).platform == TargetPlatform.iOS;
+                  Theme.of(context).platform == TargetPlatform.iOS;
               final imageChild = Tooltip(
                 message: isTouch
                     ? 'Mantén presionado para cambiar el orden'
@@ -3769,17 +4102,15 @@ class _VariantImage extends StatelessWidget {
                       Text(
                         'Sin foto',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.muted,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: AppColors.muted,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Toca la cámara',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.muted,
-                              fontSize: 10,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: AppColors.muted, fontSize: 10),
                       ),
                     ],
                   ),
@@ -4665,11 +4996,6 @@ String? _nonNegativeDecimal(String? value) {
       : null;
 }
 
-String? _nonNegativeInt(String? value) {
-  final parsed = int.tryParse(value?.trim() ?? '');
-  return parsed == null || parsed < 0 ? 'Ingresa un número válido.' : null;
-}
-
 String? _positiveInt(String? value) {
   final parsed = int.tryParse(value?.trim() ?? '');
   return parsed == null || parsed < 2 ? 'Mínimo 2.' : null;
@@ -4682,13 +5008,13 @@ String? _priceTierListError(
   final quantities = <int>{};
   for (final tier in tiers) {
     final quantity = int.tryParse(tier.quantity.text.trim());
-    final total = _optionalDecimal(tier.totalPrice.text);
+    final unitPrice = _optionalDecimal(tier.unitPrice.text);
     if (quantity == null ||
         quantity < 2 ||
-        total == null ||
-        !total.isFinite ||
-        total < 0) {
-      return 'Revisa las cantidades y precios totales de $owner.';
+        unitPrice == null ||
+        !unitPrice.isFinite ||
+        unitPrice < 0) {
+      return 'Revisa las cantidades y precios por unidad de $owner.';
     }
     if (!quantities.add(quantity)) {
       return 'La cantidad $quantity está repetida en $owner.';

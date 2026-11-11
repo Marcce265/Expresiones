@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
-  testWidgets('el administrador edita el total de docena y ciento', (
+  testWidgets('el administrador edita el precio unitario de docena y ciento', (
     tester,
   ) async {
     final client = SupabaseClient(
@@ -46,10 +46,11 @@ void main() {
     expect(
       find.byWidgetPredicate(
         (widget) =>
-            widget is TextFormField && widget.controller?.text == '30.00',
+            widget is TextFormField && widget.controller?.text == '2.50',
       ),
       findsOneWidget,
     );
+    expect(find.text('Docena · Total S/ 30.00 (12 × S/ 2.50)'), findsOneWidget);
 
     final dozenQuantity = find
         .ancestor(
@@ -57,9 +58,9 @@ void main() {
           matching: find.byType(TextFormField),
         )
         .first;
-    final dozenTotal = find
+    final dozenUnitPrice = find
         .ancestor(
-          of: find.text('Precio total (S/)'),
+          of: find.text('Precio por unidad (S/)'),
           matching: find.byType(TextFormField),
         )
         .first;
@@ -70,13 +71,17 @@ void main() {
     expect(find.text('Mínimo 2.'), findsOneWidget);
     expect(
       tester.getTopLeft(dozenQuantity).dy,
-      closeTo(tester.getTopLeft(dozenTotal).dy, .5),
+      closeTo(tester.getTopLeft(dozenUnitPrice).dy, .5),
     );
     expect(tester.takeException(), isNull);
 
     await tester.enterText(dozenQuantity, '12');
     tester.state<FormState>(find.byType(Form)).validate();
     await tester.pump();
+
+    await tester.enterText(dozenUnitPrice, '4');
+    await tester.pump();
+    expect(find.text('Docena · Total S/ 48.00 (12 × S/ 4.00)'), findsOneWidget);
 
     final addHundred = find.text('Ciento');
     await tester.ensureVisible(addHundred);

@@ -31,10 +31,14 @@ abstract final class QuoteMessageBuilder {
 
     for (final item in lines) {
       final code = item.code == null ? '' : ' · ${item.code}';
+      final unitNote = item.line.quantity > 1
+          ? ' · S/ ${item.unitPrice.toStringAsFixed(2)} c/u'
+          : '';
       buffer
         ..writeln('• ${item.line.quantity} × ${item.displayName}$code')
         ..writeln(
-          '  ${item.priceTierLabel}: S/ ${item.total.toStringAsFixed(2)}',
+          '  ${item.priceTierLabel}: S/ ${item.total.toStringAsFixed(2)}'
+          '$unitNote',
         );
       if (item.line.customization.trim().isNotEmpty) {
         buffer.writeln('  Detalle: ${item.line.customization.trim()}');

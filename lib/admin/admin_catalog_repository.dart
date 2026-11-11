@@ -41,7 +41,7 @@ class AdminCatalogRepository {
     if (existing != null) {
       throw StateError('Ya existe un producto con el código $id.');
     }
-    await _saveFamily({'id': id, ...data});
+    await _saveFamily({'id': id, ...data, 'sortOrder': await _nextSortOrder()});
   }
 
   Future<void> updateProduct(
@@ -56,6 +56,48 @@ class AdminCatalogRepository {
         .from('families')
         .update({'active': active})
         .eq('slug', productId);
+  }
+
+  /// New products always land at the end. This keeps the merchant from having
+  /// to invent a number and prevents a fresh product from jumping to the front.
+  Future<int> _nextSortOrder() async {
+    final row = await _client
+        .from('families')
+        .select('sort_order')
+        .order('sort_order', ascending: false)
+        .limit(1)
+        .maybeSingle();
+    final current = row?['sort_order'];
+    final value = current is num
+        ? current.toInt()
+        : int.tryParse('$current') ?? 0;
+    return value + 10;
+  }
+
+  /// Reordering only touches the moved row. The admin grid computes a value
+  /// between its neighbours, so a normal move is one small request instead of
+  /// rewriting every product in the catalog.
+  Future<void> updateProductSortOrder(String productId, int sortOrder) {
+    return _client
+        .from('families')
+        .update({'sort_order': sortOrder})
+        .eq('slug', productId);
+  }
+
+  /// Used only when the integer gaps between neighbours are exhausted. Updates
+  /// are sent in small batches so a rebalance does not flood Supabase.
+  Future<void> updateProductSortOrders(Map<String, int> sortOrders) async {
+    const batchSize = 8;
+    final entries = sortOrders.entries.toList(growable: false);
+    for (var start = 0; start < entries.length; start += batchSize) {
+      final end = start + batchSize > entries.length
+          ? entries.length
+          : start + batchSize;
+      await Future.wait([
+        for (final entry in entries.sublist(start, end))
+          updateProductSortOrder(entry.key, entry.value),
+      ]);
+    }
   }
 
   Future<void> deleteProduct(String productId) async {
