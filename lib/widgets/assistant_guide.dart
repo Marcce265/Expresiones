@@ -30,8 +30,8 @@ class _AssistantHelpButtonState extends State<AssistantHelpButton> {
 
   List<String> get _currentMessages =>
       (widget.messages != null && widget.messages!.isNotEmpty)
-          ? widget.messages!
-          : [widget.message];
+      ? widget.messages!
+      : [widget.message];
 
   String get _activeMessage {
     final list = _currentMessages;
@@ -118,9 +118,8 @@ class _AssistantHelpButtonState extends State<AssistantHelpButton> {
                       const SizedBox(height: 6),
                       Text(
                         _activeMessage,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              height: 1.45,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(height: 1.45),
                       ),
                       if (hasMultiple) ...[
                         const SizedBox(height: 8),
@@ -189,6 +188,9 @@ class _JashyToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = expanded ? (mobile ? 102.0 : 128.0) : (mobile ? 76.0 : 92.0);
+    final decodedWidth = (size * MediaQuery.devicePixelRatioOf(context))
+        .ceil()
+        .clamp(128, 512);
     final tooltip = expanded ? 'Cerrar ayuda de Jashy' : 'Abrir ayuda de Jashy';
 
     return Semantics(
@@ -210,6 +212,7 @@ class _JashyToggle extends StatelessWidget {
                 imageAsset,
                 fit: BoxFit.contain,
                 alignment: Alignment.bottomCenter,
+                cacheWidth: decodedWidth,
                 excludeFromSemantics: true,
                 errorBuilder: (_, _, _) =>
                     const Icon(Icons.support_agent_rounded, size: 38),

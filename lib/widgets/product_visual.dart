@@ -8,11 +8,12 @@ String? productFamilyHeroAsset(CatalogProduct product) => switch (product.id) {
   'limpiapipas-premium-8mm' => 'assets/images/family_heroes/limpiapipas.webp',
   'cinta-satinada-100m' =>
     'assets/images/family_heroes/cinta_satinada_todos_colores.webp',
-  'papel-coreano-impermeable' || 'papel-coreano' =>
-    'assets/images/family_heroes/papel_coreano.webp',
-  _ => product.category == ProductCategory.koreanPaper
-      ? 'assets/images/family_heroes/papel_coreano.webp'
-      : null,
+  'papel-coreano-impermeable' ||
+  'papel-coreano' => 'assets/images/family_heroes/papel_coreano.webp',
+  _ =>
+    product.category == ProductCategory.koreanPaper
+        ? 'assets/images/family_heroes/papel_coreano.webp'
+        : null,
 };
 
 /// Image shown for a family card or overview.
@@ -75,6 +76,8 @@ class ProductVisual extends StatelessWidget {
     this.alignment = Alignment.center,
     this.filterQuality = FilterQuality.medium,
     this.decodeToLayout = false,
+    this.placeholderImageAsset,
+    this.maxDecodeEdge = 2048,
   });
 
   final String label;
@@ -85,6 +88,8 @@ class ProductVisual extends StatelessWidget {
   final double cropBottomFraction;
   final Alignment alignment;
   final FilterQuality filterQuality;
+  final String? placeholderImageAsset;
+  final int maxDecodeEdge;
 
   /// Decodes the photo near the size it occupies on screen instead of at its
   /// full camera resolution.
@@ -104,7 +109,7 @@ class ProductVisual extends StatelessWidget {
     if (edge <= 0) return null;
     final headroom = fit == BoxFit.cover ? 1.6 : 1.0;
     final pixels = edge * devicePixelRatio * headroom;
-    final bucketed = ((pixels / 128).ceil() * 128).clamp(256, 2048);
+    final bucketed = ((pixels / 128).ceil() * 128).clamp(256, maxDecodeEdge);
     return bucketed;
   }
 
@@ -139,6 +144,30 @@ class ProductVisual extends StatelessWidget {
           ? NetworkImage(asset)
           : AssetImage(asset);
 
+      final placeholderAsset = placeholderImageAsset;
+      final ImageProvider? placeholderProvider =
+          placeholderAsset == null ||
+              placeholderAsset.isEmpty ||
+              placeholderAsset == asset
+          ? null
+          : placeholderAsset.startsWith('http://') ||
+                placeholderAsset.startsWith('https://')
+          ? NetworkImage(placeholderAsset)
+          : AssetImage(placeholderAsset);
+
+      Widget buildPlaceholder() => placeholderProvider == null
+          ? const ProductVisualSkeleton()
+          : Image(
+              image: placeholderProvider,
+              fit: fit,
+              alignment: alignment,
+              filterQuality: FilterQuality.low,
+              gaplessPlayback: true,
+              width: double.infinity,
+              height: double.infinity,
+              errorBuilder: (_, _, _) => const ProductVisualSkeleton(),
+            );
+
       Widget buildImage(ImageProvider imageProvider) => Image(
         image: imageProvider,
         fit: fit,
@@ -151,7 +180,7 @@ class ProductVisual extends StatelessWidget {
         height: double.infinity,
         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
           if (wasSynchronouslyLoaded || frame != null) return child;
-          return const ProductVisualSkeleton();
+          return buildPlaceholder();
         },
         errorBuilder: (_, _, _) =>
             _Fallback(accent: accent, icon: icon, label: label),

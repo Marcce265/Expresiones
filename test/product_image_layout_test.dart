@@ -172,7 +172,7 @@ void main() {
     expect(tester.widget<AspectRatio>(aspectFinder).aspectRatio, 1.18);
   });
 
-  testWidgets('las variantes usan botones con nombres públicos limpios', (
+  testWidgets('el detalle conserva la opción elegida sin selector interno', (
     tester,
   ) async {
     final ribbon = CatalogProduct(
@@ -212,8 +212,9 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byType(DropdownButton<String>), findsOneWidget);
+    expect(find.byType(PopupMenuButton<String>), findsNothing);
     expect(find.text('BLANCO PERLA'), findsWidgets);
+    expect(find.text('MARFIL'), findsNothing);
     expect(find.textContaining('N.º'), findsNothing);
     expect(find.text('Color'), findsNothing);
   });

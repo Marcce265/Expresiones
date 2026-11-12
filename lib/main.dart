@@ -185,27 +185,35 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   void _openProduct(CatalogProduct product, String? variantId) {
     final store = context.read<AppStore>();
-    store.recordProductView(product, variantId);
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (routeContext) {
-          final currentGroup = product.attributes['catalogGroup']?.toUpperCase().trim();
+      PageRouteBuilder<void>(
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        pageBuilder: (routeContext, _, _) {
+          final currentGroup = product.attributes['catalogGroup']
+              ?.toUpperCase()
+              .trim();
           final sameGroup = currentGroup != null && currentGroup.isNotEmpty
               ? store.products
-                  .where((p) =>
-                      p.id != product.id &&
-                      p.isActive &&
-                      p.attributes['catalogGroup']?.toUpperCase().trim() == currentGroup)
-                  .toList(growable: false)
+                    .where(
+                      (p) =>
+                          p.id != product.id &&
+                          p.isActive &&
+                          p.attributes['catalogGroup']?.toUpperCase().trim() ==
+                              currentGroup,
+                    )
+                    .toList(growable: false)
               : <CatalogProduct>[];
           final related = sameGroup.isNotEmpty
               ? sameGroup
               : store.products
-                  .where((p) =>
-                      p.id != product.id &&
-                      p.isActive &&
-                      p.category == product.category)
-                  .toList(growable: false);
+                    .where(
+                      (p) =>
+                          p.id != product.id &&
+                          p.isActive &&
+                          p.category == product.category,
+                    )
+                    .toList(growable: false);
 
           final detailScreen = ProductDetailScreen(
             product: product,
@@ -286,14 +294,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 );
               }
 
-              return Scaffold(
-                body: SafeArea(child: detailScreen),
-              );
+              return Scaffold(body: SafeArea(child: detailScreen));
             },
           );
         },
       ),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      store.recordProductView(product, variantId);
+    });
   }
 
   void _openCoordination() {
@@ -571,8 +580,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     ),
     JashyTourStep(
       title: 'Catálogo',
-      message:
-          'Mira productos, colores y precios. Precio por volumen: docena, medio cajón o cajón completo.',
+      message: 'Mira productos, colores y precios. Precio por volumen: docena, medio cajón o cajón completo.',
       targetKey: _navigationKeys[1],
       imageAsset: 'assets/images/jashy_chibi_book.webp',
     ),
@@ -735,10 +743,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         appBar: AppBar(
           title: Text(
             'Expresiones',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink,
-                ),
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.w700, color: AppColors.ink),
           ),
           backgroundColor: AppColors.surface,
           elevation: 0,
@@ -972,7 +978,8 @@ class _DesktopNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final helpIndex = FeatureFlags.customerAccounts ? 4 : 3;
-    final isMaterialsSelected = currentIndex == 1 &&
+    final isMaterialsSelected =
+        currentIndex == 1 &&
         (catalogCategory == ProductCategory.materials ||
             catalogCategory == null);
     final isKoreanPaperSelected =
@@ -1040,7 +1047,9 @@ class _DesktopNavigation extends StatelessWidget {
                       label: 'Papel Coreano',
                       selected: isKoreanPaperSelected,
                       onTap: () => onSelectCatalogCategory != null
-                          ? onSelectCatalogCategory!(ProductCategory.koreanPaper)
+                          ? onSelectCatalogCategory!(
+                              ProductCategory.koreanPaper,
+                            )
                           : onSelect(1),
                     ),
                     const SizedBox(height: 6),
@@ -1156,8 +1165,8 @@ class _DesktopNavigationItemState extends State<_DesktopNavigationItem> {
     final bgColor = isSelected
         ? AppColors.ink
         : (_isHovered
-            ? AppColors.pinkSoft.withValues(alpha: 0.6)
-            : Colors.transparent);
+              ? AppColors.pinkSoft.withValues(alpha: 0.6)
+              : Colors.transparent);
     final fgColor = isSelected ? Colors.white : AppColors.ink;
 
     return Semantics(
@@ -1185,31 +1194,30 @@ class _DesktopNavigationItemState extends State<_DesktopNavigationItem> {
               focusColor: Colors.transparent,
               highlightColor: Colors.transparent,
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     Badge.count(
                       count: widget.badgeCount,
                       isLabelVisible: widget.badgeCount > 0,
                       backgroundColor: AppColors.pinkStrong,
-                      child: widget.iconWidget ??
-                          Icon(
-                            widget.icon,
-                            size: 20,
-                            color: fgColor,
-                          ),
+                      child:
+                          widget.iconWidget ??
+                          Icon(widget.icon, size: 20, color: fgColor),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         widget.label,
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: fgColor,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                            ),
+                          color: fgColor,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],
