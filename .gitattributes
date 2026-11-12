@@ -1,0 +1,11 @@
+# GitHub Linguist overrides
+# Ignore agent tooling, skill helpers, deploy scripts, and web wrappers from repository language statistics
+
+.agents/** linguist-vendored
+.github/** linguist-vendored
+scripts/** linguist-vendored
+supabase/** linguist-vendored
+web/** linguist-vendored
+assets/** linguist-vendored
+docs/** linguist-documentation
+skills-lock.json linguist-generated
