@@ -1001,7 +1001,7 @@ class _DesktopNavigation extends StatelessWidget {
                 label: settings.text(StorefrontText.brandName),
                 header: true,
                 child: Image.asset(
-                  'assets/images/brand_lockup_black.png',
+                  'assets/images/brand_lockup_black.webp',
                   width: 140,
                   height: 140,
                   fit: BoxFit.contain,

@@ -59,10 +59,7 @@ double productImageCropBottom(
   return double.tryParse(variant?.attributes['cropBottom'] ?? '') ?? 0;
 }
 
-Alignment productImageAlignment(CatalogProduct product) =>
-    product.id == 'cinta-satinada-100m'
-    ? Alignment.topCenter
-    : Alignment.center;
+Alignment productImageAlignment(CatalogProduct product) => Alignment.center;
 
 class ProductVisual extends StatelessWidget {
   const ProductVisual({

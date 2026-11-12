@@ -73,7 +73,7 @@ flutter:
     - assets/data/
     - assets/fonts/
     - assets/images/catalog_hero.webp
-    - assets/images/brand_lockup_black.png
+    - assets/images/brand_lockup_black.webp
     - assets/images/jashy_chibi_assistant.webp
     - assets/images/jashy_chibi_question.webp
     - assets/images/jashy_chibi_book.webp

@@ -559,9 +559,9 @@ class StoreFooter extends StatelessWidget {
           runSpacing: 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            _paymentImage('assets/images/payments/yape.png', 'Yape', width: 72, height: 26),
-            _paymentImage('assets/images/payments/plin.png', 'Plin', width: 72, height: 26),
-            _paymentImage('assets/images/payments/interbank.png', 'Interbank', width: 84, height: 26),
+            _paymentImage('assets/images/payments/yape.webp', 'Yape', width: 72, height: 26),
+            _paymentImage('assets/images/payments/plin.webp', 'Plin', width: 72, height: 26),
+            _paymentImage('assets/images/payments/interbank.webp', 'Interbank', width: 84, height: 26),
           ],
         ),
       ],
