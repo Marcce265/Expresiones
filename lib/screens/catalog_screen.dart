@@ -485,6 +485,7 @@ class _FamilyCover extends StatelessWidget {
       imageAsset: image,
       categoryKey: product.category.key,
       fit: BoxFit.cover,
+      decodeToLayout: true,
     );
   }
 }
@@ -502,6 +503,7 @@ class _FamilyMosaic extends StatelessWidget {
       imageAsset: image,
       categoryKey: product.category.key,
       fit: BoxFit.cover,
+      decodeToLayout: true,
     );
 
     return switch (images.length) {

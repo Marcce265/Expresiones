@@ -39,13 +39,22 @@ Future<Uint8List?> buildBrowserThumbnail(
     final targetWidth = math.max(1, (width * scale).round());
     final targetHeight = math.max(1, (height * scale).round());
 
+    final preserveAlpha =
+        contentType == 'image/png' || contentType == 'image/webp';
     web.CanvasImageSource source = image;
     var sourceWidth = width;
     var sourceHeight = height;
     while (sourceWidth > targetWidth * 2 && sourceHeight > targetHeight * 2) {
       final halfWidth = (sourceWidth / 2).round();
       final halfHeight = (sourceHeight / 2).round();
-      source = _draw(source, sourceWidth, sourceHeight, halfWidth, halfHeight);
+      source = _draw(
+        source,
+        sourceWidth,
+        sourceHeight,
+        halfWidth,
+        halfHeight,
+        preserveAlpha: preserveAlpha,
+      );
       sourceWidth = halfWidth;
       sourceHeight = halfHeight;
     }
@@ -55,6 +64,7 @@ Future<Uint8List?> buildBrowserThumbnail(
       sourceHeight,
       targetWidth,
       targetHeight,
+      preserveAlpha: preserveAlpha,
     );
 
     final encoded = Completer<web.Blob?>();
@@ -89,18 +99,29 @@ web.HTMLCanvasElement _draw(
   int sourceWidth,
   int sourceHeight,
   int width,
-  int height,
-) {
+  int height, {
+  bool preserveAlpha = false,
+}) {
   final canvas = web.HTMLCanvasElement()
     ..width = width
     ..height = height;
   final context = canvas.context2D
     ..imageSmoothingEnabled = true
-    ..imageSmoothingQuality = 'high'
-    // JPEG has no alpha: paint white so transparent PNGs don't turn black.
-    ..fillStyle = '#FFFFFF'.toJS;
-  context
-    ..fillRect(0, 0, width, height)
-    ..drawImage(source, 0, 0, sourceWidth, sourceHeight, 0, 0, width, height);
+    ..imageSmoothingQuality = 'high';
+  if (!preserveAlpha) {
+    context.fillStyle = '#FFFFFF'.toJS;
+    context.fillRect(0, 0, width, height);
+  }
+  context.drawImage(
+    source,
+    0,
+    0,
+    sourceWidth,
+    sourceHeight,
+    0,
+    0,
+    width,
+    height,
+  );
   return canvas;
 }

@@ -22,60 +22,60 @@ Map<String, dynamic> _withModuleCover(Map<String, dynamic> product) {
 
 const Map<String, (String, String)> _moduleCoverPaths = {
   'tul-con-perlas': (
-    'assets/images/module_covers/tul-con-perlas.jpg',
-    'assets/images/module_covers/tul-con-perlas_thumb.jpg',
+    'assets/images/module_covers/tul-con-perlas.webp',
+    'assets/images/module_covers/tul-con-perlas_thumb.webp',
   ),
   'alambre-floral': (
-    'assets/images/module_covers/alambre-floral.jpg',
-    'assets/images/module_covers/alambre-floral_thumb.jpg',
+    'assets/images/module_covers/alambre-floral.webp',
+    'assets/images/module_covers/alambre-floral_thumb.webp',
   ),
   'papel-leche-cortado': (
-    'assets/images/module_covers/papel-leche-cortado.jpg',
-    'assets/images/module_covers/papel-leche-cortado_thumb.jpg',
+    'assets/images/module_covers/papel-leche-cortado.webp',
+    'assets/images/module_covers/papel-leche-cortado_thumb.webp',
   ),
   'cinta-tornasol-4cm-7m': (
-    'assets/images/module_covers/cinta-organza-tornasol.jpg',
-    'assets/images/module_covers/cinta-organza-tornasol_thumb.jpg',
+    'assets/images/module_covers/cinta-organza-tornasol.webp',
+    'assets/images/module_covers/cinta-organza-tornasol_thumb.webp',
   ),
   'cinta-organza-con-perlas': (
-    'assets/images/module_covers/cinta-organza-con-perlas.jpg',
-    'assets/images/module_covers/cinta-organza-con-perlas_thumb.jpg',
+    'assets/images/module_covers/cinta-organza-con-perlas.webp',
+    'assets/images/module_covers/cinta-organza-con-perlas_thumb.webp',
   ),
   'cinta-corazones-dorados': (
-    'assets/images/module_covers/cinta-corazones-dorados.jpg',
-    'assets/images/module_covers/cinta-corazones-dorados_thumb.jpg',
+    'assets/images/module_covers/cinta-corazones-dorados.webp',
+    'assets/images/module_covers/cinta-corazones-dorados_thumb.webp',
   ),
   'cinta-estampada-lujo': (
-    'assets/images/module_covers/cinta-estampada-lujo.jpg',
-    'assets/images/module_covers/cinta-estampada-lujo_thumb.jpg',
+    'assets/images/module_covers/cinta-estampada-lujo.webp',
+    'assets/images/module_covers/cinta-estampada-lujo_thumb.webp',
   ),
   'cinta-eternal-love': (
-    'assets/images/module_covers/cinta-eternal-love.jpg',
-    'assets/images/module_covers/cinta-eternal-love_thumb.jpg',
+    'assets/images/module_covers/cinta-eternal-love.webp',
+    'assets/images/module_covers/cinta-eternal-love_thumb.webp',
   ),
   'perlas-decorativas': (
-    'assets/images/module_covers/perlas-decorativas.jpg',
-    'assets/images/module_covers/perlas-decorativas_thumb.jpg',
+    'assets/images/module_covers/perlas-decorativas.webp',
+    'assets/images/module_covers/perlas-decorativas_thumb.webp',
   ),
   'floratape': (
-    'assets/images/module_covers/floratape.jpg',
-    'assets/images/module_covers/floratape_thumb.jpg',
+    'assets/images/module_covers/floratape.webp',
+    'assets/images/module_covers/floratape_thumb.webp',
   ),
   'brochetas': (
-    'assets/images/module_covers/brochetas.jpg',
-    'assets/images/module_covers/brochetas_thumb.jpg',
+    'assets/images/module_covers/brochetas.webp',
+    'assets/images/module_covers/brochetas_thumb.webp',
   ),
   'luz-hada': (
-    'assets/images/module_covers/luz-hada.jpg',
-    'assets/images/module_covers/luz-hada_thumb.jpg',
+    'assets/images/module_covers/luz-hada.webp',
+    'assets/images/module_covers/luz-hada_thumb.webp',
   ),
   'mariposas-decorativas': (
-    'assets/images/module_covers/mariposas-decorativas.jpg',
-    'assets/images/module_covers/mariposas-decorativas_thumb.jpg',
+    'assets/images/module_covers/mariposas-decorativas.webp',
+    'assets/images/module_covers/mariposas-decorativas_thumb.webp',
   ),
   'frases-en-vinil': (
-    'assets/images/module_covers/frases-en-vinil.jpg',
-    'assets/images/module_covers/frases-en-vinil_thumb.jpg',
+    'assets/images/module_covers/frases-en-vinil.webp',
+    'assets/images/module_covers/frases-en-vinil_thumb.webp',
   ),
 };
 

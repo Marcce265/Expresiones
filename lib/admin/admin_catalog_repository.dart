@@ -239,30 +239,43 @@ class AdminCatalogRepository {
     String folder = 'uploads',
   }) async {
     validateCatalogImageUpload(bytes: bytes, contentType: contentType);
+    Uint8List finalBytes = bytes;
+    String finalContentType = contentType;
+    if (kIsWeb) {
+      final optimized = await buildBrowserThumbnail(
+        bytes,
+        contentType: contentType,
+        maxEdge: 1200,
+        quality: .88,
+      );
+      if (optimized != null) {
+        finalBytes = optimized;
+        finalContentType = 'image/webp';
+      }
+    }
     final path = buildCatalogImagePath(
       folder: folder,
       fileName: fileName,
-      contentType: contentType,
+      contentType: finalContentType,
       timestampMicros: DateTime.now().microsecondsSinceEpoch,
     );
     await _client.storage
         .from('catalog')
         .uploadBinary(
           path,
-          bytes,
+          finalBytes,
           fileOptions: FileOptions(
             cacheControl: catalogImageCacheSeconds,
-            contentType: contentType,
+            contentType: finalContentType,
             upsert: false,
           ),
         );
     return path;
   }
 
-  /// Stores the untouched upload for product detail and a small derivative
-  /// for catalog cards. Keeping the original bytes avoids an additional lossy
-  /// encode on the image customers enlarge, while the thumbnail cuts normal
-  /// catalog bandwidth substantially.
+  /// Automatically optimizes camera photos and converts them to WebP.
+  /// Large photos from phones are scaled down to max 1200px edge for detail
+  /// and max 480px edge for thumbnails, preventing high memory usage and browser freezes.
   Future<CatalogImageUpload> uploadCatalogImageSet({
     required Uint8List bytes,
     required String fileName,
@@ -271,56 +284,80 @@ class AdminCatalogRepository {
   }) async {
     validateCatalogImageUpload(bytes: bytes, contentType: contentType);
     final timestamp = DateTime.now().microsecondsSinceEpoch;
-    final detailPath = buildCatalogImagePath(
-      folder: folder,
-      fileName: fileName,
-      contentType: contentType,
-      timestampMicros: timestamp,
-    );
-    final thumbnailContentType = kIsWeb ? 'image/webp' : 'image/jpeg';
-    final thumbnailPath = buildCatalogImagePath(
-      folder: '$folder/thumbnails',
-      fileName: fileName,
-      contentType: thumbnailContentType,
-      timestampMicros: timestamp,
-    );
 
-    // The original photo is always uploaded untouched as the detail image.
-    // `image` decodes pixels in Dart, which froze the editor on phones when run
-    // on the web UI thread. On the web the browser's native canvas builds the
-    // thumbnail instead (fast and asynchronous); native targets use an isolate.
-    // If the browser cannot read the file, the original doubles as thumbnail
-    // so an upload never fails just because the preview could not be made.
     if (kIsWeb) {
+      final detailBytes = await buildBrowserThumbnail(
+        bytes,
+        contentType: contentType,
+        maxEdge: 1200,
+        quality: .88,
+      );
       final thumbnailBytes = await buildBrowserThumbnail(
         bytes,
         contentType: contentType,
+        maxEdge: 480,
+        quality: .82,
       );
+
+      final finalDetailBytes = detailBytes ?? bytes;
+      final finalDetailContentType =
+          detailBytes != null ? 'image/webp' : contentType;
+      final detailPath = buildCatalogImagePath(
+        folder: folder,
+        fileName: fileName,
+        contentType: finalDetailContentType,
+        timestampMicros: timestamp,
+      );
+
+      final finalThumbnailBytes = thumbnailBytes ?? detailBytes ?? bytes;
+      final finalThumbnailContentType =
+          (thumbnailBytes != null || detailBytes != null)
+              ? 'image/webp'
+              : contentType;
+      final thumbnailPath = buildCatalogImagePath(
+        folder: '$folder/thumbnails',
+        fileName: fileName,
+        contentType: finalThumbnailContentType,
+        timestampMicros: timestamp,
+      );
+
       await Future.wait([
         _uploadCatalogObject(
           path: detailPath,
-          bytes: bytes,
-          contentType: contentType,
+          bytes: finalDetailBytes,
+          contentType: finalDetailContentType,
         ),
-        if (thumbnailBytes != null)
-          _uploadCatalogObject(
-            path: thumbnailPath,
-            bytes: thumbnailBytes,
-            contentType: thumbnailContentType,
-          ),
+        _uploadCatalogObject(
+          path: thumbnailPath,
+          bytes: finalThumbnailBytes,
+          contentType: finalThumbnailContentType,
+        ),
       ]);
       return CatalogImageUpload(
         detailPath: detailPath,
-        thumbnailPath: thumbnailBytes == null ? detailPath : thumbnailPath,
+        thumbnailPath: thumbnailPath,
       );
     }
 
+    final detailBytes = await compute(_buildCatalogOptimizedDetail, bytes);
     final thumbnailBytes = await compute(_buildCatalogThumbnail, bytes);
+    final detailPath = buildCatalogImagePath(
+      folder: folder,
+      fileName: fileName,
+      contentType: 'image/jpeg',
+      timestampMicros: timestamp,
+    );
+    final thumbnailPath = buildCatalogImagePath(
+      folder: '$folder/thumbnails',
+      fileName: fileName,
+      contentType: 'image/jpeg',
+      timestampMicros: timestamp,
+    );
     await Future.wait([
       _uploadCatalogObject(
         path: detailPath,
-        bytes: bytes,
-        contentType: contentType,
+        bytes: detailBytes,
+        contentType: 'image/jpeg',
       ),
       _uploadCatalogObject(
         path: thumbnailPath,
@@ -410,6 +447,32 @@ class AdminCatalogRepository {
         .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
         .replaceAll(RegExp(r'^-+|-+$'), '');
   }
+}
+
+/// Top-level so Flutter can run it in a background isolate on native builds.
+Uint8List _buildCatalogOptimizedDetail(Uint8List bytes) {
+  final decoded = image_lib.decodeImage(bytes);
+  if (decoded == null) return bytes;
+  final oriented = image_lib.bakeOrientation(decoded);
+  const maxEdge = 1200;
+  if (oriented.width <= maxEdge && oriented.height <= maxEdge) {
+    return Uint8List.fromList(image_lib.encodeJpg(oriented, quality: 88));
+  }
+  final image_lib.Image resized;
+  if (oriented.width >= oriented.height) {
+    resized = image_lib.copyResize(
+      oriented,
+      width: maxEdge,
+      interpolation: image_lib.Interpolation.average,
+    );
+  } else {
+    resized = image_lib.copyResize(
+      oriented,
+      height: maxEdge,
+      interpolation: image_lib.Interpolation.average,
+    );
+  }
+  return Uint8List.fromList(image_lib.encodeJpg(resized, quality: 88));
 }
 
 /// Top-level so Flutter can run it in a background isolate on native builds.
