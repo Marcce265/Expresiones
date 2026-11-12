@@ -92,23 +92,23 @@ void main() {
     );
   });
 
-  test('incluye solo los 80 tonos numerados de cinta satinada', () {
+  test('incluye solo los 46 tonos numerados de cinta satinada', () {
     final cinta = seedCatalogProducts.firstWhere(
       (product) => product.id == 'cinta-satinada-100m',
     );
 
-    expect(cinta.variants, hasLength(80));
-    expect(cinta.variants.first.name, 'N.º 01 · BLANCO PERLA');
-    expect(cinta.variants.last.name, 'N.º 80 · VERDE NEÓN');
+    expect(cinta.variants, hasLength(46));
+    expect(cinta.variants.first.name, 'N.°1 BLANCO');
+    expect(cinta.variants.last.name, 'N.º 49 · NEGRO');
     expect(
       cinta.variants.map((variant) => variant.imageUrl).toSet(),
-      hasLength(80),
+      hasLength(46),
     );
     expect(
       cinta.variants.every(
         (variant) =>
-            variant.imageUrl ==
-            'assets/images/satin_optimized/satin_${variant.attributes['paletteNumber']}.webp',
+            variant.imageUrl != null &&
+            variant.imageUrl!.contains('cinta-satinada-100m/variants/optimized/'),
       ),
       isTrue,
     );

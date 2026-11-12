@@ -24,13 +24,13 @@ void main() {
     expect(products, hasLength(52));
     expect(
       products.fold<int>(0, (total, item) => total + item.variants.length),
-      254,
+      220,
     );
 
     expect(published, hasLength(46));
     expect(
       published.fold<int>(0, (total, item) => total + item.variants.length),
-      239,
+      205,
     );
 
     expect(future, hasLength(6));

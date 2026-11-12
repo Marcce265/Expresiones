@@ -123,7 +123,9 @@ class ProductDescriptionCard extends StatelessWidget {
   String _formatBadge(String key, String value) {
     final normalizedKey = key.toLowerCase();
     if (normalizedKey == 'assetcount') {
-      final count = value.trim();
+      final count = product.variants.isNotEmpty
+          ? product.variants.where((v) => v.isActive).length.toString()
+          : value.trim();
       return 'OPCIONES: $count ${count == '1' ? 'TONO' : 'TONOS'}';
     }
     if (normalizedKey == 'cataloggroup') {
