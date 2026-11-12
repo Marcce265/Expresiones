@@ -16,10 +16,10 @@ import '../models/quote_line.dart';
 abstract final class QuoteExportService {
   static Future<Uint8List> buildOrderPdf(CheckoutOrder order) async {
     final regularFont = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/Roboto-Regular.ttf'),
+      await rootBundle.load('assets/fonts/PlusJakartaSans-Regular.ttf'),
     );
     final boldFont = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/Roboto-Bold.ttf'),
+      await rootBundle.load('assets/fonts/PlusJakartaSans-Bold.ttf'),
     );
     final document = pw.Document(
       title: 'Comprobante simulado ${order.id}',
@@ -204,10 +204,10 @@ abstract final class QuoteExportService {
     final createdAt = generatedAt ?? DateTime.now();
     final subtotal = _subtotal(lines);
     final regularFont = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/Roboto-Regular.ttf'),
+      await rootBundle.load('assets/fonts/PlusJakartaSans-Regular.ttf'),
     );
     final boldFont = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/Roboto-Bold.ttf'),
+      await rootBundle.load('assets/fonts/PlusJakartaSans-Bold.ttf'),
     );
     final document = pw.Document(
       title: 'Cotización $quoteId',

@@ -49,7 +49,7 @@ class ProductDescriptionCard extends StatelessWidget {
           Text(
             'Descripción del producto',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontFamily: 'PlayfairDisplay',
+              fontFamily: 'PlusJakartaSans',
               fontWeight: FontWeight.w700,
             ),
           ),

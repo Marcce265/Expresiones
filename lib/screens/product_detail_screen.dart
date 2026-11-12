@@ -415,8 +415,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               title,
                               style: Theme.of(context).textTheme.headlineMedium
                                   ?.copyWith(
-                                    fontFamily: 'PlayfairDisplay',
-                                    fontWeight: FontWeight.w700,
+                                    fontFamily: 'PlusJakartaSans',
+                                    fontWeight: FontWeight.w800,
                                     color: AppColors.ink,
                                     height: 1.18,
                                   ),

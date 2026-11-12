@@ -264,7 +264,7 @@ class StoreSpecialOrderBanner extends StatelessWidget {
                 '¿Buscas un diseño o pedido a medida?',
                 textAlign: compact ? TextAlign.center : TextAlign.start,
                 style: const TextStyle(
-                  fontFamily: 'PlayfairDisplay',
+                  fontFamily: 'PlusJakartaSans',
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
@@ -410,7 +410,7 @@ class StoreFooter extends StatelessWidget {
             Text(
               'Expresiones',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontFamily: 'PlayfairDisplay',
+                    fontFamily: 'PlusJakartaSans',
                     fontWeight: FontWeight.w700,
                   ),
             ),
