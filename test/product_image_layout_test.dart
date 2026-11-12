@@ -132,6 +132,51 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets(
+      'el detalle de cinta satinada es cuadrado en ${viewport.width.toInt()} px para encuadrar fotos de celular',
+      (tester) async {
+        tester.view.physicalSize = viewport;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final ribbonProduct = CatalogProduct(
+          id: 'cinta-satinada-100m',
+          name: 'Cinta satinada 100 m',
+          category: ProductCategory.materials,
+          basePrice: 29,
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ProductDetailScreen(
+                product: ribbonProduct,
+                onAdd: ({
+                  required quantity,
+                  variantId,
+                  required customization,
+                }) {},
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final visualFinder = find.byType(ProductVisual);
+        final aspectFinder = find.ancestor(
+          of: visualFinder,
+          matching: find.byType(AspectRatio),
+        );
+        final visualSize = tester.getSize(visualFinder);
+
+        expect(aspectFinder, findsOneWidget);
+        expect(visualSize, tester.getSize(aspectFinder));
+        expect(visualSize.width, closeTo(visualSize.height, 0.01));
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 
   testWidgets('el detalle de otros productos conserva su proporción', (

@@ -269,6 +269,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       final mobile = constraints.maxWidth < 760;
                       final squareVisual =
                           product.id == 'limpiapipas-premium-8mm' ||
+                          product.id == 'cinta-satinada-100m' ||
                           product.category == ProductCategory.koreanPaper;
 
                       final visualWidget = Container(
