@@ -315,6 +315,7 @@ class _QuoteLineCard extends StatelessWidget {
           fit: productImageFit(product, variant: variant),
           cropBottomFraction: productImageCropBottom(product, variant: variant),
           alignment: productImageAlignment(product),
+          decodeToLayout: true,
         ),
       ),
     );
