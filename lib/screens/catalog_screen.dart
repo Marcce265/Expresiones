@@ -102,10 +102,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
         : expandCatalogTiles([family]);
     final tiles = baseTiles.where((tile) => _matches(tile, query)).toList();
 
-    final catalogTitle = family != null
-        ? familyDisplayName(family)
-        : _selectedCategory.label;
-
     return Column(
       children: [
         Expanded(
@@ -120,16 +116,109 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     children: [
                       Row(
                         children: [
-                          IconButton(
+                          IconButton.outlined(
                             onPressed: _back,
-                            tooltip: 'Volver al inicio',
-                            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                            tooltip: 'Volver',
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              size: 18,
+                            ),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
-                              catalogTitle,
-                              style: Theme.of(context).textTheme.headlineMedium,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  InkWell(
+                                    onTap: widget.onBack,
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                        vertical: 2,
+                                      ),
+                                      child: Text(
+                                        'INICIO',
+                                        style: TextStyle(
+                                          fontSize: 13.5,
+                                          color: AppColors.muted,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    size: 18,
+                                    color: AppColors.muted,
+                                  ),
+                                  if (family != null) ...[
+                                    InkWell(
+                                      onTap: () {
+                                        _searchController.clear();
+                                        setState(() {
+                                          _selectedFamilyId = null;
+                                          _query = '';
+                                        });
+                                      },
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                          vertical: 2,
+                                        ),
+                                        child: Text(
+                                          _selectedCategory.label.toUpperCase(),
+                                          style: const TextStyle(
+                                            fontSize: 13.5,
+                                            color: AppColors.muted,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 0.8,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.chevron_right_rounded,
+                                      size: 18,
+                                      color: AppColors.muted,
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                        vertical: 2,
+                                      ),
+                                      child: Text(
+                                        familyDisplayName(family).toUpperCase(),
+                                        style: const TextStyle(
+                                          fontSize: 13.5,
+                                          color: AppColors.ink,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                        vertical: 2,
+                                      ),
+                                      child: Text(
+                                        _selectedCategory.label.toUpperCase(),
+                                        style: const TextStyle(
+                                          fontSize: 13.5,
+                                          color: AppColors.ink,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -355,15 +444,6 @@ bool usesSharedFamilyPricing(CatalogProduct product) {
             variant.priceOverride == null && variant.priceTiers.isEmpty,
       );
 }
-
-String familyDisplayName(CatalogProduct product) => switch (product.id) {
-  'limpiapipas-premium-8mm' => 'Limpiapipas',
-  'cinta-satinada-100m' => 'Cinta satinada',
-  'papel-coreano-impermeable' || 'papel-coreano' => 'Papel Coreano',
-  _ => product.category == ProductCategory.koreanPaper
-      ? 'Papel Coreano'
-      : product.name,
-};
 
 String _familyOptionLabel(CatalogProduct family) => switch (family.id) {
   'limpiapipas-premium-8mm' ||

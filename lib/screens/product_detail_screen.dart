@@ -181,7 +181,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   child: Text(
                                     'INICIO',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 13.5,
                                       color: AppColors.muted,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 0.8,
@@ -191,7 +191,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                               const Icon(
                                 Icons.chevron_right_rounded,
-                                size: 16,
+                                size: 18,
                                 color: AppColors.muted,
                               ),
                               InkWell(
@@ -213,7 +213,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   child: Text(
                                     product.category.label.toUpperCase(),
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 13.5,
                                       color: AppColors.muted,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 0.8,
@@ -223,24 +223,66 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                               const Icon(
                                 Icons.chevron_right_rounded,
-                                size: 16,
+                                size: 18,
                                 color: AppColors.muted,
                               ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 2,
-                                ),
-                                child: Text(
-                                  product.name.toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.ink,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.8,
+                              if (variant != null) ...[
+                                InkWell(
+                                  onTap: () => Navigator.maybePop(context),
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 2,
+                                    ),
+                                    child: Text(
+                                      familyDisplayName(product).toUpperCase(),
+                                      style: const TextStyle(
+                                        fontSize: 13.5,
+                                        color: AppColors.muted,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.8,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: 18,
+                                  color: AppColors.muted,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 2,
+                                  ),
+                                  child: Text(
+                                    variantDisplayName(variant!).toUpperCase(),
+                                    style: const TextStyle(
+                                      fontSize: 13.5,
+                                      color: AppColors.ink,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ),
+                              ] else ...[
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 2,
+                                  ),
+                                  child: Text(
+                                    familyDisplayName(product).toUpperCase(),
+                                    style: const TextStyle(
+                                      fontSize: 13.5,
+                                      color: AppColors.ink,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),

@@ -245,6 +245,16 @@ class ProductVariant {
   };
 }
 
+/// Simplified customer-facing family title.
+String familyDisplayName(CatalogProduct product) => switch (product.id) {
+  'limpiapipas-premium-8mm' => 'Limpiapipas',
+  'cinta-satinada-100m' => 'Cinta satinada',
+  'papel-coreano-impermeable' || 'papel-coreano' => 'Papel Coreano',
+  _ => product.category == ProductCategory.koreanPaper
+      ? 'Papel Coreano'
+      : product.name,
+};
+
 /// Public-facing variant name without internal palette numbering.
 ///
 /// The palette number and SKU stay intact in the database for inventory and
