@@ -60,7 +60,11 @@ abstract final class QuoteMessageBuilder {
       buffer
         ..writeln('Agencia Shalom: ${details.shalomAgencyName}')
         ..writeln('Ubicación: ${details.shalomAgencyLocality}')
-        ..writeln('Dirección: ${details.shalomAgencyAddress}');
+        ..writeln('Dirección: ${details.shalomAgencyAddress}')
+        ..writeln(
+          'Envío Shalom: desde S/ 5.00; el monto final depende del '
+          'tamaño y peso y se confirma por WhatsApp.',
+        );
     }
 
     if (details.desiredDate != null) {
@@ -85,6 +89,16 @@ abstract final class QuoteMessageBuilder {
         'Stock, tarifa de envío y disponibilidad final están sujetos a confirmación.',
       );
     return buffer.toString();
+  }
+
+  static String buildWhatsappIntro({
+    required String id,
+    required CoordinationDetails details,
+  }) {
+    final name = details.name.trim();
+    final customer = name.isEmpty ? '' : ' Soy $name.';
+    return 'Hola, ya preparé mi cotización $id en Expresiones.$customer '
+        '¿Me ayudan a confirmar stock y entrega?';
   }
 
   static String buildOrder({

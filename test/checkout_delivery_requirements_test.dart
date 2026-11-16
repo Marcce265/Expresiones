@@ -2,6 +2,7 @@ import 'package:expresiones/models/coordination_details.dart';
 import 'package:expresiones/models/storefront_settings.dart';
 import 'package:expresiones/screens/coordination_screen.dart';
 import 'package:expresiones/screens/review_screen.dart';
+import 'package:expresiones/services/quote_pdf_share_service.dart';
 import 'package:expresiones/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -153,6 +154,7 @@ void main() {
   testWidgets('la revisión comercial no muestra el pago de prueba', (
     tester,
   ) async {
+    var shared = false;
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
@@ -161,6 +163,10 @@ void main() {
           details: CoordinationDetails(desiredDate: DateTime(2026, 11, 2)),
           quoteId: 'COT-TEST',
           message: 'Cotización de prueba',
+          onSharePdf: (_) async {
+            shared = true;
+            return QuotePdfShareOutcome.shared;
+          },
           onSendWhatsapp: () async {},
           onCopyMessage: () {},
           onEditQuote: () {},
@@ -169,13 +175,21 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Enviar por WhatsApp'), findsOneWidget);
+    expect(find.text('Compartir cotización PDF'), findsOneWidget);
+    expect(find.text('Enviar mensaje por WhatsApp'), findsOneWidget);
     expect(find.text('Guardar PDF'), findsOneWidget);
     expect(find.text('Guardar Excel'), findsNothing);
     expect(find.text('Continuar al pago de prueba'), findsNothing);
     expect(find.text('Pago'), findsNothing);
     expect(find.text('Listo'), findsNothing);
     expect(find.textContaining('sin pagar'), findsNothing);
+
+    final shareButton = find.text('Compartir cotización PDF');
+    await tester.ensureVisible(shareButton);
+    await tester.tap(shareButton);
+    await tester.pumpAndSettle();
+    expect(shared, isTrue);
+    expect(find.text('Cotización PDF compartida.'), findsOneWidget);
   });
 }
 

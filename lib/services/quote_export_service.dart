@@ -384,8 +384,13 @@ abstract final class QuoteExportService {
               borderRadius: pw.BorderRadius.circular(8),
             ),
             child: pw.Text(
-              'Esta cotización no confirma la solicitud. Stock, precio final, '
-              'fecha y costo de envío se coordinan por WhatsApp.',
+              details.deliveryMethod == DeliveryMethod.shalom
+                  ? 'Envío por Shalom: costo adicional desde S/ 5.00. El '
+                        'monto final depende del tamaño y peso del pedido y se '
+                        'confirma por WhatsApp. Esta cotización no confirma '
+                        'stock ni disponibilidad final.'
+                  : 'Esta cotización no confirma la solicitud. Stock, precio '
+                        'final y fecha se coordinan por WhatsApp.',
               style: const pw.TextStyle(fontSize: 9),
             ),
           ),

@@ -31,6 +31,7 @@ import 'screens/privacy_screen.dart';
 import 'screens/quote_screen.dart';
 import 'screens/review_screen.dart';
 import 'services/quote_message.dart';
+import 'services/quote_pdf_share_service.dart';
 import 'services/simulated_payment_service.dart';
 import 'services/supabase_bootstrap.dart';
 import 'state/app_store.dart';
@@ -372,9 +373,21 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             details: details,
             quoteId: quoteId,
             message: message,
+            onSharePdf: (sharePositionOrigin) => QuotePdfShareService.share(
+              quoteId: quoteId,
+              lines: lines,
+              details: details,
+              sharePositionOrigin: sharePositionOrigin,
+            ),
             onSendWhatsapp: () async {
               final number = store.storefrontSettings.normalizedWhatsappNumber;
-              final uri = Uri.https('wa.me', '/$number', {'text': message});
+              final shortMessage = QuoteMessageBuilder.buildWhatsappIntro(
+                id: quoteId,
+                details: details,
+              );
+              final uri = Uri.https('wa.me', '/$number', {
+                'text': shortMessage,
+              });
               final opened = await launchUrl(
                 uri,
                 mode: kIsWeb

@@ -4,6 +4,7 @@ import '../config/feature_flags.dart';
 import '../models/coordination_details.dart';
 import '../models/quote_line.dart';
 import '../models/storefront_settings.dart';
+import '../services/quote_pdf_share_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
@@ -17,6 +18,7 @@ class ReviewScreen extends StatefulWidget {
     required this.details,
     required this.quoteId,
     required this.message,
+    this.onSharePdf,
     this.onSendWhatsapp,
     required this.onCopyMessage,
     required this.onEditQuote,
@@ -28,6 +30,8 @@ class ReviewScreen extends StatefulWidget {
   final CoordinationDetails details;
   final String quoteId;
   final String message;
+  final Future<QuotePdfShareOutcome> Function(Rect sharePositionOrigin)?
+  onSharePdf;
   final Future<void> Function()? onSendWhatsapp;
   final VoidCallback onCopyMessage;
   final VoidCallback onEditQuote;
@@ -39,6 +43,7 @@ class ReviewScreen extends StatefulWidget {
 }
 
 class _ReviewScreenState extends State<ReviewScreen> {
+  bool _sharing = false;
   bool _sending = false;
 
   double get _subtotal =>
@@ -53,12 +58,40 @@ class _ReviewScreenState extends State<ReviewScreen> {
     } catch (_) {
       if (mounted) {
         _showNotice(
-          'No pudimos abrir WhatsApp. Copia el mensaje e inténtalo nuevamente.',
+          'No pudimos abrir WhatsApp. Puedes compartir o guardar el PDF.',
           tone: AppNoticeTone.error,
         );
       }
     } finally {
       if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _sharePdf(BuildContext buttonContext) async {
+    final share = widget.onSharePdf;
+    if (_sharing || share == null) return;
+    final box = buttonContext.findRenderObject() as RenderBox?;
+    final origin = box == null
+        ? Rect.zero
+        : box.localToGlobal(Offset.zero) & box.size;
+    setState(() => _sharing = true);
+    try {
+      final outcome = await share(origin);
+      if (!mounted || outcome == QuotePdfShareOutcome.dismissed) return;
+      _showNotice(
+        outcome == QuotePdfShareOutcome.shared
+            ? 'Cotización PDF compartida.'
+            : 'Tu navegador descargó la cotización PDF.',
+      );
+    } catch (_) {
+      if (mounted) {
+        _showNotice(
+          'No pudimos compartir el PDF. Usa Guardar PDF e inténtalo nuevamente.',
+          tone: AppNoticeTone.error,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sharing = false);
     }
   }
 
@@ -131,7 +164,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   message: widget.message,
                   lines: widget.lines,
                   details: widget.details,
+                  sharing: _sharing,
                   sending: _sending,
+                  onSharePdf: widget.onSharePdf == null ? null : _sharePdf,
                   onSend: widget.onSendWhatsapp == null ? null : _send,
                   onCopy: _copy,
                   onEdit: widget.onEditQuote,
@@ -383,6 +418,13 @@ class _CoordinationCard extends StatelessWidget {
                   height: 250,
                 ),
               ],
+              const SizedBox(height: 12),
+              const _DetailRow(
+                icon: Icons.payments_outlined,
+                label:
+                    'Envío desde S/ 5.00. El monto final depende del tamaño '
+                    'y peso del pedido y se confirma por WhatsApp.',
+              ),
             ],
             const SizedBox(height: 12),
             _DetailRow(
@@ -440,7 +482,9 @@ class _SendPanel extends StatelessWidget {
     required this.message,
     required this.lines,
     required this.details,
+    required this.sharing,
     required this.sending,
+    required this.onSharePdf,
     required this.onSend,
     required this.onCopy,
     required this.onEdit,
@@ -452,7 +496,9 @@ class _SendPanel extends StatelessWidget {
   final String message;
   final List<ResolvedQuoteLine> lines;
   final CoordinationDetails details;
+  final bool sharing;
   final bool sending;
+  final Future<void> Function(BuildContext buttonContext)? onSharePdf;
   final VoidCallback? onSend;
   final VoidCallback onCopy;
   final VoidCallback onEdit;
@@ -533,16 +579,40 @@ class _SendPanel extends StatelessWidget {
               ),
               const SizedBox(height: 10),
             ],
+            if (onSharePdf != null)
+              Builder(
+                builder: (buttonContext) => SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: sharing || sending
+                        ? null
+                        : () => onSharePdf!(buttonContext),
+                    icon: sharing
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.ios_share_rounded),
+                    label: Text(
+                      sharing ? 'Preparando PDF…' : 'Compartir cotización PDF',
+                    ),
+                  ),
+                ),
+              ),
+            if (onSharePdf != null && onSend != null)
+              const SizedBox(height: 10),
             if (onSend != null)
               SizedBox(
                 width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: sending ? null : onSend,
+                child: OutlinedButton.icon(
+                  onPressed: sharing || sending ? null : onSend,
                   icon: const Icon(Icons.chat_outlined),
-                  label: const Text('Enviar por WhatsApp'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.whatsapp,
-                    foregroundColor: Colors.white,
+                  label: const Text('Enviar mensaje por WhatsApp'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.whatsapp,
                   ),
                 ),
               ),
