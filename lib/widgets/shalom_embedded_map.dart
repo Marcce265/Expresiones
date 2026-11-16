@@ -74,7 +74,7 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
 
   void _centerSelection() {
     if (!mounted || !_mapReady) return;
-    _controller.move(_selectedPoint, _hasSelectedCoordinates ? 15 : 5);
+    _controller.move(_selectedPoint, _hasSelectedCoordinates ? 16.5 : 5);
   }
 
   void _changeZoom(double delta) {
@@ -118,7 +118,7 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
                 mapController: _controller,
                 options: MapOptions(
                   initialCenter: _selectedPoint,
-                  initialZoom: _hasSelectedCoordinates ? 15 : 5,
+                  initialZoom: _hasSelectedCoordinates ? 16.5 : 5,
                   minZoom: 3,
                   maxZoom: 18,
                   backgroundColor: const Color(0xFFE6EEF0),

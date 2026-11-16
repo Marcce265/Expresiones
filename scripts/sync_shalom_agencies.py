@@ -102,8 +102,22 @@ def main() -> None:
     agencies = [_clean(item) for item in _fetch()]
     ids = [item["id"] for item in agencies]
     public = [item for item in agencies if item["web"]]
+    destinations = [item for item in public if item["canReceive"]]
+    invalid_coordinates = [
+        item
+        for item in destinations
+        if item["latitude"] is None
+        or item["longitude"] is None
+        or not -20 <= item["latitude"] <= 1
+        or not -83 <= item["longitude"] <= -68
+    ]
     if len(agencies) < 300 or len(public) < 200 or len(set(ids)) != len(ids):
         raise ValueError("Directorio incompleto o con identificadores duplicados.")
+    if invalid_coordinates:
+        invalid_ids = ", ".join(item["id"] for item in invalid_coordinates[:10])
+        raise ValueError(
+            "Hay agencias de destino sin coordenadas válidas: " + invalid_ids
+        )
 
     payload = {
         "source": f"{BASE}/agencias",

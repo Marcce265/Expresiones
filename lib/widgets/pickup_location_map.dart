@@ -37,7 +37,7 @@ class _PickupLocationMapState extends State<PickupLocationMap> {
             oldWidget.location.longitude != widget.location.longitude) &&
         widget.location.hasCoordinates) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _ready) _controller.move(_point, 16);
+        if (mounted && _ready) _controller.move(_point, 17.5);
       });
     }
   }
@@ -92,7 +92,7 @@ class _PickupLocationMapState extends State<PickupLocationMap> {
                 mapController: _controller,
                 options: MapOptions(
                   initialCenter: _point,
-                  initialZoom: 16,
+                  initialZoom: 17.5,
                   minZoom: 3,
                   maxZoom: 19,
                   interactionOptions: const InteractionOptions(

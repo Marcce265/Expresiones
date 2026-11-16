@@ -9,6 +9,8 @@ void main() {
       expect(location.name, 'Expresiones Eternas');
       expect(location.address, 'Pje. Porvenir 149, Huancayo 12001');
       expect(location.hasCoordinates, isTrue);
+      expect(location.latitude, -12.0729918);
+      expect(location.longitude, -75.2000781);
     });
 
     test('incluye textos seguros para el pago simulado', () {
