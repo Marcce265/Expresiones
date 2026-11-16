@@ -18,6 +18,12 @@
 /assets/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=604800
 
+# El directorio cambia sin modificar su URL. Debe revalidarse para no mostrar
+# agencias cerradas o coordenadas antiguas después de una sincronización.
+/assets/assets/data/shalom_agencies.json
+  ! Cache-Control
+  Cache-Control: no-cache, must-revalidate
+
 /admin/assets/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=604800
 
