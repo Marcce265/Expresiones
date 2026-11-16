@@ -92,13 +92,7 @@ class AppStore extends ChangeNotifier {
 
   List<ResolvedQuoteLine> get resolvedLines {
     final byId = {for (final product in _products) product.id: product};
-    return _cart.values
-        .where((line) => byId.containsKey(line.productId))
-        .map(
-          (line) =>
-              ResolvedQuoteLine(line: line, product: byId[line.productId]!),
-        )
-        .toList(growable: false);
+    return resolveQuoteLines(lines: _cart.values, products: byId);
   }
 
   int get cartQuantity =>

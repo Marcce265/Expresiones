@@ -47,16 +47,25 @@ class QuoteLine {
 }
 
 class ResolvedQuoteLine {
-  const ResolvedQuoteLine({required this.line, required this.product});
+  const ResolvedQuoteLine({
+    required this.line,
+    required this.product,
+    this.pricingQuantity,
+  });
 
   final QuoteLine line;
   final CatalogProduct product;
 
+  /// Total units of the same product family in the quote. Quantity tiers use
+  /// this value, so one unit of each colour still reaches the dozen price.
+  final int? pricingQuantity;
+
+  int get tierQuantity => pricingQuantity ?? line.quantity;
+
   ProductVariant? get variant => product.variantById(line.variantId);
   double get unitPrice =>
-      product.unitPriceFor(line.quantity, variantId: line.variantId);
-  double get total =>
-      product.totalFor(line.quantity, variantId: line.variantId);
+      product.unitPriceFor(tierQuantity, variantId: line.variantId);
+  double get total => unitPrice * (line.quantity < 1 ? 1 : line.quantity);
   String get displayName =>
       variant == null ? product.name : '${product.name} · ${variant!.name}';
   String? get code => variant?.sku ?? product.sku;
@@ -69,9 +78,48 @@ class ResolvedQuoteLine {
         : product.priceTiers;
     PriceTier? selected;
     for (final tier in tiers) {
-      if (tier.appliesTo(line.quantity)) selected = tier;
+      if (tier.appliesTo(tierQuantity)) selected = tier;
     }
-    return selected?.label ??
-        (line.quantity == 1 ? 'Por ${product.unitLabel}' : 'Precio aplicado');
+    if (selected != null) {
+      return selected.label ?? 'Desde ${selected.minQuantity}';
+    }
+    return line.quantity == 1 ? 'Por ${product.unitLabel}' : 'Precio aplicado';
   }
+}
+
+/// Resolves every quote line against the catalog.
+///
+/// Product-level quantity tiers are shared by all variants: twelve units of
+/// different colours count as a dozen. Variants that define their own tiers
+/// are grouped separately so their special prices are not mixed.
+List<ResolvedQuoteLine> resolveQuoteLines({
+  required Iterable<QuoteLine> lines,
+  required Map<String, CatalogProduct> products,
+}) {
+  final resolved = <({QuoteLine line, CatalogProduct product})>[];
+  final quantities = <String, int>{};
+  for (final line in lines) {
+    final product = products[line.productId];
+    if (product == null) continue;
+    resolved.add((line: line, product: product));
+    final group = _pricingGroup(product, line.variantId);
+    final quantity = line.quantity < 1 ? 1 : line.quantity;
+    quantities[group] = (quantities[group] ?? 0) + quantity;
+  }
+  return [
+    for (final item in resolved)
+      ResolvedQuoteLine(
+        line: item.line,
+        product: item.product,
+        pricingQuantity:
+            quantities[_pricingGroup(item.product, item.line.variantId)]!,
+      ),
+  ];
+}
+
+String _pricingGroup(CatalogProduct product, String? variantId) {
+  final variant = product.variantById(variantId);
+  return variant != null && variant.priceTiers.isNotEmpty
+      ? '${product.id}::${variant.id}'
+      : product.id;
 }

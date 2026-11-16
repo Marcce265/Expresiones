@@ -653,7 +653,8 @@ class _FamilyPricePanel extends StatelessWidget {
           const SizedBox(height: 5),
           Text(
             sharedPricing
-                ? 'Elige la opción que prefieras; la escala de precios es la misma.'
+                ? 'Elige la opción que prefieras; la escala de precios es la '
+                      'misma y las cantidades se suman entre opciones.'
                 : 'Revisa el precio indicado en cada modelo antes de elegir.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
