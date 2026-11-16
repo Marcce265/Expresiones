@@ -1,6 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/checkout_order.dart';
+import '../security/input_sanitizer.dart';
+import '../security/rate_limiter.dart';
 
 class CustomerProfile {
   const CustomerProfile({
@@ -73,7 +75,17 @@ class CustomerAccountRepository {
     required String phone,
     required String password,
   }) async {
-    final cleanName = fullName.trim();
+    ClientRateLimiter.instance.enforce(
+      'auth_register',
+      maxAttempts: 5,
+      window: const Duration(minutes: 1),
+    );
+    if (InputSanitizer.containsSqlOrScriptInjection(fullName)) {
+      throw const FormatException(
+        'El nombre contiene caracteres o código no permitido.',
+      );
+    }
+    final cleanName = InputSanitizer.sanitizeText(fullName, maxLength: 100);
     final cleanPhone = normalizePhone(phone);
     _validateCredentials(name: cleanName, password: password);
     try {
@@ -104,6 +116,11 @@ class CustomerAccountRepository {
     required String phone,
     required String password,
   }) async {
+    ClientRateLimiter.instance.enforce(
+      'auth_login',
+      maxAttempts: 6,
+      window: const Duration(minutes: 1),
+    );
     final cleanPhone = normalizePhone(phone);
     if (password.isEmpty) {
       throw const FormatException('Escribe tu contraseña.');
@@ -146,21 +163,32 @@ class CustomerAccountRepository {
   }
 
   Future<void> saveOrder(CheckoutOrder order) async {
+    ClientRateLimiter.instance.enforce(
+      'order_submit',
+      maxAttempts: 4,
+      window: const Duration(minutes: 1),
+    );
     final profile = await currentProfile();
     if (profile == null) {
       throw StateError('Inicia sesión para guardar la compra.');
     }
     try {
       await client.from('customer_orders').insert({
-        'id': order.id,
+        'id': InputSanitizer.sanitizeText(order.id, maxLength: 80),
         'user_id': profile.userId,
         'status': 'paid_simulated',
         'total': order.simulatedTotal,
         'total_quantity': order.totalQuantity,
-        'customer_name': profile.fullName,
+        'customer_name': InputSanitizer.sanitizeText(
+          profile.fullName,
+          maxLength: 100,
+        ),
         'customer_phone': profile.phone,
         'delivery_method': order.details.deliveryMethod.name,
-        'payment_reference': order.payment.reference,
+        'payment_reference': InputSanitizer.sanitizeText(
+          order.payment.reference,
+          maxLength: 80,
+        ),
         'payment_method': order.payment.method.name,
         'snapshot': order.toJson(),
         'created_at': order.createdAt.toUtc().toIso8601String(),

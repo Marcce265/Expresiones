@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/catalog_repository.dart';
 import '../models/catalog_models.dart';
+import '../security/input_sanitizer.dart';
 import 'catalog_thumbnail.dart';
 
 /// Supabase catalog access used exclusively by the authenticated admin portal.
@@ -408,6 +409,7 @@ class AdminCatalogRepository {
     if (!allowedCatalogImageTypes.contains(contentType)) {
       throw const FormatException('Usa una imagen JPG, PNG o WebP.');
     }
+    InputSanitizer.validateNoDisguisedExecutableOrHtml(bytes);
   }
 
   /// Builds a deterministic, bucket-relative destination for an upload.

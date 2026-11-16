@@ -20,7 +20,23 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Catálogo de materiales y cotizador de Expresiones en Huancayo. Prepara tu solicitud y envíala por WhatsApp.">
+  <meta name="robots" content="noai, noimageai">
   <meta name="theme-color" content="#191816">
+
+  <style>
+    html, body {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    img, canvas, svg {
+      -webkit-user-drag: none;
+      user-drag: none;
+      pointer-events: auto;
+    }
+  </style>
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -125,6 +141,53 @@
     } catch (e) {
       // Almacenamiento bloqueado: la limpieza es opcional.
     }
+
+    // Escudo anti-clonación, anti-copia de activos y anti-clickjacking
+    (function() {
+      // 1. Frame-busting: evita que otra web incruste Expresiones dentro de un iframe
+      try {
+        if (window.top !== window.self) {
+          window.top.location = window.self.location;
+        }
+      } catch (e) {}
+
+      function isEditableTarget(el) {
+        if (!el || !el.tagName) return false;
+        var tag = el.tagName.toUpperCase();
+        return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+      }
+
+      // 2. Bloquear menú contextual (clic derecho -> Guardar imagen / Inspeccionar)
+      document.addEventListener('contextmenu', function(e) {
+        if (!isEditableTarget(e.target)) {
+          e.preventDefault();
+        }
+      }, false);
+
+      // 3. Bloquear arrastre de imágenes y canvas
+      document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+      }, false);
+
+      // 4. Bloquear atajos de clonación y extracción de código (Ctrl+U, Ctrl+S, F12, Ctrl+Shift+I/J/C)
+      document.addEventListener('keydown', function(e) {
+        var key = (e.key || '').toUpperCase();
+        var ctrlOrCmd = e.ctrlKey || e.metaKey;
+
+        if (e.keyCode === 123 || key === 'F12') {
+          e.preventDefault();
+          return false;
+        }
+        if (ctrlOrCmd && e.shiftKey && (key === 'I' || key === 'J' || key === 'C')) {
+          e.preventDefault();
+          return false;
+        }
+        if (ctrlOrCmd && (key === 'U' || key === 'S')) {
+          e.preventDefault();
+          return false;
+        }
+      }, false);
+    })();
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

@@ -23,6 +23,11 @@ for required_key in SUPABASE_URL SUPABASE_PUBLISHABLE_KEY; do
   fi
 done
 
+if grep -Eqi '(service_role|sb_secret_)' "$config_path"; then
+  echo "ERROR DE SEGURIDAD: $config_path contiene una clave privada (service_role o sb_secret_). Usa únicamente la clave pública (publishable/anon)." >&2
+  exit 1
+fi
+
 public_output="$project_root/build/web"
 admin_output="$project_root/build/admin-web"
 admin_destination="$public_output/admin"
@@ -37,9 +42,9 @@ esac
 
 cd "$project_root"
 "$flutter_bin" pub get
-"$flutter_bin" build web --release --no-pub \
+"$flutter_bin" build web --release --no-pub --no-source-maps \
   --dart-define-from-file="$config_path"
-"$flutter_bin" build web --release --no-pub \
+"$flutter_bin" build web --release --no-pub --no-source-maps \
   --no-tree-shake-icons \
   --target lib/admin_main.dart \
   --base-href /admin/ \
@@ -109,6 +114,13 @@ fi
 
 cp -- "$project_root/web/_redirects" "$public_output/_redirects"
 cp -- "$project_root/web/_headers" "$public_output/_headers"
+if [[ -f "$project_root/web/robots.txt" ]]; then
+  cp -- "$project_root/web/robots.txt" "$public_output/robots.txt"
+fi
+
+# Eliminar cualquier source map o símbolo de depuración para impedir
+# ingeniería inversa del código Dart en producción.
+find "$public_output" -type f \( -name '*.map' -o -name '*.symbols' \) -delete
 
 echo "Build para Cloudflare Pages listo: $public_output"
 echo "Catálogo: /"

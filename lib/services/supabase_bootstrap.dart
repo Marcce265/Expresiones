@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../security/input_sanitizer.dart';
+
 class SupabaseBootstrapResult {
   const SupabaseBootstrapResult({
     required this.connected,
@@ -44,6 +46,15 @@ abstract final class SupabaseBootstrap {
         message:
             'La dirección de Supabase no es válida. Revisa la configuración '
             'de publicación antes de volver a abrir el panel.',
+      );
+    }
+
+    if (InputSanitizer.isServiceRoleOrSecretKey(key)) {
+      return const SupabaseBootstrapResult(
+        connected: false,
+        message:
+            'Bloqueado por seguridad: se detectó una clave privada (service_role) '
+            'en lugar de la clave pública (publishable/anon).',
       );
     }
 

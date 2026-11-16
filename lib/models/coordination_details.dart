@@ -1,3 +1,5 @@
+import '../security/input_sanitizer.dart';
+
 enum DeliveryMethod { pickup, shalom }
 
 class CoordinationDetails {
@@ -85,19 +87,35 @@ class CoordinationDetails {
   }
 
   Map<String, Object?> toJson() => {
-    'name': name,
-    'phone': phone,
+    'name': InputSanitizer.sanitizeText(name, maxLength: 120),
+    'phone': InputSanitizer.sanitizeText(phone, maxLength: 24),
     'deliveryMethod': deliveryMethod.name,
-    'destination': destination,
-    'shalomAgencyId': shalomAgencyId,
-    'shalomAgencyName': shalomAgencyName,
-    'shalomAgencyAddress': shalomAgencyAddress,
-    'shalomAgencyLocality': shalomAgencyLocality,
+    'destination': InputSanitizer.sanitizeText(destination, maxLength: 160),
+    'shalomAgencyId': InputSanitizer.sanitizeText(
+      shalomAgencyId,
+      maxLength: 80,
+    ),
+    'shalomAgencyName': InputSanitizer.sanitizeText(
+      shalomAgencyName,
+      maxLength: 140,
+    ),
+    'shalomAgencyAddress': InputSanitizer.sanitizeText(
+      shalomAgencyAddress,
+      maxLength: 220,
+    ),
+    'shalomAgencyLocality': InputSanitizer.sanitizeText(
+      shalomAgencyLocality,
+      maxLength: 140,
+    ),
     'shalomAgencyLatitude': shalomAgencyLatitude,
     'shalomAgencyLongitude': shalomAgencyLongitude,
     'desiredDate': desiredDate?.toIso8601String(),
-    'note': note,
-    'customFields': customFields,
+    'note': InputSanitizer.sanitizeText(
+      note,
+      maxLength: 500,
+      allowNewlines: true,
+    ),
+    'customFields': InputSanitizer.sanitizeCustomFields(customFields),
   };
 
   factory CoordinationDetails.fromJson(Map<String, Object?> json) {
@@ -112,23 +130,48 @@ class CoordinationDetails {
       }
     }
     return CoordinationDetails(
-      name: json['name'] as String? ?? '',
-      phone: json['phone'] as String? ?? '',
+      name: InputSanitizer.sanitizeText(
+        json['name'] as String? ?? '',
+        maxLength: 120,
+      ),
+      phone: InputSanitizer.sanitizeText(
+        json['phone'] as String? ?? '',
+        maxLength: 24,
+      ),
       deliveryMethod: DeliveryMethod.values.firstWhere(
         (value) => value.name == deliveryName,
         orElse: () => DeliveryMethod.pickup,
       ),
-      destination: json['destination'] as String? ?? '',
-      shalomAgencyId: json['shalomAgencyId'] as String? ?? '',
-      shalomAgencyName: json['shalomAgencyName'] as String? ?? '',
-      shalomAgencyAddress: json['shalomAgencyAddress'] as String? ?? '',
-      shalomAgencyLocality: json['shalomAgencyLocality'] as String? ?? '',
+      destination: InputSanitizer.sanitizeText(
+        json['destination'] as String? ?? '',
+        maxLength: 160,
+      ),
+      shalomAgencyId: InputSanitizer.sanitizeText(
+        json['shalomAgencyId'] as String? ?? '',
+        maxLength: 80,
+      ),
+      shalomAgencyName: InputSanitizer.sanitizeText(
+        json['shalomAgencyName'] as String? ?? '',
+        maxLength: 140,
+      ),
+      shalomAgencyAddress: InputSanitizer.sanitizeText(
+        json['shalomAgencyAddress'] as String? ?? '',
+        maxLength: 220,
+      ),
+      shalomAgencyLocality: InputSanitizer.sanitizeText(
+        json['shalomAgencyLocality'] as String? ?? '',
+        maxLength: 140,
+      ),
       shalomAgencyLatitude: (json['shalomAgencyLatitude'] as num?)?.toDouble(),
       shalomAgencyLongitude: (json['shalomAgencyLongitude'] as num?)
           ?.toDouble(),
       desiredDate: DateTime.tryParse(json['desiredDate'] as String? ?? ''),
-      note: json['note'] as String? ?? '',
-      customFields: Map.unmodifiable(customFields),
+      note: InputSanitizer.sanitizeText(
+        json['note'] as String? ?? '',
+        maxLength: 500,
+        allowNewlines: true,
+      ),
+      customFields: InputSanitizer.sanitizeCustomFields(customFields),
     );
   }
 }

@@ -1,5 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../security/input_sanitizer.dart';
+import '../security/rate_limiter.dart';
+
 abstract class ProductPopularityRepository {
   const ProductPopularityRepository();
 
@@ -38,8 +41,14 @@ class SupabaseProductPopularityRepository
   }
 
   @override
-  Future<void> recordView(String productId) =>
-      _record(productId, action: 'view', quantity: 1);
+  Future<void> recordView(String productId) {
+    final safeSlug = InputSanitizer.validateSafeSlug(productId);
+    if (safeSlug == null) return Future<void>.value();
+    if (!ClientRateLimiter.instance.markOncePerSession('view:$safeSlug')) {
+      return Future<void>.value();
+    }
+    return _record(safeSlug, action: 'view', quantity: 1);
+  }
 
   @override
   Future<void> recordAdded(String productId, {required int quantity}) =>
@@ -62,14 +71,21 @@ class SupabaseProductPopularityRepository
     required int quantity,
   }) async {
     final activeClient = client;
-    final normalizedId = productId.trim();
-    if (activeClient == null || normalizedId.isEmpty || quantity < 1) return;
+    final normalizedId = InputSanitizer.validateSafeSlug(productId);
+    if (activeClient == null || normalizedId == null || quantity < 1) return;
+    if (!ClientRateLimiter.instance.tryAcquire(
+      'popularity_rpc',
+      maxAttempts: 30,
+      window: const Duration(minutes: 1),
+    )) {
+      return;
+    }
     await activeClient.rpc<void>(
       'record_product_popularity',
       params: {
         'p_product_slug': normalizedId,
         'p_action': action,
-        'p_quantity': quantity.clamp(1, 10000),
+        'p_quantity': quantity.clamp(1, 500),
       },
     );
   }
