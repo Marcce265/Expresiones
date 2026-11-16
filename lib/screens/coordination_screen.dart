@@ -23,6 +23,7 @@ class CoordinationScreen extends StatefulWidget {
     this.isDateAvailable,
     this.deliveryWeekdays,
     this.pickupTimeSlots = ProductionCapacitySnapshot.defaultPickupTimeSlots,
+    this.pickupTimeSlotsForDate,
     this.settings = const StorefrontSettings(),
   });
 
@@ -32,6 +33,7 @@ class CoordinationScreen extends StatefulWidget {
   final bool Function(DateTime date, DeliveryMethod method)? isDateAvailable;
   final Set<int> Function(DeliveryMethod method)? deliveryWeekdays;
   final List<String> pickupTimeSlots;
+  final List<String> Function(DateTime date)? pickupTimeSlotsForDate;
   final StorefrontSettings settings;
 
   @override
@@ -72,8 +74,9 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
       final parts = initial.name.trim().split(RegExp(r'\s+'));
       if (parts.length >= 2) {
         _nameController = TextEditingController(text: parts.first);
-        _lastNameController =
-            TextEditingController(text: parts.sublist(1).join(' '));
+        _lastNameController = TextEditingController(
+          text: parts.sublist(1).join(' '),
+        );
       } else {
         _nameController = TextEditingController(text: initial.name);
         _lastNameController = TextEditingController();
@@ -86,13 +89,6 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     _dniController = TextEditingController(
       text: _answerForLabel(initial.customFields, 'DNI'),
     );
-    final savedPickupTime = _answerForLabel(
-      initial.customFields,
-      'Horario de recojo',
-    );
-    _pickupTimeSlot = widget.pickupTimeSlots.contains(savedPickupTime)
-        ? savedPickupTime
-        : null;
     _noteController = TextEditingController(text: initial.note);
     _syncCustomControllers(initialValues: initial.customFields);
     _deliveryMethod = initial.deliveryMethod;
@@ -108,6 +104,13 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     if (_desiredDate != null && !_isSelectable(_desiredDate!)) {
       _desiredDate = null;
     }
+    final savedPickupTime = _answerForLabel(
+      initial.customFields,
+      'Horario de recojo',
+    );
+    _pickupTimeSlot = _availablePickupTimeSlots.contains(savedPickupTime)
+        ? savedPickupTime
+        : null;
   }
 
   @override
@@ -116,8 +119,10 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     if (oldWidget.settings.checkoutFields != widget.settings.checkoutFields) {
       _syncCustomControllers(initialValues: widget.initial.customFields);
     }
-    if (oldWidget.pickupTimeSlots != widget.pickupTimeSlots &&
-        !widget.pickupTimeSlots.contains(_pickupTimeSlot)) {
+    if ((oldWidget.pickupTimeSlots != widget.pickupTimeSlots ||
+            oldWidget.pickupTimeSlotsForDate !=
+                widget.pickupTimeSlotsForDate) &&
+        !_availablePickupTimeSlots.contains(_pickupTimeSlot)) {
       _pickupTimeSlot = null;
     }
   }
@@ -147,69 +152,85 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     final configured = widget.settings.checkoutFields
         .where((field) => !CheckoutCustomField.isReservedLabel(field.label))
         .toList();
-    final hasName = configured.any((f) =>
-        f.id == 'field_name' ||
-        f.id == 'name' ||
-        (f.label.trim().toLowerCase().contains('nombre') &&
-            !f.label.trim().toLowerCase().contains('apellido')));
-    final hasLastName = configured.any((f) =>
-        f.id == 'field_last_name' ||
-        f.id == 'last_name' ||
-        f.label.trim().toLowerCase().contains('apellido'));
-    final hasPhone = configured.any((f) =>
-        f.id == 'field_phone' ||
-        f.id == 'phone' ||
-        f.label.trim().toLowerCase().contains('teléfono') ||
-        f.label.trim().toLowerCase().contains('telefono'));
-    final hasDni = configured.any((f) =>
-        f.id == 'field_dni' ||
-        f.id == 'dni' ||
-        f.label.trim().toLowerCase().contains('dni'));
+    final hasName = configured.any(
+      (f) =>
+          f.id == 'field_name' ||
+          f.id == 'name' ||
+          (f.label.trim().toLowerCase().contains('nombre') &&
+              !f.label.trim().toLowerCase().contains('apellido')),
+    );
+    final hasLastName = configured.any(
+      (f) =>
+          f.id == 'field_last_name' ||
+          f.id == 'last_name' ||
+          f.label.trim().toLowerCase().contains('apellido'),
+    );
+    final hasPhone = configured.any(
+      (f) =>
+          f.id == 'field_phone' ||
+          f.id == 'phone' ||
+          f.label.trim().toLowerCase().contains('teléfono') ||
+          f.label.trim().toLowerCase().contains('telefono'),
+    );
+    final hasDni = configured.any(
+      (f) =>
+          f.id == 'field_dni' ||
+          f.id == 'dni' ||
+          f.label.trim().toLowerCase().contains('dni'),
+    );
 
     final defaults = <CheckoutCustomField>[];
     if (!hasName) {
-      defaults.add(const CheckoutCustomField(
-        id: 'field_name',
-        label: 'Nombre',
-        icon: 'person',
-        hint: '¿Cómo te llamas?',
-        required: true,
-        scope: CheckoutFieldScope.both,
-        inputType: CheckoutFieldInputType.lettersOnly,
-      ));
+      defaults.add(
+        const CheckoutCustomField(
+          id: 'field_name',
+          label: 'Nombre',
+          icon: 'person',
+          hint: '¿Cómo te llamas?',
+          required: true,
+          scope: CheckoutFieldScope.both,
+          inputType: CheckoutFieldInputType.lettersOnly,
+        ),
+      );
     }
     if (!hasLastName) {
-      defaults.add(const CheckoutCustomField(
-        id: 'field_last_name',
-        label: 'Apellidos',
-        icon: 'person',
-        hint: 'Tus apellidos',
-        required: true,
-        scope: CheckoutFieldScope.both,
-        inputType: CheckoutFieldInputType.lettersOnly,
-      ));
+      defaults.add(
+        const CheckoutCustomField(
+          id: 'field_last_name',
+          label: 'Apellidos',
+          icon: 'person',
+          hint: 'Tus apellidos',
+          required: true,
+          scope: CheckoutFieldScope.both,
+          inputType: CheckoutFieldInputType.lettersOnly,
+        ),
+      );
     }
     if (!hasPhone) {
-      defaults.add(const CheckoutCustomField(
-        id: 'field_phone',
-        label: 'Teléfono',
-        icon: 'phone',
-        hint: '+51 999 999 999',
-        required: true,
-        scope: CheckoutFieldScope.both,
-        inputType: CheckoutFieldInputType.numbersOnly,
-      ));
+      defaults.add(
+        const CheckoutCustomField(
+          id: 'field_phone',
+          label: 'Teléfono',
+          icon: 'phone',
+          hint: '+51 999 999 999',
+          required: true,
+          scope: CheckoutFieldScope.both,
+          inputType: CheckoutFieldInputType.numbersOnly,
+        ),
+      );
     }
     if (!hasDni) {
-      defaults.add(const CheckoutCustomField(
-        id: 'field_dni',
-        label: 'DNI',
-        icon: 'badge',
-        hint: '8 dígitos · titular mayor de edad',
-        required: true,
-        scope: CheckoutFieldScope.shalom,
-        inputType: CheckoutFieldInputType.numbersOnly,
-      ));
+      defaults.add(
+        const CheckoutCustomField(
+          id: 'field_dni',
+          label: 'DNI',
+          icon: 'badge',
+          hint: '8 dígitos · titular mayor de edad',
+          required: true,
+          scope: CheckoutFieldScope.shalom,
+          inputType: CheckoutFieldInputType.numbersOnly,
+        ),
+      );
     }
     return [...defaults, ...configured];
   }
@@ -274,6 +295,12 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
           .name] ??
       const {};
 
+  List<String> get _availablePickupTimeSlots {
+    final date = _desiredDate;
+    if (date == null) return const [];
+    return widget.pickupTimeSlotsForDate?.call(date) ?? widget.pickupTimeSlots;
+  }
+
   bool _isSelectable(DateTime date) {
     final value = _dateOnly(date);
     return !value.isBefore(_firstDate) &&
@@ -288,6 +315,9 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
       _pickupTimeSlotError = false;
       if (_desiredDate != null && !_isSelectable(_desiredDate!)) {
         _desiredDate = null;
+      }
+      if (!_availablePickupTimeSlots.contains(_pickupTimeSlot)) {
+        _pickupTimeSlot = null;
       }
     });
   }
@@ -334,6 +364,9 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
       setState(() {
         _desiredDate = _dateOnly(selected);
         _desiredDateError = false;
+        if (!_availablePickupTimeSlots.contains(_pickupTimeSlot)) {
+          _pickupTimeSlot = null;
+        }
       });
     }
   }
@@ -415,10 +448,6 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         desiredDate: _desiredDate,
         note: _noteController.text.trim(),
         customFields: Map.unmodifiable({
-          if (_nameController.text.trim().isNotEmpty)
-            'Nombre': _nameController.text.trim(),
-          if (_lastNameController.text.trim().isNotEmpty)
-            'Apellidos': _lastNameController.text.trim(),
           if (_deliveryMethod == DeliveryMethod.shalom) ...{
             'DNI': _dniController.text.trim(),
           },
@@ -435,8 +464,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   Widget _buildUnifiedContactFields() {
     final activeFields = _orderedFields
         .where(
-          (field) =>
-              field.enabled && field.appliesTo(_deliveryMethod.name),
+          (field) => field.enabled && field.appliesTo(_deliveryMethod.name),
         )
         .toList(growable: false);
 
@@ -487,8 +515,11 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
           ],
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: Icon(CheckoutFieldIcons.resolve(
-                field.icon.isNotEmpty ? field.icon : 'person')),
+            prefixIcon: Icon(
+              CheckoutFieldIcons.resolve(
+                field.icon.isNotEmpty ? field.icon : 'person',
+              ),
+            ),
             counterText: '',
           ),
           validator: _validateName,
@@ -518,8 +549,11 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
           ],
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: Icon(CheckoutFieldIcons.resolve(
-                field.icon.isNotEmpty ? field.icon : 'person')),
+            prefixIcon: Icon(
+              CheckoutFieldIcons.resolve(
+                field.icon.isNotEmpty ? field.icon : 'person',
+              ),
+            ),
             counterText: '',
           ),
           validator: _validateLastName,
@@ -544,8 +578,11 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
           ],
           decoration: InputDecoration(
             hintText: field.hint.isNotEmpty ? field.hint : '+51 999 999 999',
-            prefixIcon: Icon(CheckoutFieldIcons.resolve(
-                field.icon.isNotEmpty ? field.icon : 'phone')),
+            prefixIcon: Icon(
+              CheckoutFieldIcons.resolve(
+                field.icon.isNotEmpty ? field.icon : 'phone',
+              ),
+            ),
             counterText: '',
           ),
           validator: _validatePhone,
@@ -568,12 +605,14 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
             LengthLimitingTextInputFormatter(8),
           ],
           decoration: InputDecoration(
-            hintText: field.hint.isNotEmpty &&
-                    !field.hint.contains('8 dígitos')
+            hintText: field.hint.isNotEmpty && !field.hint.contains('8 dígitos')
                 ? field.hint
                 : '8 dígitos',
-            prefixIcon: Icon(CheckoutFieldIcons.resolve(
-                field.icon.isNotEmpty ? field.icon : 'badge')),
+            prefixIcon: Icon(
+              CheckoutFieldIcons.resolve(
+                field.icon.isNotEmpty ? field.icon : 'badge',
+              ),
+            ),
             counterText: '',
           ),
           validator: _validateDni,
@@ -630,7 +669,8 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         keyboardType: field.inputType == CheckoutFieldInputType.numbersOnly
             ? TextInputType.number
             : (field.multiline ? TextInputType.multiline : TextInputType.text),
-        textCapitalization: field.inputType == CheckoutFieldInputType.lettersOnly
+        textCapitalization:
+            field.inputType == CheckoutFieldInputType.lettersOnly
             ? TextCapitalization.words
             : TextCapitalization.sentences,
         textInputAction: field.multiline
@@ -823,7 +863,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                         const SizedBox(height: 18),
                         if (_deliveryMethod == DeliveryMethod.pickup)
                           _PickupTimeSelector(
-                            slots: widget.pickupTimeSlots,
+                            slots: _availablePickupTimeSlots,
                             selected: _pickupTimeSlot,
                             enabled: _desiredDate != null,
                             showError: _pickupTimeSlotError,

@@ -175,3 +175,15 @@ class CoordinationDetails {
     );
   }
 }
+
+/// Name fields saved by older checkout versions are already represented by
+/// [CoordinationDetails.name] and must not be rendered a second time.
+bool isLegacyNameCustomField(String label) {
+  final normalized = label.trim().toLowerCase();
+  return normalized == 'nombre' ||
+      normalized == 'nombres' ||
+      normalized == 'apellido' ||
+      normalized == 'apellidos' ||
+      normalized == 'nombre completo' ||
+      normalized == 'nombres y apellidos';
+}

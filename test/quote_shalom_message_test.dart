@@ -28,8 +28,9 @@ void main() {
     expect(message, contains('Agencia Shalom: CERRO DE PASCO'));
     expect(message, contains('CHAUPIMARCA · PASCO'));
     expect(message, contains('JR. HUARICAPCHA'));
-    expect(message, contains('Nombre: Paul'));
-    expect(message, contains('Apellidos: Matos Medina'));
+    expect(message, contains('Nombres y apellidos: Paul Matos Medina'));
+    expect(message, isNot(contains('\nNombre:')));
+    expect(message, isNot(contains('\nApellidos:')));
     expect(message, contains('DNI: 42555477'));
     expect(message, contains('desde S/ 5.00'));
     expect(message, contains('tamaño y peso'));

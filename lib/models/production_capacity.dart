@@ -9,6 +9,7 @@ class ProductionCapacitySnapshot {
     required this.weeklyCapacityPoints,
     this.deliveryWeekdays = defaultDeliveryWeekdays,
     this.pickupTimeSlots = defaultPickupTimeSlots,
+    this.pickupTimeSlotsByWeekday = const {},
     this.reservedPointsByDate = const {},
     this.overridesByDate = const {},
     this.horizonDays = 120,
@@ -52,6 +53,12 @@ class ProductionCapacitySnapshot {
 
   /// Hour ranges customers may choose for pickup at the Huancayo store.
   final List<String> pickupTimeSlots;
+
+  /// Pickup slots configured for each weekday (`1` Monday through `7` Sunday).
+  ///
+  /// [pickupTimeSlots] remains as a backwards-compatible fallback for data
+  /// saved before schedules could vary by day.
+  final Map<int, List<String>> pickupTimeSlotsByWeekday;
 
   /// Aggregated confirmed workload, keyed as `yyyy-MM-dd`.
   final Map<String, int> reservedPointsByDate;
@@ -123,6 +130,9 @@ class ProductionCapacitySnapshot {
           : Map.unmodifiable(weekly),
       deliveryWeekdays: _deliveryWeekdays(map['deliveryWeekdays']),
       pickupTimeSlots: _pickupTimeSlots(map['pickupTimeSlots']),
+      pickupTimeSlotsByWeekday: _pickupTimeSlotsByWeekday(
+        map['pickupTimeSlotsByWeekday'],
+      ),
       reservedPointsByDate: Map.unmodifiable(reserved),
       overridesByDate: Map.unmodifiable(overrides),
       horizonDays: math.max(1, _int(map['horizonDays'], fallback: 120)),
@@ -153,6 +163,16 @@ class ProductionCapacitySnapshot {
   bool isDeliveryDay(String method, DateTime date) =>
       weekdaysForDelivery(method).contains(date.weekday);
 
+  List<String> pickupSlotsForWeekday(int weekday) {
+    final configured = pickupTimeSlotsByWeekday[weekday];
+    return configured == null || configured.isEmpty
+        ? pickupTimeSlots
+        : configured;
+  }
+
+  List<String> pickupSlotsForDate(DateTime date) =>
+      pickupSlotsForWeekday(date.weekday);
+
   Map<String, dynamic> toMap() => {
     'weeklyCapacityPoints': {
       for (final entry in weeklyCapacityPoints.entries)
@@ -163,6 +183,11 @@ class ProductionCapacitySnapshot {
         entry.key: (entry.value.toList()..sort()),
     },
     'pickupTimeSlots': pickupTimeSlots,
+    if (pickupTimeSlotsByWeekday.isNotEmpty)
+      'pickupTimeSlotsByWeekday': {
+        for (final entry in pickupTimeSlotsByWeekday.entries)
+          entry.key.toString(): entry.value,
+      },
     'reservedPointsByDate': reservedPointsByDate,
     'overridesByDate': {
       for (final entry in overridesByDate.entries)
@@ -304,6 +329,37 @@ List<String> _pickupTimeSlots(Object? value) {
   return parsed.isEmpty
       ? ProductionCapacitySnapshot.defaultPickupTimeSlots
       : List.unmodifiable(parsed);
+}
+
+Map<int, List<String>> _pickupTimeSlotsByWeekday(Object? value) {
+  if (value is! Map) return const {};
+  final parsed = <int, List<String>>{};
+  for (final entry in value.entries) {
+    final weekday = int.tryParse(entry.key.toString());
+    if (weekday == null ||
+        weekday < DateTime.monday ||
+        weekday > DateTime.sunday ||
+        entry.value is! Iterable) {
+      continue;
+    }
+    final seen = <String>{};
+    final slots = <String>[];
+    for (final item in entry.value as Iterable) {
+      final slot = item.toString().trim();
+      if (_isTimeSlot(slot) && seen.add(slot)) slots.add(slot);
+    }
+    slots.sort(
+      (left, right) => _timeSlotStart(left).compareTo(_timeSlotStart(right)),
+    );
+    if (slots.isNotEmpty) parsed[weekday] = List.unmodifiable(slots);
+  }
+  return Map.unmodifiable(parsed);
+}
+
+int _timeSlotStart(String value) {
+  final match = RegExp(r'^(\d{2}):(\d{2})').firstMatch(value);
+  if (match == null) return 0;
+  return int.parse(match.group(1)!) * 60 + int.parse(match.group(2)!);
 }
 
 bool _isTimeSlot(String value) {

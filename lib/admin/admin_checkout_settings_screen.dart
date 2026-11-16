@@ -92,7 +92,7 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
   late List<CheckoutCustomField> _fields;
   late final Set<int> _pickupWeekdays;
   late final Set<int> _shalomWeekdays;
-  late final List<String> _pickupTimeSlots;
+  late final Map<int, List<String>> _pickupTimeSlotsByWeekday;
   int? _fieldEditorIndex;
   bool _saving = false;
 
@@ -114,76 +114,92 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
     final existing = widget.initial.checkoutFields
         .where((field) => !CheckoutCustomField.isReservedLabel(field.label))
         .toList();
-    final hasName = existing.any((f) =>
-        f.id == 'field_name' ||
-        f.id == 'name' ||
-        f.label.trim().toLowerCase().contains('nombre'));
-    final hasLastName = existing.any((f) =>
-        f.id == 'field_last_name' ||
-        f.id == 'last_name' ||
-        f.label.trim().toLowerCase().contains('apellido'));
-    final hasPhone = existing.any((f) =>
-        f.id == 'field_phone' ||
-        f.id == 'phone' ||
-        f.label.trim().toLowerCase().contains('teléfono') ||
-        f.label.trim().toLowerCase().contains('telefono'));
-    final hasDni = existing.any((f) =>
-        f.id == 'field_dni' ||
-        f.id == 'dni' ||
-        f.label.trim().toLowerCase().contains('dni'));
+    final hasName = existing.any(
+      (f) =>
+          f.id == 'field_name' ||
+          f.id == 'name' ||
+          f.label.trim().toLowerCase().contains('nombre'),
+    );
+    final hasLastName = existing.any(
+      (f) =>
+          f.id == 'field_last_name' ||
+          f.id == 'last_name' ||
+          f.label.trim().toLowerCase().contains('apellido'),
+    );
+    final hasPhone = existing.any(
+      (f) =>
+          f.id == 'field_phone' ||
+          f.id == 'phone' ||
+          f.label.trim().toLowerCase().contains('teléfono') ||
+          f.label.trim().toLowerCase().contains('telefono'),
+    );
+    final hasDni = existing.any(
+      (f) =>
+          f.id == 'field_dni' ||
+          f.id == 'dni' ||
+          f.label.trim().toLowerCase().contains('dni'),
+    );
 
     final defaults = <CheckoutCustomField>[];
     if (!hasName) {
-      defaults.add(const CheckoutCustomField(
-        id: 'field_name',
-        label: 'Nombre',
-        icon: 'person',
-        hint: 'Obligatorio',
-        required: true,
-        multiline: false,
-        enabled: true,
-        scope: CheckoutFieldScope.both,
-        inputType: CheckoutFieldInputType.lettersOnly,
-      ));
+      defaults.add(
+        const CheckoutCustomField(
+          id: 'field_name',
+          label: 'Nombre',
+          icon: 'person',
+          hint: 'Obligatorio',
+          required: true,
+          multiline: false,
+          enabled: true,
+          scope: CheckoutFieldScope.both,
+          inputType: CheckoutFieldInputType.lettersOnly,
+        ),
+      );
     }
     if (!hasLastName) {
-      defaults.add(const CheckoutCustomField(
-        id: 'field_last_name',
-        label: 'Apellidos',
-        icon: 'person',
-        hint: 'Obligatorio',
-        required: true,
-        multiline: false,
-        enabled: true,
-        scope: CheckoutFieldScope.both,
-        inputType: CheckoutFieldInputType.lettersOnly,
-      ));
+      defaults.add(
+        const CheckoutCustomField(
+          id: 'field_last_name',
+          label: 'Apellidos',
+          icon: 'person',
+          hint: 'Obligatorio',
+          required: true,
+          multiline: false,
+          enabled: true,
+          scope: CheckoutFieldScope.both,
+          inputType: CheckoutFieldInputType.lettersOnly,
+        ),
+      );
     }
     if (!hasPhone) {
-      defaults.add(const CheckoutCustomField(
-        id: 'field_phone',
-        label: 'Teléfono',
-        icon: 'phone',
-        hint: 'Obligatorio',
-        required: true,
-        multiline: false,
-        enabled: true,
-        scope: CheckoutFieldScope.both,
-        inputType: CheckoutFieldInputType.numbersOnly,
-      ));
+      defaults.add(
+        const CheckoutCustomField(
+          id: 'field_phone',
+          label: 'Teléfono',
+          icon: 'phone',
+          hint: 'Obligatorio',
+          required: true,
+          multiline: false,
+          enabled: true,
+          scope: CheckoutFieldScope.both,
+          inputType: CheckoutFieldInputType.numbersOnly,
+        ),
+      );
     }
     if (!hasDni) {
-      defaults.add(const CheckoutCustomField(
-        id: 'field_dni',
-        label: 'DNI',
-        icon: 'badge',
-        hint: '8 dígitos · titular mayor de edad',
-        required: true,
-        multiline: false,
-        enabled: true,
-        scope: CheckoutFieldScope.shalom,
-        inputType: CheckoutFieldInputType.numbersOnly,
-      ));
+      defaults.add(
+        const CheckoutCustomField(
+          id: 'field_dni',
+          label: 'DNI',
+          icon: 'badge',
+          hint: '8 dígitos · titular mayor de edad',
+          required: true,
+          multiline: false,
+          enabled: true,
+          scope: CheckoutFieldScope.shalom,
+          inputType: CheckoutFieldInputType.numbersOnly,
+        ),
+      );
     }
     _fields = [...defaults, ...existing];
     _pickupWeekdays = Set.of(
@@ -192,7 +208,10 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
     _shalomWeekdays = Set.of(
       widget.initialSchedule.weekdaysForDelivery('shalom'),
     );
-    _pickupTimeSlots = List.of(widget.initialSchedule.pickupTimeSlots);
+    _pickupTimeSlotsByWeekday = {
+      for (final weekday in _pickupWeekdays)
+        weekday: List.of(widget.initialSchedule.pickupSlotsForWeekday(weekday)),
+    };
   }
 
   @override
@@ -212,6 +231,18 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
     longitude: widget.initial.pickupLocation.longitude ?? -75.2000781,
   );
 
+  List<String> get _allPickupTimeSlots {
+    final slots = <String>{
+      for (final weekday in _pickupWeekdays)
+        ...?_pickupTimeSlotsByWeekday[weekday],
+    }.toList();
+    slots.sort(
+      (left, right) =>
+          _slotStartMinutes(left).compareTo(_slotStartMinutes(right)),
+    );
+    return slots;
+  }
+
   Future<void> _save() async {
     if (_saving || !_formKey.currentState!.validate()) return;
     if (_fieldEditorIndex != null) {
@@ -222,12 +253,20 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
       );
       return;
     }
-    if (_pickupWeekdays.isEmpty ||
-        _shalomWeekdays.isEmpty ||
-        _pickupTimeSlots.isEmpty) {
+    if (_pickupWeekdays.isEmpty || _shalomWeekdays.isEmpty) {
       showAppNotice(
         context,
-        'Selecciona al menos un día para cada forma de entrega y un horario de recojo.',
+        'Selecciona al menos un día para cada forma de entrega.',
+        tone: AppNoticeTone.error,
+      );
+      return;
+    }
+    if (_pickupWeekdays.any(
+      (weekday) => _pickupTimeSlotsByWeekday[weekday]?.isEmpty ?? true,
+    )) {
+      showAppNotice(
+        context,
+        'Define un horario de inicio y fin para cada día de recojo.',
         tone: AppNoticeTone.error,
       );
       return;
@@ -261,7 +300,11 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
               'pickup': Set.unmodifiable(_pickupWeekdays),
               'shalom': Set.unmodifiable(_shalomWeekdays),
             }),
-            pickupTimeSlots: List.unmodifiable(_pickupTimeSlots),
+            pickupTimeSlots: List.unmodifiable(_allPickupTimeSlots),
+            pickupTimeSlotsByWeekday: Map.unmodifiable({
+              for (final weekday in _pickupWeekdays)
+                weekday: List.unmodifiable(_pickupTimeSlotsByWeekday[weekday]!),
+            }),
             reservedPointsByDate: widget.initialSchedule.reservedPointsByDate,
             overridesByDate: widget.initialSchedule.overridesByDate,
             horizonDays: widget.initialSchedule.horizonDays,
@@ -502,9 +545,10 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
               icon: Icons.storefront_outlined,
               title: 'Recojo en Huancayo',
               selected: _pickupWeekdays,
+              onChanged: _onPickupWeekdayChanged,
             ),
             const SizedBox(height: 20),
-            _pickupTimeSlotEditor(context),
+            _pickupScheduleEditor(context),
             const Divider(height: 32),
             _deliveryDayPicker(
               context,
@@ -518,7 +562,8 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
     );
   }
 
-  Widget _pickupTimeSlotEditor(BuildContext context) {
+  Widget _pickupScheduleEditor(BuildContext context) {
+    final weekdays = _pickupWeekdays.toList()..sort();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -536,45 +581,68 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
         ),
         const SizedBox(height: 5),
         Text(
-          'El cliente elegirá uno después de seleccionar la fecha de recojo.',
+          'Configura desde qué hora hasta qué hora atiendes cada día.',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (var index = 0; index < _pickupTimeSlots.length; index++)
-              InputChip(
-                avatar: const Icon(Icons.schedule_outlined, size: 18),
-                label: Text(_pickupTimeSlots[index]),
-                tooltip: 'Editar horario',
-                onPressed: () => _editPickupTimeSlot(index),
-                onDeleted: _pickupTimeSlots.length == 1
-                    ? null
-                    : () => setState(() => _pickupTimeSlots.removeAt(index)),
+        if (weekdays.isEmpty)
+          Text(
+            'Selecciona primero los días de recojo.',
+            style: Theme.of(context).textTheme.bodySmall,
+          )
+        else
+          ...weekdays.map((weekday) {
+            final slots = _pickupTimeSlotsByWeekday[weekday] ?? const [];
+            final range = _rangeForSlots(slots);
+            final rangeLabel = range == null
+                ? 'Definir horario'
+                : '${_formatTime(range.$1)} – ${_formatTime(range.$2)}';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _weekdayNames[weekday]!,
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => _editPickupHours(weekday),
+                      icon: const Icon(Icons.schedule_outlined, size: 18),
+                      label: Text(rangeLabel),
+                    ),
+                  ],
+                ),
               ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-          onPressed: _pickupTimeSlots.length >= 24
-              ? null
-              : () => _editPickupTimeSlot(),
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('Agregar horario'),
-        ),
+            );
+          }),
       ],
     );
   }
 
-  Future<void> _editPickupTimeSlot([int? index]) async {
-    final existing = index == null
-        ? null
-        : _parseTimeSlot(_pickupTimeSlots[index]);
+  void _onPickupWeekdayChanged(int weekday, bool enabled) {
+    if (enabled) {
+      _pickupTimeSlotsByWeekday.putIfAbsent(
+        weekday,
+        () => List.of(widget.initialSchedule.pickupSlotsForWeekday(weekday)),
+      );
+    }
+  }
+
+  Future<void> _editPickupHours(int weekday) async {
+    final existing = _rangeForSlots(
+      _pickupTimeSlotsByWeekday[weekday] ?? const [],
+    );
     final start = await showTimePicker(
       context: context,
-      helpText: index == null ? 'Inicio del nuevo horario' : 'Editar inicio',
+      helpText: 'Hora de inicio · ${_weekdayNames[weekday]}',
       initialTime: existing?.$1 ?? const TimeOfDay(hour: 7, minute: 0),
       builder: _force24HourClock,
     );
@@ -583,7 +651,7 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
     final suggestedEnd = (startMinutes + 60).clamp(0, 1439);
     final end = await showTimePicker(
       context: context,
-      helpText: index == null ? 'Fin del nuevo horario' : 'Editar fin',
+      helpText: 'Hora de fin · ${_weekdayNames[weekday]}',
       initialTime:
           existing?.$2 ??
           TimeOfDay(hour: suggestedEnd ~/ 60, minute: suggestedEnd % 60),
@@ -598,28 +666,38 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
       );
       return;
     }
-    final slot = '${_formatTime(start)} - ${_formatTime(end)}';
-    if (_pickupTimeSlots.asMap().entries.any(
-      (entry) => entry.key != index && entry.value == slot,
-    )) {
-      showAppNotice(
-        context,
-        'Ese horario ya está agregado.',
-        tone: AppNoticeTone.error,
-      );
-      return;
-    }
     setState(() {
-      if (index == null) {
-        _pickupTimeSlots.add(slot);
-      } else {
-        _pickupTimeSlots[index] = slot;
-      }
-      _pickupTimeSlots.sort(
+      _pickupTimeSlotsByWeekday[weekday] = _hourlySlots(start, end);
+    });
+  }
+
+  List<String> _hourlySlots(TimeOfDay start, TimeOfDay end) {
+    final endMinutes = end.hour * 60 + end.minute;
+    var current = start.hour * 60 + start.minute;
+    final slots = <String>[];
+    while (current < endMinutes) {
+      final next = (current + 60).clamp(0, endMinutes).toInt();
+      slots.add('${_formatMinutes(current)} - ${_formatMinutes(next)}');
+      current = next;
+    }
+    return slots;
+  }
+
+  String _formatMinutes(int value) =>
+      '${(value ~/ 60).toString().padLeft(2, '0')}:'
+      '${(value % 60).toString().padLeft(2, '0')}';
+
+  (TimeOfDay, TimeOfDay)? _rangeForSlots(List<String> slots) {
+    if (slots.isEmpty) return null;
+    final sorted = List.of(slots)
+      ..sort(
         (left, right) =>
             _slotStartMinutes(left).compareTo(_slotStartMinutes(right)),
       );
-    });
+    final first = _parseTimeSlot(sorted.first);
+    final last = _parseTimeSlot(sorted.last);
+    if (first == null || last == null) return null;
+    return (first.$1, last.$2);
   }
 
   Widget _force24HourClock(BuildContext context, Widget? child) => MediaQuery(
@@ -657,6 +735,7 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
     required IconData icon,
     required String title,
     required Set<int> selected,
+    void Function(int weekday, bool enabled)? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -697,6 +776,7 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
                   } else {
                     selected.remove(weekday);
                   }
+                  onChanged?.call(weekday, enabled);
                 }),
               ),
           ],
@@ -825,8 +905,7 @@ class _CheckoutSettingsEditorState extends State<_CheckoutSettingsEditor> {
                             onEdit: () => _editField(index),
                             onDelete: _isEssentialField(_fields[index])
                                 ? null
-                                : () =>
-                                    setState(() => _fields.removeAt(index)),
+                                : () => setState(() => _fields.removeAt(index)),
                             onMoveUp: () => _moveField(index, -1),
                             onMoveDown: () => _moveField(index, 1),
                           ),

@@ -108,6 +108,10 @@ void main() {
           'shalom': [DateTime.monday, DateTime.saturday],
         },
         'pickupTimeSlots': ['08:00 - 09:00', '15:00 - 16:00'],
+        'pickupTimeSlotsByWeekday': {
+          '2': ['08:00 - 09:00', '09:00 - 10:00'],
+          '3': ['14:00 - 15:00'],
+        },
       });
       final restored = ProductionCapacitySnapshot.fromMap(snapshot.toMap());
 
@@ -119,6 +123,17 @@ void main() {
       expect(restored.isDeliveryDay('shalom', DateTime(2026, 10, 24)), isTrue);
       expect(restored.isDeliveryDay('shalom', DateTime(2026, 10, 23)), isFalse);
       expect(restored.pickupTimeSlots, ['08:00 - 09:00', '15:00 - 16:00']);
+      expect(restored.pickupSlotsForWeekday(DateTime.tuesday), [
+        '08:00 - 09:00',
+        '09:00 - 10:00',
+      ]);
+      expect(restored.pickupSlotsForWeekday(DateTime.wednesday), [
+        '14:00 - 15:00',
+      ]);
+      expect(restored.pickupSlotsForWeekday(DateTime.thursday), [
+        '08:00 - 09:00',
+        '15:00 - 16:00',
+      ]);
     });
 
     test('usa horarios de recojo seguros cuando faltan o son inválidos', () {

@@ -460,7 +460,10 @@ class _DeliveryCard extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 18),
               child: Divider(),
             ),
-            _DetailRow(icon: Icons.person_outline_rounded, text: details.name),
+            _DetailRow(
+              icon: Icons.person_outline_rounded,
+              text: 'Nombres y apellidos: ${details.name}',
+            ),
             const SizedBox(height: 12),
             _DetailRow(icon: Icons.phone_outlined, text: details.phone),
             const SizedBox(height: 12),
@@ -486,7 +489,8 @@ class _DeliveryCard extends StatelessWidget {
                   : 'Fecha deseada: ${_formatDate(desiredDate)}',
             ),
             for (final entry in details.customFields.entries)
-              if (entry.value.trim().isNotEmpty) ...[
+              if (entry.value.trim().isNotEmpty &&
+                  !isLegacyNameCustomField(entry.key)) ...[
                 const SizedBox(height: 12),
                 _DetailRow(
                   icon: Icons.assignment_outlined,

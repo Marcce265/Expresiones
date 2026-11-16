@@ -51,7 +51,7 @@ abstract final class QuoteMessageBuilder {
       ..writeln('Subtotal de productos: S/ ${subtotal.toStringAsFixed(2)}')
       ..writeln('Envío: por confirmar')
       ..writeln()
-      ..writeln('Nombre: ${details.name.trim()}')
+      ..writeln('Nombres y apellidos: ${details.name.trim()}')
       ..writeln('Teléfono: ${details.phone.trim()}')
       ..writeln('Entrega: ${details.deliveryLabel}');
 
@@ -75,7 +75,8 @@ abstract final class QuoteMessageBuilder {
       buffer.writeln('Fecha deseada: no registrada');
     }
     for (final entry in details.customFields.entries) {
-      if (entry.value.trim().isNotEmpty) {
+      if (entry.value.trim().isNotEmpty &&
+          !isLegacyNameCustomField(entry.key)) {
         buffer.writeln('${entry.key}: ${entry.value.trim()}');
       }
     }
@@ -134,7 +135,7 @@ abstract final class QuoteMessageBuilder {
         'Envío: ${order.shippingPending ? 'por confirmar' : 'sin costo adicional'}',
       )
       ..writeln()
-      ..writeln('Nombre: ${details.name.trim()}')
+      ..writeln('Nombres y apellidos: ${details.name.trim()}')
       ..writeln('Teléfono: ${details.phone.trim()}')
       ..writeln('Entrega: ${details.deliveryLabel}');
 
@@ -151,7 +152,8 @@ abstract final class QuoteMessageBuilder {
       );
     }
     for (final entry in details.customFields.entries) {
-      if (entry.value.trim().isNotEmpty) {
+      if (entry.value.trim().isNotEmpty &&
+          !isLegacyNameCustomField(entry.key)) {
         buffer.writeln('${entry.key}: ${entry.value.trim()}');
       }
     }

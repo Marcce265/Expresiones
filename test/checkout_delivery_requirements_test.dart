@@ -5,6 +5,7 @@ import 'package:expresiones/screens/review_screen.dart';
 import 'package:expresiones/services/quote_pdf_share_service.dart';
 import 'package:expresiones/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -115,6 +116,29 @@ void main() {
     expect(find.text('Selecciona una fecha.'), findsOneWidget);
   });
 
+  testWidgets('el calendario se muestra completamente en español', (
+    tester,
+  ) async {
+    await _pumpCoordination(tester);
+
+    final dateField = find.text('Selecciona una fecha').first;
+    await tester.ensureVisible(dateField);
+    await tester.pumpAndSettle();
+    await tester.tap(dateField);
+    await tester.pumpAndSettle();
+
+    final picker = find.byType(DatePickerDialog);
+    expect(picker, findsOneWidget);
+    expect(
+      find.descendant(of: picker, matching: find.textContaining('noviembre')),
+      findsWidgets,
+    );
+    expect(
+      find.descendant(of: picker, matching: find.textContaining('November')),
+      findsNothing,
+    );
+  });
+
   testWidgets('recojo exige y conserva un horario de atención', (tester) async {
     CoordinationDetails? submitted;
     await _pumpCoordination(
@@ -149,6 +173,20 @@ void main() {
     await tester.pump();
 
     expect(submitted?.customFields['Horario de recojo'], '07:00 - 08:00');
+  });
+
+  testWidgets('muestra los horarios configurados para el día elegido', (
+    tester,
+  ) async {
+    await _pumpCoordination(
+      tester,
+      initial: CoordinationDetails(desiredDate: DateTime.now()),
+      pickupTimeSlotsForDate: (_) => const ['10:00 - 11:00', '11:00 - 12:00'],
+    );
+
+    expect(find.text('10:00 - 11:00'), findsOneWidget);
+    expect(find.text('11:00 - 12:00'), findsOneWidget);
+    expect(find.text('07:00 - 08:00'), findsNothing);
   });
 
   testWidgets('la revisión comercial no muestra el pago de prueba', (
@@ -198,12 +236,20 @@ Future<void> _pumpCoordination(
   ValueChanged<CoordinationDetails>? onSubmit,
   CoordinationDetails initial = const CoordinationDetails(),
   StorefrontSettings settings = const StorefrontSettings(),
+  List<String> Function(DateTime date)? pickupTimeSlotsForDate,
 }) async {
   await tester.binding.setSurfaceSize(const Size(1200, 1000));
   addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(
     MaterialApp(
       theme: AppTheme.light,
+      locale: const Locale('es', 'PE'),
+      supportedLocales: const [Locale('es', 'PE')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: CoordinationScreen(
         initial: initial,
         earliestDate: DateTime.now(),
@@ -216,6 +262,7 @@ Future<void> _pumpCoordination(
           DateTime.saturday,
           DateTime.sunday,
         },
+        pickupTimeSlotsForDate: pickupTimeSlotsForDate,
         onSubmit: onSubmit ?? (_) {},
         settings: settings,
       ),

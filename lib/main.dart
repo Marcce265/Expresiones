@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -76,6 +77,13 @@ class ExpresionesApp extends StatelessWidget {
       title: settings.text(StorefrontText.brandName),
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      locale: const Locale('es', 'PE'),
+      supportedLocales: const [Locale('es', 'PE')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: const AppShell(),
     );
   }
@@ -331,6 +339,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             earliestDate: store.earliestDesiredDate,
             deliveryWeekdays: store.deliveryWeekdaysFor,
             pickupTimeSlots: store.pickupTimeSlots,
+            pickupTimeSlotsForDate: store.pickupTimeSlotsFor,
             isDateAvailable: store.isDesiredDateAvailable,
             onSubmit: (details) {
               store.updateDetails(details);

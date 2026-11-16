@@ -349,7 +349,7 @@ abstract final class QuoteExportService {
             style: pw.TextStyle(fontSize: 15, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 8),
-          _pdfDetail('Cliente', details.name.trim()),
+          _pdfDetail('Nombres y apellidos', details.name.trim()),
           _pdfDetail('Teléfono', details.phone.trim()),
           _pdfDetail('Entrega', details.deliveryLabel),
           if (details.deliveryMethod == DeliveryMethod.shalom &&
@@ -371,7 +371,8 @@ abstract final class QuoteExportService {
                 : DateFormat('dd/MM/yyyy').format(details.desiredDate!),
           ),
           for (final entry in details.customFields.entries)
-            if (entry.value.trim().isNotEmpty)
+            if (entry.value.trim().isNotEmpty &&
+                !isLegacyNameCustomField(entry.key))
               _pdfDetail(entry.key, entry.value.trim()),
           if (details.note.trim().isNotEmpty)
             _pdfDetail('Nota', details.note.trim()),
@@ -471,7 +472,7 @@ abstract final class QuoteExportService {
 
     final detailStart = totalRow + 3;
     final detailsRows = <(String, String)>[
-      ('Cliente', details.name.trim()),
+      ('Nombres y apellidos', details.name.trim()),
       ('Teléfono', details.phone.trim()),
       ('Entrega', details.deliveryLabel),
       if (details.deliveryMethod == DeliveryMethod.shalom &&
@@ -493,7 +494,9 @@ abstract final class QuoteExportService {
             : DateFormat('dd/MM/yyyy').format(details.desiredDate!),
       ),
       for (final entry in details.customFields.entries)
-        if (entry.value.trim().isNotEmpty) (entry.key, entry.value.trim()),
+        if (entry.value.trim().isNotEmpty &&
+            !isLegacyNameCustomField(entry.key))
+          (entry.key, entry.value.trim()),
       if (details.note.trim().isNotEmpty) ('Nota', details.note.trim()),
     ];
     for (var index = 0; index < detailsRows.length; index++) {
@@ -619,7 +622,7 @@ abstract final class QuoteExportService {
         'Procesado',
         DateFormat('dd/MM/yyyy HH:mm').format(order.payment.processedAt),
       ),
-      ('Cliente', order.details.name.trim()),
+      ('Nombres y apellidos', order.details.name.trim()),
       ('Teléfono', order.details.phone.trim()),
       ('Entrega', order.details.deliveryLabel),
       if (order.details.deliveryMethod == DeliveryMethod.shalom &&
@@ -635,7 +638,9 @@ abstract final class QuoteExportService {
             : DateFormat('dd/MM/yyyy').format(order.details.desiredDate!),
       ),
       for (final entry in order.details.customFields.entries)
-        if (entry.value.trim().isNotEmpty) (entry.key, entry.value.trim()),
+        if (entry.value.trim().isNotEmpty &&
+            !isLegacyNameCustomField(entry.key))
+          (entry.key, entry.value.trim()),
       if (order.details.note.trim().isNotEmpty)
         ('Nota', order.details.note.trim()),
     ];
@@ -774,7 +779,7 @@ abstract final class QuoteExportService {
 
   static List<pw.Widget> _pdfCoordinationDetails(CoordinationDetails details) {
     return [
-      _pdfDetail('Cliente', details.name.trim()),
+      _pdfDetail('Nombres y apellidos', details.name.trim()),
       _pdfDetail('Teléfono', details.phone.trim()),
       _pdfDetail('Entrega', details.deliveryLabel),
       if (details.deliveryMethod == DeliveryMethod.shalom &&
@@ -790,7 +795,8 @@ abstract final class QuoteExportService {
             : DateFormat('dd/MM/yyyy').format(details.desiredDate!),
       ),
       for (final entry in details.customFields.entries)
-        if (entry.value.trim().isNotEmpty)
+        if (entry.value.trim().isNotEmpty &&
+            !isLegacyNameCustomField(entry.key))
           _pdfDetail(entry.key, entry.value.trim()),
       if (details.note.trim().isNotEmpty)
         _pdfDetail('Nota', details.note.trim()),

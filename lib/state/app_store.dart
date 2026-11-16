@@ -105,6 +105,9 @@ class AppStore extends ChangeNotifier {
 
   List<String> get pickupTimeSlots => _capacitySnapshot.pickupTimeSlots;
 
+  List<String> pickupTimeSlotsFor(DateTime date) =>
+      _capacitySnapshot.pickupSlotsForDate(date);
+
   bool isDesiredDateAvailable(DateTime date, DeliveryMethod method) =>
       _capacitySnapshot.isDeliveryDay(method.name, date) &&
       !dateOnly(date).isBefore(earliestDesiredDate);

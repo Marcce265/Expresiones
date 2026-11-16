@@ -31,8 +31,10 @@ void main() {
 
     expect(find.text('Días de entrega'), findsOneWidget);
     expect(find.text('Horarios de atención'), findsOneWidget);
-    expect(find.text('07:00 - 08:00'), findsOneWidget);
-    expect(find.text('Agregar horario'), findsOneWidget);
+    expect(find.text('08:00 – 12:00'), findsOneWidget);
+    expect(find.text('14:00 – 18:00'), findsOneWidget);
+    expect(find.text('Lunes'), findsWidgets);
+    expect(find.text('Sábado'), findsWidgets);
     expect(find.text('Tus datos de contacto'), findsOneWidget);
     expect(find.text('Fecha de nacimiento'), findsNothing);
 
@@ -112,8 +114,28 @@ class _FakeOperationsRepository extends AdminOperationsRepository {
   _FakeOperationsRepository() : super(client: _testClient());
 
   @override
-  Stream<ProductionCapacitySnapshot> watchCapacity() =>
-      Stream.value(ProductionCapacitySnapshot.twoPersonFallback());
+  Stream<ProductionCapacitySnapshot> watchCapacity() {
+    final fallback = ProductionCapacitySnapshot.twoPersonFallback();
+    return Stream.value(
+      ProductionCapacitySnapshot(
+        weeklyCapacityPoints: fallback.weeklyCapacityPoints,
+        pickupTimeSlotsByWeekday: const {
+          DateTime.monday: [
+            '08:00 - 09:00',
+            '09:00 - 10:00',
+            '10:00 - 11:00',
+            '11:00 - 12:00',
+          ],
+          DateTime.tuesday: [
+            '14:00 - 15:00',
+            '15:00 - 16:00',
+            '16:00 - 17:00',
+            '17:00 - 18:00',
+          ],
+        },
+      ),
+    );
+  }
 
   @override
   Future<void> saveCapacity(ProductionCapacitySnapshot snapshot) async {}
