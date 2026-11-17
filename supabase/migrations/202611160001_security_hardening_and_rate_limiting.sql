@@ -85,6 +85,21 @@ as $$
 declare
   recent_order_count integer;
   snapshot_text text;
+  v_item jsonb;
+  v_product_slug text;
+  v_variant_slug text;
+  v_item_qty integer;
+  v_unit_price numeric(12, 2);
+  v_line_total numeric(12, 2);
+  v_sum_qty integer := 0;
+  v_sum_total numeric(12, 2) := 0;
+  v_family_id uuid;
+  v_family_base_price numeric(12, 2);
+  v_variant_id uuid;
+  v_variant_price numeric(12, 2);
+  v_family_total_qty integer;
+  v_expected_price numeric(12, 2);
+  v_payment_amount numeric(12, 2);
 begin
   -- 1. Validar longitud y formato de campos escalares
   if char_length(btrim(coalesce(new.customer_name, ''))) < 2
@@ -129,7 +144,113 @@ begin
       message = 'Se detectó contenido o código no permitido en los datos del pedido.';
   end if;
 
-  -- 4. Rate Limiting: máximo 5 órdenes por usuario cada 10 minutos
+  -- 4. Verificación en servidor de precios, cantidades y montos de pago
+  if jsonb_typeof(new.snapshot -> 'items') = 'array' then
+    if jsonb_array_length(new.snapshot -> 'items') < 1
+       or jsonb_array_length(new.snapshot -> 'items') > 200 then
+      raise exception using
+        errcode = '22023',
+        message = 'El pedido debe contener entre 1 y 200 líneas de productos.';
+    end if;
+
+    for v_item in select * from jsonb_array_elements(new.snapshot -> 'items') loop
+      v_product_slug := btrim(coalesce(v_item ->> 'productId', ''));
+      v_variant_slug := btrim(coalesce(v_item ->> 'variantId', ''));
+      v_item_qty := coalesce((v_item ->> 'quantity')::integer, 0);
+      v_unit_price := coalesce((v_item ->> 'unitPrice')::numeric(12, 2), 0);
+      v_line_total := coalesce((v_item ->> 'lineTotal')::numeric(12, 2), 0);
+
+      if v_item_qty < 1 or v_item_qty > 10000 or v_unit_price <= 0 then
+        raise exception using
+          errcode = '22023',
+          message = 'Cantidad o precio unitario inválido en una línea del pedido.';
+      end if;
+
+      if abs(v_line_total - round(v_unit_price * v_item_qty, 2)) > 0.05 then
+        raise exception using
+          errcode = '22023',
+          message = 'El subtotal de una línea no coincide con precio x cantidad.';
+      end if;
+
+      -- Si el producto existe activo en la base de datos, verificar que el precio
+      -- no haya sido manipulado por debajo del catálogo oficial
+      select f.id, f.base_price
+        into v_family_id, v_family_base_price
+        from public.families f
+       where f.slug = v_product_slug
+         and f.active = true;
+
+      if v_family_id is not null then
+        -- Cantidad agregada de la misma familia en todo el pedido (para tarifas por mayor)
+        select coalesce(sum(coalesce((elem ->> 'quantity')::integer, 0)), v_item_qty)
+          into v_family_total_qty
+          from jsonb_array_elements(new.snapshot -> 'items') elem
+         where btrim(coalesce(elem ->> 'productId', '')) = v_product_slug;
+
+        v_expected_price := v_family_base_price;
+
+        -- Verificar escala por mayor de la familia
+        select coalesce(min(t.unit_price), v_expected_price)
+          into v_expected_price
+          from public.family_price_tiers t
+         where t.family_id = v_family_id
+           and t.min_qty <= v_family_total_qty;
+
+        -- Si hay variante con precio/escala propia, considerar también su mínimo válido
+        if v_variant_slug <> '' then
+          select v.id, v.base_price
+            into v_variant_id, v_variant_price
+            from public.variants v
+           where v.family_id = v_family_id
+             and v.slug = v_variant_slug;
+
+          if v_variant_id is not null then
+            if v_variant_price is not null and v_variant_price < v_expected_price then
+              v_expected_price := v_variant_price;
+            end if;
+            select coalesce(min(vt.unit_price), v_expected_price)
+              into v_expected_price
+              from public.variant_price_tiers vt
+             where vt.variant_id = v_variant_id
+               and vt.min_qty <= v_family_total_qty;
+          end if;
+        end if;
+
+        if v_unit_price < (v_expected_price - 0.05) then
+          raise exception using
+            errcode = '22023',
+            message = 'Precio rechazado por el servidor: no coincide con el catálogo oficial.';
+        end if;
+      end if;
+
+      v_sum_qty := v_sum_qty + v_item_qty;
+      v_sum_total := v_sum_total + v_line_total;
+    end loop;
+
+    if v_sum_qty <> new.total_quantity then
+      raise exception using
+        errcode = '22023',
+        message = 'La suma de unidades no coincide con el total de unidades del pedido.';
+    end if;
+
+    if abs(v_sum_total - new.total) > 0.05 then
+      raise exception using
+        errcode = '22023',
+        message = 'La suma de precios de los productos no coincide con el total del pedido.';
+    end if;
+
+    if jsonb_typeof(new.snapshot -> 'payment') = 'object'
+       and (new.snapshot -> 'payment' ? 'amount') then
+      v_payment_amount := coalesce((new.snapshot #>> '{payment,amount}')::numeric(12, 2), 0);
+      if abs(v_payment_amount - new.total) > 0.05 then
+        raise exception using
+          errcode = '22023',
+          message = 'El monto registrado en el pago no coincide con el total verificado.';
+      end if;
+    end if;
+  end if;
+
+  -- 5. Rate Limiting: máximo 5 órdenes por usuario cada 10 minutos
   select count(*)
     into recent_order_count
     from public.customer_orders
@@ -186,3 +307,11 @@ create trigger trg_enforce_customer_profile_security
   for each row execute function public.enforce_customer_profile_security();
 
 revoke all on function public.enforce_customer_profile_security() from public, anon, authenticated;
+
+-- ============================================================================
+-- C. RESTRICCIÓN EN SERVIDOR DE TIPOS MIME Y TAMAÑO EN STORAGE BUCKET (8 MB)
+-- ============================================================================
+update storage.buckets
+   set file_size_limit = 8388608,
+       allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp']
+ where id = 'catalog';

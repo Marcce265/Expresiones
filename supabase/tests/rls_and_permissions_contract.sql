@@ -90,6 +90,17 @@ begin
   ) then
     raise exception 'trg_enforce_customer_profile_security is missing on public.customer_profiles';
   end if;
+
+  -- 6. Verificar límites de tipo MIME y tamaño en el bucket de Storage
+  if not exists (
+    select 1
+    from storage.buckets
+    where id = 'catalog'
+      and file_size_limit = 8388608
+      and allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp']
+  ) then
+    raise exception 'catalog bucket is missing strict MIME or 8MB size restrictions';
+  end if;
 end;
 $rls_contract$;
 

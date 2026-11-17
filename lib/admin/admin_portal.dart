@@ -27,6 +27,8 @@ import 'admin_operations_repository.dart';
 import 'admin_site_settings_repository.dart';
 import 'admin_site_settings_screen.dart';
 import '../data/customer_account_repository.dart';
+import '../security/input_sanitizer.dart';
+import '../security/rate_limiter.dart';
 import 'admin_ui.dart';
 
 class AdminPortalApp extends StatelessWidget {
@@ -233,10 +235,25 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       _error = null;
     });
     try {
+      ClientRateLimiter.instance.enforce(
+        'admin_login',
+        maxAttempts: 5,
+        window: const Duration(minutes: 1),
+        message:
+            'Demasiados intentos de inicio de sesión. Espera un minuto antes de reintentar.',
+      );
+      final cleanEmail = InputSanitizer.sanitizeText(
+        _email.text,
+        maxLength: 160,
+      );
       await widget.client.auth.signInWithPassword(
-        email: _email.text.trim(),
+        email: cleanEmail,
         password: _password.text,
       );
+    } on FormatException catch (error) {
+      setState(() {
+        _error = error.message;
+      });
     } on AuthException catch (error) {
       setState(() {
         final message = error.message.toLowerCase();
@@ -4752,11 +4769,22 @@ class _TotpChallengeScreenState extends State<_TotpChallengeScreen> {
     });
 
     try {
+      ClientRateLimiter.instance.enforce(
+        'admin_mfa_verify',
+        maxAttempts: 5,
+        window: const Duration(minutes: 1),
+        message:
+            'Demasiados intentos de código 2FA. Espera un minuto antes de reintentar.',
+      );
       await widget.client.auth.mfa.challengeAndVerify(
         factorId: widget.factorId,
         code: _codeController.text.trim(),
       );
       widget.onVerified();
+    } on FormatException catch (e) {
+      setState(() {
+        _error = e.message;
+      });
     } on AuthException catch (_) {
       setState(() {
         _error = 'Código de verificación incorrecto o expirado.';
