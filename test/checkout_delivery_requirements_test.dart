@@ -168,11 +168,46 @@ void main() {
     final firstSlot = find.text('07:00 - 08:00');
     await tester.ensureVisible(firstSlot);
     await tester.tap(firstSlot);
+
+    // Intentar enviar sin marcar las dos casillas separadas debe bloquearse
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pump();
+    expect(submitted, isNull);
+    expect(
+      find.text(
+        'Marca ambas casillas por separado (Términos y Condiciones y Política de Privacidad) para continuar.',
+      ),
+      findsOneWidget,
+    );
+
+    // Marcar solo una casilla tampoco permite continuar (prohibido un solo chulito para todo)
+    final termsCheckbox = find.byKey(const ValueKey('consent_terms_checkbox'));
+    await tester.ensureVisible(termsCheckbox);
+    await tester.tap(termsCheckbox);
+    await tester.pump();
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pump();
+    expect(submitted, isNull);
+
+    // Marcar la segunda casilla separada (Política de Privacidad) habilita el envío y registra fecha/hora/canal
+    final privacyCheckbox = find.byKey(
+      const ValueKey('consent_privacy_checkbox'),
+    );
+    await tester.ensureVisible(privacyCheckbox);
+    await tester.tap(privacyCheckbox);
+    await tester.pump();
+
     await tester.ensureVisible(submit);
     await tester.tap(submit);
     await tester.pump();
 
     expect(submitted?.customFields['Horario de recojo'], '07:00 - 08:00');
+    expect(submitted?.termsAcceptedAt, isNotNull);
+    expect(submitted?.privacyAcceptedAt, isNotNull);
+    expect(submitted?.legalPolicyVersion, '2026-11-PE');
+    expect(submitted?.legalAcceptedVia, contains('dos_casillas_separadas'));
   });
 
   testWidgets('muestra los horarios configurados para el día elegido', (

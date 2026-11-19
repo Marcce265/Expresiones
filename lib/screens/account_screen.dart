@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/customer_account_repository.dart';
+import '../services/legal_consent_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/legal_consent_checkboxes.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({
@@ -43,6 +45,9 @@ class _AccountScreenState extends State<AccountScreen> {
   bool _loading = true;
   bool _submitting = false;
   bool _hidePassword = true;
+  bool _termsAccepted = false;
+  bool _privacyAccepted = false;
+  bool _consentError = false;
   String? _error;
 
   @override
@@ -85,8 +90,17 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Future<void> _submit() async {
     if (_submitting) return;
+    if (_registering && (!_termsAccepted || !_privacyAccepted)) {
+      setState(() {
+        _consentError = true;
+        _error =
+            'Marca ambas casillas por separado (Términos y Condiciones y Política de Privacidad) para crear tu cuenta.';
+      });
+      return;
+    }
     setState(() {
       _submitting = true;
+      _consentError = false;
       _error = null;
     });
     try {
@@ -100,6 +114,18 @@ class _AccountScreenState extends State<AccountScreen> {
               phone: _phone.text,
               password: _password.text,
             );
+      if (_registering) {
+        unawaited(
+          LegalConsentService.recordConsent(
+            context: 'account_registration',
+            termsAccepted: _termsAccepted,
+            privacyAccepted: _privacyAccepted,
+            customerName: profile.fullName,
+            customerPhone: profile.phone,
+            supabaseClient: widget.repository.client,
+          ),
+        );
+      }
       if (!mounted) return;
       setState(() => _profile = profile);
       widget.onAuthenticated?.call();
@@ -240,6 +266,28 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                   ),
                 ),
+                if (_registering) ...[
+                  const SizedBox(height: 16),
+                  LegalConsentCheckboxes(
+                    termsAccepted: _termsAccepted,
+                    privacyAccepted: _privacyAccepted,
+                    showError: _consentError,
+                    onTermsChanged: (checked) => setState(() {
+                      _termsAccepted = checked;
+                      if (_termsAccepted && _privacyAccepted) {
+                        _consentError = false;
+                        _error = null;
+                      }
+                    }),
+                    onPrivacyChanged: (checked) => setState(() {
+                      _privacyAccepted = checked;
+                      if (_termsAccepted && _privacyAccepted) {
+                        _consentError = false;
+                        _error = null;
+                      }
+                    }),
+                  ),
+                ],
                 if (_error != null) ...[
                   const SizedBox(height: 12),
                   Text(

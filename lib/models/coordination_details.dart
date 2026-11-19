@@ -17,6 +17,10 @@ class CoordinationDetails {
     this.desiredDate,
     this.note = '',
     this.customFields = const {},
+    this.termsAcceptedAt,
+    this.privacyAcceptedAt,
+    this.legalPolicyVersion,
+    this.legalAcceptedVia,
   });
 
   final String name;
@@ -40,6 +44,13 @@ class CoordinationDetails {
   /// receipts or WhatsApp messages.
   final Map<String, String> customFields;
 
+  /// Registro auditable de cuándo y cómo se aceptaron los Términos y la
+  /// Política de Privacidad por separado (Ley N° 29733 y D.S. N° 016-2024-JUS).
+  final DateTime? termsAcceptedAt;
+  final DateTime? privacyAcceptedAt;
+  final String? legalPolicyVersion;
+  final String? legalAcceptedVia;
+
   String get deliveryLabel {
     if (deliveryMethod == DeliveryMethod.pickup) return 'Recojo en Huancayo';
     if (shalomAgencyId.isNotEmpty) return 'Envío por Shalom';
@@ -62,6 +73,10 @@ class CoordinationDetails {
     bool clearDesiredDate = false,
     String? note,
     Map<String, String>? customFields,
+    DateTime? termsAcceptedAt,
+    DateTime? privacyAcceptedAt,
+    String? legalPolicyVersion,
+    String? legalAcceptedVia,
   }) {
     return CoordinationDetails(
       name: name ?? this.name,
@@ -83,6 +98,10 @@ class CoordinationDetails {
       customFields: customFields == null
           ? this.customFields
           : Map.unmodifiable(customFields),
+      termsAcceptedAt: termsAcceptedAt ?? this.termsAcceptedAt,
+      privacyAcceptedAt: privacyAcceptedAt ?? this.privacyAcceptedAt,
+      legalPolicyVersion: legalPolicyVersion ?? this.legalPolicyVersion,
+      legalAcceptedVia: legalAcceptedVia ?? this.legalAcceptedVia,
     );
   }
 
@@ -116,6 +135,20 @@ class CoordinationDetails {
       allowNewlines: true,
     ),
     'customFields': InputSanitizer.sanitizeCustomFields(customFields),
+    if (termsAcceptedAt != null)
+      'termsAcceptedAt': termsAcceptedAt!.toUtc().toIso8601String(),
+    if (privacyAcceptedAt != null)
+      'privacyAcceptedAt': privacyAcceptedAt!.toUtc().toIso8601String(),
+    if (legalPolicyVersion != null)
+      'legalPolicyVersion': InputSanitizer.sanitizeText(
+        legalPolicyVersion!,
+        maxLength: 40,
+      ),
+    if (legalAcceptedVia != null)
+      'legalAcceptedVia': InputSanitizer.sanitizeText(
+        legalAcceptedVia!,
+        maxLength: 80,
+      ),
   };
 
   factory CoordinationDetails.fromJson(Map<String, Object?> json) {
@@ -172,6 +205,24 @@ class CoordinationDetails {
         allowNewlines: true,
       ),
       customFields: InputSanitizer.sanitizeCustomFields(customFields),
+      termsAcceptedAt: DateTime.tryParse(
+        json['termsAcceptedAt'] as String? ?? '',
+      ),
+      privacyAcceptedAt: DateTime.tryParse(
+        json['privacyAcceptedAt'] as String? ?? '',
+      ),
+      legalPolicyVersion: json['legalPolicyVersion'] == null
+          ? null
+          : InputSanitizer.sanitizeText(
+              '${json['legalPolicyVersion']}',
+              maxLength: 40,
+            ),
+      legalAcceptedVia: json['legalAcceptedVia'] == null
+          ? null
+          : InputSanitizer.sanitizeText(
+              '${json['legalAcceptedVia']}',
+              maxLength: 80,
+            ),
     );
   }
 }

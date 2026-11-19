@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,10 +8,12 @@ import '../models/coordination_details.dart';
 import '../models/production_capacity.dart';
 import '../models/shalom_agency.dart';
 import '../models/storefront_settings.dart';
+import '../services/legal_consent_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
 import '../widgets/checkout_field_icons.dart';
+import '../widgets/legal_consent_checkboxes.dart';
 import '../widgets/pickup_location_map.dart';
 import '../widgets/shalom_embedded_map.dart';
 import 'shalom_agency_picker.dart';
@@ -60,11 +64,16 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   bool _agencyError = false;
   bool _desiredDateError = false;
   bool _pickupTimeSlotError = false;
+  bool _termsAccepted = false;
+  bool _privacyAccepted = false;
+  bool _consentError = false;
 
   @override
   void initState() {
     super.initState();
     final initial = widget.initial;
+    _termsAccepted = initial.termsAcceptedAt != null;
+    _privacyAccepted = initial.privacyAcceptedAt != null;
     final savedLastName = _answerForLabel(initial.customFields, 'Apellidos');
     final savedFirstName = _answerForLabel(initial.customFields, 'Nombre');
     if (savedLastName.isNotEmpty || savedFirstName.isNotEmpty) {
@@ -398,11 +407,13 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
       _pickupTimeSlotError =
           _deliveryMethod == DeliveryMethod.pickup && _pickupTimeSlot == null;
       _agencyError = needsShippingIdentity && _agencyId.isEmpty;
+      _consentError = !_termsAccepted || !_privacyAccepted;
     });
     if (!formValid ||
         _desiredDateError ||
         _pickupTimeSlotError ||
-        _agencyError) {
+        _agencyError ||
+        _consentError) {
       return;
     }
     if (_desiredDate != null && !_isSelectable(_desiredDate!)) {
@@ -418,11 +429,26 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
       _nameController.text.trim(),
       _lastNameController.text.trim(),
     ].where((s) => s.isNotEmpty).join(' ');
+    final cleanPhone = _phoneController.text.trim();
+    final acceptedAt = DateTime.now().toUtc();
+    final acceptedChannel = LegalConsentService.defaultChannel;
+
+    unawaited(
+      LegalConsentService.recordConsent(
+        context: 'checkout_coordination',
+        termsAccepted: _termsAccepted,
+        privacyAccepted: _privacyAccepted,
+        customerName: fullName,
+        customerPhone: cleanPhone,
+        acceptedVia: acceptedChannel,
+        timestamp: acceptedAt,
+      ),
+    );
 
     widget.onSubmit(
       CoordinationDetails(
         name: fullName,
-        phone: _phoneController.text.trim(),
+        phone: cleanPhone,
         deliveryMethod: _deliveryMethod,
         destination: _deliveryMethod == DeliveryMethod.shalom
             ? '$_agencyName · $_agencyLocality'
@@ -447,6 +473,10 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
             : null,
         desiredDate: _desiredDate,
         note: _noteController.text.trim(),
+        termsAcceptedAt: acceptedAt,
+        privacyAcceptedAt: acceptedAt,
+        legalPolicyVersion: kCurrentLegalPolicyVersion,
+        legalAcceptedVia: acceptedChannel,
         customFields: Map.unmodifiable({
           if (_deliveryMethod == DeliveryMethod.shalom) ...{
             'DNI': _dniController.text.trim(),
@@ -901,6 +931,25 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                             ),
                             alignLabelWithHint: true,
                           ),
+                        ),
+                        const SizedBox(height: 16),
+                        LegalConsentCheckboxes(
+                          termsAccepted: _termsAccepted,
+                          privacyAccepted: _privacyAccepted,
+                          showError: _consentError,
+                          settings: widget.settings,
+                          onTermsChanged: (checked) => setState(() {
+                            _termsAccepted = checked;
+                            if (_termsAccepted && _privacyAccepted) {
+                              _consentError = false;
+                            }
+                          }),
+                          onPrivacyChanged: (checked) => setState(() {
+                            _privacyAccepted = checked;
+                            if (_termsAccepted && _privacyAccepted) {
+                              _consentError = false;
+                            }
+                          }),
                         ),
                         const SizedBox(height: 18),
                         _SubmitArea(onPressed: _submit),

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/catalog_models.dart';
 import '../models/storefront_settings.dart';
+import '../screens/privacy_screen.dart';
 import '../theme/app_theme.dart';
 
 /// Franja de sellos de confianza con estilo Rosatel adaptado a Expresiones.
@@ -374,7 +375,49 @@ class StoreFooter extends StatelessWidget {
                 ),
               const SizedBox(height: 36),
               const Divider(color: AppColors.border),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 18,
+                runSpacing: 8,
+                children: [
+                  _footerLink(
+                    'Términos y Condiciones',
+                    () => showLegalDocumentDialog(
+                      context,
+                      initialSection: LegalDocumentSection.terms,
+                    ),
+                  ),
+                  _footerLink(
+                    'Política de Privacidad (Ley N° 29733)',
+                    () => showLegalDocumentDialog(
+                      context,
+                      initialSection: LegalDocumentSection.privacy,
+                    ),
+                  ),
+                  _footerLink(
+                    'Política de Reembolsos y Cambios',
+                    () => showLegalDocumentDialog(
+                      context,
+                      initialSection: LegalDocumentSection.refunds,
+                    ),
+                  ),
+                  _footerLink(
+                    'Política de Cookies',
+                    () => showLegalDocumentDialog(
+                      context,
+                      initialSection: LegalDocumentSection.cookies,
+                    ),
+                  ),
+                  _footerLink(
+                    '📖 Libro de Reclamaciones',
+                    () => showLegalDocumentDialog(
+                      context,
+                      initialSection: LegalDocumentSection.claimsBook,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
               Wrap(
                 alignment: WrapAlignment.spaceBetween,
                 crossAxisAlignment: WrapCrossAlignment.center,
@@ -382,7 +425,7 @@ class StoreFooter extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   Text(
-                    '© 2026 Expresiones · Todos los derechos reservados',
+                    '© 2026 Expresiones · Todos los derechos reservados (D.L. N° 822 - Perú)',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.muted,
                           fontSize: 12,
