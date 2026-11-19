@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/feature_flags.dart';
+import '../models/catalog_models.dart';
 import '../models/coordination_details.dart';
 import '../models/quote_line.dart';
 import '../models/storefront_settings.dart';
@@ -8,8 +9,10 @@ import '../services/quote_pdf_share_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
+import '../widgets/breadcrumb_bar.dart';
 import '../widgets/quote_export_buttons.dart';
 import '../widgets/shalom_embedded_map.dart';
+import '../widgets/store_footer.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({
@@ -23,6 +26,8 @@ class ReviewScreen extends StatefulWidget {
     required this.onCopyMessage,
     required this.onEditQuote,
     this.onContinueToPayment,
+    this.onSelectCategory,
+    this.onOpenHelp,
     this.settings = const StorefrontSettings(),
   });
 
@@ -36,6 +41,8 @@ class ReviewScreen extends StatefulWidget {
   final VoidCallback onCopyMessage;
   final VoidCallback onEditQuote;
   final VoidCallback? onContinueToPayment;
+  final ValueChanged<ProductCategory>? onSelectCategory;
+  final VoidCallback? onOpenHelp;
   final StorefrontSettings settings;
 
   @override
@@ -110,88 +117,87 @@ class _ReviewScreenState extends State<ReviewScreen> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: ResponsivePage(
-        maxWidth: 1380,
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 48),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Column(
+        children: [
+          ResponsivePage(
+            maxWidth: 1380,
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 48),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IconButton(
-                  onPressed: widget.onEditQuote,
-                  tooltip: 'Volver a la cotización',
-                  icon: const Icon(Icons.arrow_back_rounded),
+                AppBreadcrumbBar(
+                  onBack: () => Navigator.maybePop(context),
+                  items: [
+                    BreadcrumbItem(label: 'Carrito', onTap: widget.onEditQuote),
+                    BreadcrumbItem(
+                      label: 'Datos',
+                      onTap: () => Navigator.maybePop(context),
+                    ),
+                    const BreadcrumbItem(label: 'Revisión'),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    widget.settings.text(StorefrontText.reviewTitle),
-                    style: Theme.of(context).textTheme.headlineLarge,
-                  ),
+                const SizedBox(height: 18),
+                const StepProgress(current: 3),
+                const SizedBox(height: 24),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final wide = constraints.maxWidth >= 980;
+                    final overview = Column(
+                      children: [
+                        _RequestCard(lines: widget.lines, subtotal: _subtotal),
+                        const SizedBox(height: 14),
+                        _CoordinationCard(
+                          details: widget.details,
+                          settings: widget.settings,
+                        ),
+                      ],
+                    );
+                    final sendPanel = _SendPanel(
+                      quoteId: widget.quoteId,
+                      message: widget.message,
+                      lines: widget.lines,
+                      details: widget.details,
+                      sharing: _sharing,
+                      sending: _sending,
+                      onSharePdf: widget.onSharePdf == null ? null : _sharePdf,
+                      onSend: widget.onSendWhatsapp == null ? null : _send,
+                      onCopy: _copy,
+                      onEdit: widget.onEditQuote,
+                      onContinueToPayment: widget.onContinueToPayment,
+                      settings: widget.settings,
+                    );
+
+                    if (!wide) {
+                      return Column(
+                        children: [
+                          overview,
+                          const SizedBox(height: 18),
+                          sendPanel,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 7, child: overview),
+                        const SizedBox(width: 28),
+                        Expanded(flex: 5, child: sendPanel),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
-            const SizedBox(height: 7),
-            Padding(
-              padding: const EdgeInsets.only(left: 52),
-              child: Text(
-                FeatureFlags.demoPayment
-                    ? widget.settings.text(StorefrontText.reviewBody)
-                    : 'Comprueba los productos, tus datos y la entrega antes de finalizar.',
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.muted),
-              ),
-            ),
-            const SizedBox(height: 18),
-            const StepProgress(current: 3),
-            const SizedBox(height: 24),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 980;
-                final overview = Column(
-                  children: [
-                    _RequestCard(lines: widget.lines, subtotal: _subtotal),
-                    const SizedBox(height: 14),
-                    _CoordinationCard(
-                      details: widget.details,
-                      settings: widget.settings,
-                    ),
-                  ],
-                );
-                final sendPanel = _SendPanel(
-                  quoteId: widget.quoteId,
-                  message: widget.message,
-                  lines: widget.lines,
-                  details: widget.details,
-                  sharing: _sharing,
-                  sending: _sending,
-                  onSharePdf: widget.onSharePdf == null ? null : _sharePdf,
-                  onSend: widget.onSendWhatsapp == null ? null : _send,
-                  onCopy: _copy,
-                  onEdit: widget.onEditQuote,
-                  onContinueToPayment: widget.onContinueToPayment,
-                  settings: widget.settings,
-                );
-
-                if (!wide) {
-                  return Column(
-                    children: [overview, const SizedBox(height: 18), sendPanel],
-                  );
-                }
-
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 7, child: overview),
-                    const SizedBox(width: 28),
-                    Expanded(flex: 5, child: sendPanel),
-                  ],
-                );
-              },
-            ),
-          ],
-        ),
+          ),
+          StoreFooter(
+            settings: widget.settings,
+            onSelectCategory: widget.onSelectCategory,
+            onOpenQuote: widget.onEditQuote,
+            onOpenHelp: widget.onOpenHelp,
+            whatsappNumber: widget.settings.whatsappNumber,
+          ),
+        ],
       ),
     );
   }

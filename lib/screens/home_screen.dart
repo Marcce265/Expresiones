@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import '../models/catalog_models.dart';
 import '../models/checkout_order.dart';
 import '../models/storefront_settings.dart';
+import '../services/catalog_search_engine.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/product_card.dart';
+import '../widgets/store_footer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -18,6 +20,8 @@ class HomeScreen extends StatefulWidget {
     required this.onProduct,
     required this.onOpenQuote,
     required this.quoteQuantity,
+    this.onOpenFamily,
+    this.onOpenHelp,
     this.settings = const StorefrontSettings(),
     this.onZeroResultSearch,
     this.lastOrder,
@@ -30,6 +34,8 @@ class HomeScreen extends StatefulWidget {
   final ProductSelected onProduct;
   final VoidCallback onOpenQuote;
   final int quoteQuantity;
+  final ValueChanged<CatalogProduct>? onOpenFamily;
+  final VoidCallback? onOpenHelp;
   final StorefrontSettings settings;
   final ValueChanged<String>? onZeroResultSearch;
   final CheckoutOrder? lastOrder;
@@ -42,12 +48,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   final Set<String> _reportedEmptySearches = {};
-  Timer? _searchDebounce;
+  Timer? _filterDebounce;
+  Timer? _telemetryDebounce;
   String _query = '';
+  int _visibleResultLimit = CatalogSearchEngine.defaultPageSize;
 
   @override
   void dispose() {
-    _searchDebounce?.cancel();
+    _filterDebounce?.cancel();
+    _telemetryDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -70,12 +79,13 @@ class _HomeScreenState extends State<HomeScreen> {
             if (featured != 0) return featured;
             return a.sortOrder.compareTo(b.sortOrder);
           });
-    final query = _query.trim().toLowerCase();
+    final query = _query.trim();
     final results = query.isEmpty
         ? const <CatalogTile>[]
-        : expandCatalogTiles(products)
-              .where((tile) => _matches(tile, query))
-              .toList();
+        : CatalogSearchEngine.searchProducts(products, query);
+    final visibleResults = results.length <= _visibleResultLimit
+        ? results
+        : results.take(_visibleResultLimit).toList(growable: false);
     final rankedProducts = widget.popularProducts
         .where(
           (product) =>
@@ -90,95 +100,162 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     return SingleChildScrollView(
-      child: ResponsivePage(
-        maxWidth: 1400,
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 36),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!usesDesktopNavigation) ...[
-              _TopBar(
-                settings: widget.settings,
-                quoteQuantity: widget.quoteQuantity,
-                onOpenQuote: widget.onOpenQuote,
-              ),
-              const SizedBox(height: 28),
-            ],
-            if (widget.lastOrder != null && widget.onOpenLastOrder != null) ...[
-              _LastOrderCard(
-                order: widget.lastOrder!,
-                onOpen: () => widget.onOpenLastOrder!(widget.lastOrder!),
-              ),
-              const SizedBox(height: 18),
-            ],
-            _HomeIntro(
-              settings: widget.settings,
-              searchController: _searchController,
-              query: _query,
-              onSearchChanged: _onSearchChanged,
-              onSearchSubmitted: _reportEmptySearch,
-              onClearSearch: () {
-                _searchController.clear();
-                setState(() => _query = '');
-              },
-              showHero: query.isEmpty,
-            ),
-            if (query.isNotEmpty) ...[
-              const SizedBox(height: 30),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Resultados',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
+      child: Column(
+        children: [
+          ResponsivePage(
+            maxWidth: 1400,
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 36),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!usesDesktopNavigation) ...[
+                  _TopBar(
+                    settings: widget.settings,
+                    quoteQuantity: widget.quoteQuantity,
+                    onOpenQuote: widget.onOpenQuote,
                   ),
-                  Text(
-                    '${results.length} ${results.length == 1 ? 'producto' : 'productos'}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  const SizedBox(height: 28),
                 ],
-              ),
-              const SizedBox(height: 12),
-              _SearchResults(results: results, onProduct: widget.onProduct),
-            ] else ...[
-              if (showTrustRow) ...[
-                const SizedBox(height: 24),
-                const _HomeTrustRow(),
-                const SizedBox(height: 32),
-              ] else
-                const SizedBox(height: 28),
-              _FeaturedHeader(
-                title: widget.settings.text(StorefrontText.homeFeaturedTitle),
-                onAction: () => widget.onBrowse(ProductCategory.materials),
-              ),
-              const SizedBox(height: 12),
-              if (featured.isEmpty)
-                const EmptyState(
-                  icon: Icons.inventory_2_outlined,
-                  title: 'El catálogo se está preparando',
-                  message:
-                      'Los productos aparecerán aquí cuando estén disponibles.',
-                )
-              else
-                _FeaturedProducts(
-                  products: featured,
-                  onProduct: widget.onProduct,
+                if (widget.lastOrder != null &&
+                    widget.onOpenLastOrder != null) ...[
+                  _LastOrderCard(
+                    order: widget.lastOrder!,
+                    onOpen: () => widget.onOpenLastOrder!(widget.lastOrder!),
+                  ),
+                  const SizedBox(height: 18),
+                ],
+                _HomeIntro(
+                  settings: widget.settings,
+                  searchController: _searchController,
+                  query: _query,
+                  onSearchChanged: _onSearchChanged,
+                  onSearchSubmitted: _onSearchSubmitted,
+                  onClearSearch: () {
+                    _filterDebounce?.cancel();
+                    _telemetryDebounce?.cancel();
+                    _searchController.clear();
+                    setState(() {
+                      _query = '';
+                      _visibleResultLimit = CatalogSearchEngine.defaultPageSize;
+                    });
+                  },
+                  showHero: query.isEmpty,
                 ),
-            ],
-          ],
-        ),
+                if (query.isNotEmpty) ...[
+                  const SizedBox(height: 30),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Resultados',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      Text(
+                        '${results.length} ${results.length == 1 ? 'resultado' : 'resultados'}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _SearchResults(
+                    results: visibleResults,
+                    totalCount: results.length,
+                    onLoadMore: results.length > visibleResults.length
+                        ? () => setState(
+                            () => _visibleResultLimit +=
+                                CatalogSearchEngine.defaultPageSize,
+                          )
+                        : null,
+                    onProduct: _handleSearchTileTap,
+                  ),
+                ] else ...[
+                  if (showTrustRow) ...[
+                    const SizedBox(height: 24),
+                    const _HomeTrustRow(),
+                    const SizedBox(height: 32),
+                  ] else
+                    const SizedBox(height: 28),
+                  _FeaturedHeader(
+                    title: widget.settings.text(
+                      StorefrontText.homeFeaturedTitle,
+                    ),
+                    onAction: () => widget.onBrowse(ProductCategory.materials),
+                  ),
+                  const SizedBox(height: 12),
+                  if (featured.isEmpty)
+                    const EmptyState(
+                      icon: Icons.inventory_2_outlined,
+                      title: 'El catálogo se está preparando',
+                      message:
+                          'Los productos aparecerán aquí cuando estén disponibles.',
+                    )
+                  else
+                    _FeaturedProducts(
+                      products: featured,
+                      onProduct: widget.onProduct,
+                    ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          StoreFooter(
+            settings: widget.settings,
+            onSelectCategory: widget.onBrowse,
+            onOpenQuote: widget.onOpenQuote,
+            onOpenHelp: widget.onOpenHelp,
+            whatsappNumber: widget.settings.whatsappNumber,
+          ),
+        ],
       ),
     );
   }
 
+  void _handleSearchTileTap(CatalogProduct product, String? variantId) {
+    final activeVariants = product.variants
+        .where((v) => v.isActive)
+        .toList(growable: false);
+    if (variantId == null &&
+        activeVariants.length > 1 &&
+        widget.onOpenFamily != null) {
+      widget.onOpenFamily!(product);
+      return;
+    }
+    widget.onProduct(product, variantId);
+  }
+
   void _onSearchChanged(String value) {
-    setState(() => _query = value);
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(
-      const Duration(milliseconds: 800),
+    _filterDebounce?.cancel();
+    _telemetryDebounce?.cancel();
+    if (value.trim().isEmpty) {
+      setState(() {
+        _query = '';
+        _visibleResultLimit = CatalogSearchEngine.defaultPageSize;
+      });
+      return;
+    }
+    _filterDebounce = Timer(CatalogSearchEngine.inputFilterDebounce, () {
+      if (!mounted) return;
+      setState(() {
+        _query = value;
+        _visibleResultLimit = CatalogSearchEngine.defaultPageSize;
+      });
+    });
+    _telemetryDebounce = Timer(
+      CatalogSearchEngine.zeroResultTelemetryDebounce,
       () => _reportEmptySearch(value),
     );
+  }
+
+  void _onSearchSubmitted(String value) {
+    _filterDebounce?.cancel();
+    _telemetryDebounce?.cancel();
+    setState(() {
+      _query = value;
+      _visibleResultLimit = CatalogSearchEngine.defaultPageSize;
+    });
+    _reportEmptySearch(value);
   }
 
   void _reportEmptySearch(String rawQuery) {
@@ -191,8 +268,10 @@ class _HomeScreenState extends State<HomeScreen> {
           (product.category == ProductCategory.materials ||
               product.category == ProductCategory.koreanPaper),
     );
-    final hasResult = expandCatalogTiles(products)
-        .any((tile) => _matches(tile, query));
+    final hasResult = CatalogSearchEngine.searchProducts(
+      products,
+      query,
+    ).isNotEmpty;
     if (hasResult) return;
     _reportedEmptySearches.add(query);
     widget.onZeroResultSearch!(query);
@@ -365,7 +444,7 @@ class _HomeIntro extends StatelessWidget {
               SizedBox(height: isWide ? 11 : 13),
               _PopularSearches(
                 controller: searchController,
-                onSelected: onSearchChanged,
+                onSelected: onSearchSubmitted,
               ),
             ],
           ),
@@ -922,10 +1001,17 @@ class _FeaturedProducts extends StatelessWidget {
 }
 
 class _SearchResults extends StatelessWidget {
-  const _SearchResults({required this.results, required this.onProduct});
+  const _SearchResults({
+    required this.results,
+    required this.totalCount,
+    required this.onProduct,
+    this.onLoadMore,
+  });
 
   final List<CatalogTile> results;
+  final int totalCount;
   final ProductSelected onProduct;
+  final VoidCallback? onLoadMore;
 
   @override
   Widget build(BuildContext context) {
@@ -936,45 +1022,43 @@ class _SearchResults extends StatelessWidget {
         message: 'Prueba con un color, código o nombre de producto.',
       );
     }
-    return LayoutBuilder(
-      builder: (context, constraints) => GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: results.length,
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: constraints.maxWidth < 600 ? 210 : 250,
-          mainAxisExtent: constraints.maxWidth < 600 ? 248 : 292,
-          crossAxisSpacing: constraints.maxWidth < 600 ? 12 : 16,
-          mainAxisSpacing: constraints.maxWidth < 600 ? 12 : 16,
+    return Column(
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) => GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: results.length,
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: constraints.maxWidth < 600 ? 210 : 250,
+              mainAxisExtent: constraints.maxWidth < 600 ? 248 : 292,
+              crossAxisSpacing: constraints.maxWidth < 600 ? 12 : 16,
+              mainAxisSpacing: constraints.maxWidth < 600 ? 12 : 16,
+            ),
+            itemBuilder: (context, index) {
+              final tile = results[index];
+              return ProductCard(
+                product: tile.product,
+                variant: tile.variant,
+                compact: constraints.maxWidth < 600,
+                onTap: () => onProduct(tile.product, tile.variant?.id),
+              );
+            },
+          ),
         ),
-        itemBuilder: (context, index) {
-          final tile = results[index];
-          return ProductCard(
-            product: tile.product,
-            variant: tile.variant,
-            compact: constraints.maxWidth < 600,
-            onTap: () => onProduct(tile.product, tile.variant?.id),
-          );
-        },
-      ),
+        if (onLoadMore != null) ...[
+          const SizedBox(height: 18),
+          OutlinedButton.icon(
+            onPressed: onLoadMore,
+            icon: const Icon(Icons.expand_more_rounded),
+            label: Text(
+              'Mostrar más resultados (${results.length} de $totalCount)',
+            ),
+          ),
+        ],
+      ],
     );
   }
-}
-
-bool _matches(CatalogTile tile, String query) {
-  final product = tile.product;
-  final variant = tile.variant;
-  return [
-    product.name,
-    product.description,
-    product.sku ?? '',
-    product.category.label,
-    ...product.tags,
-    ...product.attributes.values,
-    variant?.name ?? '',
-    variant?.sku ?? '',
-    ...?variant?.attributes.values,
-  ].any((value) => value.toLowerCase().contains(query));
 }
 
 List<CatalogTile> _featuredProductTiles(

@@ -106,6 +106,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   bool _customerAuthReady = false;
   int _index = 0;
   ProductCategory? _catalogCategory;
+  String? _catalogFamilyId;
   bool _guideCheckScheduled = false;
   bool _assistantMuted = false;
 
@@ -163,11 +164,22 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void _showCatalog([ProductCategory? category]) {
     setState(() {
       _catalogCategory = category;
+      _catalogFamilyId = null;
+      _index = 1;
+    });
+  }
+
+  void _openCatalogFamily(CatalogProduct product) {
+    setState(() {
+      _catalogCategory = product.category;
+      _catalogFamilyId = product.id;
       _index = 1;
     });
   }
 
   void _showQuote() => setState(() => _index = 2);
+
+  void _showHelp() => setState(() => _index = FeatureFlags.customerAccounts ? 4 : 3);
 
   void _openLastOrder(CheckoutOrder order) {
     Navigator.of(context).push(
@@ -237,6 +249,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             onNavigateHome: () {
               Navigator.of(routeContext).pop();
               setState(() => _index = 0);
+            },
+            onOpenQuote: () {
+              Navigator.of(routeContext).pop();
+              _showQuote();
+            },
+            onOpenHelp: () {
+              Navigator.of(routeContext).pop();
+              _showHelp();
             },
             onBuyNow: ({required quantity, variantId, required customization}) {
               store.addProduct(
@@ -330,6 +350,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           ),
           child: CoordinationScreen(
             settings: store.storefrontSettings,
+            onSelectCategory: (category) {
+              Navigator.of(coordinationContext).popUntil((r) => r.isFirst);
+              _showCatalog(category);
+            },
+            onOpenHelp: () {
+              Navigator.of(coordinationContext).popUntil((r) => r.isFirst);
+              _showHelp();
+            },
             initial: profile == null
                 ? store.details
                 : store.details.copyWith(
@@ -378,6 +406,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           ),
           child: ReviewScreen(
             settings: store.storefrontSettings,
+            onSelectCategory: (category) {
+              Navigator.of(reviewContext).popUntil((r) => r.isFirst);
+              _showCatalog(category);
+            },
+            onOpenHelp: () {
+              Navigator.of(reviewContext).popUntil((r) => r.isFirst);
+              _showHelp();
+            },
             lines: lines,
             details: details,
             quoteId: quoteId,
@@ -787,7 +823,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         popularProducts: store.popularProducts,
         onBrowse: _showCatalog,
         onProduct: _openProduct,
+        onOpenFamily: _openCatalogFamily,
         onOpenQuote: _showQuote,
+        onOpenHelp: _showHelp,
         quoteQuantity: store.cartQuantity,
         onZeroResultSearch: store.recordZeroResultSearch,
         lastOrder: FeatureFlags.demoPayment ? store.lastOrder : null,
@@ -795,14 +833,18 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       ),
       1 => CatalogScreen(
         settings: store.storefrontSettings,
-        key: ValueKey(_catalogCategory),
+        key: ValueKey('$_catalogCategory:${_catalogFamilyId ?? ''}'),
         products: store.products,
         initialCategory: _catalogCategory,
-        onCategoryChanged: (category) =>
-            setState(() => _catalogCategory = category),
+        initialFamilyId: _catalogFamilyId,
+        onCategoryChanged: (category) => setState(() {
+          _catalogCategory = category;
+          _catalogFamilyId = null;
+        }),
         onProduct: _openProduct,
         onBack: () => setState(() => _index = 0),
         onOpenQuote: _showQuote,
+        onOpenHelp: _showHelp,
         onZeroResultSearch: store.recordZeroResultSearch,
       ),
       2 => QuoteScreen(
@@ -813,12 +855,17 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onContinue: _openCoordination,
         onBrowse: _showCatalog,
         onBack: () => setState(() => _index = 0),
+        onSelectCategory: _showCatalog,
+        onOpenHelp: _showHelp,
       ),
       3 when FeatureFlags.customerAccounts => AccountScreen(
         repository: _customerAccounts!,
       ),
       _ => HelpScreen(
         settings: store.storefrontSettings,
+        onBack: () => setState(() => _index = 0),
+        onSelectCategory: _showCatalog,
+        onOpenQuote: _showQuote,
         onPrivacy: _openPrivacy,
         onAdminLogin: () => unawaited(_openAdminPortal()),
         assistantMuted: _assistantMuted,

@@ -4,12 +4,12 @@ import '../models/catalog_models.dart';
 import '../theme/app_theme.dart';
 import 'product_visual.dart';
 
+export '../models/catalog_models.dart' show CatalogTile;
+
 typedef ProductSelected = void Function(
   CatalogProduct product,
   String? variantId,
 );
-
-typedef CatalogTile = ({CatalogProduct product, ProductVariant? variant});
 
 List<CatalogTile> expandCatalogTiles(Iterable<CatalogProduct> products) {
   return [

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../config/feature_flags.dart';
+import '../models/catalog_models.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/breadcrumb_bar.dart';
+import '../widgets/store_footer.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({
@@ -13,6 +16,9 @@ class HelpScreen extends StatelessWidget {
     required this.onAdminLogin,
     required this.onAssistantGuide,
     required this.assistantMuted,
+    this.onBack,
+    this.onSelectCategory,
+    this.onOpenQuote,
     this.settings = const StorefrontSettings(),
   });
 
@@ -21,6 +27,9 @@ class HelpScreen extends StatelessWidget {
   final VoidCallback onAdminLogin;
   final VoidCallback onAssistantGuide;
   final bool assistantMuted;
+  final VoidCallback? onBack;
+  final ValueChanged<ProductCategory>? onSelectCategory;
+  final VoidCallback? onOpenQuote;
   final StorefrontSettings settings;
 
   @override
@@ -62,81 +71,101 @@ class HelpScreen extends StatelessWidget {
     ];
 
     return SingleChildScrollView(
-      child: ResponsivePage(
-        maxWidth: 1040,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Eyebrow(settings.text(StorefrontText.helpEyebrow)),
-            const SizedBox(height: 8),
-            Text(
-              settings.text(StorefrontText.helpTitle),
-              style: Theme.of(context).textTheme.headlineLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              settings.text(StorefrontText.helpBody),
-              style: Theme.of(context).textTheme.bodyLarge
-                  ?.copyWith(color: AppColors.muted),
-            ),
-            const SizedBox(height: 20),
-            InfoBanner(
-              title: FeatureFlags.customerAccounts
-                  ? settings.text(StorefrontText.helpBannerTitle)
-                  : 'Cotización sin registro',
-              message: FeatureFlags.customerAccounts
-                  ? settings.text(StorefrontText.helpBannerBody)
-                  : 'Puedes explorar, calcular cantidades y preparar tu cotización sin iniciar sesión.',
-              icon: Icons.lock_open_rounded,
-            ),
-            const SizedBox(height: 24),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth < 760) {
-                  return Column(
-                    children: [for (final item in items) _FaqCard(item: item)],
-                  );
-                }
-                final left = <({IconData icon, String title, String body})>[];
-                final right = <({IconData icon, String title, String body})>[];
-                for (var index = 0; index < items.length; index++) {
-                  (index.isEven ? left : right).add(items[index]);
-                }
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
+      child: Column(
+        children: [
+          ResponsivePage(
+            maxWidth: 1040,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppBreadcrumbBar(
+                  onBack: onBack ?? () => Navigator.maybePop(context),
+                  items: const [BreadcrumbItem(label: 'Ayuda')],
+                ),
+                const SizedBox(height: 20),
+                Eyebrow(settings.text(StorefrontText.helpEyebrow)),
+                const SizedBox(height: 8),
+                Text(
+                  settings.text(StorefrontText.helpTitle),
+                  style: Theme.of(context).textTheme.headlineLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  settings.text(StorefrontText.helpBody),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(color: AppColors.muted),
+                ),
+                const SizedBox(height: 20),
+                InfoBanner(
+                  title: FeatureFlags.customerAccounts
+                      ? settings.text(StorefrontText.helpBannerTitle)
+                      : 'Cotización sin registro',
+                  message: FeatureFlags.customerAccounts
+                      ? settings.text(StorefrontText.helpBannerBody)
+                      : 'Puedes explorar, calcular cantidades y preparar tu cotización sin iniciar sesión.',
+                  icon: Icons.lock_open_rounded,
+                ),
+                const SizedBox(height: 24),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxWidth < 760) {
+                      return Column(
                         children: [
-                          for (final item in left) _FaqCard(item: item),
+                          for (final item in items) _FaqCard(item: item),
                         ],
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          for (final item in right) _FaqCard(item: item),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
+                      );
+                    }
+                    final left = <({IconData icon, String title, String body})>[];
+                    final right =
+                        <({IconData icon, String title, String body})>[];
+                    for (var index = 0; index < items.length; index++) {
+                      (index.isEven ? left : right).add(items[index]);
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              for (final item in left) _FaqCard(item: item),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              for (final item in right) _FaqCard(item: item),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                LayoutBuilder(
+                  builder: (context, constraints) => _HelpActions(
+                    horizontal: constraints.maxWidth >= 620,
+                    onPrivacy: onPrivacy,
+                    onAdminLogin: onAdminLogin,
+                    onAssistantGuide: onAssistantGuide,
+                    assistantMuted: assistantMuted,
+                    privacyLabel: settings.text(StorefrontText.helpPrivacyButton),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            LayoutBuilder(
-              builder: (context, constraints) => _HelpActions(
-                horizontal: constraints.maxWidth >= 620,
-                onPrivacy: onPrivacy,
-                onAdminLogin: onAdminLogin,
-                onAssistantGuide: onAssistantGuide,
-                assistantMuted: assistantMuted,
-                privacyLabel: settings.text(StorefrontText.helpPrivacyButton),
-              ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 24),
+          StoreFooter(
+            settings: settings,
+            onSelectCategory: onSelectCategory,
+            onOpenQuote: onOpenQuote,
+            whatsappNumber: settings.whatsappNumber,
+          ),
+        ],
       ),
     );
   }

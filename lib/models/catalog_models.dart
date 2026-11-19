@@ -642,3 +642,5 @@ Map<String, String> _stringMap(Object? value) {
     (key, value) => MapEntry(key.toString(), value?.toString() ?? ''),
   );
 }
+
+typedef CatalogTile = ({CatalogProduct product, ProductVariant? variant});

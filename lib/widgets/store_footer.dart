@@ -324,119 +324,156 @@ class StoreFooter extends StatelessWidget {
   const StoreFooter({
     super.key,
     this.onSelectCategory,
+    this.onOpenQuote,
+    this.onOpenHelp,
     this.onContact,
     this.whatsappNumber,
+    this.settings = const StorefrontSettings(),
   });
 
   final ValueChanged<ProductCategory>? onSelectCategory;
+  final VoidCallback? onOpenQuote;
+  final VoidCallback? onOpenHelp;
   final VoidCallback? onContact;
   final String? whatsappNumber;
+  final StorefrontSettings settings;
+
+  static const Color _footerBg = Color(0xFFFCEEEF);
+  static const Color _footerDivider = Color(0xFFF0D5DC);
+
+  Future<void> _openWhatsapp() async {
+    if (onContact != null) {
+      onContact!();
+      return;
+    }
+    final number = whatsappNumber ?? settings.whatsappNumber;
+    final clean = number.replaceAll(RegExp(r'\D'), '');
+    final target = clean.isEmpty ? '51956744914' : clean;
+    final uri = Uri.https('wa.me', '/$target', {
+      'text': '¡Hola Expresiones! Quisiera información sobre sus productos.',
+    });
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(
+        uri,
+        mode: kIsWeb
+            ? LaunchMode.platformDefault
+            : LaunchMode.externalApplication,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 40, 24, 28),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border)),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 960;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (compact)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _brandBlock(context),
-                    const SizedBox(height: 28),
-                    _categoriesBlock(context),
-                    const SizedBox(height: 24),
-                    _attentionBlock(context),
-                    const SizedBox(height: 24),
-                    _paymentsBlock(context),
-                  ],
-                )
-              else
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 4, child: _brandBlock(context)),
-                    const SizedBox(width: 32),
-                    Expanded(flex: 3, child: _categoriesBlock(context)),
-                    const SizedBox(width: 24),
-                    Expanded(flex: 3, child: _attentionBlock(context)),
-                    const SizedBox(width: 24),
-                    Expanded(flex: 3, child: _paymentsBlock(context)),
-                  ],
-                ),
-              const SizedBox(height: 36),
-              const Divider(color: AppColors.border),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 18,
-                runSpacing: 8,
-                children: [
-                  _footerLink(
-                    'Términos y Condiciones',
-                    () => showLegalDocumentDialog(
-                      context,
-                      initialSection: LegalDocumentSection.terms,
-                    ),
-                  ),
-                  _footerLink(
-                    'Política de Privacidad (Ley N° 29733)',
-                    () => showLegalDocumentDialog(
-                      context,
-                      initialSection: LegalDocumentSection.privacy,
-                    ),
-                  ),
-                  _footerLink(
-                    'Política de Reembolsos y Cambios',
-                    () => showLegalDocumentDialog(
-                      context,
-                      initialSection: LegalDocumentSection.refunds,
-                    ),
-                  ),
-                  _footerLink(
-                    'Política de Cookies',
-                    () => showLegalDocumentDialog(
-                      context,
-                      initialSection: LegalDocumentSection.cookies,
-                    ),
-                  ),
-                  _footerLink(
-                    '📖 Libro de Reclamaciones',
-                    () => showLegalDocumentDialog(
-                      context,
-                      initialSection: LegalDocumentSection.claimsBook,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 12,
-                runSpacing: 8,
-                children: [
-                  Text(
-                    '© 2026 Expresiones · Todos los derechos reservados (D.L. N° 822 - Perú)',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                          fontSize: 12,
+    return Material(
+      color: _footerBg,
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: _footerDivider)),
+        ),
+        child: Column(
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1320),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 42, 24, 34),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxWidth < 720) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _brandBlock(context),
+                          const SizedBox(height: 28),
+                          _catalogBlock(context),
+                          const SizedBox(height: 24),
+                          _policiesBlock(context),
+                          const SizedBox(height: 24),
+                          _infoBlock(context),
+                          const SizedBox(height: 24),
+                          _paymentsAndClaimsBlock(context),
+                        ],
+                      );
+                    }
+                    if (constraints.maxWidth < 1040) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(flex: 4, child: _brandBlock(context)),
+                              const SizedBox(width: 28),
+                              Expanded(flex: 3, child: _catalogBlock(context)),
+                              const SizedBox(width: 24),
+                              Expanded(flex: 3, child: _policiesBlock(context)),
+                            ],
+                          ),
+                          const SizedBox(height: 28),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(flex: 5, child: _infoBlock(context)),
+                              const SizedBox(width: 28),
+                              Expanded(
+                                flex: 5,
+                                child: _paymentsAndClaimsBlock(context),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 4, child: _brandBlock(context)),
+                        const SizedBox(width: 28),
+                        Expanded(flex: 2, child: _catalogBlock(context)),
+                        const SizedBox(width: 24),
+                        Expanded(flex: 3, child: _policiesBlock(context)),
+                        const SizedBox(width: 24),
+                        Expanded(flex: 3, child: _infoBlock(context)),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          flex: 3,
+                          child: _paymentsAndClaimsBlock(context),
                         ),
-                  ),
-                  const Text('🌸 Huancayo, Perú', style: TextStyle(fontSize: 12, color: AppColors.muted)),
-                ],
+                      ],
+                    );
+                  },
+                ),
               ),
-            ],
-          );
-        },
+            ),
+          ),
+          const Divider(height: 1, color: _footerDivider),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+            child: Text(
+              'EXPRESIONES · Huancayo, Perú — Todos los derechos reservados 2026 (D.L. N° 822)',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.ink.withValues(alpha: 0.72),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+      ),
+    );
+  }
+
+  Widget _columnHeading(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontFamily: 'PlusJakartaSans',
+        fontSize: 14,
+        fontWeight: FontWeight.w800,
+        color: AppColors.pinkStrong,
       ),
     );
   }
@@ -453,44 +490,47 @@ class StoreFooter extends StatelessWidget {
             Text(
               'Expresiones',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontFamily: 'PlusJakartaSans',
-                    fontWeight: FontWeight.w700,
-                  ),
+                fontFamily: 'PlusJakartaSans',
+                fontWeight: FontWeight.w800,
+                color: AppColors.pinkStrong,
+                fontSize: 22,
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         Text(
           'Taller artesanal de rosas eternas, ramos de listón y materiales de alta calidad para manualidades y emprendedores en Huancayo. Envíos locales y a todo el Perú.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.muted,
-                height: 1.45,
-              ),
+            color: AppColors.ink.withValues(alpha: 0.78),
+            fontSize: 13,
+            height: 1.5,
+          ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
         Row(
           children: [
             _socialCircle(
               CustomPaint(
-                size: const Size(18, 18),
+                size: const Size(17, 17),
                 painter: FacebookBrandPainter(color: AppColors.ink),
               ),
               'Facebook: Expresiones Huancayo',
               'https://facebook.com/expresioneshuancayo',
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             _socialCircle(
               CustomPaint(
-                size: const Size(18, 18),
+                size: const Size(17, 17),
                 painter: InstagramBrandPainter(color: AppColors.ink),
               ),
               'Instagram: @expresiones_huancayo',
               'https://instagram.com/expresiones_huancayo',
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             _socialCircle(
               CustomPaint(
-                size: const Size(18, 18),
+                size: const Size(17, 17),
                 painter: TikTokBrandPainter(color: AppColors.ink),
               ),
               'TikTok: @expresiones_huancayo',
@@ -506,7 +546,7 @@ class StoreFooter extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: AppColors.canvas,
+        color: Colors.white,
         shape: const CircleBorder(),
         child: InkWell(
           onTap: () async {
@@ -514,7 +554,9 @@ class StoreFooter extends StatelessWidget {
             if (await canLaunchUrl(uri)) {
               await launchUrl(
                 uri,
-                mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+                mode: kIsWeb
+                    ? LaunchMode.platformDefault
+                    : LaunchMode.externalApplication,
               );
             }
           },
@@ -525,93 +567,234 @@ class StoreFooter extends StatelessWidget {
             height: 36,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: _footerDivider),
             ),
             alignment: Alignment.center,
-            child: SizedBox(
-              width: 18,
-              height: 18,
-              child: iconWidget,
-            ),
+            child: SizedBox(width: 17, height: 17, child: iconWidget),
           ),
         ),
       ),
     );
   }
 
-  Widget _categoriesBlock(BuildContext context) {
+  Widget _catalogBlock(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'MÓDULOS',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                letterSpacing: 1.1,
-                fontWeight: FontWeight.w700,
-                color: AppColors.muted,
-              ),
-        ),
+        _columnHeading('Catálogo'),
         const SizedBox(height: 12),
-        _footerLink('✨ Materiales', () => onSelectCategory?.call(ProductCategory.materials)),
+        _footerLink(
+          'Materiales',
+          onSelectCategory == null
+              ? null
+              : () => onSelectCategory!(ProductCategory.materials),
+        ),
         const SizedBox(height: 8),
-        _footerLink('🌸 Papel Coreano', () => onSelectCategory?.call(ProductCategory.koreanPaper)),
+        _footerLink(
+          'Papel Coreano',
+          onSelectCategory == null
+              ? null
+              : () => onSelectCategory!(ProductCategory.koreanPaper),
+        ),
+        if (onOpenQuote != null) ...[
+          const SizedBox(height: 8),
+          _footerLink('Mi carrito', onOpenQuote),
+        ],
+        if (onOpenHelp != null) ...[
+          const SizedBox(height: 8),
+          _footerLink('Preguntas frecuentes', onOpenHelp),
+        ],
       ],
     );
   }
 
-  Widget _attentionBlock(BuildContext context) {
+  Widget _policiesBlock(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'ATENCIÓN',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                letterSpacing: 1.1,
-                fontWeight: FontWeight.w700,
-                color: AppColors.muted,
-              ),
-        ),
+        _columnHeading('Políticas'),
         const SizedBox(height: 12),
-        const Text(
-          'Lun a Sáb: 11:00 AM - 5:00 PM',
-          style: TextStyle(fontSize: 13, color: AppColors.ink, fontWeight: FontWeight.w600),
+        _footerLink(
+          'Términos y condiciones',
+          () => showLegalDocumentDialog(
+            context,
+            initialSection: LegalDocumentSection.terms,
+            settings: settings,
+          ),
         ),
-        const SizedBox(height: 4),
-        const Text('Huancayo · Envíos a todo el Perú', style: TextStyle(fontSize: 13, color: AppColors.muted)),
         const SizedBox(height: 8),
-        _footerLink('Recojo en tienda Shalom', null),
+        _footerLink(
+          'Política de privacidad',
+          () => showLegalDocumentDialog(
+            context,
+            initialSection: LegalDocumentSection.privacy,
+            settings: settings,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _footerLink(
+          'Políticas de entrega y devolución',
+          () => showLegalDocumentDialog(
+            context,
+            initialSection: LegalDocumentSection.refunds,
+            settings: settings,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _footerLink(
+          'Política de cookies',
+          () => showLegalDocumentDialog(
+            context,
+            initialSection: LegalDocumentSection.cookies,
+            settings: settings,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _paymentsBlock(BuildContext context) {
+  Widget _infoBlock(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'FORMAS DE PAGO',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                letterSpacing: 1.1,
-                fontWeight: FontWeight.w700,
-                color: AppColors.muted,
-              ),
+        _columnHeading('Información'),
+        const SizedBox(height: 12),
+        _infoRow(Icons.location_on_outlined, 'Recojo en tienda · Huancayo'),
+        const SizedBox(height: 9),
+        InkWell(
+          onTap: _openWhatsapp,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: _infoRow(
+              Icons.phone_outlined,
+              '+51 956 744 914 (WhatsApp)',
+              bold: true,
+            ),
+          ),
         ),
+        const SizedBox(height: 9),
+        _infoRow(Icons.schedule_outlined, 'Lun a Sáb: 11:00 AM - 5:00 PM'),
+        const SizedBox(height: 9),
+        _infoRow(
+          Icons.local_shipping_outlined,
+          'Envíos a todo el Perú vía Shalom',
+        ),
+      ],
+    );
+  }
+
+  Widget _infoRow(IconData icon, String text, {bool bold = false}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Icon(icon, size: 16, color: AppColors.ink),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.ink.withValues(alpha: 0.85),
+              fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+              height: 1.35,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _paymentsAndClaimsBlock(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _columnHeading('Formas de pago'),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            _paymentImage('assets/images/payments/yape.webp', 'Yape', width: 72, height: 26),
-            _paymentImage('assets/images/payments/plin.webp', 'Plin', width: 72, height: 26),
-            _paymentImage('assets/images/payments/interbank.webp', 'Interbank', width: 84, height: 26),
+            _paymentImage(
+              'assets/images/payments/yape.webp',
+              'Yape',
+              width: 68,
+              height: 26,
+            ),
+            _paymentImage(
+              'assets/images/payments/plin.webp',
+              'Plin',
+              width: 68,
+              height: 26,
+            ),
+            _paymentImage(
+              'assets/images/payments/interbank.webp',
+              'Interbank',
+              width: 82,
+              height: 26,
+            ),
           ],
+        ),
+        const SizedBox(height: 18),
+        InkWell(
+          onTap: () => showLegalDocumentDialog(
+            context,
+            initialSection: LegalDocumentSection.claimsBook,
+            settings: settings,
+          ),
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            width: 178,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.pinkStrong, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Libro de\nReclamaciones',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0D6EFD),
+                    height: 1.2,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Icon(
+                  Icons.menu_book_rounded,
+                  size: 32,
+                  color: Color(0xFF5A6577),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
   }
 
-  Widget _paymentImage(String asset, String label, {double width = 72, double height = 26}) {
+  Widget _paymentImage(
+    String asset,
+    String label, {
+    double width = 72,
+    double height = 26,
+  }) {
     return Tooltip(
       message: label,
       child: Container(
@@ -644,13 +827,17 @@ class StoreFooter extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.canvas,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: _footerDivider),
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.ink),
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: AppColors.ink,
+        ),
       ),
     );
   }
@@ -665,7 +852,9 @@ class StoreFooter extends StatelessWidget {
           text,
           style: TextStyle(
             fontSize: 13,
-            color: onTap != null ? AppColors.ink : AppColors.muted,
+            color: onTap != null
+                ? AppColors.ink.withValues(alpha: 0.88)
+                : AppColors.muted,
             fontWeight: onTap != null ? FontWeight.w500 : FontWeight.normal,
           ),
         ),

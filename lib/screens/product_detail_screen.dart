@@ -5,6 +5,7 @@ import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/assistant_guide.dart';
+import '../widgets/breadcrumb_bar.dart';
 import '../widgets/product_description_card.dart';
 import '../widgets/product_visual.dart';
 import '../widgets/quantity_input.dart';
@@ -27,6 +28,8 @@ class ProductDetailScreen extends StatefulWidget {
     this.onSelectRelated,
     this.onNavigateCategory,
     this.onNavigateHome,
+    this.onOpenQuote,
+    this.onOpenHelp,
     this.onBuyNow,
     this.settings,
   });
@@ -39,6 +42,8 @@ class ProductDetailScreen extends StatefulWidget {
   final ValueChanged<CatalogProduct>? onSelectRelated;
   final ValueChanged<ProductCategory>? onNavigateCategory;
   final VoidCallback? onNavigateHome;
+  final VoidCallback? onOpenQuote;
+  final VoidCallback? onOpenHelp;
   final AddProductCallback? onBuyNow;
   final StorefrontSettings? settings;
 
@@ -152,153 +157,38 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ResponsivePage(
                   maxWidth: 1200,
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                  child: Row(
-                    children: [
-                      IconButton.outlined(
-                        onPressed: () => Navigator.maybePop(context),
-                        tooltip: 'Volver',
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 18,
-                        ),
+                  child: AppBreadcrumbBar(
+                    onBack: () => Navigator.maybePop(context),
+                    items: [
+                      BreadcrumbItem(
+                        label: product.category.label,
+                        onTap: () {
+                          if (widget.onNavigateCategory != null) {
+                            widget.onNavigateCategory!(product.category);
+                          } else {
+                            Navigator.maybePop(context);
+                          }
+                        },
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              InkWell(
-                                onTap:
-                                    widget.onNavigateHome ??
-                                    () => Navigator.maybePop(context),
-                                borderRadius: BorderRadius.circular(4),
-                                child: const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 2,
-                                  ),
-                                  child: Text(
-                                    'INICIO',
-                                    style: TextStyle(
-                                      fontSize: 13.5,
-                                      color: AppColors.muted,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.8,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                size: 18,
-                                color: AppColors.muted,
-                              ),
-                              InkWell(
-                                onTap: () {
-                                  if (widget.onNavigateCategory != null) {
-                                    widget.onNavigateCategory!(
-                                      product.category,
-                                    );
-                                  } else {
-                                    Navigator.maybePop(context);
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(4),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 2,
-                                  ),
-                                  child: Text(
-                                    product.category.label.toUpperCase(),
-                                    style: const TextStyle(
-                                      fontSize: 13.5,
-                                      color: AppColors.muted,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.8,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                size: 18,
-                                color: AppColors.muted,
-                              ),
-                              if (variant != null) ...[
-                                InkWell(
-                                  onTap: () => Navigator.maybePop(context),
-                                  borderRadius: BorderRadius.circular(4),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                      vertical: 2,
-                                    ),
-                                    child: Text(
-                                      familyDisplayName(product).toUpperCase(),
-                                      style: const TextStyle(
-                                        fontSize: 13.5,
-                                        color: AppColors.muted,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.8,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.chevron_right_rounded,
-                                  size: 18,
-                                  color: AppColors.muted,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 2,
-                                  ),
-                                  child: Text(
-                                    variantDisplayName(variant!).toUpperCase(),
-                                    style: const TextStyle(
-                                      fontSize: 13.5,
-                                      color: AppColors.ink,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.8,
-                                    ),
-                                  ),
-                                ),
-                              ] else ...[
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                    vertical: 2,
-                                  ),
-                                  child: Text(
-                                    familyDisplayName(product).toUpperCase(),
-                                    style: const TextStyle(
-                                      fontSize: 13.5,
-                                      color: AppColors.ink,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.8,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
+                      if (variant != null) ...[
+                        BreadcrumbItem(
+                          label: familyDisplayName(product),
+                          onTap: () => Navigator.maybePop(context),
                         ),
-                      ),
-                      if (widget.onHelp != null) ...[
-                        const SizedBox(width: 8),
-                        IconButton.outlined(
-                          onPressed: widget.onHelp,
-                          tooltip: '¿Necesitas ayuda?',
-                          icon: const Icon(
-                            Icons.help_outline_rounded,
-                            size: 18,
-                          ),
-                        ),
-                      ],
+                        BreadcrumbItem(label: variantDisplayName(variant!)),
+                      ] else
+                        BreadcrumbItem(label: familyDisplayName(product)),
                     ],
+                    trailing: widget.onHelp == null
+                        ? null
+                        : IconButton.outlined(
+                            onPressed: widget.onHelp,
+                            tooltip: '¿Necesitas ayuda?',
+                            icon: const Icon(
+                              Icons.help_outline_rounded,
+                              size: 18,
+                            ),
+                          ),
                   ),
                 ),
 
@@ -741,7 +631,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                 // SECCIÓN 3: Pie de Página Integral (Estilo Rosatel)
                 StoreFooter(
+                  settings: widget.settings ?? const StorefrontSettings(),
                   onSelectCategory: widget.onNavigateCategory,
+                  onOpenQuote: widget.onOpenQuote,
+                  onOpenHelp: widget.onOpenHelp,
                   whatsappNumber: widget.settings?.normalizedWhatsappNumber,
                 ),
               ]),

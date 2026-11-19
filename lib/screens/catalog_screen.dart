@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 
 import '../models/catalog_models.dart';
 import '../models/storefront_settings.dart';
+import '../services/catalog_search_engine.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/breadcrumb_bar.dart';
 import '../widgets/crown_icon.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_description_card.dart';
 import '../widgets/product_visual.dart';
+import '../widgets/store_footer.dart';
 
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({
@@ -18,18 +21,22 @@ class CatalogScreen extends StatefulWidget {
     required this.onProduct,
     required this.onBack,
     required this.onOpenQuote,
+    this.onOpenHelp,
     this.settings = const StorefrontSettings(),
     this.initialCategory,
+    this.initialFamilyId,
     this.onCategoryChanged,
     this.onZeroResultSearch,
   });
 
   final List<CatalogProduct> products;
   final ProductCategory? initialCategory;
+  final String? initialFamilyId;
   final ValueChanged<ProductCategory>? onCategoryChanged;
   final ProductSelected onProduct;
   final VoidCallback onBack;
   final VoidCallback onOpenQuote;
+  final VoidCallback? onOpenHelp;
   final StorefrontSettings settings;
   final ValueChanged<String>? onZeroResultSearch;
 
@@ -41,6 +48,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
   final _searchController = TextEditingController();
   final Set<String> _reportedEmptySearches = {};
   Timer? _searchDebounce;
+  Timer? _telemetryDebounce;
   late ProductCategory _selectedCategory;
   String? _selectedFamilyId;
   String _query = '';
@@ -49,11 +57,13 @@ class _CatalogScreenState extends State<CatalogScreen> {
   void initState() {
     super.initState();
     _selectedCategory = widget.initialCategory ?? ProductCategory.materials;
+    _selectedFamilyId = widget.initialFamilyId;
   }
 
   @override
   void dispose() {
     _searchDebounce?.cancel();
+    _telemetryDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -65,7 +75,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
         widget.initialCategory != oldWidget.initialCategory &&
         widget.initialCategory != _selectedCategory) {
       _selectedCategory = widget.initialCategory!;
-      _selectedFamilyId = null;
+      _selectedFamilyId = widget.initialFamilyId;
+      _query = '';
+      _searchController.clear();
+    } else if (widget.initialFamilyId != oldWidget.initialFamilyId) {
+      _selectedFamilyId = widget.initialFamilyId;
       _query = '';
       _searchController.clear();
     } else if (_selectedFamilyId != null && _selectedFamily == null) {
@@ -87,20 +101,29 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final query = _query.trim().toLowerCase();
+    final query = _query.trim();
     final family = _selectedFamily;
     final sharedPricing = family != null && usesSharedFamilyPricing(family);
     final availableProducts = widget.products.where(
       (product) =>
           product.isActive && product.category == _selectedCategory,
     );
-    final baseTiles = family == null
-        ? [
-            for (final product in availableProducts)
-              (product: product, variant: null),
-          ]
-        : expandCatalogTiles([family]);
-    final tiles = baseTiles.where((tile) => _matches(tile, query)).toList();
+    final List<CatalogTile> tiles;
+    if (query.isEmpty) {
+      tiles = family == null
+          ? [
+              for (final product in availableProducts)
+                (product: product, variant: null),
+            ]
+          : expandCatalogTiles([family]);
+    } else if (family == null) {
+      tiles = CatalogSearchEngine.searchProducts(availableProducts, query);
+    } else {
+      tiles = CatalogSearchEngine.filterFamilyTiles(
+        expandCatalogTiles([family]),
+        query,
+      );
+    }
 
     return Column(
       children: [
@@ -114,113 +137,23 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          IconButton.outlined(
-                            onPressed: _back,
-                            tooltip: 'Volver',
-                            icon: const Icon(
-                              Icons.arrow_back_ios_new_rounded,
-                              size: 18,
-                            ),
+                      AppBreadcrumbBar(
+                        onBack: _back,
+                        items: [
+                          BreadcrumbItem(
+                            label: _selectedCategory.label,
+                            onTap: family == null
+                                ? null
+                                : () {
+                                    _searchController.clear();
+                                    setState(() {
+                                      _selectedFamilyId = null;
+                                      _query = '';
+                                    });
+                                  },
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  InkWell(
-                                    onTap: widget.onBack,
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: const Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                        vertical: 2,
-                                      ),
-                                      child: Text(
-                                        'INICIO',
-                                        style: TextStyle(
-                                          fontSize: 13.5,
-                                          color: AppColors.muted,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 0.8,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.chevron_right_rounded,
-                                    size: 18,
-                                    color: AppColors.muted,
-                                  ),
-                                  if (family != null) ...[
-                                    InkWell(
-                                      onTap: () {
-                                        _searchController.clear();
-                                        setState(() {
-                                          _selectedFamilyId = null;
-                                          _query = '';
-                                        });
-                                      },
-                                      borderRadius: BorderRadius.circular(4),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                          vertical: 2,
-                                        ),
-                                        child: Text(
-                                          _selectedCategory.label.toUpperCase(),
-                                          style: const TextStyle(
-                                            fontSize: 13.5,
-                                            color: AppColors.muted,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.8,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const Icon(
-                                      Icons.chevron_right_rounded,
-                                      size: 18,
-                                      color: AppColors.muted,
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                        vertical: 2,
-                                      ),
-                                      child: Text(
-                                        familyDisplayName(family).toUpperCase(),
-                                        style: const TextStyle(
-                                          fontSize: 13.5,
-                                          color: AppColors.ink,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.8,
-                                        ),
-                                      ),
-                                    ),
-                                  ] else ...[
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                        vertical: 2,
-                                      ),
-                                      child: Text(
-                                        _selectedCategory.label.toUpperCase(),
-                                        style: const TextStyle(
-                                          fontSize: 13.5,
-                                          color: AppColors.ink,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.8,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ),
+                          if (family != null)
+                            BreadcrumbItem(label: familyDisplayName(family)),
                         ],
                       ),
                       if (family != null) ...[
@@ -334,6 +267,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   ),
                 ),
               ],
+              SliverToBoxAdapter(
+                child: StoreFooter(
+                  settings: widget.settings,
+                  onSelectCategory: _switchCategory,
+                  onOpenQuote: widget.onOpenQuote,
+                  onOpenHelp: widget.onOpenHelp,
+                  whatsappNumber: widget.settings.whatsappNumber,
+                ),
+              ),
             ],
           ),
         ),
@@ -356,15 +298,24 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+    _telemetryDebounce?.cancel();
+    if (value.trim().isEmpty) {
+      setState(() => _query = '');
+      return;
+    }
+    _searchDebounce = Timer(CatalogSearchEngine.inputFilterDebounce, () {
       if (!mounted) return;
       setState(() => _query = value);
-      _reportEmptySearch(value);
     });
+    _telemetryDebounce = Timer(
+      CatalogSearchEngine.zeroResultTelemetryDebounce,
+      () => _reportEmptySearch(value),
+    );
   }
 
   void _onSearchSubmitted(String value) {
     _searchDebounce?.cancel();
+    _telemetryDebounce?.cancel();
     setState(() => _query = value);
     _reportEmptySearch(value);
   }
@@ -378,13 +329,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
           product.isActive && product.category == _selectedCategory,
     );
     final family = _selectedFamily;
-    final baseTiles = family == null
-        ? [
-            for (final product in availableProducts)
-              (product: product, variant: null),
-          ]
-        : expandCatalogTiles([family]);
-    final hasResult = baseTiles.any((tile) => _matches(tile, query));
+    final hasResult = family == null
+        ? CatalogSearchEngine.searchProducts(
+            availableProducts,
+            query,
+          ).isNotEmpty
+        : CatalogSearchEngine.filterFamilyTiles(
+            expandCatalogTiles([family]),
+            query,
+          ).isNotEmpty;
     if (hasResult) return;
     _reportedEmptySearches.add(query);
     widget.onZeroResultSearch!(query);
@@ -394,7 +347,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final variants = tile.product.variants
         .where((variant) => variant.isActive)
         .toList();
-    if (_selectedFamilyId == null && variants.length > 1) {
+    if (_selectedFamilyId == null && tile.variant == null && variants.length > 1) {
       _searchController.clear();
       setState(() {
         _selectedFamilyId = tile.product.id;
@@ -416,24 +369,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
       _query = '';
     });
   }
-}
-
-bool _matches(CatalogTile tile, String query) {
-  if (query.isEmpty) return true;
-  final product = tile.product;
-  final variant = tile.variant;
-  return [
-    product.name,
-    product.description,
-    product.sku ?? '',
-    ...product.tags,
-    ...product.attributes.values,
-    variant?.name ?? '',
-    variant?.sku ?? '',
-    ...?variant?.attributes.values,
-    if (variant == null)
-      for (final option in product.variants) ...[option.name, option.sku ?? ''],
-  ].any((value) => value.toLowerCase().contains(query));
 }
 
 bool usesSharedFamilyPricing(CatalogProduct product) {

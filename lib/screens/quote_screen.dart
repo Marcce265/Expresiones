@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../models/catalog_models.dart';
 import '../models/quote_line.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/breadcrumb_bar.dart';
 import '../widgets/product_visual.dart';
 import '../widgets/quantity_input.dart';
+import '../widgets/store_footer.dart';
 
 typedef QuantityChanged = void Function(QuoteLine line, int quantity);
 
@@ -18,6 +21,8 @@ class QuoteScreen extends StatelessWidget {
     required this.onContinue,
     required this.onBrowse,
     this.onBack,
+    this.onSelectCategory,
+    this.onOpenHelp,
     this.settings = const StorefrontSettings(),
   });
 
@@ -27,79 +32,106 @@ class QuoteScreen extends StatelessWidget {
   final VoidCallback onContinue;
   final VoidCallback onBrowse;
   final VoidCallback? onBack;
+  final ValueChanged<ProductCategory>? onSelectCategory;
+  final VoidCallback? onOpenHelp;
   final StorefrontSettings settings;
 
   @override
   Widget build(BuildContext context) {
     if (lines.isEmpty) {
       return SingleChildScrollView(
-        child: ResponsivePage(
-          maxWidth: 900,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _PageHeading(itemCount: 0, onBack: onBack),
-              const SizedBox(height: 16),
-              EmptyState(
-                icon: Icons.shopping_bag_outlined,
-                title: settings.text(StorefrontText.quoteEmptyTitle),
-                message: settings.text(StorefrontText.quoteEmptyBody),
-                action: FilledButton.icon(
-                  onPressed: onBrowse,
-                  icon: const Icon(Icons.grid_view_rounded),
-                  label: const Text('Explorar catálogo'),
-                ),
+        child: Column(
+          children: [
+            ResponsivePage(
+              maxWidth: 900,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _PageHeading(itemCount: 0, onBack: onBack),
+                  const SizedBox(height: 16),
+                  EmptyState(
+                    icon: Icons.shopping_bag_outlined,
+                    title: settings.text(StorefrontText.quoteEmptyTitle),
+                    message: settings.text(StorefrontText.quoteEmptyBody),
+                    action: FilledButton.icon(
+                      onPressed: onBrowse,
+                      icon: const Icon(Icons.grid_view_rounded),
+                      label: const Text('Explorar catálogo'),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 36),
+            StoreFooter(
+              settings: settings,
+              onSelectCategory: onSelectCategory,
+              onOpenHelp: onOpenHelp,
+              whatsappNumber: settings.whatsappNumber,
+            ),
+          ],
         ),
       );
     }
 
     return SingleChildScrollView(
-      child: ResponsivePage(
-        maxWidth: 1380,
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 48),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _PageHeading(itemCount: lines.length, onBack: onBack),
-            const SizedBox(height: 18),
-            const StepProgress(current: 1),
-            const SizedBox(height: 24),
-            // Info de precios mostrada en la tarjeta de resumen
-            const SizedBox(height: 8),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 940;
-                final items = _QuoteItemsSection(
-                  lines: lines,
-                  onQuantityChanged: onQuantityChanged,
-                  onRemove: onRemove,
-                );
-                final nextStep = _QuoteNextStep(
-                  onContinue: onContinue,
-                  onBrowse: onBrowse,
-                );
+      child: Column(
+        children: [
+          ResponsivePage(
+            maxWidth: 1380,
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 48),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _PageHeading(itemCount: lines.length, onBack: onBack),
+                const SizedBox(height: 18),
+                const StepProgress(current: 1),
+                const SizedBox(height: 24),
+                // Info de precios mostrada en la tarjeta de resumen
+                const SizedBox(height: 8),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final wide = constraints.maxWidth >= 940;
+                    final items = _QuoteItemsSection(
+                      lines: lines,
+                      onQuantityChanged: onQuantityChanged,
+                      onRemove: onRemove,
+                    );
+                    final nextStep = _QuoteNextStep(
+                      onContinue: onContinue,
+                      onBrowse: onBrowse,
+                    );
 
-                if (!wide) {
-                  return Column(
-                    children: [items, const SizedBox(height: 22), nextStep],
-                  );
-                }
+                    if (!wide) {
+                      return Column(
+                        children: [
+                          items,
+                          const SizedBox(height: 22),
+                          nextStep,
+                        ],
+                      );
+                    }
 
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 7, child: items),
-                    const SizedBox(width: 28),
-                    Expanded(flex: 3, child: nextStep),
-                  ],
-                );
-              },
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 7, child: items),
+                        const SizedBox(width: 28),
+                        Expanded(flex: 3, child: nextStep),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          StoreFooter(
+            settings: settings,
+            onSelectCategory: onSelectCategory,
+            onOpenHelp: onOpenHelp,
+            whatsappNumber: settings.whatsappNumber,
+          ),
+        ],
       ),
     );
   }
@@ -193,34 +225,23 @@ class _PageHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: onBack ?? () => Navigator.maybePop(context),
-          tooltip: 'Volver',
-          icon: const Icon(Icons.arrow_back_rounded),
+    return AppBreadcrumbBar(
+      onBack: onBack ?? () => Navigator.maybePop(context),
+      items: const [BreadcrumbItem(label: 'Carrito')],
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: AppColors.canvas,
+          borderRadius: BorderRadius.circular(99),
+          border: Border.all(color: AppColors.border),
         ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            'Mi carrito',
-            style: Theme.of(context).textTheme.headlineLarge,
-          ),
+        child: Text(
+          '$itemCount ${itemCount == 1 ? 'producto' : 'productos'}',
+          style: Theme.of(
+            context,
+          ).textTheme.labelMedium?.copyWith(color: AppColors.muted),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: AppColors.canvas,
-            borderRadius: BorderRadius.circular(99),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Text(
-            '$itemCount ${itemCount == 1 ? 'producto' : 'productos'}',
-            style: Theme.of(context).textTheme.labelMedium
-                ?.copyWith(color: AppColors.muted),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

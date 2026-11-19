@@ -70,8 +70,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // 1. Breadcrumbs en mayúsculas
-    expect(find.text('INICIO'), findsOneWidget);
+    // 1. Breadcrumbs en mayúsculas sin INICIO
+    expect(find.text('INICIO'), findsNothing);
     expect(find.text('RAMOS'), findsWidgets);
     expect(find.textContaining('PRIMAVERAL GIRASOLES'), findsWidgets);
 
@@ -110,7 +110,8 @@ void main() {
     expect(find.byType(StoreSpecialOrderBanner), findsNothing);
     expect(find.text('¿Buscas un diseño o pedido a medida?'), findsNothing);
     expect(find.byType(StoreFooter), findsOneWidget);
-    expect(find.text('FORMAS DE PAGO'), findsOneWidget);
+    expect(find.text('Formas de pago'), findsOneWidget);
+    expect(find.text('Libro de\nReclamaciones'), findsOneWidget);
     expect(find.byTooltip('Yape'), findsOneWidget);
 
     // 9. Jashy presente en la pantalla de detalle

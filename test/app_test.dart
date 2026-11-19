@@ -242,9 +242,9 @@ void main() {
     }
     await tester.tap(find.text('Listo'));
     await tester.pumpAndSettle();
-    expect(find.text('Expresiones'), findsOneWidget);
+    expect(find.text('Expresiones'), findsAtLeastNWidgets(1));
     expect(find.text('Inicio'), findsOneWidget);
-    expect(find.text('Catálogo'), findsOneWidget);
+    expect(find.text('Catálogo'), findsAtLeastNWidgets(1));
     expect(find.text('Carrito'), findsOneWidget);
     expect(find.text('Ayuda'), findsOneWidget);
 

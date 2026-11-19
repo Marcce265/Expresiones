@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../config/feature_flags.dart';
+import '../models/catalog_models.dart';
 import '../models/coordination_details.dart';
 import '../models/production_capacity.dart';
 import '../models/shalom_agency.dart';
@@ -12,10 +13,12 @@ import '../services/legal_consent_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
+import '../widgets/breadcrumb_bar.dart';
 import '../widgets/checkout_field_icons.dart';
 import '../widgets/legal_consent_checkboxes.dart';
 import '../widgets/pickup_location_map.dart';
 import '../widgets/shalom_embedded_map.dart';
+import '../widgets/store_footer.dart';
 import 'shalom_agency_picker.dart';
 
 class CoordinationScreen extends StatefulWidget {
@@ -28,6 +31,8 @@ class CoordinationScreen extends StatefulWidget {
     this.deliveryWeekdays,
     this.pickupTimeSlots = ProductionCapacitySnapshot.defaultPickupTimeSlots,
     this.pickupTimeSlotsForDate,
+    this.onSelectCategory,
+    this.onOpenHelp,
     this.settings = const StorefrontSettings(),
   });
 
@@ -38,6 +43,8 @@ class CoordinationScreen extends StatefulWidget {
   final Set<int> Function(DeliveryMethod method)? deliveryWeekdays;
   final List<String> pickupTimeSlots;
   final List<String> Function(DateTime date)? pickupTimeSlotsForDate;
+  final ValueChanged<ProductCategory>? onSelectCategory;
+  final VoidCallback? onOpenHelp;
   final StorefrontSettings settings;
 
   @override
@@ -731,15 +738,17 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: ResponsivePage(
-        maxWidth: 1480,
-        child: Form(
-          key: _formKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _Heading(onBack: () => Navigator.maybePop(context)),
+      child: Column(
+        children: [
+          ResponsivePage(
+            maxWidth: 1480,
+            child: Form(
+              key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _Heading(onBack: () => Navigator.maybePop(context)),
               const SizedBox(height: 18),
               Center(
                 child: ConstrainedBox(
@@ -979,6 +988,16 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
             ],
           ),
         ),
+      ),
+          const SizedBox(height: 24),
+          StoreFooter(
+            settings: widget.settings,
+            onSelectCategory: widget.onSelectCategory,
+            onOpenQuote: () => Navigator.maybePop(context),
+            onOpenHelp: widget.onOpenHelp,
+            whatsappNumber: widget.settings.whatsappNumber,
+          ),
+        ],
       ),
     );
   }
@@ -1613,20 +1632,11 @@ class _Heading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: onBack,
-          tooltip: 'Volver',
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            'Datos para coordinar',
-            style: Theme.of(context).textTheme.headlineLarge,
-          ),
-        ),
+    return AppBreadcrumbBar(
+      onBack: onBack,
+      items: [
+        BreadcrumbItem(label: 'Carrito', onTap: onBack),
+        const BreadcrumbItem(label: 'Datos'),
       ],
     );
   }
