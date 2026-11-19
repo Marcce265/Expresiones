@@ -100,6 +100,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   final _guidePreferences = const GuidePreferences();
   final _navigationKeys = List<GlobalKey>.generate(5, (_) => GlobalKey());
   final _assistantButtonKey = GlobalKey();
+  int _catalogSearchRequest = 0;
   CustomerAccountRepository? _customerAccounts;
   StreamSubscription<AuthState>? _customerAuthSubscription;
   CustomerProfile? _customerProfile;
@@ -165,6 +166,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     setState(() {
       _catalogCategory = category;
       _catalogFamilyId = null;
+      _catalogSearchRequest = 0;
       _index = 1;
     });
   }
@@ -173,11 +175,21 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     setState(() {
       _catalogCategory = product.category;
       _catalogFamilyId = product.id;
+      _catalogSearchRequest = 0;
       _index = 1;
     });
   }
 
-  void _showQuote() => setState(() => _index = 2);
+  void _openCatalogSearch() {
+    setState(() {
+      _index = 1;
+      _catalogFamilyId = null;
+      _catalogCategory ??= ProductCategory.materials;
+      _catalogSearchRequest++;
+    });
+  }
+
+  void _showQuote() => _selectDestination(2);
 
   void _showHelp() => setState(() => _index = FeatureFlags.customerAccounts ? 4 : 3);
 
@@ -837,9 +849,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         products: store.products,
         initialCategory: _catalogCategory,
         initialFamilyId: _catalogFamilyId,
+        searchRequest: _catalogSearchRequest,
         onCategoryChanged: (category) => setState(() {
           _catalogCategory = category;
           _catalogFamilyId = null;
+          _catalogSearchRequest = 0;
         }),
         onProduct: _openProduct,
         onBack: () => setState(() => _index = 0),
@@ -876,7 +890,48 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     return LayoutBuilder(
       builder: (context, constraints) {
         final desktop = constraints.maxWidth >= 1024;
+        final showMobileHeader = constraints.maxWidth < 768;
         return Scaffold(
+          appBar: showMobileHeader
+              ? _MobileStoreHeader(
+                  quoteQuantity: store.cartQuantity,
+                  onHome: () => _selectDestination(0),
+                  onSearch: _openCatalogSearch,
+                  onCart: _showQuote,
+                )
+              : null,
+          drawer: showMobileHeader
+              ? Drawer(
+                  child: SafeArea(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      children: [
+                        for (final destination in [
+                          (0, Icons.home_outlined, 'Inicio'),
+                          (1, Icons.grid_view_outlined, 'Catálogo'),
+                          (2, Icons.shopping_bag_outlined, 'Carrito'),
+                          if (FeatureFlags.customerAccounts)
+                            (3, Icons.person_outline_rounded, 'Cuenta'),
+                          (
+                            FeatureFlags.customerAccounts ? 4 : 3,
+                            Icons.help_outline_rounded,
+                            'Ayuda',
+                          ),
+                        ])
+                          ListTile(
+                            leading: Icon(destination.$2),
+                            title: Text(destination.$3),
+                            selected: _index == destination.$1,
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _selectDestination(destination.$1);
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                )
+              : null,
           body: SafeArea(
             child: Row(
               children: [
@@ -922,11 +977,91 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   void _selectDestination(int value) {
     setState(() {
+      _catalogSearchRequest = 0;
       if (value == 1 && _catalogCategory == null) {
         _catalogCategory = ProductCategory.materials;
       }
       _index = value;
     });
+  }
+}
+
+class _MobileStoreHeader extends StatelessWidget
+    implements PreferredSizeWidget {
+  const _MobileStoreHeader({
+    required this.quoteQuantity,
+    required this.onHome,
+    required this.onSearch,
+    required this.onCart,
+  });
+
+  final int quoteQuantity;
+  final VoidCallback onHome;
+  final VoidCallback onSearch;
+  final VoidCallback onCart;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(60);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      toolbarHeight: preferredSize.height,
+      backgroundColor: AppColors.surface,
+      titleSpacing: 8,
+      title: Row(
+        children: [
+          SizedBox(
+            width: 96,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                tooltip: 'Abrir menú',
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                icon: const Icon(Icons.menu_rounded),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: InkWell(
+                onTap: onHome,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Image.asset(
+                    'assets/images/brand/expresiones_mobile.png',
+                    width: 172,
+                    height: 48,
+                    fit: BoxFit.contain,
+                    semanticLabel: 'Expresiones, ir al inicio',
+                  ),
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Buscar productos',
+            onPressed: onSearch,
+            icon: const Icon(Icons.search_rounded),
+          ),
+          IconButton(
+            tooltip: 'Abrir carrito',
+            onPressed: onCart,
+            icon: Badge.count(
+              count: quoteQuantity,
+              isLabelVisible: quoteQuantity > 0,
+              child: const Icon(Icons.shopping_bag_outlined),
+            ),
+          ),
+        ],
+      ),
+      bottom: const PreferredSize(
+        preferredSize: Size.zero,
+        child: Divider(height: 1, color: AppColors.border),
+      ),
+    );
   }
 }
 

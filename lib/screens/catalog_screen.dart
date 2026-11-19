@@ -25,6 +25,7 @@ class CatalogScreen extends StatefulWidget {
     this.settings = const StorefrontSettings(),
     this.initialCategory,
     this.initialFamilyId,
+    this.searchRequest = 0,
     this.onCategoryChanged,
     this.onZeroResultSearch,
   });
@@ -32,6 +33,7 @@ class CatalogScreen extends StatefulWidget {
   final List<CatalogProduct> products;
   final ProductCategory? initialCategory;
   final String? initialFamilyId;
+  final int searchRequest;
   final ValueChanged<ProductCategory>? onCategoryChanged;
   final ProductSelected onProduct;
   final VoidCallback onBack;
@@ -46,6 +48,7 @@ class CatalogScreen extends StatefulWidget {
 
 class _CatalogScreenState extends State<CatalogScreen> {
   final _searchController = TextEditingController();
+  final _searchFocus = FocusNode();
   final Set<String> _reportedEmptySearches = {};
   Timer? _searchDebounce;
   Timer? _telemetryDebounce;
@@ -58,6 +61,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
     super.initState();
     _selectedCategory = widget.initialCategory ?? ProductCategory.materials;
     _selectedFamilyId = widget.initialFamilyId;
+    if (widget.searchRequest > 0) _focusSearchAfterLayout();
   }
 
   @override
@@ -65,12 +69,17 @@ class _CatalogScreenState extends State<CatalogScreen> {
     _searchDebounce?.cancel();
     _telemetryDebounce?.cancel();
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
   @override
   void didUpdateWidget(covariant CatalogScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.searchRequest > 0 &&
+        oldWidget.searchRequest != widget.searchRequest) {
+      _focusSearchAfterLayout();
+    }
     if (widget.initialCategory != null &&
         widget.initialCategory != oldWidget.initialCategory &&
         widget.initialCategory != _selectedCategory) {
@@ -175,6 +184,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       ],
                       TextField(
                         controller: _searchController,
+                        focusNode: _searchFocus,
                         onChanged: _onSearchChanged,
                         onSubmitted: _onSearchSubmitted,
                         decoration: InputDecoration(
@@ -294,6 +304,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
       }
     }
     return null;
+  }
+
+  void _focusSearchAfterLayout() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _searchFocus.requestFocus();
+    });
   }
 
   void _onSearchChanged(String value) {

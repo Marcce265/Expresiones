@@ -714,37 +714,39 @@ class StoreFooter extends StatelessWidget {
   }
 
   Widget _paymentsAndClaimsBlock(BuildContext context) {
+    final mobile = MediaQuery.sizeOf(context).width < 768;
+    final logoSize = mobile ? 32.0 : 48.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _columnHeading('Formas de pago'),
         const SizedBox(height: 12),
         Wrap(
-          spacing: 10,
-          runSpacing: 10,
+          spacing: mobile ? 8 : 10,
+          runSpacing: mobile ? 8 : 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _paymentLogoCard(
               'assets/images/payments/yape_sq.webp',
               'Yape',
-              width: 48,
-              height: 48,
+              width: logoSize,
+              height: logoSize,
               padding: EdgeInsets.zero,
               fit: BoxFit.cover,
             ),
             _paymentLogoCard(
               'assets/images/payments/plin_sq.webp',
               'Plin',
-              width: 48,
-              height: 48,
+              width: logoSize,
+              height: logoSize,
               padding: EdgeInsets.zero,
               fit: BoxFit.cover,
             ),
             _paymentLogoCard(
               'assets/images/payments/interbank_sq.webp',
               'Interbank',
-              width: 48,
-              height: 48,
+              width: logoSize,
+              height: logoSize,
               padding: EdgeInsets.zero,
               fit: BoxFit.cover,
             ),

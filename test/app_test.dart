@@ -300,6 +300,52 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('la cabecera móvil abre el menú y enfoca la búsqueda', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    await const GuidePreferences().markOnboardingSeen();
+    final store = AppStore(() async => seedCatalogProducts);
+    await store.initialize();
+
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 720);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(value: store, child: const ExpresionesApp()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('Expresiones, ir al inicio'), findsOneWidget);
+    await tester.tap(find.byTooltip('Abrir menú'));
+    await tester.pumpAndSettle();
+    final drawer = find.byType(Drawer);
+    expect(drawer, findsOneWidget);
+    await tester.tap(
+      find.descendant(of: drawer, matching: find.text('Catálogo')),
+    );
+    await tester.pumpAndSettle();
+    expect(drawer, findsNothing);
+
+    await tester.tap(find.byTooltip('Buscar productos'));
+    await tester.pumpAndSettle();
+    final field = find.descendant(
+      of: find.byType(CatalogScreen),
+      matching: find.byType(TextField),
+    );
+    expect(tester.widget<TextField>(field).focusNode?.hasFocus, isTrue);
+
+    await tester.tap(find.byTooltip('Abrir carrito'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tu carrito está vacío'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    tester.view.physicalSize = const Size(1280, 800);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Abrir menú'), findsNothing);
+  });
+
   testWidgets(
     'la portada pública usa la imagen configurada por administración',
     (tester) async {
