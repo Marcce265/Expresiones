@@ -967,11 +967,15 @@ class _MobileNavigation extends StatelessWidget {
           icon: Badge.count(
             count: quoteQuantity,
             isLabelVisible: quoteQuantity > 0,
+            backgroundColor: AppColors.pinkSoft,
+            textColor: AppColors.ink,
             child: const Icon(Icons.shopping_bag_outlined),
           ),
           selectedIcon: Badge.count(
             count: quoteQuantity,
             isLabelVisible: quoteQuantity > 0,
+            backgroundColor: AppColors.pinkSoft,
+            textColor: AppColors.ink,
             child: const Icon(Icons.shopping_bag_rounded),
           ),
           label: 'Carrito',
@@ -1272,7 +1276,8 @@ class _DesktopNavigationItemState extends State<_DesktopNavigationItem> {
                     Badge.count(
                       count: widget.badgeCount,
                       isLabelVisible: widget.badgeCount > 0,
-                      backgroundColor: AppColors.pinkStrong,
+                      backgroundColor: AppColors.pinkSoft,
+                      textColor: AppColors.ink,
                       child:
                           widget.iconWidget ??
                           Icon(widget.icon, size: 20, color: fgColor),

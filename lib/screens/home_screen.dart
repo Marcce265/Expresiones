@@ -355,7 +355,8 @@ class _TopBar extends StatelessWidget {
           Badge.count(
             count: quoteQuantity,
             isLabelVisible: quoteQuantity > 0,
-            backgroundColor: AppColors.pinkStrong,
+            backgroundColor: AppColors.pinkSoft,
+            textColor: AppColors.ink,
             child: constraints.maxWidth >= 560
                 ? OutlinedButton.icon(
                     onPressed: onOpenQuote,
@@ -506,7 +507,7 @@ class _HeroBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFFF6E8E4),
+        color: AppColors.pinkSoft,
         borderRadius: BorderRadius.circular(99),
       ),
       child: Padding(
@@ -517,7 +518,7 @@ class _HeroBadge extends StatelessWidget {
             const Icon(
               Icons.auto_awesome_rounded,
               size: 11,
-              color: Color(0xFFA84B5A),
+              color: AppColors.pinkStrong,
             ),
             const SizedBox(width: 5),
             Flexible(
@@ -572,7 +573,7 @@ class _HomeHeadline extends StatelessWidget {
           TextSpan(
             text: title.substring(accentStart, accentEnd),
             style: const TextStyle(
-              color: Color(0xFFA84B5A),
+              color: AppColors.pinkStrong,
               fontStyle: FontStyle.italic,
               fontWeight: FontWeight.w500,
             ),
@@ -777,8 +778,8 @@ class _HomeTrustRow extends StatelessWidget {
   static const _items = [
     _TrustContent(
       icon: Icons.check_rounded,
-      iconBackground: Color(0xFFFBECEF),
-      iconColor: Color(0xFFB64D66),
+      iconBackground: AppColors.pinkSoft,
+      iconColor: AppColors.pinkStrong,
       title: 'Cotiza sin registro',
       description: 'Selecciona los productos y coordina directamente sin contraseñas ni registros forzados.',
     ),
@@ -933,7 +934,7 @@ class _FeaturedHeader extends StatelessWidget {
         TextButton.icon(
           onPressed: onAction,
           style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFFA84B5A),
+            foregroundColor: AppColors.pinkStrong,
             minimumSize: const Size(0, 36),
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
             textStyle: const TextStyle(

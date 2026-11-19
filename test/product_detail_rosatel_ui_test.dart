@@ -111,8 +111,10 @@ void main() {
     expect(find.text('¿Buscas un diseño o pedido a medida?'), findsNothing);
     expect(find.byType(StoreFooter), findsOneWidget);
     expect(find.text('Formas de pago'), findsOneWidget);
-    expect(find.text('Libro de\nReclamaciones'), findsOneWidget);
+    expect(find.byTooltip('Libro de Reclamaciones'), findsOneWidget);
     expect(find.byTooltip('Yape'), findsOneWidget);
+    expect(find.byTooltip('Plin'), findsOneWidget);
+    expect(find.byTooltip('Interbank'), findsOneWidget);
 
     // 9. Jashy presente en la pantalla de detalle
     expect(find.byType(AssistantHelpButton), findsOneWidget);

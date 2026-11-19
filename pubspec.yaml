@@ -89,7 +89,8 @@ flutter:
     # Portadas editoriales agrupadas de módulos con muchas opciones.
     - assets/images/module_covers/
     - assets/images/korean_paper/
-    # Logotipos e insignias de formas de pago
+    # Logotipos estáticos de marca, Libro de Reclamaciones y formas de pago (WebP)
+    - assets/images/brand/
     - assets/images/payments/
     # Las fotos de productos ya se sirven directamente desde Supabase Storage:
     # https://wxoaedvqeuynzinzazsj.supabase.co/storage/v1/object/public/catalog/images/

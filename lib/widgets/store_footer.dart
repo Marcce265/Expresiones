@@ -338,8 +338,8 @@ class StoreFooter extends StatelessWidget {
   final String? whatsappNumber;
   final StorefrontSettings settings;
 
-  static const Color _footerBg = Color(0xFFFCEEEF);
-  static const Color _footerDivider = Color(0xFFF0D5DC);
+  static const Color _footerBg = Color(0xFFFDECE2);
+  static const Color _footerDivider = Color(0xFFF3CCB5);
 
   Future<void> _openWhatsapp() async {
     if (onContact != null) {
@@ -482,12 +482,17 @@ class StoreFooter extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('🌸', style: TextStyle(fontSize: 22)),
-            const SizedBox(width: 8),
-            Text(
+        Semantics(
+          label: 'Expresiones',
+          image: true,
+          child: Image.asset(
+            'assets/images/brand/expresiones_wordmark.webp',
+            height: 44,
+            fit: BoxFit.contain,
+            alignment: Alignment.centerLeft,
+            filterQuality: FilterQuality.medium,
+            semanticLabel: 'Expresiones',
+            errorBuilder: (context, error, stackTrace) => Text(
               'Expresiones',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontFamily: 'PlusJakartaSans',
@@ -496,7 +501,7 @@ class StoreFooter extends StatelessWidget {
                 fontSize: 22,
               ),
             ),
-          ],
+          ),
         ),
         const SizedBox(height: 12),
         Text(
@@ -515,8 +520,8 @@ class StoreFooter extends StatelessWidget {
                 size: const Size(17, 17),
                 painter: FacebookBrandPainter(color: AppColors.ink),
               ),
-              'Facebook: Expresiones Huancayo',
-              'https://facebook.com/expresioneshuancayo',
+              'Facebook: Expresiones',
+              'https://www.facebook.com/profile.php?id=61574939932181',
             ),
             const SizedBox(width: 10),
             _socialCircle(
@@ -524,8 +529,8 @@ class StoreFooter extends StatelessWidget {
                 size: const Size(17, 17),
                 painter: InstagramBrandPainter(color: AppColors.ink),
               ),
-              'Instagram: @expresiones_huancayo',
-              'https://instagram.com/expresiones_huancayo',
+              'Instagram: @expreciones_eternas',
+              'https://www.instagram.com/expreciones_eternas',
             ),
             const SizedBox(width: 10),
             _socialCircle(
@@ -533,8 +538,8 @@ class StoreFooter extends StatelessWidget {
                 size: const Size(17, 17),
                 painter: TikTokBrandPainter(color: AppColors.ink),
               ),
-              'TikTok: @expresiones_huancayo',
-              'https://tiktok.com/@expresiones_huancayo',
+              'TikTok: @expresiones_eternas',
+              'https://www.tiktok.com/@expresiones_eternas',
             ),
           ],
         ),
@@ -715,73 +720,96 @@ class StoreFooter extends StatelessWidget {
         _columnHeading('Formas de pago'),
         const SizedBox(height: 12),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 10,
+          runSpacing: 10,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            _paymentImage(
+            _paymentLogoCard(
               'assets/images/payments/yape.webp',
               'Yape',
-              width: 68,
-              height: 26,
+              width: 38,
+              height: 38,
+              padding: EdgeInsets.zero,
+              fit: BoxFit.cover,
             ),
-            _paymentImage(
+            _paymentLogoCard(
               'assets/images/payments/plin.webp',
               'Plin',
-              width: 68,
-              height: 26,
+              width: 38,
+              height: 38,
+              padding: const EdgeInsets.all(4),
+              fit: BoxFit.contain,
             ),
-            _paymentImage(
+            _paymentLogoCard(
               'assets/images/payments/interbank.webp',
               'Interbank',
-              width: 82,
-              height: 26,
+              width: 112,
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              fit: BoxFit.contain,
             ),
           ],
         ),
         const SizedBox(height: 18),
-        InkWell(
-          onTap: () => showLegalDocumentDialog(
-            context,
-            initialSection: LegalDocumentSection.claimsBook,
-            settings: settings,
-          ),
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            width: 178,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
+        Tooltip(
+          message: 'Libro de Reclamaciones',
+          child: Semantics(
+            button: true,
+            label: 'Libro de Reclamaciones',
+            child: InkWell(
+              onTap: () => showLegalDocumentDialog(
+                context,
+                initialSection: LegalDocumentSection.claimsBook,
+                settings: settings,
+              ),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.pinkStrong, width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+              child: Container(
+                width: 178,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
                 ),
-              ],
-            ),
-            child: const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Libro de\nReclamaciones',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF0D6EFD),
-                    height: 1.2,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.pinkStrong, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  'assets/images/brand/libro_reclamaciones.webp',
+                  height: 76,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.medium,
+                  semanticLabel: 'Libro de Reclamaciones',
+                  errorBuilder: (context, error, stackTrace) => const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Libro de\nReclamaciones',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0D6EFD),
+                          height: 1.2,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Icon(
+                        Icons.menu_book_rounded,
+                        size: 30,
+                        color: AppColors.ink,
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(height: 6),
-                Icon(
-                  Icons.menu_book_rounded,
-                  size: 32,
-                  color: Color(0xFF5A6577),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -789,17 +817,24 @@ class StoreFooter extends StatelessWidget {
     );
   }
 
-  Widget _paymentImage(
+  Widget _paymentLogoCard(
     String asset,
     String label, {
-    double width = 72,
-    double height = 26,
+    required double width,
+    required double height,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(4),
+    BoxFit fit = BoxFit.contain,
   }) {
     return Tooltip(
       message: label,
       child: Container(
+        width: width,
+        height: height,
+        padding: padding,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: _footerDivider),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -809,12 +844,11 @@ class StoreFooter extends StatelessWidget {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(padding == EdgeInsets.zero ? 9 : 4),
           child: Image.asset(
             asset,
-            width: width,
-            height: height,
-            fit: BoxFit.contain,
+            fit: fit,
+            filterQuality: FilterQuality.medium,
             semanticLabel: label,
             errorBuilder: (context, error, stackTrace) => _paymentBadge(label),
           ),
