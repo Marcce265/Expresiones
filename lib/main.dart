@@ -296,12 +296,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           return LayoutBuilder(
             builder: (context, constraints) {
               final desktop = constraints.maxWidth >= 1024;
-              return Scaffold(
-                body: SafeArea(
-                  child: Column(
-                    children: [
-                      if (desktop)
-                        _StoreTopHeader(
+              if (desktop) {
+                return Scaffold(
+                  body: SafeArea(
+                    child: Row(
+                      children: [
+                        _DesktopNavigation(
                           settings: store.storefrontSettings,
                           currentIndex: _index,
                           catalogCategory: product.category,
@@ -315,14 +315,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                             _showCatalog(category);
                           },
                           itemKeys: null,
-                        )
-                      else
-                        const _AnnouncementStrip(),
-                      Expanded(child: detailScreen),
-                    ],
+                        ),
+                        Expanded(child: detailScreen),
+                      ],
+                    ),
                   ),
-                ),
-              );
+                );
+              }
+
+              return Scaffold(body: SafeArea(child: detailScreen));
             },
           );
         },
@@ -475,23 +476,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
         return Scaffold(
           body: SafeArea(
-            child: Column(
+            child: Row(
               children: [
                 if (desktop)
-                  _StoreTopHeader(
+                  _DesktopNavigation(
                     settings: store.storefrontSettings,
                     currentIndex: 2,
                     quoteQuantity: store.cartQuantity,
                     onSelect: leaveCheckout,
-                    onSelectCatalogCategory: (category) {
-                      Navigator.of(
-                        routeContext,
-                      ).popUntil((route) => route.isFirst);
-                      _showCatalog(category);
-                    },
-                  )
-                else
-                  const _AnnouncementStrip(),
+                  ),
                 Expanded(child: child),
               ],
             ),
@@ -885,10 +878,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         final desktop = constraints.maxWidth >= 1024;
         return Scaffold(
           body: SafeArea(
-            child: Column(
+            child: Row(
               children: [
                 if (desktop)
-                  _StoreTopHeader(
+                  _DesktopNavigation(
                     settings: store.storefrontSettings,
                     currentIndex: _index,
                     catalogCategory: _catalogCategory,
@@ -896,9 +889,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     onSelect: _selectDestination,
                     onSelectCatalogCategory: _showCatalog,
                     itemKeys: _navigationKeys,
-                  )
-                else
-                  const _AnnouncementStrip(),
+                  ),
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 220),
@@ -1003,33 +994,39 @@ class _MobileNavigation extends StatelessWidget {
   }
 }
 
-class _AnnouncementStrip extends StatelessWidget {
-  const _AnnouncementStrip();
+class _NavSectionDivider extends StatelessWidget {
+  const _NavSectionDivider({required this.label});
+
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: AppColors.announcementBar,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-      child: Text(
-        'Envíos a todo el Perú por Shalom · Recojo en tienda en Huancayo',
-        textAlign: TextAlign.center,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: AppColors.ink,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.15,
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+      child: Row(
+        children: [
+          const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.1,
+              ),
+            ),
+          ),
+          const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+        ],
       ),
     );
   }
 }
 
-class _StoreTopHeader extends StatelessWidget {
-  const _StoreTopHeader({
+class _DesktopNavigation extends StatelessWidget {
+  const _DesktopNavigation({
     required this.settings,
     required this.currentIndex,
     required this.quoteQuantity,
@@ -1057,216 +1054,242 @@ class _StoreTopHeader extends StatelessWidget {
     final isKoreanPaperSelected =
         currentIndex == 1 && catalogCategory == ProductCategory.koreanPaper;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const _AnnouncementStrip(),
-        Container(
-          width: double.infinity,
-          decoration: const BoxDecoration(
-            color: AppColors.canvas,
-            border: Border(bottom: BorderSide(color: AppColors.border)),
-          ),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1320),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 28,
-                  vertical: 14,
+    return Container(
+      width: 248,
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(right: BorderSide(color: AppColors.border)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 22, 16, 18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Semantics(
+                label: settings.text(StorefrontText.brandName),
+                header: true,
+                child: Image.asset(
+                  'assets/images/brand_lockup_black.webp',
+                  width: 140,
+                  height: 140,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
+                  excludeFromSemantics: true,
                 ),
-                child: Row(
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Semantics(
-                      label: settings.text(StorefrontText.brandName),
-                      header: true,
-                      button: true,
-                      child: InkWell(
-                        onTap: () => onSelect(0),
-                        borderRadius: BorderRadius.circular(10),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
-                          ),
-                          child: Image.asset(
-                            'assets/images/brand/expresiones_wordmark.webp',
-                            height: 36,
-                            fit: BoxFit.contain,
-                            filterQuality: FilterQuality.medium,
-                            errorBuilder: (_, _, _) => Text(
-                              settings.text(StorefrontText.brandName),
-                              style: Theme.of(context).textTheme.headlineMedium,
-                            ),
-                          ),
-                        ),
-                      ),
+                    _DesktopNavigationItem(
+                      key: itemKeys?[0],
+                      icon: currentIndex == 0
+                          ? Icons.home_rounded
+                          : Icons.home_outlined,
+                      label: 'Inicio',
+                      selected: currentIndex == 0,
+                      onTap: () => onSelect(0),
                     ),
-                    const Spacer(),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _HeaderNavLink(
-                          key: itemKeys?[0],
-                          label: 'INICIO',
-                          selected: currentIndex == 0,
-                          pillHighlight: true,
-                          onTap: () => onSelect(0),
-                        ),
-                        const SizedBox(width: 8),
-                        _HeaderNavLink(
-                          key: itemKeys?[1],
-                          label: 'MATERIALES',
-                          selected: isMaterialsSelected,
-                          onTap: () => onSelectCatalogCategory != null
-                              ? onSelectCatalogCategory!(
-                                  ProductCategory.materials,
-                                )
-                              : onSelect(1),
-                        ),
-                        const SizedBox(width: 8),
-                        _HeaderNavLink(
-                          label: 'PAPEL COREANO',
-                          selected: isKoreanPaperSelected,
-                          onTap: () => onSelectCatalogCategory != null
-                              ? onSelectCatalogCategory!(
-                                  ProductCategory.koreanPaper,
-                                )
-                              : onSelect(1),
-                        ),
-                        if (FeatureFlags.customerAccounts) ...[
-                          const SizedBox(width: 8),
-                          _HeaderNavLink(
-                            key: itemKeys?[3],
-                            label: 'CUENTA',
-                            selected: currentIndex == 3,
-                            onTap: () => onSelect(3),
-                          ),
-                        ],
-                        const SizedBox(width: 8),
-                        _HeaderNavLink(
-                          key: itemKeys?[helpIndex],
-                          label: 'AYUDA',
-                          selected: currentIndex == helpIndex,
-                          onTap: () => onSelect(helpIndex),
-                        ),
-                      ],
+                    const SizedBox(height: 6),
+                    const _NavSectionDivider(label: 'PARA EMPRENDER'),
+                    const SizedBox(height: 4),
+                    _DesktopNavigationItem(
+                      key: itemKeys?[1],
+                      icon: isMaterialsSelected
+                          ? Icons.auto_awesome_rounded
+                          : Icons.auto_awesome_outlined,
+                      label: 'Materiales',
+                      selected: isMaterialsSelected,
+                      onTap: () => onSelectCatalogCategory != null
+                          ? onSelectCatalogCategory!(ProductCategory.materials)
+                          : onSelect(1),
                     ),
-                    const Spacer(),
-                    Tooltip(
-                      message: 'Mi carrito',
-                      child: InkWell(
-                        key: itemKeys?[2],
-                        onTap: () => onSelect(2),
-                        borderRadius: BorderRadius.circular(99),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: currentIndex == 2
-                                ? AppColors.pinkSoft
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(99),
-                            border: Border.all(
-                              color: currentIndex == 2
-                                  ? AppColors.announcementBar
-                                  : Colors.transparent,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Badge.count(
-                                count: quoteQuantity,
-                                isLabelVisible: quoteQuantity > 0,
-                                backgroundColor: AppColors.pinkStrong,
-                                child: const Icon(
-                                  Icons.shopping_bag_outlined,
-                                  size: 21,
-                                  color: AppColors.ink,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                    const SizedBox(height: 4),
+                    _DesktopNavigationItem(
+                      icon: isKoreanPaperSelected
+                          ? Icons.layers_rounded
+                          : Icons.layers_outlined,
+                      label: 'Papel Coreano',
+                      selected: isKoreanPaperSelected,
+                      onTap: () => onSelectCatalogCategory != null
+                          ? onSelectCatalogCategory!(
+                              ProductCategory.koreanPaper,
+                            )
+                          : onSelect(1),
+                    ),
+                    const SizedBox(height: 6),
+                    const _NavSectionDivider(label: 'MI PEDIDO'),
+                    const SizedBox(height: 4),
+                    _DesktopNavigationItem(
+                      key: itemKeys?[2],
+                      icon: currentIndex == 2
+                          ? Icons.shopping_bag_rounded
+                          : Icons.shopping_bag_outlined,
+                      label: 'Carrito',
+                      selected: currentIndex == 2,
+                      badgeCount: quoteQuantity,
+                      onTap: () => onSelect(2),
+                    ),
+                    if (FeatureFlags.customerAccounts) ...[
+                      const SizedBox(height: 4),
+                      _DesktopNavigationItem(
+                        key: itemKeys?[3],
+                        icon: currentIndex == 3
+                            ? Icons.person_rounded
+                            : Icons.person_outline_rounded,
+                        label: 'Cuenta',
+                        selected: currentIndex == 3,
+                        onTap: () => onSelect(3),
                       ),
+                    ],
+                    const SizedBox(height: 6),
+                    const _NavSectionDivider(label: 'SOPORTE'),
+                    const SizedBox(height: 4),
+                    _DesktopNavigationItem(
+                      key: itemKeys?[helpIndex],
+                      icon: currentIndex == helpIndex
+                          ? Icons.help_rounded
+                          : Icons.help_outline_rounded,
+                      label: 'Ayuda',
+                      selected: currentIndex == helpIndex,
+                      onTap: () => onSelect(helpIndex),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.pinkSoft,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    FeatureFlags.customerAccounts
+                        ? Icons.account_circle_outlined
+                        : Icons.lock_open_rounded,
+                    size: 20,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    FeatureFlags.customerAccounts
+                        ? settings.text(StorefrontText.homeSidebarTitle)
+                        : 'Cotiza libremente',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    FeatureFlags.customerAccounts
+                        ? settings.text(StorefrontText.homeSidebarBody)
+                        : 'Elige materiales y prepara tu cotización sin iniciar sesión.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
 
-class _HeaderNavLink extends StatefulWidget {
-  const _HeaderNavLink({
+class _DesktopNavigationItem extends StatefulWidget {
+  const _DesktopNavigationItem({
     super.key,
+    this.icon,
+    this.iconWidget,
     required this.label,
     required this.selected,
     required this.onTap,
-    this.pillHighlight = false,
-  });
+    this.badgeCount = 0,
+  }) : assert(icon != null || iconWidget != null);
 
+  final IconData? icon;
+  final Widget? iconWidget;
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  final bool pillHighlight;
+  final int badgeCount;
 
   @override
-  State<_HeaderNavLink> createState() => _HeaderNavLinkState();
+  State<_DesktopNavigationItem> createState() => _DesktopNavigationItemState();
 }
 
-class _HeaderNavLinkState extends State<_HeaderNavLink> {
-  bool _hovered = false;
+class _DesktopNavigationItemState extends State<_DesktopNavigationItem> {
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = widget.selected
-        ? AppColors.announcementBar.withValues(alpha: 0.72)
-        : widget.pillHighlight
-        ? AppColors.announcementBar.withValues(alpha: _hovered ? 0.55 : 0.35)
-        : (_hovered
-              ? AppColors.pinkSoft
+    final isSelected = widget.selected;
+    final bgColor = isSelected
+        ? AppColors.ink
+        : (_isHovered
+              ? AppColors.pinkSoft.withValues(alpha: 0.6)
               : Colors.transparent);
+    final fgColor = isSelected ? Colors.white : AppColors.ink;
 
     return Semantics(
-      selected: widget.selected,
+      selected: isSelected,
       button: true,
       child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
         cursor: SystemMouseCursors.click,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(99),
-            hoverColor: Colors.transparent,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 140),
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(99),
-              ),
-              child: Text(
-                widget.label,
-                style: TextStyle(
-                  fontFamily: AppTheme.bodyFont,
-                  fontSize: 12,
-                  letterSpacing: 0.9,
-                  fontWeight: widget.selected
-                      ? FontWeight.w700
-                      : FontWeight.w600,
-                  color: widget.selected
-                      ? AppColors.ink
-                      : (_hovered ? AppColors.pinkStrong : AppColors.ink),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              onTap: widget.onTap,
+              canRequestFocus: false,
+              borderRadius: BorderRadius.circular(14),
+              hoverColor: Colors.transparent,
+              focusColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    Badge.count(
+                      count: widget.badgeCount,
+                      isLabelVisible: widget.badgeCount > 0,
+                      backgroundColor: AppColors.pinkStrong,
+                      child:
+                          widget.iconWidget ??
+                          Icon(widget.icon, size: 20, color: fgColor),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.label,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: fgColor,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

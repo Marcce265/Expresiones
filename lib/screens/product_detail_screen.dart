@@ -487,8 +487,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   ),
                                 ),
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: AppColors.pinkStrong,
-                                  foregroundColor: Colors.white,
                                   shape: const StadiumBorder(),
                                 ),
                               ),

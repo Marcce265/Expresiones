@@ -337,19 +337,21 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final usesDesktopNavigation = MediaQuery.sizeOf(context).width >= 1024;
-    if (usesDesktopNavigation) return const SizedBox.shrink();
     return LayoutBuilder(
       builder: (context, constraints) => Row(
         children: [
-          Expanded(
-            child: Text(
-              settings.text(StorefrontText.brandName),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.w500,
+          if (!usesDesktopNavigation)
+            Expanded(
+              child: Text(
+                settings.text(StorefrontText.brandName),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ),
+            )
+          else
+            const Spacer(),
           Badge.count(
             count: quoteQuantity,
             isLabelVisible: quoteQuantity > 0,
@@ -554,7 +556,7 @@ class _HomeHeadline extends StatelessWidget {
             TextSpan(
               text: title.substring(accentStart, accentEnd),
               style: const TextStyle(
-                color: AppColors.sage,
+                color: AppColors.pinkStrong,
                 fontStyle: FontStyle.italic,
                 fontWeight: FontWeight.w400,
               ),
@@ -567,7 +569,7 @@ class _HomeHeadline extends StatelessWidget {
       );
     }
 
-    // Estilo editorial Amapolas: la última palabra del titular en itálica verde salvia
+    // Palabra clave en itálica rosada editorial
     final trimmed = title.trim();
     final lastSpace = trimmed.lastIndexOf(' ');
     if (lastSpace > 0 && lastSpace < trimmed.length - 1) {
@@ -579,7 +581,7 @@ class _HomeHeadline extends StatelessWidget {
             TextSpan(
               text: trimmed.substring(lastSpace + 1),
               style: const TextStyle(
-                color: AppColors.sage,
+                color: AppColors.pinkStrong,
                 fontStyle: FontStyle.italic,
                 fontWeight: FontWeight.w400,
               ),
@@ -673,7 +675,7 @@ class _HomeSearchField extends StatelessWidget {
               child: FilledButton(
                 onPressed: () => onSubmitted(controller.text),
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.pinkStrong,
+                  backgroundColor: AppColors.ink,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(78, 36),
                   padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
-  static const canvas = Color(0xFFF8F5ED);
-  static const surface = Color(0xFFFFFFFF);
-  static const ink = Color(0xFF2C4132);
-  static const muted = Color(0xFF6A7972);
-  static const border = Color(0xFFE7E1D6);
-  static const pinkSoft = Color(0xFFF5E9E6);
-  static const pinkStrong = Color(0xFFA84A63);
-  static const accentHover = Color(0xFF923F55);
-  static const announcementBar = Color(0xFFDDB7AC);
-  static const sage = Color(0xFF6F8C6D);
+  static const canvas = Color(0xFFF7F4EF);
+  static const surface = Color(0xFFFFFEFC);
+  static const ink = Color(0xFF191816);
+  static const muted = Color(0xFF7B7771);
+  static const border = Color(0xFFE3DED6);
+  static const pinkSoft = Color(0xFFF7E5EB);
+  static const pinkStrong = Color(0xFFD76582);
   static const whatsapp = Color(0xFF218A5B);
   static const error = Color(0xFFB42318);
 }

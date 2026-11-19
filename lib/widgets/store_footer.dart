@@ -338,8 +338,8 @@ class StoreFooter extends StatelessWidget {
   final String? whatsappNumber;
   final StorefrontSettings settings;
 
-  static const Color _footerBg = Color(0xFFF3EAE4);
-  static const Color _footerDivider = Color(0xFFE3D5CC);
+  static const Color _footerBg = Color(0xFFFCEEEF);
+  static const Color _footerDivider = Color(0xFFF0D5DC);
 
   Future<void> _openWhatsapp() async {
     if (onContact != null) {
@@ -727,24 +727,24 @@ class StoreFooter extends StatelessWidget {
             _paymentLogoCard(
               'assets/images/payments/yape.webp',
               'Yape',
-              width: 44,
-              height: 44,
+              width: 48,
+              height: 48,
               padding: EdgeInsets.zero,
               fit: BoxFit.cover,
             ),
             _paymentLogoCard(
               'assets/images/payments/plin.webp',
               'Plin',
-              width: 44,
-              height: 44,
+              width: 48,
+              height: 48,
               padding: EdgeInsets.zero,
               fit: BoxFit.cover,
             ),
             _paymentLogoCard(
               'assets/images/payments/interbank.webp',
               'Interbank',
-              width: 44,
-              height: 44,
+              width: 48,
+              height: 48,
               padding: EdgeInsets.zero,
               fit: BoxFit.cover,
             ),
