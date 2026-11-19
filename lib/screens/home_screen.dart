@@ -337,21 +337,19 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final usesDesktopNavigation = MediaQuery.sizeOf(context).width >= 1024;
+    if (usesDesktopNavigation) return const SizedBox.shrink();
     return LayoutBuilder(
       builder: (context, constraints) => Row(
         children: [
-          if (!usesDesktopNavigation)
-            Expanded(
-              child: Text(
-                settings.text(StorefrontText.brandName),
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w500,
-                ),
+          Expanded(
+            child: Text(
+              settings.text(StorefrontText.brandName),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w500,
               ),
-            )
-          else
-            const Spacer(),
+            ),
+          ),
           Badge.count(
             count: quoteQuantity,
             isLabelVisible: quoteQuantity > 0,
@@ -504,37 +502,25 @@ class _HeroBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6E8E4),
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.auto_awesome_rounded,
-              size: 11,
-              color: Color(0xFFA84B5A),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: Text(
+            label.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              fontSize: 10.5,
+              letterSpacing: 1.8,
+              fontWeight: FontWeight.w600,
+              color: AppColors.muted,
             ),
-            const SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontSize: 10,
-                  letterSpacing: 0,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        const SizedBox(width: 12),
+        Container(width: 38, height: 1, color: AppColors.border),
+      ],
     );
   }
 }
@@ -547,41 +533,69 @@ class _HomeHeadline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baseStyle = Theme.of(context).textTheme.displaySmall?.copyWith(
+      fontFamily: AppTheme.displayFont,
+      fontSize: compact ? 31 : 38,
+      height: 1.12,
+      fontWeight: FontWeight.w500,
+      letterSpacing: compact ? -0.35 : -0.5,
+      color: AppColors.ink,
+    );
+
     const accentText = 'crear y expresar';
     final accentStart = title.toLowerCase().indexOf(accentText);
-    final baseStyle = Theme.of(context).textTheme.displaySmall?.copyWith(
-      fontSize: compact ? 32 : 36,
-      height: 1.03,
-      fontWeight: FontWeight.w600,
-      letterSpacing: compact ? -0.45 : -0.7,
-    );
-    if (accentStart < 0) {
-      return Text(
-        title,
+    if (accentStart >= 0) {
+      final accentEnd = accentStart + accentText.length;
+      return Text.rich(
+        TextSpan(
+          style: baseStyle,
+          children: [
+            TextSpan(text: title.substring(0, accentStart)),
+            TextSpan(
+              text: title.substring(accentStart, accentEnd),
+              style: const TextStyle(
+                color: AppColors.sage,
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            TextSpan(text: title.substring(accentEnd)),
+          ],
+        ),
         maxLines: compact ? 4 : 3,
         overflow: TextOverflow.ellipsis,
-        style: baseStyle,
       );
     }
-    final accentEnd = accentStart + accentText.length;
-    return Text.rich(
-      TextSpan(
-        style: baseStyle,
-        children: [
-          TextSpan(text: title.substring(0, accentStart)),
-          TextSpan(
-            text: title.substring(accentStart, accentEnd),
-            style: const TextStyle(
-              color: Color(0xFFA84B5A),
-              fontStyle: FontStyle.italic,
-              fontWeight: FontWeight.w500,
+
+    // Estilo editorial Amapolas: la última palabra del titular en itálica verde salvia
+    final trimmed = title.trim();
+    final lastSpace = trimmed.lastIndexOf(' ');
+    if (lastSpace > 0 && lastSpace < trimmed.length - 1) {
+      return Text.rich(
+        TextSpan(
+          style: baseStyle,
+          children: [
+            TextSpan(text: trimmed.substring(0, lastSpace + 1)),
+            TextSpan(
+              text: trimmed.substring(lastSpace + 1),
+              style: const TextStyle(
+                color: AppColors.sage,
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w400,
+              ),
             ),
-          ),
-          TextSpan(text: title.substring(accentEnd)),
-        ],
-      ),
+          ],
+        ),
+        maxLines: compact ? 4 : 3,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    return Text(
+      title,
       maxLines: compact ? 4 : 3,
       overflow: TextOverflow.ellipsis,
+      style: baseStyle,
     );
   }
 }
@@ -606,15 +620,15 @@ class _HomeSearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 44,
+      height: 46,
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(999),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
-          const SizedBox(width: 11),
+          const SizedBox(width: 14),
           const Icon(Icons.search_rounded, size: 19, color: AppColors.muted),
           const SizedBox(width: 8),
           Expanded(
@@ -623,12 +637,15 @@ class _HomeSearchField extends StatelessWidget {
               onChanged: onChanged,
               onSubmitted: onSubmitted,
               textInputAction: TextInputAction.search,
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: AppColors.ink, fontSize: 11),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.ink, fontSize: 12.5),
               decoration: InputDecoration(
                 hintText: hintText,
-                hintStyle: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: const Color(0xFF99958F), fontSize: 11),
+                hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.muted,
+                  fontSize: 12.5,
+                ),
                 isDense: true,
                 filled: false,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -652,18 +669,17 @@ class _HomeSearchField extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(4),
             child: SizedBox(
-              width: 66,
-              height: 34,
+              height: 36,
               child: FilledButton(
                 onPressed: () => onSubmitted(controller.text),
                 style: FilledButton.styleFrom(
-                  minimumSize: const Size(66, 34),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  backgroundColor: AppColors.pinkStrong,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(78, 36),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: const StadiumBorder(),
                   textStyle: const TextStyle(
-                    fontSize: 10,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -777,24 +793,27 @@ class _HomeTrustRow extends StatelessWidget {
   static const _items = [
     _TrustContent(
       icon: Icons.check_rounded,
-      iconBackground: Color(0xFFFBECEF),
-      iconColor: Color(0xFFB64D66),
+      iconBackground: AppColors.ink,
+      iconColor: Colors.white,
       title: 'Cotiza sin registro',
-      description: 'Selecciona los productos y coordina directamente sin contraseñas ni registros forzados.',
+      description:
+          'Selecciona tus materiales y coordina directo sin contraseñas.',
     ),
     _TrustContent(
       icon: Icons.percent_rounded,
-      iconBackground: Color(0xFFFFF5DE),
-      iconColor: Color(0xFFE28A24),
+      iconBackground: AppColors.ink,
+      iconColor: Colors.white,
       title: 'Precios por volumen',
-      description: 'Escalas automáticas por mayor en limpiapipas, rollos de cinta y accesorios.',
+      description:
+          'Escalas automáticas por mayor en limpiapipas, cintas y accesorios.',
     ),
     _TrustContent(
-      icon: Icons.inventory_2_outlined,
-      iconBackground: Color(0xFFEAF6F0),
-      iconColor: Color(0xFF4B8C72),
-      title: 'Recojo local y envíos Shalom',
-      description: 'Recojo en nuestro local de Huancayo o encomienda segura a agencias de todo el país.',
+      icon: Icons.local_shipping_outlined,
+      iconBackground: AppColors.ink,
+      iconColor: Colors.white,
+      title: 'Recojo y envíos Shalom',
+      description:
+          'Recojo en nuestro local de Huancayo o envío seguro a todo el Perú.',
     ),
   ];
 
@@ -863,15 +882,15 @@ class _HomeTrustItem extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               color: content.iconBackground,
-              borderRadius: BorderRadius.circular(11),
+              shape: BoxShape.circle,
             ),
-            child: Icon(content.icon, size: 17, color: content.iconColor),
+            child: Icon(content.icon, size: 18, color: content.iconColor),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 13),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -881,16 +900,20 @@ class _HomeTrustItem extends StatelessWidget {
                   content.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge
-                      ?.copyWith(fontSize: 11.5),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   content.description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(fontSize: 9.5, height: 1.35),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: 11,
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),
@@ -909,43 +932,99 @@ class _FeaturedHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.headlineMedium
-                    ?.copyWith(fontSize: 22),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Los favoritos de nuestros artesanos y decoradores',
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(fontSize: 10),
-              ),
-            ],
-          ),
-        ),
-        TextButton.icon(
+    final trimmed = title.trim();
+    final lastSpace = trimmed.lastIndexOf(' ');
+    final headingStyle = Theme.of(context).textTheme.headlineMedium?.copyWith(
+      fontFamily: AppTheme.displayFont,
+      fontSize: 27,
+      fontWeight: FontWeight.w500,
+      color: AppColors.ink,
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 520;
+        final titleColumn = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'DESTACADOS',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontSize: 10,
+                    letterSpacing: 1.8,
+                    color: AppColors.muted,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(width: 34, height: 1, color: AppColors.border),
+              ],
+            ),
+            const SizedBox(height: 5),
+            if (lastSpace > 0 && lastSpace < trimmed.length - 1)
+              Text.rich(
+                TextSpan(
+                  style: headingStyle,
+                  children: [
+                    TextSpan(text: trimmed.substring(0, lastSpace + 1)),
+                    TextSpan(
+                      text: trimmed.substring(lastSpace + 1),
+                      style: const TextStyle(fontStyle: FontStyle.italic),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Text(trimmed, style: headingStyle),
+            const SizedBox(height: 3),
+            Text(
+              'Los favoritos de nuestros artesanos y decoradores',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontSize: 12),
+            ),
+          ],
+        );
+        final actionButton = OutlinedButton.icon(
           onPressed: onAction,
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFFA84B5A),
-            minimumSize: const Size(0, 36),
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.ink,
+            side: const BorderSide(color: AppColors.ink, width: 1.1),
+            minimumSize: const Size(0, 38),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            shape: const StadiumBorder(),
             textStyle: const TextStyle(
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
           iconAlignment: IconAlignment.end,
-          icon: const Icon(Icons.arrow_forward_rounded, size: 13),
+          icon: const Icon(Icons.arrow_forward_rounded, size: 14),
           label: const Text('Ver todo el catálogo'),
-        ),
-      ],
+        );
+
+        if (compact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              titleColumn,
+              const SizedBox(height: 12),
+              actionButton,
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(child: titleColumn),
+            const SizedBox(width: 12),
+            actionButton,
+          ],
+        );
+      },
     );
   }
 }

@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppColors {
-  static const canvas = Color(0xFFF7F4EF);
-  static const surface = Color(0xFFFFFEFC);
-  static const ink = Color(0xFF191816);
-  static const muted = Color(0xFF7B7771);
-  static const border = Color(0xFFE3DED6);
-  static const pinkSoft = Color(0xFFF7E5EB);
-  static const pinkStrong = Color(0xFFD76582);
+  static const canvas = Color(0xFFF8F5ED);
+  static const surface = Color(0xFFFFFFFF);
+  static const ink = Color(0xFF2C4132);
+  static const muted = Color(0xFF6A7972);
+  static const border = Color(0xFFE7E1D6);
+  static const pinkSoft = Color(0xFFF5E9E6);
+  static const pinkStrong = Color(0xFFA84A63);
+  static const accentHover = Color(0xFF923F55);
+  static const announcementBar = Color(0xFFDDB7AC);
+  static const sage = Color(0xFF6F8C6D);
   static const whatsapp = Color(0xFF218A5B);
   static const error = Color(0xFFB42318);
 }
 
 abstract final class AppTheme {
+  static const String displayFont = 'Lora';
+  static const String bodyFont = 'PlusJakartaSans';
+
   static ThemeData get light {
     final scheme =
         ColorScheme.fromSeed(
@@ -35,81 +41,84 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.canvas,
-      fontFamily: 'PlusJakartaSans',
+      fontFamily: bodyFont,
       visualDensity: VisualDensity.standard,
       dividerColor: AppColors.border,
       focusColor: AppColors.pinkSoft,
-      hoverColor: AppColors.pinkSoft.withValues(alpha: .22),
+      hoverColor: AppColors.pinkSoft.withValues(alpha: .35),
     );
 
     return base.copyWith(
       textTheme: base.textTheme.copyWith(
         displaySmall: const TextStyle(
-          fontFamily: 'PlusJakartaSans',
-          fontSize: 32,
-          height: 1.15,
-          fontWeight: FontWeight.w800,
+          fontFamily: displayFont,
+          fontSize: 36,
+          height: 1.12,
+          fontWeight: FontWeight.w500,
+          letterSpacing: -0.4,
           color: AppColors.ink,
         ),
         headlineLarge: const TextStyle(
-          fontFamily: 'PlusJakartaSans',
-          fontSize: 28,
-          height: 1.18,
-          fontWeight: FontWeight.w800,
+          fontFamily: displayFont,
+          fontSize: 30,
+          height: 1.16,
+          fontWeight: FontWeight.w500,
+          letterSpacing: -0.3,
           color: AppColors.ink,
         ),
         headlineMedium: const TextStyle(
-          fontFamily: 'PlusJakartaSans',
+          fontFamily: displayFont,
           fontSize: 24,
           height: 1.2,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w500,
+          letterSpacing: -0.2,
           color: AppColors.ink,
         ),
         titleLarge: const TextStyle(
-          fontFamily: 'PlusJakartaSans',
-          fontSize: 20,
+          fontFamily: bodyFont,
+          fontSize: 19,
           height: 1.25,
           fontWeight: FontWeight.w700,
           color: AppColors.ink,
         ),
         titleMedium: const TextStyle(
-          fontFamily: 'PlusJakartaSans',
-          fontSize: 16,
+          fontFamily: bodyFont,
+          fontSize: 15.5,
           height: 1.3,
           fontWeight: FontWeight.w600,
           color: AppColors.ink,
         ),
         bodyLarge: const TextStyle(
-          fontFamily: 'PlusJakartaSans',
-          fontSize: 16,
-          height: 1.45,
+          fontFamily: bodyFont,
+          fontSize: 15.5,
+          height: 1.5,
           color: AppColors.ink,
         ),
         bodyMedium: const TextStyle(
-          fontFamily: 'PlusJakartaSans',
+          fontFamily: bodyFont,
           fontSize: 14,
-          height: 1.42,
+          height: 1.48,
           color: AppColors.ink,
         ),
         bodySmall: const TextStyle(
-          fontFamily: 'PlusJakartaSans',
-          fontSize: 12,
-          height: 1.4,
+          fontFamily: bodyFont,
+          fontSize: 12.5,
+          height: 1.45,
           color: AppColors.muted,
         ),
         labelLarge: const TextStyle(
-          fontFamily: 'PlusJakartaSans',
+          fontFamily: bodyFont,
           fontSize: 14,
           height: 1.2,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           color: AppColors.ink,
         ),
         labelMedium: const TextStyle(
-          fontFamily: 'PlusJakartaSans',
+          fontFamily: bodyFont,
           fontSize: 12,
           height: 1.2,
-          fontWeight: FontWeight.w700,
-          letterSpacing: .35,
+          fontWeight: FontWeight.w600,
+          letterSpacing: .4,
           color: AppColors.ink,
         ),
       ),
@@ -121,10 +130,10 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          fontFamily: 'PlusJakartaSans',
-          fontSize: 20,
+          fontFamily: displayFont,
+          fontSize: 22,
           height: 1.2,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w500,
           color: AppColors.ink,
         ),
       ),
@@ -177,24 +186,27 @@ abstract final class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(0, 54),
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+          minimumSize: const Size(0, 50),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
+          shape: const StadiumBorder(),
+          textStyle: const TextStyle(
+            fontFamily: bodyFont,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(0, 52),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+          minimumSize: const Size(0, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
           foregroundColor: AppColors.ink,
-          side: const BorderSide(color: AppColors.border),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppColors.border, width: 1.2),
+          shape: const StadiumBorder(),
+          textStyle: const TextStyle(
+            fontFamily: bodyFont,
+            fontWeight: FontWeight.w600,
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       textButtonTheme: TextButtonThemeData(

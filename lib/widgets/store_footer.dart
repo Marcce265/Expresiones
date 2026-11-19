@@ -338,8 +338,8 @@ class StoreFooter extends StatelessWidget {
   final String? whatsappNumber;
   final StorefrontSettings settings;
 
-  static const Color _footerBg = Color(0xFFFCEEEF);
-  static const Color _footerDivider = Color(0xFFF0D5DC);
+  static const Color _footerBg = Color(0xFFF3EAE4);
+  static const Color _footerDivider = Color(0xFFE3D5CC);
 
   Future<void> _openWhatsapp() async {
     if (onContact != null) {

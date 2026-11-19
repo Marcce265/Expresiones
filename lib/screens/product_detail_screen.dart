@@ -79,12 +79,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         Container(
           width: 38,
           height: 38,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
+          decoration: const BoxDecoration(
+            color: AppColors.ink,
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.border),
           ),
-          child: Icon(icon, size: 18, color: AppColors.ink),
+          child: Icon(icon, size: 18, color: Colors.white),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -488,6 +487,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   ),
                                 ),
                                 style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.pinkStrong,
+                                  foregroundColor: Colors.white,
                                   shape: const StadiumBorder(),
                                 ),
                               ),

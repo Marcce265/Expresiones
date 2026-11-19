@@ -120,7 +120,7 @@ class ProductVisual extends StatelessWidget {
       }
     }
     return switch (categoryKey) {
-      'bouquets' => const Color(0xFFE9A3B3),
+      'bouquets' => const Color(0xFFA84A63),
       'gifts' => const Color(0xFFD9B36D),
       _ => const Color(0xFF8BA17D),
     };
