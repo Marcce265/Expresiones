@@ -66,9 +66,24 @@ class PrivacyScreen extends StatefulWidget {
 }
 
 class _PrivacyScreenState extends State<PrivacyScreen> {
-  late LegalDocumentSection _section = widget.initialSection;
+  LegalDocumentSection get _section => widget.initialSection;
   bool _clearing = false;
   List<LegalConsentRecord> _consentRecords = const [];
+
+  String _subtitleForSection(LegalDocumentSection section) {
+    return switch (section) {
+      LegalDocumentSection.privacy =>
+        'Ley N° 29733 y Reglamento D.S. N° 016-2024-JUS · Perú (Versión $kCurrentLegalPolicyVersion)',
+      LegalDocumentSection.terms =>
+        'Condiciones de uso, precios, entregas y derechos de autor · Perú (Versión $kCurrentLegalPolicyVersion)',
+      LegalDocumentSection.refunds =>
+        'Garantía legal, cambios y devoluciones conforme a la Ley N° 29571 · INDECOPI',
+      LegalDocumentSection.cookies =>
+        'Transparencia sobre almacenamiento local estrictamente técnico · Perú',
+      LegalDocumentSection.claimsBook =>
+        'Hoja de Reclamación Virtual · D.S. N° 011-2011-PCM y Ley N° 31435 (INDECOPI)',
+    };
+  }
 
   // Campos del Libro de Reclamaciones Virtual (INDECOPI)
   final _claimNameController = TextEditingController();
@@ -231,23 +246,10 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Centro Legal, Privacidad y Protección al Consumidor · Perú (Versión $kCurrentLegalPolicyVersion)',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  _subtitleForSection(_section),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.muted,
                   ),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final tab in LegalDocumentSection.values)
-                      ChoiceChip(
-                        label: Text(tab.label),
-                        selected: _section == tab,
-                        onSelected: (_) => setState(() => _section = tab),
-                      ),
-                  ],
                 ),
                 const SizedBox(height: 24),
                 if (_section == LegalDocumentSection.privacy)

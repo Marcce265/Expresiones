@@ -45,9 +45,8 @@ class LegalConsentCheckboxes extends StatelessWidget {
             checkboxKey: const ValueKey('consent_terms_checkbox'),
             value: termsAccepted,
             onChanged: onTermsChanged,
-            label:
-                'He leído y acepto los Términos y Condiciones y la Política de Reembolsos y Cambios *',
-            linkText: 'Leer Términos y Reembolsos',
+            label: 'He leído y acepto los Términos y Condiciones *',
+            linkText: 'Leer Términos y Condiciones',
             onOpenDocument: () => showLegalDocumentDialog(
               context,
               initialSection: LegalDocumentSection.terms,
@@ -60,7 +59,7 @@ class LegalConsentCheckboxes extends StatelessWidget {
             value: privacyAccepted,
             onChanged: onPrivacyChanged,
             label:
-                'He leído y acepto la Política de Privacidad y el tratamiento de mis datos personales (Ley N° 29733) *',
+                'He leído y acepto la Política de Privacidad (Ley N° 29733) *',
             linkText: 'Leer Política de Privacidad',
             onOpenDocument: () => showLegalDocumentDialog(
               context,
