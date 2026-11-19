@@ -725,7 +725,7 @@ class StoreFooter extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _paymentLogoCard(
-              'assets/images/payments/yape.webp',
+              'assets/images/payments/yape_sq.webp',
               'Yape',
               width: 48,
               height: 48,
@@ -733,7 +733,7 @@ class StoreFooter extends StatelessWidget {
               fit: BoxFit.cover,
             ),
             _paymentLogoCard(
-              'assets/images/payments/plin.webp',
+              'assets/images/payments/plin_sq.webp',
               'Plin',
               width: 48,
               height: 48,
@@ -741,7 +741,7 @@ class StoreFooter extends StatelessWidget {
               fit: BoxFit.cover,
             ),
             _paymentLogoCard(
-              'assets/images/payments/interbank.webp',
+              'assets/images/payments/interbank_sq.webp',
               'Interbank',
               width: 48,
               height: 48,
