@@ -6,8 +6,8 @@ abstract final class AppColors {
   static const ink = Color(0xFF191816);
   static const muted = Color(0xFF7B7771);
   static const border = Color(0xFFE3DED6);
-  static const pinkSoft = Color(0xFFFBD0B7);
-  static const pinkStrong = Color(0xFFE47A5C);
+  static const pinkSoft = Color(0xFFF7E5EB);
+  static const pinkStrong = Color(0xFFD76582);
   static const whatsapp = Color(0xFF218A5B);
   static const error = Color(0xFFB42318);
 }
