@@ -371,97 +371,68 @@ class StoreFooter extends StatelessWidget {
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: _footerDivider)),
         ),
-        child: Column(
-        children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1320),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 42, 24, 34),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    if (constraints.maxWidth < 720) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _brandBlock(context),
-                          const SizedBox(height: 28),
-                          _catalogBlock(context),
-                          const SizedBox(height: 24),
-                          _policiesBlock(context),
-                          const SizedBox(height: 24),
-                          _infoBlock(context),
-                          const SizedBox(height: 24),
-                          _paymentsAndClaimsBlock(context),
-                        ],
-                      );
-                    }
-                    if (constraints.maxWidth < 1040) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(flex: 4, child: _brandBlock(context)),
-                              const SizedBox(width: 28),
-                              Expanded(flex: 3, child: _catalogBlock(context)),
-                              const SizedBox(width: 24),
-                              Expanded(flex: 3, child: _policiesBlock(context)),
-                            ],
-                          ),
-                          const SizedBox(height: 28),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(flex: 5, child: _infoBlock(context)),
-                              const SizedBox(width: 28),
-                              Expanded(
-                                flex: 5,
-                                child: _paymentsAndClaimsBlock(context),
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    }
-                    return Row(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1320),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 38, 24, 36),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth < 720) {
+                    return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(flex: 4, child: _brandBlock(context)),
-                        const SizedBox(width: 28),
-                        Expanded(flex: 2, child: _catalogBlock(context)),
-                        const SizedBox(width: 24),
-                        Expanded(flex: 3, child: _policiesBlock(context)),
-                        const SizedBox(width: 24),
-                        Expanded(flex: 3, child: _infoBlock(context)),
-                        const SizedBox(width: 24),
-                        Expanded(
-                          flex: 3,
-                          child: _paymentsAndClaimsBlock(context),
+                        _brandBlock(context),
+                        const SizedBox(height: 26),
+                        _policiesBlock(context),
+                        const SizedBox(height: 24),
+                        _infoBlock(context),
+                        const SizedBox(height: 24),
+                        _paymentsBlock(context),
+                      ],
+                    );
+                  }
+                  if (constraints.maxWidth < 1040) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 5, child: _brandBlock(context)),
+                            const SizedBox(width: 28),
+                            Expanded(flex: 5, child: _policiesBlock(context)),
+                          ],
+                        ),
+                        const SizedBox(height: 28),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 5, child: _infoBlock(context)),
+                            const SizedBox(width: 28),
+                            Expanded(flex: 5, child: _paymentsBlock(context)),
+                          ],
                         ),
                       ],
                     );
-                  },
-                ),
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 4, child: _brandBlock(context)),
+                      const SizedBox(width: 32),
+                      Expanded(flex: 3, child: _policiesBlock(context)),
+                      const SizedBox(width: 28),
+                      Expanded(flex: 3, child: _infoBlock(context)),
+                      const SizedBox(width: 28),
+                      Expanded(flex: 3, child: _paymentsBlock(context)),
+                    ],
+                  );
+                },
               ),
             ),
           ),
-          const Divider(height: 1, color: _footerDivider),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-            child: Text(
-              'EXPRESIONES · Huancayo, Perú — Todos los derechos reservados 2026 (D.L. N° 822)',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.ink.withValues(alpha: 0.72),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
       ),
     );
   }
@@ -582,37 +553,6 @@ class StoreFooter extends StatelessWidget {
     );
   }
 
-  Widget _catalogBlock(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _columnHeading('Catálogo'),
-        const SizedBox(height: 12),
-        _footerLink(
-          'Materiales',
-          onSelectCategory == null
-              ? null
-              : () => onSelectCategory!(ProductCategory.materials),
-        ),
-        const SizedBox(height: 8),
-        _footerLink(
-          'Papel Coreano',
-          onSelectCategory == null
-              ? null
-              : () => onSelectCategory!(ProductCategory.koreanPaper),
-        ),
-        if (onOpenQuote != null) ...[
-          const SizedBox(height: 8),
-          _footerLink('Mi carrito', onOpenQuote),
-        ],
-        if (onOpenHelp != null) ...[
-          const SizedBox(height: 8),
-          _footerLink('Preguntas frecuentes', onOpenHelp),
-        ],
-      ],
-    );
-  }
-
   Widget _policiesBlock(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -651,6 +591,15 @@ class StoreFooter extends StatelessWidget {
           () => showLegalDocumentDialog(
             context,
             initialSection: LegalDocumentSection.cookies,
+            settings: settings,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _footerLink(
+          'Libro de reclamaciones',
+          () => showLegalDocumentDialog(
+            context,
+            initialSection: LegalDocumentSection.claimsBook,
             settings: settings,
           ),
         ),
@@ -713,7 +662,7 @@ class StoreFooter extends StatelessWidget {
     );
   }
 
-  Widget _paymentsAndClaimsBlock(BuildContext context) {
+  Widget _paymentsBlock(BuildContext context) {
     final mobile = MediaQuery.sizeOf(context).width < 768;
     final logoSize = mobile ? 32.0 : 48.0;
     return Column(
@@ -751,69 +700,6 @@ class StoreFooter extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ],
-        ),
-        const SizedBox(height: 18),
-        Tooltip(
-          message: 'Libro de Reclamaciones',
-          child: Semantics(
-            button: true,
-            label: 'Libro de Reclamaciones',
-            child: InkWell(
-              onTap: () => showLegalDocumentDialog(
-                context,
-                initialSection: LegalDocumentSection.claimsBook,
-                settings: settings,
-              ),
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                width: 178,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.pinkStrong, width: 1.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Image.asset(
-                  'assets/images/brand/libro_reclamaciones.webp',
-                  height: 76,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.medium,
-                  semanticLabel: 'Libro de Reclamaciones',
-                  errorBuilder: (context, error, stackTrace) => const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Libro de\nReclamaciones',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0D6EFD),
-                          height: 1.2,
-                        ),
-                      ),
-                      SizedBox(height: 6),
-                      Icon(
-                        Icons.menu_book_rounded,
-                        size: 30,
-                        color: AppColors.ink,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
         ),
       ],
     );

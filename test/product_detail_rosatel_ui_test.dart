@@ -110,8 +110,11 @@ void main() {
     expect(find.byType(StoreSpecialOrderBanner), findsNothing);
     expect(find.text('¿Buscas un diseño o pedido a medida?'), findsNothing);
     expect(find.byType(StoreFooter), findsOneWidget);
+    expect(find.text('Catálogo'), findsNothing);
+    expect(find.text('Políticas'), findsOneWidget);
+    expect(find.text('Libro de reclamaciones'), findsOneWidget);
+    expect(find.textContaining('Todos los derechos reservados'), findsNothing);
     expect(find.text('Formas de pago'), findsOneWidget);
-    expect(find.byTooltip('Libro de Reclamaciones'), findsOneWidget);
     expect(find.byTooltip('Yape'), findsOneWidget);
     expect(find.byTooltip('Plin'), findsOneWidget);
     expect(find.byTooltip('Interbank'), findsOneWidget);
