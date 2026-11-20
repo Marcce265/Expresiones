@@ -1076,7 +1076,7 @@ class _MobileStoreHeader extends StatelessWidget
                 tooltip: 'Abrir menú',
                 color: AppColors.ink,
                 onPressed: () => Scaffold.of(context).openDrawer(),
-                icon: const Icon(Icons.menu_rounded),
+                icon: const _HamburgerMenuIcon(color: AppColors.ink),
               ),
             ),
           ),
@@ -1124,6 +1124,47 @@ class _MobileStoreHeader extends StatelessWidget
       ),
     );
   }
+}
+
+/// Ícono hamburguesa vectorial nativo que no depende de la caché de
+/// MaterialIcons-Regular.otf en navegadores móviles.
+class _HamburgerMenuIcon extends StatelessWidget {
+  const _HamburgerMenuIcon({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(22, 16),
+      painter: _HamburgerMenuPainter(color: color),
+    );
+  }
+}
+
+class _HamburgerMenuPainter extends CustomPainter {
+  const _HamburgerMenuPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2.1
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    const ys = [0.12, 0.5, 0.88];
+    for (final factor in ys) {
+      final y = size.height * factor;
+      canvas.drawLine(Offset(1.5, y), Offset(size.width - 1.5, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _HamburgerMenuPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 class _MobileNavigation extends StatelessWidget {

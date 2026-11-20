@@ -24,8 +24,34 @@
   ! Cache-Control
   Cache-Control: no-cache, must-revalidate
 
+# Flutter Web genera MaterialIcons con tree-shaking y manifiestos con URL fija.
+# Revalidarlos evita que íconos recién agregados se vean invisibles en caché.
+/assets/fonts/MaterialIcons-Regular.otf
+  ! Cache-Control
+  Cache-Control: no-cache, must-revalidate
+
+/assets/FontManifest.json
+  ! Cache-Control
+  Cache-Control: no-cache, must-revalidate
+
+/assets/AssetManifest.bin.json
+  ! Cache-Control
+  Cache-Control: no-cache, must-revalidate
+
 /admin/assets/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=604800
+
+/admin/assets/fonts/MaterialIcons-Regular.otf
+  ! Cache-Control
+  Cache-Control: no-cache, must-revalidate
+
+/admin/assets/FontManifest.json
+  ! Cache-Control
+  Cache-Control: no-cache, must-revalidate
+
+/admin/assets/AssetManifest.bin.json
+  ! Cache-Control
+  Cache-Control: no-cache, must-revalidate
 
 /canvaskit/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
