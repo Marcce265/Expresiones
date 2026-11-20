@@ -100,6 +100,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   final _guidePreferences = const GuidePreferences();
   final _navigationKeys = List<GlobalKey>.generate(5, (_) => GlobalKey());
   final _assistantButtonKey = GlobalKey();
+  final _mobileMenuKey = GlobalKey();
+  final _mobileSearchKey = GlobalKey();
+  final _mobileCartKey = GlobalKey();
+  final _mobileHomeKey = GlobalKey();
   int _catalogSearchRequest = 0;
   CustomerAccountRepository? _customerAccounts;
   StreamSubscription<AuthState>? _customerAuthSubscription;
@@ -191,7 +195,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   void _showQuote() => _selectDestination(2);
 
-  void _showHelp() => setState(() => _index = FeatureFlags.customerAccounts ? 4 : 3);
+  void _showHelp() => _selectDestination(FeatureFlags.customerAccounts ? 4 : 3);
 
   void _openLastOrder(CheckoutOrder order) {
     Navigator.of(context).push(
@@ -485,8 +489,23 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           Navigator.of(routeContext).popUntil((route) => route.isFirst);
           _selectDestination(destination);
         }
+        final showMobileHeader = constraints.maxWidth < 768;
 
         return Scaffold(
+          appBar: showMobileHeader
+              ? _MobileStoreHeader(
+                  quoteQuantity: store.cartQuantity,
+                  onHome: () => leaveCheckout(0),
+                  onSearch: () {
+                    leaveCheckout(1);
+                    _openCatalogSearch();
+                  },
+                  onCart: () => leaveCheckout(2),
+                )
+              : null,
+          drawer: showMobileHeader
+              ? _MobileStoreMenu(selectedIndex: 2, onSelect: leaveCheckout)
+              : null,
           body: SafeArea(
             child: Row(
               children: [
@@ -501,7 +520,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               ],
             ),
           ),
-          bottomNavigationBar: desktop
+          bottomNavigationBar: desktop || showMobileHeader
               ? null
               : _MobileNavigation(
                   selectedIndex: 2,
@@ -645,32 +664,32 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     JashyTourStep(
       title: 'Inicio',
       message: 'Busca materiales aquí.',
-      targetKey: _navigationKeys[0],
+      targetKey: _guideNavigationKey(0),
       imageAsset: 'assets/images/jashy_chibi_assistant.webp',
     ),
     JashyTourStep(
       title: 'Catálogo',
       message: 'Mira productos, colores y precios. Precio por volumen: docena, medio cajón o cajón completo.',
-      targetKey: _navigationKeys[1],
+      targetKey: _guideNavigationKey(1),
       imageAsset: 'assets/images/jashy_chibi_book.webp',
     ),
     JashyTourStep(
       title: 'Carrito',
       message: 'Revisa productos y cantidades.',
-      targetKey: _navigationKeys[2],
+      targetKey: _guideNavigationKey(2),
       imageAsset: 'assets/images/jashy_chibi_writing.webp',
     ),
     if (FeatureFlags.customerAccounts)
       JashyTourStep(
         title: 'Cuenta',
         message: 'Revisa tus compras guardadas.',
-        targetKey: _navigationKeys[3],
+        targetKey: _guideNavigationKey(3),
         imageAsset: 'assets/images/jashy_chibi_writing.webp',
       ),
     JashyTourStep(
       title: 'Ayuda',
       message: 'Encuentra respuestas o escríbenos.',
-      targetKey: _navigationKeys[FeatureFlags.customerAccounts ? 4 : 3],
+      targetKey: _guideNavigationKey(FeatureFlags.customerAccounts ? 4 : 3),
       imageAsset: 'assets/images/jashy_chibi_question.webp',
     ),
     JashyTourStep(
@@ -709,7 +728,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     return JashyTourStep(
       title: titles[_index],
       message: messages[_index],
-      targetKey: _navigationKeys[_index],
+      targetKey: _guideNavigationKey(_index),
       imageAsset: assets[_index],
     );
   }
@@ -744,12 +763,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  Widget? _assistantHelpButton(
+  Widget _assistantHelpButton(
     JashyTourStep step, {
     Key? key,
     double bottomOffset = 0.0,
   }) {
-    if (_assistantMuted) return null;
     final tipsBySection = <int, List<String>>{
       0: [
         '¡Bienvenido a Expresiones! 💕 Encuentra aquí los mejores materiales y rosas eternas.',
@@ -898,38 +916,16 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                   onHome: () => _selectDestination(0),
                   onSearch: _openCatalogSearch,
                   onCart: _showQuote,
+                  menuKey: _mobileMenuKey,
+                  searchKey: _mobileSearchKey,
+                  cartKey: _mobileCartKey,
+                  homeKey: _mobileHomeKey,
                 )
               : null,
           drawer: showMobileHeader
-              ? Drawer(
-                  child: SafeArea(
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      children: [
-                        for (final destination in [
-                          (0, Icons.home_outlined, 'Inicio'),
-                          (1, Icons.grid_view_outlined, 'Catálogo'),
-                          (2, Icons.shopping_bag_outlined, 'Carrito'),
-                          if (FeatureFlags.customerAccounts)
-                            (3, Icons.person_outline_rounded, 'Cuenta'),
-                          (
-                            FeatureFlags.customerAccounts ? 4 : 3,
-                            Icons.help_outline_rounded,
-                            'Ayuda',
-                          ),
-                        ])
-                          ListTile(
-                            leading: Icon(destination.$2),
-                            title: Text(destination.$3),
-                            selected: _index == destination.$1,
-                            onTap: () {
-                              Navigator.of(context).pop();
-                              _selectDestination(destination.$1);
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
+              ? _MobileStoreMenu(
+                  selectedIndex: _index,
+                  onSelect: _selectDestination,
                 )
               : null,
           body: SafeArea(
@@ -958,7 +954,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               ],
             ),
           ),
-          bottomNavigationBar: desktop
+          bottomNavigationBar: desktop || showMobileHeader
               ? null
               : _MobileNavigation(
                   selectedIndex: _index,
@@ -984,6 +980,57 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       _index = value;
     });
   }
+
+  GlobalKey _guideNavigationKey(int index) {
+    if (MediaQuery.sizeOf(context).width >= 768) return _navigationKeys[index];
+    return switch (index) {
+      0 => _mobileHomeKey,
+      1 => _mobileSearchKey,
+      2 => _mobileCartKey,
+      _ => _mobileMenuKey,
+    };
+  }
+}
+
+class _MobileStoreMenu extends StatelessWidget {
+  const _MobileStoreMenu({required this.selectedIndex, required this.onSelect});
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          children: [
+            for (final destination in [
+              (0, Icons.home_outlined, 'Inicio'),
+              (1, Icons.grid_view_outlined, 'Catálogo'),
+              (2, Icons.shopping_bag_outlined, 'Carrito'),
+              if (FeatureFlags.customerAccounts)
+                (3, Icons.person_outline_rounded, 'Cuenta'),
+              (
+                FeatureFlags.customerAccounts ? 4 : 3,
+                Icons.help_outline_rounded,
+                'Ayuda',
+              ),
+            ])
+              ListTile(
+                leading: Icon(destination.$2),
+                title: Text(destination.$3),
+                selected: selectedIndex == destination.$1,
+                onTap: () {
+                  Scaffold.of(context).closeDrawer();
+                  onSelect(destination.$1);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _MobileStoreHeader extends StatelessWidget
@@ -993,15 +1040,23 @@ class _MobileStoreHeader extends StatelessWidget
     required this.onHome,
     required this.onSearch,
     required this.onCart,
+    this.menuKey,
+    this.searchKey,
+    this.cartKey,
+    this.homeKey,
   });
 
   final int quoteQuantity;
   final VoidCallback onHome;
   final VoidCallback onSearch;
   final VoidCallback onCart;
+  final Key? menuKey;
+  final Key? searchKey;
+  final Key? cartKey;
+  final Key? homeKey;
 
   @override
-  Size get preferredSize => const Size.fromHeight(60);
+  Size get preferredSize => const Size.fromHeight(64);
 
   @override
   Widget build(BuildContext context) {
@@ -1017,7 +1072,9 @@ class _MobileStoreHeader extends StatelessWidget
             child: Align(
               alignment: Alignment.centerLeft,
               child: IconButton(
+                key: menuKey,
                 tooltip: 'Abrir menú',
+                color: AppColors.ink,
                 onPressed: () => Scaffold.of(context).openDrawer(),
                 icon: const Icon(Icons.menu_rounded),
               ),
@@ -1026,14 +1083,15 @@ class _MobileStoreHeader extends StatelessWidget
           Expanded(
             child: Center(
               child: InkWell(
+                key: homeKey,
                 onTap: onHome,
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Image.asset(
-                    'assets/images/brand/expresiones_mobile.png',
-                    width: 172,
-                    height: 48,
+                    'assets/images/brand/expresiones_mobile_v2.png',
+                    width: 220,
+                    height: 54,
                     fit: BoxFit.contain,
                     semanticLabel: 'Expresiones, ir al inicio',
                   ),
@@ -1042,14 +1100,17 @@ class _MobileStoreHeader extends StatelessWidget
             ),
           ),
           IconButton(
+            key: searchKey,
             tooltip: 'Buscar productos',
             onPressed: onSearch,
             icon: const Icon(Icons.search_rounded),
           ),
           IconButton(
+            key: cartKey,
             tooltip: 'Abrir carrito',
             onPressed: onCart,
             icon: Badge.count(
+              backgroundColor: AppColors.pinkStrong,
               count: quoteQuantity,
               isLabelVisible: quoteQuantity > 0,
               child: const Icon(Icons.shopping_bag_outlined),

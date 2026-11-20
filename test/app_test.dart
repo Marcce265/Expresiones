@@ -9,6 +9,7 @@ import 'package:expresiones/screens/catalog_screen.dart';
 import 'package:expresiones/screens/home_screen.dart';
 import 'package:expresiones/services/quote_message.dart';
 import 'package:expresiones/state/app_store.dart';
+import 'package:expresiones/theme/app_theme.dart';
 import 'package:expresiones/widgets/product_visual.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -242,11 +243,16 @@ void main() {
     }
     await tester.tap(find.text('Listo'));
     await tester.pumpAndSettle();
-    expect(find.text('Expresiones'), findsAtLeastNWidgets(1));
-    expect(find.text('Inicio'), findsOneWidget);
-    expect(find.text('Catálogo'), findsAtLeastNWidgets(1));
-    expect(find.text('Carrito'), findsOneWidget);
-    expect(find.text('Ayuda'), findsOneWidget);
+    expect(find.bySemanticsLabel('Expresiones, ir al inicio'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+    await tester.tap(find.byTooltip('Abrir menú'));
+    await tester.pumpAndSettle();
+    for (final label in ['Inicio', 'Catálogo', 'Carrito', 'Ayuda']) {
+      expect(
+        find.descendant(of: find.byType(Drawer), matching: find.text(label)),
+        findsOneWidget,
+      );
+    }
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(
@@ -256,7 +262,7 @@ void main() {
     expect(find.text('¡Hola! Soy Jashy'), findsNothing);
   });
 
-  testWidgets('No molestar oculta a Jashy y Ayuda permite reactivarla', (
+  testWidgets('No molestar cierra el tutorial y conserva la ayuda de Jashy', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -276,12 +282,16 @@ void main() {
 
     await tester.tap(find.byTooltip('Abrir ayuda de Jashy'));
     await tester.pumpAndSettle();
-    expect(find.text('Inicio'), findsWidgets);
+    expect(find.byTooltip('Cerrar ayuda de Jashy'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Cerrar ayuda de Jashy'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Ayuda'));
+    await tester.tap(find.byTooltip('Abrir menú'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(of: find.byType(Drawer), matching: find.text('Ayuda')),
+    );
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Repetir guía de Jashy'));
     await tester.tap(find.text('Repetir guía de Jashy'));
@@ -289,7 +299,12 @@ void main() {
 
     await tester.tap(find.text('No molestar'));
     await tester.pumpAndSettle();
-    expect(find.byTooltip('Abrir ayuda de Jashy'), findsNothing);
+    expect(find.text('¡Hola! Soy Jashy'), findsNothing);
+    await tester.tap(find.byTooltip('Abrir ayuda de Jashy'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Cerrar ayuda de Jashy'), findsOneWidget);
+    await tester.tap(find.byTooltip('Cerrar ayuda de Jashy'));
+    await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Activar guía de Jashy'));
     await tester.tap(find.text('Activar guía de Jashy'));
@@ -298,6 +313,13 @@ void main() {
     expect(find.text('¡Hola! Soy Jashy'), findsOneWidget);
     await tester.tap(find.text('No molestar'));
     await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(value: store, child: const ExpresionesApp()),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('¡Hola! Soy Jashy'), findsNothing);
+    expect(find.byTooltip('Abrir ayuda de Jashy'), findsOneWidget);
   });
 
   testWidgets('la cabecera móvil abre el menú y enfoca la búsqueda', (
@@ -318,6 +340,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('Expresiones, ir al inicio'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byIcon(Icons.shopping_bag_outlined).hitTestable(), findsOneWidget);
+    final cartBadge = find.descendant(
+      of: find.byTooltip('Abrir carrito'),
+      matching: find.byType(Badge),
+    );
+    expect(tester.widget<Badge>(cartBadge).backgroundColor, AppColors.pinkStrong);
     await tester.tap(find.byTooltip('Abrir menú'));
     await tester.pumpAndSettle();
     final drawer = find.byType(Drawer);
