@@ -32,7 +32,7 @@ void main() {
 
     expect(find.text('Cotiza sin registro'), findsOneWidget);
     expect(find.text('Ver todo el catálogo'), findsOneWidget);
-    expect(find.byType(ProductCard), findsNWidgets(6));
+    expect(find.byType(ProductCard), findsNWidgets(5));
     final cardSize = tester.getSize(find.byType(ProductCard).first);
     expect(cardSize.height, greaterThan(cardSize.width));
     expect(tester.takeException(), isNull);

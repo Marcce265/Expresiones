@@ -157,9 +157,9 @@ class _AccountScreenState extends State<AccountScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     return SingleChildScrollView(
-      child: ResponsivePage(
-        maxWidth: 1120,
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 48),
+      child: ResponsivePage.storefront(
+        top: 24,
+        bottom: 48,
         child: _profile == null ? _buildAccess() : _buildAccount(),
       ),
     );

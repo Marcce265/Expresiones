@@ -83,9 +83,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return PopScope(
       canPop: !_processing,
       child: SingleChildScrollView(
-        child: ResponsivePage(
-          maxWidth: 1280,
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 48),
+        child: ResponsivePage.storefront(
+          bottom: 48,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

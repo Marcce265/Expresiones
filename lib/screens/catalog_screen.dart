@@ -140,9 +140,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
-                child: ResponsivePage(
-                  maxWidth: 1180,
-                  padding: const EdgeInsets.fromLTRB(14, 12, 20, 16),
+                child: ResponsivePage.storefront(
+                  top: 12,
+                  bottom: 16,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -235,9 +235,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     builder: (context, constraints) {
                       final viewportWidth = constraints.crossAxisExtent;
                       final compact = viewportWidth < 640;
-                      final horizontalPadding = viewportWidth > 1180
-                          ? (viewportWidth - 1180) / 2 + 20
-                          : 20.0;
+                      final horizontalPadding =
+                          ResponsivePage.storefrontInset(viewportWidth);
                       return SliverPadding(
                         padding: EdgeInsets.fromLTRB(
                           horizontalPadding,

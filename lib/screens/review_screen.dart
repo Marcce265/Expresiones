@@ -119,9 +119,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          ResponsivePage(
-            maxWidth: 1380,
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 48),
+          ResponsivePage.storefront(
+            bottom: 48,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -136,8 +135,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     const BreadcrumbItem(label: 'Revisión'),
                   ],
                 ),
-                const SizedBox(height: 18),
-                const StepProgress(current: 3),
                 const SizedBox(height: 24),
                 LayoutBuilder(
                   builder: (context, constraints) {

@@ -4,6 +4,27 @@ import '../config/feature_flags.dart';
 import '../theme/app_theme.dart';
 
 class ResponsivePage extends StatelessWidget {
+  static const storefrontMaxWidth = 1180.0;
+  static const storefrontGutter = 20.0;
+
+  static double storefrontInset(double viewportWidth) =>
+      viewportWidth > storefrontMaxWidth
+      ? (viewportWidth - storefrontMaxWidth) / 2 + storefrontGutter
+      : storefrontGutter;
+
+  ResponsivePage.storefront({
+    super.key,
+    required this.child,
+    double top = 20,
+    double bottom = 40,
+  }) : maxWidth = storefrontMaxWidth,
+       padding = EdgeInsets.fromLTRB(
+         storefrontGutter,
+         top,
+         storefrontGutter,
+         bottom,
+       );
+
   const ResponsivePage({
     super.key,
     required this.child,

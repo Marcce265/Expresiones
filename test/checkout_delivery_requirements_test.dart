@@ -116,27 +116,34 @@ void main() {
     expect(find.text('Selecciona una fecha.'), findsOneWidget);
   });
 
-  testWidgets('el calendario se muestra completamente en español', (
+  testWidgets('el calendario integrado permite elegir un día en español', (
     tester,
   ) async {
     await _pumpCoordination(tester);
 
-    final dateField = find.text('Selecciona una fecha').first;
-    await tester.ensureVisible(dateField);
+    final calendar = find.byKey(const ValueKey('delivery-calendar'));
+    expect(calendar, findsOneWidget);
+    final today = DateTime.now();
+    final next = DateTime(today.year, today.month + 1);
+    final forward = find.byTooltip('Mes siguiente');
+    await tester.ensureVisible(forward);
     await tester.pumpAndSettle();
-    await tester.tap(dateField);
+    await tester.tap(forward);
     await tester.pumpAndSettle();
-
-    final picker = find.byType(DatePickerDialog);
-    expect(picker, findsOneWidget);
+    final context = tester.element(calendar);
     expect(
-      find.descendant(of: picker, matching: find.textContaining('noviembre')),
-      findsWidgets,
+      find.text(MaterialLocalizations.of(context).formatMonthYear(next)),
+      findsOneWidget,
     );
-    expect(
-      find.descendant(of: picker, matching: find.textContaining('November')),
-      findsNothing,
+    final day = find.descendant(
+      of: calendar,
+      matching: find.widgetWithText(TextButton, '1'),
     );
+    await tester.ensureVisible(day);
+    await tester.tap(day);
+    await tester.pumpAndSettle();
+    expect(find.text('07:00 - 08:00'), findsOneWidget);
+    expect(find.byType(DatePickerDialog), findsNothing);
   });
 
   testWidgets('recojo exige y conserva un horario de atención', (tester) async {

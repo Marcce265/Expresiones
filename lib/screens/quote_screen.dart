@@ -42,8 +42,7 @@ class QuoteScreen extends StatelessWidget {
       return SingleChildScrollView(
         child: Column(
           children: [
-            ResponsivePage(
-              maxWidth: 900,
+            ResponsivePage.storefront(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -77,15 +76,12 @@ class QuoteScreen extends StatelessWidget {
     return SingleChildScrollView(
       child: Column(
         children: [
-          ResponsivePage(
-            maxWidth: 1380,
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 48),
+          ResponsivePage.storefront(
+            bottom: 48,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _PageHeading(itemCount: lines.length, onBack: onBack),
-                const SizedBox(height: 18),
-                const StepProgress(current: 1),
                 const SizedBox(height: 24),
                 // Info de precios mostrada en la tarjeta de resumen
                 const SizedBox(height: 8),

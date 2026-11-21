@@ -78,9 +78,8 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen> {
   Widget build(BuildContext context) {
     final order = widget.order;
     return SingleChildScrollView(
-      child: ResponsivePage(
-        maxWidth: 1280,
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 48),
+      child: ResponsivePage.storefront(
+        bottom: 48,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

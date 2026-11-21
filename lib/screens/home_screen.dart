@@ -102,9 +102,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          ResponsivePage(
-            maxWidth: 1400,
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 36),
+          ResponsivePage.storefront(
+            top: 14,
+            bottom: 36,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -127,6 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
                 _HomeIntro(
                   settings: widget.settings,
+                  onBrowse: () => widget.onBrowse(ProductCategory.materials),
                   searchController: _searchController,
                   query: _query,
                   onSearchChanged: _onSearchChanged,
@@ -378,6 +379,7 @@ class _TopBar extends StatelessWidget {
 class _HomeIntro extends StatelessWidget {
   const _HomeIntro({
     required this.settings,
+    required this.onBrowse,
     required this.searchController,
     required this.query,
     required this.onSearchChanged,
@@ -387,6 +389,7 @@ class _HomeIntro extends StatelessWidget {
   });
 
   final StorefrontSettings settings;
+  final VoidCallback onBrowse;
   final TextEditingController searchController;
   final String query;
   final ValueChanged<String> onSearchChanged;
@@ -416,8 +419,6 @@ class _HomeIntro extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _HeroBadge(label: settings.text(StorefrontText.homeEyebrow)),
-              SizedBox(height: isWide ? 9 : 11),
               _HomeHeadline(
                 title: settings.text(StorefrontText.homeTitle),
                 compact: !isWide,
@@ -434,13 +435,27 @@ class _HomeIntro extends StatelessWidget {
                 ),
               ),
               SizedBox(height: isWide ? 16 : 18),
-              _HomeSearchField(
-                controller: searchController,
-                query: query,
-                hintText: settings.text(StorefrontText.homeSearchHint),
-                onChanged: onSearchChanged,
-                onSubmitted: onSearchSubmitted,
-                onClear: onClearSearch,
+              if (showHero) ...[
+                SizedBox(
+                  width: isWide ? null : double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: onBrowse,
+                    icon: const Icon(Icons.grid_view_rounded),
+                    label: const Text('Abrir catálogo'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: _HomeSearchField(
+                  controller: searchController,
+                  query: query,
+                  hintText: settings.text(StorefrontText.homeSearchHint),
+                  onChanged: onSearchChanged,
+                  onSubmitted: onSearchSubmitted,
+                  onClear: onClearSearch,
+                ),
               ),
               SizedBox(height: isWide ? 11 : 13),
               _PopularSearches(
@@ -484,46 +499,16 @@ class _HomeIntro extends StatelessWidget {
         }
 
         return SizedBox(
-          height: 334,
+          height: 350,
           child: Row(
             children: [
-              Expanded(flex: 58, child: copyCard),
+              Expanded(flex: 62, child: copyCard),
               const SizedBox(width: 18),
-              Expanded(flex: 42, child: hero),
+              Expanded(flex: 38, child: hero),
             ],
           ),
         );
       },
-    );
-  }
-}
-
-class _HeroBadge extends StatelessWidget {
-  const _HeroBadge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Flexible(
-          child: Text(
-            label.toUpperCase(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              fontSize: 10.5,
-              letterSpacing: 1.8,
-              fontWeight: FontWeight.w600,
-              color: AppColors.muted,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Container(width: 38, height: 1, color: AppColors.border),
-      ],
     );
   }
 }
@@ -1014,7 +999,7 @@ class _FeaturedHeader extends StatelessWidget {
             children: [
               titleColumn,
               const SizedBox(height: 12),
-              actionButton,
+              SizedBox(width: double.infinity, child: actionButton),
             ],
           );
         }
@@ -1044,13 +1029,15 @@ class _FeaturedProducts extends StatelessWidget {
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 900;
         final isTablet = constraints.maxWidth >= 620;
-        final visibleProducts = products.take(6).toList(growable: false);
-        final itemCount = visibleProducts.length;
         final targetColumns = isDesktop
-            ? 6
+            ? (constraints.maxWidth >= 1060 ? 5 : 4)
             : isTablet
             ? 3
             : 2;
+        final visibleProducts = products
+            .take(isDesktop ? targetColumns : 6)
+            .toList(growable: false);
+        final itemCount = visibleProducts.length;
         final columns = itemCount < targetColumns ? itemCount : targetColumns;
         return GridView.builder(
           shrinkWrap: true,
@@ -1063,8 +1050,8 @@ class _FeaturedProducts extends StatelessWidget {
                 : isTablet
                 ? 304
                 : 250,
-            crossAxisSpacing: isDesktop ? 14 : 12,
-            mainAxisSpacing: isDesktop ? 14 : 12,
+            crossAxisSpacing: isDesktop ? 16 : 12,
+            mainAxisSpacing: isDesktop ? 16 : 12,
           ),
           itemBuilder: (context, index) {
             final tile = visibleProducts[index];

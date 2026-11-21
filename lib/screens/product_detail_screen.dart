@@ -153,9 +153,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             SliverList(
               delegate: SliverChildListDelegate.fixed([
                 // Breadcrumbs y barra superior
-                ResponsivePage(
-                  maxWidth: 1200,
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                ResponsivePage.storefront(
+                  top: 14,
+                  bottom: 8,
                   child: AppBreadcrumbBar(
                     onBack: () => Navigator.maybePop(context),
                     items: [
@@ -192,9 +192,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
 
                 // Sección Principal (Foto a la izquierda + Buy Box a la derecha estilo Rosatel)
-                ResponsivePage(
-                  maxWidth: 1200,
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                ResponsivePage.storefront(
+                  top: 12,
+                  bottom: 32,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final mobile = constraints.maxWidth < 760;
@@ -555,9 +555,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
 
                 // SECCIÓN 2: Descripción a la izquierda y Sellos de Confianza a la derecha (Ahorro de espacio)
-                ResponsivePage(
-                  maxWidth: 1200,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ResponsivePage.storefront(
+                  top: 0,
+                  bottom: 0,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final isStacked = constraints.maxWidth < 800;

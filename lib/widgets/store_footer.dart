@@ -6,6 +6,7 @@ import '../models/catalog_models.dart';
 import '../models/storefront_settings.dart';
 import '../screens/privacy_screen.dart';
 import '../theme/app_theme.dart';
+import 'app_components.dart';
 
 /// Franja de sellos de confianza con estilo Rosatel adaptado a Expresiones.
 class TrustBadgesStrip extends StatelessWidget {
@@ -373,9 +374,16 @@ class StoreFooter extends StatelessWidget {
         ),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1320),
+            constraints: const BoxConstraints(
+              maxWidth: ResponsivePage.storefrontMaxWidth,
+            ),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 38, 24, 36),
+              padding: const EdgeInsets.fromLTRB(
+                ResponsivePage.storefrontGutter,
+                38,
+                ResponsivePage.storefrontGutter,
+                36,
+              ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   if (constraints.maxWidth < 720) {
