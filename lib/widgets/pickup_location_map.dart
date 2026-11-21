@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/storefront_settings.dart';
+import '../security/rate_limiter.dart';
 import '../theme/app_theme.dart';
 
 /// In-app pickup map. It mirrors the Shalom map experience and does not send
@@ -92,11 +93,20 @@ class _PickupLocationMapState extends State<PickupLocationMap> {
                 mapController: _controller,
                 options: MapOptions(
                   initialCenter: _point,
-                  initialZoom: 17.5,
-                  minZoom: 3,
-                  maxZoom: 19,
+                  initialZoom: 17.2,
+                  minZoom: 11,
+                  maxZoom: 18.5,
+                  cameraConstraint: CameraConstraint.containCenter(
+                    bounds: LatLngBounds(
+                      const LatLng(-19.5, -82.5),
+                      const LatLng(0.5, -67.5),
+                    ),
+                  ),
                   interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                    flags:
+                        (InteractiveFlag.all &
+                        ~InteractiveFlag.rotate &
+                        ~InteractiveFlag.flingAnimation),
                   ),
                   onMapReady: () => _ready = true,
                 ),
@@ -105,27 +115,16 @@ class _PickupLocationMapState extends State<PickupLocationMap> {
                     urlTemplate:
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'pe.com.expresiones.catalogo',
-                    maxNativeZoom: 19,
+                    maxNativeZoom: 18,
                   ),
                   MarkerLayer(
                     markers: [
                       Marker(
                         point: _point,
-                        width: 54,
-                        height: 62,
-                        alignment: Alignment.bottomCenter,
-                        child: const Icon(
-                          Icons.location_on_rounded,
-                          size: 54,
-                          color: AppColors.ink,
-                          shadows: [
-                            Shadow(
-                              color: Color(0x55000000),
-                              blurRadius: 6,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
+                        width: 30,
+                        height: 35,
+                        alignment: Alignment.topCenter,
+                        child: const _ExpresionesStorePin(),
                       ),
                     ],
                   ),
@@ -253,10 +252,86 @@ class _PickupLocationMapState extends State<PickupLocationMap> {
 
   void _changeZoom(double delta) {
     if (!_ready) return;
+    if (!ClientRateLimiter.instance.tryAcquire(
+      'pickup_map_zoom',
+      maxAttempts: 6,
+      window: const Duration(seconds: 2),
+    )) {
+      return;
+    }
     final camera = _controller.camera;
     _controller.move(
       camera.center,
-      (camera.zoom + delta).clamp(3.0, 19.0).toDouble(),
+      (camera.zoom + delta).clamp(11.0, 18.5).toDouble(),
     );
   }
+}
+
+class _ExpresionesStorePin extends StatelessWidget {
+  const _ExpresionesStorePin();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 30,
+      height: 35,
+      child: CustomPaint(
+        painter: const _StorePinPainter(),
+        child: const Align(
+          alignment: Alignment(0, -0.26),
+          child: Icon(
+            Icons.storefront_rounded,
+            size: 14,
+            color: AppColors.ink,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StorePinPainter extends CustomPainter {
+  const _StorePinPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final boxH = h * 0.74;
+    final radius = w * 0.24;
+    final pointerHalfW = w * 0.16;
+    final cx = w / 2;
+
+    final pinPath = Path()
+      ..moveTo(radius, 0)
+      ..lineTo(w - radius, 0)
+      ..quadraticBezierTo(w, 0, w, radius)
+      ..lineTo(w, boxH - radius)
+      ..quadraticBezierTo(w, boxH, w - radius, boxH)
+      ..lineTo(cx + pointerHalfW, boxH)
+      ..lineTo(cx, h)
+      ..lineTo(cx - pointerHalfW, boxH)
+      ..lineTo(radius, boxH)
+      ..quadraticBezierTo(0, boxH, 0, boxH - radius)
+      ..lineTo(0, radius)
+      ..quadraticBezierTo(0, 0, radius, 0)
+      ..close();
+
+    canvas.drawShadow(pinPath, const Color(0x44000000), 3, true);
+
+    final fillPaint = Paint()
+      ..color = AppColors.pinkSoft
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(pinPath, fillPaint);
+
+    final borderPaint = Paint()
+      ..color = AppColors.ink
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(pinPath, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _StorePinPainter oldDelegate) => false;
 }

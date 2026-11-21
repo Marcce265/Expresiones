@@ -294,16 +294,13 @@ class _ProductCardState extends State<ProductCard> {
                                     '$pricePrefix${_priceLabel(price)}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          fontSize: widget.homePresentation
-                                              ? 13
-                                              : widget.compact
-                                              ? 16
-                                              : 17,
-                                        ),
+                                    style: AppTheme.priceStyle(
+                                      fontSize: widget.homePresentation
+                                          ? 13.5
+                                          : widget.compact
+                                          ? 16
+                                          : 17,
+                                    ),
                                   ),
                                 ),
                                 if (!widget.compact ||

@@ -48,9 +48,9 @@ class ProductDescriptionCard extends StatelessWidget {
         children: [
           Text(
             'Descripción del producto',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontFamily: 'PlusJakartaSans',
-              fontWeight: FontWeight.w700,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontFamily: AppTheme.displayFont,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 6),

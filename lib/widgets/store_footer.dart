@@ -266,9 +266,9 @@ class StoreSpecialOrderBanner extends StatelessWidget {
                 '¿Buscas un diseño o pedido a medida?',
                 textAlign: compact ? TextAlign.center : TextAlign.start,
                 style: const TextStyle(
-                  fontFamily: 'PlusJakartaSans',
+                  fontFamily: AppTheme.displayFont,
                   fontSize: 22,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
               ),
@@ -449,9 +449,10 @@ class StoreFooter extends StatelessWidget {
     return Text(
       title,
       style: const TextStyle(
-        fontFamily: 'PlusJakartaSans',
-        fontSize: 14,
-        fontWeight: FontWeight.w800,
+        fontFamily: AppTheme.bodyFont,
+        fontSize: 13.5,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.2,
         color: AppColors.pinkStrong,
       ),
     );
@@ -474,8 +475,8 @@ class StoreFooter extends StatelessWidget {
             errorBuilder: (context, error, stackTrace) => Text(
               'Expresiones',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontFamily: 'PlusJakartaSans',
-                fontWeight: FontWeight.w800,
+                fontFamily: AppTheme.displayFont,
+                fontWeight: FontWeight.w700,
                 color: AppColors.pinkStrong,
                 fontSize: 22,
               ),
@@ -672,15 +673,15 @@ class StoreFooter extends StatelessWidget {
 
   Widget _paymentsBlock(BuildContext context) {
     final mobile = MediaQuery.sizeOf(context).width < 768;
-    final logoSize = mobile ? 32.0 : 48.0;
+    final logoSize = mobile ? 22.0 : 28.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _columnHeading('Formas de pago'),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Wrap(
-          spacing: mobile ? 8 : 10,
-          runSpacing: mobile ? 8 : 10,
+          spacing: mobile ? 6 : 8,
+          runSpacing: mobile ? 6 : 8,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _paymentLogoCard(
@@ -729,7 +730,7 @@ class StoreFooter extends StatelessWidget {
         padding: padding,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(7),
           border: Border.all(color: _footerDivider),
           boxShadow: [
             BoxShadow(
@@ -740,7 +741,7 @@ class StoreFooter extends StatelessWidget {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(padding == EdgeInsets.zero ? 9 : 4),
+          borderRadius: BorderRadius.circular(padding == EdgeInsets.zero ? 6 : 4),
           child: Image.asset(
             asset,
             fit: fit,

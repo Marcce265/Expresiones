@@ -462,7 +462,7 @@ class _PriceAndQuantity extends StatelessWidget {
           children: [
             Text(
               'S/ ${resolved.total.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: AppTheme.priceStyle(fontSize: 19),
             ),
             Text(
               'S/ ${resolved.unitPrice.toStringAsFixed(2)} por ${resolved.product.unitLabel}',

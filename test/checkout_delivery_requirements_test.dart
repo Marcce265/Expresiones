@@ -18,7 +18,7 @@ void main() {
     expect(find.text('TELÉFONO *'), findsOneWidget);
     expect(find.text('DNI *'), findsNothing);
     expect(find.text('FECHA DE NACIMIENTO *'), findsNothing);
-    expect(find.text('HORARIO DE ATENCIÓN *'), findsOneWidget);
+    expect(find.text('HORARIO DE RECOJO'), findsOneWidget);
   });
 
   testWidgets('Shalom solicita identidad y nombre completo obligatorios', (
@@ -33,7 +33,7 @@ void main() {
     expect(find.text('APELLIDOS *'), findsOneWidget);
     expect(find.text('DNI *'), findsOneWidget);
     expect(find.text('FECHA DE NACIMIENTO *'), findsNothing);
-    expect(find.text('HORARIO DE ATENCIÓN *'), findsNothing);
+    expect(find.text('HORARIO DE RECOJO'), findsNothing);
     expect(
       find.textContaining('el DNI debe pertenecer a una persona mayor de edad'),
       findsOneWidget,
@@ -170,7 +170,7 @@ void main() {
     await tester.ensureVisible(submit);
     await tester.tap(submit);
     await tester.pump();
-    expect(find.text('Selecciona un horario de atención.'), findsOneWidget);
+    expect(find.text('Selecciona un horario de recojo.'), findsOneWidget);
 
     final firstSlot = find.text('07:00 - 08:00');
     await tester.ensureVisible(firstSlot);

@@ -145,11 +145,17 @@ class CustomerAccountRepository {
   Future<List<StoredCustomerOrder>> loadMyOrders() async {
     final user = client.auth.currentUser;
     if (user == null) return const [];
+    ClientRateLimiter.instance.enforce(
+      'account_orders_read',
+      maxAttempts: 12,
+      window: const Duration(minutes: 1),
+    );
     final rows = await client
         .from('customer_orders')
         .select()
         .eq('user_id', user.id)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .limit(50);
     return rows.map<StoredCustomerOrder>(_storedOrderFromRow).toList();
   }
 

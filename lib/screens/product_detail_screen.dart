@@ -304,8 +304,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               title,
                               style: Theme.of(context).textTheme.headlineMedium
                                   ?.copyWith(
-                                    fontFamily: 'PlusJakartaSans',
-                                    fontWeight: FontWeight.w800,
+                                    fontFamily: AppTheme.displayFont,
+                                    fontWeight: FontWeight.w600,
                                     color: AppColors.ink,
                                     height: 1.18,
                                   ),
@@ -330,11 +330,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               children: [
                                 Text(
                                   '${product.startingAt ? 'Desde ' : ''}S/ ${unitPrice.toStringAsFixed(2)}',
-                                  style: const TextStyle(
+                                  style: AppTheme.priceStyle(
                                     fontSize: 28,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w600,
                                     color: AppColors.ink,
-                                    letterSpacing: -0.5,
                                   ),
                                 ),
                                 Text(

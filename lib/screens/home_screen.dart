@@ -82,7 +82,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final query = _query.trim();
     final results = query.isEmpty
         ? const <CatalogTile>[]
-        : CatalogSearchEngine.searchProducts(products, query);
+        : CatalogSearchEngine.searchProducts(
+            products,
+            query,
+            expandFamilyMatches: true,
+          );
     final visibleResults = results.length <= _visibleResultLimit
         ? results
         : results.take(_visibleResultLimit).toList(growable: false);
@@ -127,7 +131,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
                 _HomeIntro(
                   settings: widget.settings,
-                  onBrowse: () => widget.onBrowse(ProductCategory.materials),
                   searchController: _searchController,
                   query: _query,
                   onSearchChanged: _onSearchChanged,
@@ -379,7 +382,6 @@ class _TopBar extends StatelessWidget {
 class _HomeIntro extends StatelessWidget {
   const _HomeIntro({
     required this.settings,
-    required this.onBrowse,
     required this.searchController,
     required this.query,
     required this.onSearchChanged,
@@ -389,7 +391,6 @@ class _HomeIntro extends StatelessWidget {
   });
 
   final StorefrontSettings settings;
-  final VoidCallback onBrowse;
   final TextEditingController searchController;
   final String query;
   final ValueChanged<String> onSearchChanged;
@@ -430,22 +431,11 @@ class _HomeIntro extends StatelessWidget {
                 overflow: isWide ? TextOverflow.ellipsis : null,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.muted,
-                  fontSize: isWide ? 13 : 14,
+                  fontSize: isWide ? 12.5 : 14,
                   height: 1.42,
                 ),
               ),
               SizedBox(height: isWide ? 16 : 18),
-              if (showHero) ...[
-                SizedBox(
-                  width: isWide ? null : double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: onBrowse,
-                    icon: const Icon(Icons.grid_view_rounded),
-                    label: const Text('Abrir catálogo'),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 460),
                 child: _HomeSearchField(
@@ -504,10 +494,10 @@ class _HomeIntro extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(flex: 62, child: copyCard),
+                Expanded(flex: 55, child: copyCard),
                 const SizedBox(width: 18),
                 Expanded(
-                  flex: 38,
+                  flex: 45,
                   child: Stack(children: [Positioned.fill(child: hero)]),
                 ),
               ],
@@ -529,10 +519,10 @@ class _HomeHeadline extends StatelessWidget {
   Widget build(BuildContext context) {
     final baseStyle = Theme.of(context).textTheme.displaySmall?.copyWith(
       fontFamily: AppTheme.displayFont,
-      fontSize: compact ? 31 : 38,
+      fontSize: compact ? 30 : 33,
       height: 1.12,
       fontWeight: FontWeight.w500,
-      letterSpacing: compact ? -0.35 : -0.5,
+      letterSpacing: compact ? -0.35 : -0.45,
       color: AppColors.ink,
     );
 
@@ -981,21 +971,22 @@ class _FeaturedHeader extends StatelessWidget {
             ),
           ],
         );
-        final actionButton = OutlinedButton.icon(
+        final actionButton = FilledButton.icon(
           onPressed: onAction,
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.ink,
-            side: const BorderSide(color: AppColors.ink, width: 1.1),
-            minimumSize: const Size(0, 38),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.ink,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(0, 44),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
             shape: const StadiumBorder(),
             textStyle: const TextStyle(
-              fontSize: 12,
+              fontFamily: AppTheme.bodyFont,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
+              letterSpacing: 0.15,
             ),
           ),
-          iconAlignment: IconAlignment.end,
-          icon: const Icon(Icons.arrow_forward_rounded, size: 14),
+          icon: const Icon(Icons.grid_view_rounded, size: 17),
           label: const Text('Ver todo el catálogo'),
         );
 

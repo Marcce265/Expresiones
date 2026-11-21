@@ -159,7 +159,7 @@ class PriceText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       '${prefix.isEmpty ? '' : '$prefix '}S/ ${value.toStringAsFixed(2)}',
-      style: Theme.of(context).textTheme.titleLarge,
+      style: AppTheme.priceStyle(fontSize: 19),
     );
   }
 }

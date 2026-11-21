@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/shalom_agency_repository.dart';
 import '../models/shalom_agency.dart';
+import '../security/input_sanitizer.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 
@@ -15,15 +19,44 @@ class ShalomAgencyPicker extends StatefulWidget {
 }
 
 class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
+  static const int _maxQueryLength = 60;
+  static const Duration _searchDebounceDuration = Duration(milliseconds: 200);
+
   final _searchController = TextEditingController();
   late final Future<ShalomAgencyCatalog> _catalog =
       ShalomAgencyRepository.load();
+  Timer? _searchDebounce;
   String _query = '';
+  bool _selecting = false;
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String raw) {
+    final sanitized = InputSanitizer.sanitizeText(
+      raw,
+      maxLength: _maxQueryLength,
+      neutralizeFormula: false,
+    );
+    _searchDebounce?.cancel();
+    if (sanitized.isEmpty) {
+      if (_query.isNotEmpty) setState(() => _query = '');
+      return;
+    }
+    _searchDebounce = Timer(_searchDebounceDuration, () {
+      if (!mounted || _query == sanitized) return;
+      setState(() => _query = sanitized);
+    });
+  }
+
+  void _selectAgency(ShalomAgency agency) {
+    if (_selecting || !agency.canReceive) return;
+    _selecting = true;
+    Navigator.of(context).pop(agency);
   }
 
   @override
@@ -45,18 +78,12 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
           }
 
           final catalog = snapshot.data!;
-          final publicAgencies = catalog.agencies
-              .where((agency) => agency.isPublic)
-              .toList(growable: false);
-          final filtered =
-              publicAgencies
-                  .where((agency) => agency.matches(_query))
-                  .toList(growable: false)
-                ..sort((a, b) {
-                  final byDepartment = a.department.compareTo(b.department);
-                  if (byDepartment != 0) return byDepartment;
-                  return a.displayName.compareTo(b.displayName);
-                });
+          final publicAgencies = catalog.publicAgencies;
+          final filtered = _query.isEmpty
+              ? publicAgencies
+              : publicAgencies
+                    .where((agency) => agency.matches(_query))
+                    .toList(growable: false);
 
           return ResponsivePage(
             maxWidth: 1180,
@@ -83,15 +110,28 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
                 TextField(
                   controller: _searchController,
                   textInputAction: TextInputAction.search,
-                  onChanged: (value) => setState(() => _query = value),
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(_maxQueryLength),
+                  ],
+                  onChanged: _onSearchChanged,
+                  onSubmitted: (value) {
+                    _searchDebounce?.cancel();
+                    final clean = InputSanitizer.sanitizeText(
+                      value,
+                      maxLength: _maxQueryLength,
+                      neutralizeFormula: false,
+                    );
+                    if (_query != clean) setState(() => _query = clean);
+                  },
                   decoration: InputDecoration(
                     hintText: 'Ej. Huancayo o Lima',
                     prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: _query.isEmpty
+                    suffixIcon: _query.isEmpty && _searchController.text.isEmpty
                         ? null
                         : IconButton(
                             tooltip: 'Borrar búsqueda',
                             onPressed: () {
+                              _searchDebounce?.cancel();
                               _searchController.clear();
                               setState(() => _query = '');
                             },
@@ -131,7 +171,7 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
                                 agency: agency,
                                 selected: agency.id == widget.selectedId,
                                 onTap: agency.canReceive
-                                    ? () => Navigator.of(context).pop(agency)
+                                    ? () => _selectAgency(agency)
                                     : null,
                               );
                             }

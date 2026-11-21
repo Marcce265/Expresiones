@@ -335,7 +335,7 @@ class _ReviewLine extends StatelessWidget {
         const SizedBox(width: 12),
         Text(
           'S/ ${resolved.total.toStringAsFixed(2)}',
-          style: Theme.of(context).textTheme.labelLarge,
+          style: AppTheme.priceStyle(fontSize: 15.5),
         ),
       ],
     );

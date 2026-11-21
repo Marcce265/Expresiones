@@ -14,7 +14,22 @@ abstract final class AppColors {
 
 abstract final class AppTheme {
   static const String displayFont = 'Lora';
-  static const String bodyFont = 'PlusJakartaSans';
+  static const String bodyFont = 'Montserrat';
+
+  static TextStyle priceStyle({
+    double fontSize = 18,
+    FontWeight fontWeight = FontWeight.w600,
+    Color color = AppColors.ink,
+    double height = 1.2,
+  }) {
+    return TextStyle(
+      fontFamily: displayFont,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      height: height,
+      color: color,
+    );
+  }
 
   static ThemeData get light {
     final scheme =
@@ -47,6 +62,22 @@ abstract final class AppTheme {
 
     return base.copyWith(
       textTheme: base.textTheme.copyWith(
+        displayLarge: const TextStyle(
+          fontFamily: displayFont,
+          fontSize: 48,
+          height: 1.08,
+          fontWeight: FontWeight.w500,
+          letterSpacing: -0.6,
+          color: AppColors.ink,
+        ),
+        displayMedium: const TextStyle(
+          fontFamily: displayFont,
+          fontSize: 40,
+          height: 1.1,
+          fontWeight: FontWeight.w500,
+          letterSpacing: -0.5,
+          color: AppColors.ink,
+        ),
         displaySmall: const TextStyle(
           fontFamily: displayFont,
           fontSize: 36,
@@ -71,52 +102,79 @@ abstract final class AppTheme {
           letterSpacing: -0.2,
           color: AppColors.ink,
         ),
+        headlineSmall: const TextStyle(
+          fontFamily: displayFont,
+          fontSize: 20,
+          height: 1.24,
+          fontWeight: FontWeight.w500,
+          letterSpacing: -0.15,
+          color: AppColors.ink,
+        ),
         titleLarge: const TextStyle(
           fontFamily: bodyFont,
-          fontSize: 19,
-          height: 1.25,
-          fontWeight: FontWeight.w700,
+          fontSize: 18.5,
+          height: 1.26,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.1,
           color: AppColors.ink,
         ),
         titleMedium: const TextStyle(
           fontFamily: bodyFont,
-          fontSize: 15.5,
-          height: 1.3,
+          fontSize: 15,
+          height: 1.32,
+          fontWeight: FontWeight.w600,
+          color: AppColors.ink,
+        ),
+        titleSmall: const TextStyle(
+          fontFamily: bodyFont,
+          fontSize: 13.5,
+          height: 1.32,
           fontWeight: FontWeight.w600,
           color: AppColors.ink,
         ),
         bodyLarge: const TextStyle(
           fontFamily: bodyFont,
-          fontSize: 15.5,
-          height: 1.5,
+          fontSize: 15,
+          height: 1.52,
+          fontWeight: FontWeight.w400,
           color: AppColors.ink,
         ),
         bodyMedium: const TextStyle(
           fontFamily: bodyFont,
-          fontSize: 14,
-          height: 1.48,
+          fontSize: 13.5,
+          height: 1.5,
+          fontWeight: FontWeight.w400,
           color: AppColors.ink,
         ),
         bodySmall: const TextStyle(
           fontFamily: bodyFont,
-          fontSize: 12.5,
+          fontSize: 12,
           height: 1.45,
+          fontWeight: FontWeight.w400,
           color: AppColors.muted,
         ),
         labelLarge: const TextStyle(
           fontFamily: bodyFont,
-          fontSize: 14,
-          height: 1.2,
+          fontSize: 13.5,
+          height: 1.24,
           fontWeight: FontWeight.w600,
           color: AppColors.ink,
         ),
         labelMedium: const TextStyle(
           fontFamily: bodyFont,
-          fontSize: 12,
-          height: 1.2,
+          fontSize: 11.5,
+          height: 1.22,
           fontWeight: FontWeight.w600,
-          letterSpacing: .4,
+          letterSpacing: 0.45,
           color: AppColors.ink,
+        ),
+        labelSmall: const TextStyle(
+          fontFamily: bodyFont,
+          fontSize: 10.5,
+          height: 1.2,
+          fontWeight: FontWeight.w500,
+          letterSpacing: 0.35,
+          color: AppColors.muted,
         ),
       ),
       appBarTheme: const AppBarTheme(
@@ -178,8 +236,8 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.all(Radius.circular(14)),
           borderSide: BorderSide(color: AppColors.error),
         ),
-        hintStyle: TextStyle(color: AppColors.muted),
-        labelStyle: TextStyle(color: AppColors.muted),
+        hintStyle: TextStyle(fontFamily: bodyFont, color: AppColors.muted),
+        labelStyle: TextStyle(fontFamily: bodyFont, color: AppColors.muted),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -214,7 +272,10 @@ abstract final class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          textStyle: const TextStyle(
+            fontFamily: bodyFont,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
@@ -231,8 +292,11 @@ abstract final class AppTheme {
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        labelStyle: const TextStyle(color: AppColors.ink),
-        secondaryLabelStyle: const TextStyle(color: Colors.white),
+        labelStyle: const TextStyle(fontFamily: bodyFont, color: AppColors.ink),
+        secondaryLabelStyle: const TextStyle(
+          fontFamily: bodyFont,
+          color: Colors.white,
+        ),
         showCheckmark: false,
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -241,7 +305,14 @@ abstract final class AppTheme {
         unselectedItemColor: AppColors.muted,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
-        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w700),
+        selectedLabelStyle: TextStyle(
+          fontFamily: bodyFont,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontFamily: bodyFont,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
@@ -260,6 +331,7 @@ abstract final class AppTheme {
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           return TextStyle(
+            fontFamily: bodyFont,
             color: states.contains(WidgetState.selected)
                 ? AppColors.ink
                 : AppColors.muted,
@@ -276,10 +348,14 @@ abstract final class AppTheme {
         selectedIconTheme: IconThemeData(color: AppColors.ink),
         unselectedIconTheme: IconThemeData(color: AppColors.muted),
         selectedLabelTextStyle: TextStyle(
+          fontFamily: bodyFont,
           color: AppColors.ink,
           fontWeight: FontWeight.w700,
         ),
-        unselectedLabelTextStyle: TextStyle(color: AppColors.muted),
+        unselectedLabelTextStyle: TextStyle(
+          fontFamily: bodyFont,
+          color: AppColors.muted,
+        ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: AppColors.ink,
@@ -294,12 +370,16 @@ abstract final class AppTheme {
           color: AppColors.ink,
           borderRadius: BorderRadius.circular(10),
         ),
-        textStyle: const TextStyle(color: Colors.white, fontSize: 12),
+        textStyle: const TextStyle(
+          fontFamily: bodyFont,
+          color: Colors.white,
+          fontSize: 12,
+        ),
         waitDuration: const Duration(milliseconds: 450),
       ),
       snackBarTheme: const SnackBarThemeData(
         backgroundColor: AppColors.ink,
-        contentTextStyle: TextStyle(color: Colors.white),
+        contentTextStyle: TextStyle(fontFamily: bodyFont, color: Colors.white),
         behavior: SnackBarBehavior.floating,
       ),
     );

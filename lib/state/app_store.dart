@@ -14,6 +14,7 @@ import '../models/quote_line.dart';
 import '../data/production_capacity_repository.dart';
 import '../data/site_settings_repository.dart';
 import '../models/storefront_settings.dart';
+import '../security/input_sanitizer.dart';
 import '../services/commerce_telemetry_service.dart';
 
 typedef CatalogLoader = Future<List<CatalogProduct>> Function();
@@ -31,6 +32,8 @@ class AppStore extends ChangeNotifier {
 
   static const _cartKey = 'expresiones.quote.v1';
   static const _detailsKey = 'expresiones.coordination.v1';
+  static const int maxCartLines = 40;
+  static const int maxLineQuantity = 500;
 
   final CatalogLoader _catalogLoader;
   final CatalogStreamLoader? catalogStreamLoader;
@@ -148,34 +151,47 @@ class AppStore extends ChangeNotifier {
     String? variantId,
     String customization = '',
   }) {
-    final safeQuantity = quantity < 1 ? 1 : quantity;
+    final safeQuantity = quantity.clamp(1, maxLineQuantity);
+    final cleanCustomization = InputSanitizer.sanitizeText(
+      customization,
+      maxLength: 160,
+    );
     final incoming = QuoteLine(
       productId: product.id,
       quantity: safeQuantity,
       variantId: variantId,
-      customization: customization.trim(),
+      customization: cleanCustomization,
     );
     final current = _cart[incoming.key];
-    _cart[incoming.key] = incoming.copyWith(
-      quantity: (current?.quantity ?? 0) + safeQuantity,
+    if (current == null && _cart.length >= maxCartLines) {
+      return;
+    }
+    final previousQuantity = current?.quantity ?? 0;
+    final nextQuantity = (previousQuantity + safeQuantity).clamp(
+      1,
+      maxLineQuantity,
     );
+    final addedDelta = nextQuantity - previousQuantity;
+    _cart[incoming.key] = incoming.copyWith(quantity: nextQuantity);
     _persistCart();
-    final commerceTelemetry = telemetry;
-    if (commerceTelemetry != null) {
-      unawaited(
-        commerceTelemetry.recordProductAdded(
-          productId: product.id,
-          variantId: variantId,
-          quantity: safeQuantity,
-          cartItemCount: cartQuantity,
-          cartSubtotal: subtotal,
-        ),
+    if (addedDelta > 0) {
+      final commerceTelemetry = telemetry;
+      if (commerceTelemetry != null) {
+        unawaited(
+          commerceTelemetry.recordProductAdded(
+            productId: product.id,
+            variantId: variantId,
+            quantity: addedDelta,
+            cartItemCount: cartQuantity,
+            cartSubtotal: subtotal,
+          ),
+        );
+      }
+      _recordPopularity(
+        (repository) =>
+            repository.recordAdded(product.id, quantity: addedDelta),
       );
     }
-    _recordPopularity(
-      (repository) =>
-          repository.recordAdded(product.id, quantity: safeQuantity),
-    );
     notifyListeners();
   }
 
@@ -184,12 +200,13 @@ class AppStore extends ChangeNotifier {
       removeLine(line);
       return;
     }
+    final safeQuantity = quantity.clamp(1, maxLineQuantity);
     final current = _cart[line.key];
-    if (current == null) return;
-    _cart[line.key] = line.copyWith(quantity: quantity);
+    if (current == null || current.quantity == safeQuantity) return;
+    _cart[line.key] = line.copyWith(quantity: safeQuantity);
     _persistCart();
     _recordQuoteActivity();
-    final addedQuantity = quantity - current.quantity;
+    final addedQuantity = safeQuantity - current.quantity;
     if (addedQuantity > 0) {
       _recordPopularity(
         (repository) =>
@@ -537,17 +554,45 @@ class AppStore extends ChangeNotifier {
     70: 32,
   };
 
+  bool _cartPersistInFlight = false;
+  bool _cartPersistDirty = false;
+  bool _detailsPersistInFlight = false;
+  bool _detailsPersistDirty = false;
+
   Future<void> _persistCart() async {
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(
-      _cartKey,
-      jsonEncode(_cart.values.map((line) => line.toJson()).toList()),
-    );
+    _cartPersistDirty = true;
+    if (_cartPersistInFlight) return;
+    _cartPersistInFlight = true;
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      while (_cartPersistDirty) {
+        _cartPersistDirty = false;
+        await preferences.setString(
+          _cartKey,
+          jsonEncode(_cart.values.map((line) => line.toJson()).toList()),
+        );
+      }
+    } finally {
+      _cartPersistInFlight = false;
+    }
   }
 
   Future<void> _persistDetails() async {
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(_detailsKey, jsonEncode(_details.toJson()));
+    _detailsPersistDirty = true;
+    if (_detailsPersistInFlight) return;
+    _detailsPersistInFlight = true;
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      while (_detailsPersistDirty) {
+        _detailsPersistDirty = false;
+        await preferences.setString(
+          _detailsKey,
+          jsonEncode(_details.toJson()),
+        );
+      }
+    } finally {
+      _detailsPersistInFlight = false;
+    }
   }
 
   @override

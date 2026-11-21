@@ -1,5 +1,7 @@
+import 'dart:math' as math;
+
 class ShalomAgency {
-  const ShalomAgency({
+  ShalomAgency({
     required this.id,
     required this.name,
     required this.locationName,
@@ -54,7 +56,64 @@ class ShalomAgency {
   String get localityLabel =>
       _uniqueNonEmpty([district, province, department]).join(' · ');
 
-  String get searchableText => _normalize(
+  String get transitEstimateFromHuancayo => estimateTransitFromHuancayo(
+    department: department,
+    locality: localityLabel,
+    latitude: latitude,
+    longitude: longitude,
+  );
+
+  /// Estima los días de envío terrestre por Shalom desde Huancayo.
+  static String estimateTransitFromHuancayo({
+    String department = '',
+    String locality = '',
+    double? latitude,
+    double? longitude,
+    double originLatitude = -12.065,
+    double originLongitude = -75.210,
+  }) {
+    final normalizedDept = _normalize(department);
+    final normalizedLoc = _normalize(locality);
+    final region = normalizedDept.isNotEmpty
+        ? normalizedDept
+        : normalizedLoc.split('·').last.trim();
+
+    final hasValidCoords =
+        latitude != null &&
+        longitude != null &&
+        latitude >= -20 &&
+        latitude <= 0 &&
+        longitude >= -82 &&
+        longitude <= -68;
+    final distanceKm = hasValidCoords
+        ? _haversineKm(originLatitude, originLongitude, latitude, longitude)
+        : null;
+
+    if (region.contains('loreto') ||
+        region.contains('madre de dios') ||
+        region.contains('tumbes') ||
+        (distanceKm != null && distanceKm >= 1000)) {
+      return 'Llega en 3 a 4 días';
+    }
+
+    if (region.contains('junin') ||
+        region.contains('huancavelica') ||
+        region.contains('pasco') ||
+        region.contains('ayacucho')) {
+      return 'Llega en 1 a 2 días';
+    }
+
+    if (region == 'lima' || region == 'callao' || normalizedLoc.contains('lima') || normalizedLoc.contains('callao')) {
+      if (distanceKm != null && distanceKm > 360) {
+        return 'Llega en 2 a 3 días';
+      }
+      return 'Llega en 1 a 2 días';
+    }
+
+    return 'Llega en 2 a 3 días';
+  }
+
+  late final String searchableText = _normalize(
     [
       displayName,
       name,
@@ -70,9 +129,12 @@ class ShalomAgency {
   );
 
   bool matches(String query) {
-    final normalized = _normalize(query.trim());
+    final clean = query.trim();
+    if (clean.isEmpty) return true;
+    final capped = clean.length > 60 ? clean.substring(0, 60) : clean;
+    final normalized = _normalize(capped);
     return normalized.isEmpty ||
-        normalized.split(' ').every(searchableText.contains);
+        normalized.split(' ').take(8).every(searchableText.contains);
   }
 
   factory ShalomAgency.fromJson(Map<String, Object?> json) {
@@ -110,15 +172,22 @@ class ShalomAgency {
 }
 
 class ShalomAgencyCatalog {
-  const ShalomAgencyCatalog({
+  ShalomAgencyCatalog({
     required this.source,
     required this.updatedAt,
     required this.agencies,
-  });
+  }) : publicAgencies = List.unmodifiable(
+         (agencies.where((agency) => agency.isPublic).toList()..sort((a, b) {
+           final byDepartment = a.department.compareTo(b.department);
+           if (byDepartment != 0) return byDepartment;
+           return a.displayName.compareTo(b.displayName);
+         })),
+       );
 
   final String source;
   final DateTime? updatedAt;
   final List<ShalomAgency> agencies;
+  final List<ShalomAgency> publicAgencies;
 
   factory ShalomAgencyCatalog.fromJson(Map<String, Object?> json) {
     final rawAgencies = json['agencies'];
@@ -182,4 +251,16 @@ String _normalize(String value) {
     result = result.replaceAll(accents[index], plain[index]);
   }
   return result.replaceAll(RegExp(r'\s+'), ' ').trim();
+}
+
+double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
+  const earthRadiusKm = 6371.0088;
+  final p1 = lat1 * math.pi / 180;
+  final p2 = lat2 * math.pi / 180;
+  final dp = (lat2 - lat1) * math.pi / 180;
+  final dl = (lon2 - lon1) * math.pi / 180;
+  final a =
+      math.sin(dp / 2) * math.sin(dp / 2) +
+      math.cos(p1) * math.cos(p2) * math.sin(dl / 2) * math.sin(dl / 2);
+  return 2 * earthRadiusKm * math.asin(math.sqrt(math.min(1.0, a)));
 }

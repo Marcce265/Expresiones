@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/shalom_agency_repository.dart';
 import '../models/shalom_agency.dart';
+import '../security/rate_limiter.dart';
 import '../theme/app_theme.dart';
 
 /// Mapa interactivo de agencias Shalom que permanece dentro de la aplicación.
@@ -40,9 +41,29 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
   static const _shalomRed = Color(0xFFC8102E);
 
   final MapController _controller = MapController();
-  late final Future<ShalomAgencyCatalog> _catalog =
-      ShalomAgencyRepository.load();
+  List<ShalomAgency> _agencies = const [];
   bool _mapReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAgencies();
+  }
+
+  Future<void> _loadAgencies() async {
+    final catalog = await ShalomAgencyRepository.load();
+    if (!mounted) return;
+    setState(() {
+      _agencies = [
+        for (final agency in catalog.agencies)
+          if (agency.isPublic &&
+              agency.canReceive &&
+              agency.latitude != null &&
+              agency.longitude != null)
+            agency,
+      ];
+    });
+  }
 
   bool get _hasSelectedCoordinates =>
       widget.latitude != null && widget.longitude != null;
@@ -74,13 +95,20 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
 
   void _centerSelection() {
     if (!mounted || !_mapReady) return;
-    _controller.move(_selectedPoint, _hasSelectedCoordinates ? 16.5 : 5);
+    _controller.move(_selectedPoint, _hasSelectedCoordinates ? 17.0 : 5.2);
   }
 
   void _changeZoom(double delta) {
     if (!_mapReady) return;
+    if (!ClientRateLimiter.instance.tryAcquire(
+      'shalom_map_zoom',
+      maxAttempts: 6,
+      window: const Duration(seconds: 2),
+    )) {
+      return;
+    }
     final camera = _controller.camera;
-    final zoom = (camera.zoom + delta).clamp(3.0, 18.0).toDouble();
+    final zoom = (camera.zoom + delta).clamp(4.5, 18.0).toDouble();
     _controller.move(camera.center, zoom);
   }
 
@@ -118,12 +146,21 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
                 mapController: _controller,
                 options: MapOptions(
                   initialCenter: _selectedPoint,
-                  initialZoom: _hasSelectedCoordinates ? 16.5 : 5,
-                  minZoom: 3,
+                  initialZoom: _hasSelectedCoordinates ? 17.0 : 5.2,
+                  minZoom: 4.5,
                   maxZoom: 18,
+                  cameraConstraint: CameraConstraint.containCenter(
+                    bounds: LatLngBounds(
+                      const LatLng(-19.5, -82.5),
+                      const LatLng(0.5, -67.5),
+                    ),
+                  ),
                   backgroundColor: const Color(0xFFE6EEF0),
                   interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                    flags:
+                        (InteractiveFlag.all &
+                        ~InteractiveFlag.rotate &
+                        ~InteractiveFlag.flingAnimation),
                   ),
                   onMapReady: () {
                     _mapReady = true;
@@ -135,13 +172,13 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
                     urlTemplate:
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'pe.com.expresiones.catalogo',
-                    maxNativeZoom: 19,
+                    maxNativeZoom: 18,
                   ),
-                  FutureBuilder<ShalomAgencyCatalog>(
-                    future: _catalog,
-                    builder: (context, snapshot) => MarkerLayer(
-                      markers: _markers(snapshot.data?.agencies ?? const []),
-                    ),
+                  _ShalomAgenciesLayer(
+                    agencies: widget.showOtherAgencies ? _agencies : const [],
+                    selectedAgencyId: widget.selectedAgencyId,
+                    selectedAgencyName: _selectedAgencyName,
+                    selectedPoint: _hasSelectedCoordinates ? _selectedPoint : null,
                   ),
                   SimpleAttributionWidget(
                     source: const Text(
@@ -184,44 +221,98 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
     );
   }
 
-  List<Marker> _markers(List<ShalomAgency> agencies) {
-    final result = <Marker>[
-      for (final agency
-          in widget.showOtherAgencies ? agencies : const <ShalomAgency>[])
-        if (agency.isPublic &&
-            agency.canReceive &&
-            agency.latitude != null &&
-            agency.longitude != null &&
-            agency.id != widget.selectedAgencyId)
+}
+
+class _ShalomAgenciesLayer extends StatelessWidget {
+  const _ShalomAgenciesLayer({
+    required this.agencies,
+    required this.selectedAgencyId,
+    required this.selectedAgencyName,
+    required this.selectedPoint,
+  });
+
+  static const _pinZoomThreshold = 10.5;
+  static const _maxVisiblePins = 45;
+
+  final List<ShalomAgency> agencies;
+  final String selectedAgencyId;
+  final String selectedAgencyName;
+  final LatLng? selectedPoint;
+
+  @override
+  Widget build(BuildContext context) {
+    final camera = MapCamera.of(context);
+    final bounds = camera.visibleBounds;
+    final showDetailedPins = camera.zoom >= _pinZoomThreshold;
+
+    final visibleOthers = <ShalomAgency>[];
+    for (final agency in agencies) {
+      if (agency.id == selectedAgencyId) continue;
+      final lat = agency.latitude!;
+      final lng = agency.longitude!;
+      if (lat >= bounds.south - 0.05 &&
+          lat <= bounds.north + 0.05 &&
+          lng >= bounds.west - 0.05 &&
+          lng <= bounds.east + 0.05) {
+        visibleOthers.add(agency);
+      }
+    }
+
+    final markers = <Marker>[];
+    final circles = <CircleMarker>[];
+
+    if (showDetailedPins && visibleOthers.length <= _maxVisiblePins) {
+      for (final agency in visibleOthers) {
+        markers.add(
           Marker(
             key: ValueKey(agency.id),
             point: LatLng(agency.latitude!, agency.longitude!),
-            width: 30,
-            height: 38,
-            alignment: Alignment.bottomCenter,
+            width: 26,
+            height: 31,
+            alignment: Alignment.topCenter,
             child: Tooltip(
               message: agency.displayName,
               child: const _ShalomMarker(selected: false),
             ),
           ),
-    ];
+        );
+      }
+    } else {
+      for (final agency in visibleOthers) {
+        circles.add(
+          CircleMarker(
+            point: LatLng(agency.latitude!, agency.longitude!),
+            radius: camera.zoom >= 8 ? 5.5 : 4.2,
+            color: _ShalomEmbeddedMapState._shalomRed,
+            borderColor: Colors.white,
+            borderStrokeWidth: 1.2,
+          ),
+        );
+      }
+    }
 
-    if (_hasSelectedCoordinates) {
-      result.add(
+    if (selectedPoint != null) {
+      markers.add(
         Marker(
-          key: ValueKey('selected-${widget.selectedAgencyId}'),
-          point: _selectedPoint,
-          width: 48,
-          height: 58,
-          alignment: Alignment.bottomCenter,
+          key: ValueKey('selected-$selectedAgencyId'),
+          point: selectedPoint!,
+          width: 36,
+          height: 42,
+          alignment: Alignment.topCenter,
           child: Tooltip(
-            message: _selectedAgencyName,
+            message: selectedAgencyName,
             child: const _ShalomMarker(selected: true),
           ),
         ),
       );
     }
-    return result;
+
+    return Stack(
+      children: [
+        if (circles.isNotEmpty) CircleLayer(circles: circles),
+        if (markers.isNotEmpty) MarkerLayer(markers: markers),
+      ],
+    );
   }
 }
 
@@ -386,36 +477,79 @@ class _ShalomMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = selected ? 48.0 : 30.0;
-    return Stack(
-      alignment: Alignment.topCenter,
-      children: [
-        Icon(
-          Icons.location_on_rounded,
-          size: size,
-          color: _ShalomEmbeddedMapState._shalomRed,
-          shadows: const [
-            Shadow(
-              color: Color(0x55000000),
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        Positioned(
-          top: selected ? 8 : 5,
+    final width = selected ? 36.0 : 26.0;
+    final height = selected ? 42.0 : 31.0;
+    return SizedBox(
+      width: width,
+      height: height,
+      child: CustomPaint(
+        painter: _ShalomPinPainter(selected: selected),
+        child: Align(
+          alignment: const Alignment(0, -0.26),
           child: Text(
             'S',
             style: TextStyle(
               color: Colors.white,
-              fontSize: selected ? 14 : 9,
+              fontSize: selected ? 16 : 11.5,
               height: 1,
               fontStyle: FontStyle.italic,
               fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
             ),
           ),
         ),
-      ],
+      ),
     );
   }
+}
+
+class _ShalomPinPainter extends CustomPainter {
+  const _ShalomPinPainter({required this.selected});
+
+  final bool selected;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final boxH = h * 0.74;
+    final radius = w * 0.2;
+    final pointerHalfW = w * 0.16;
+    final cx = w / 2;
+
+    final pinPath = Path()
+      ..moveTo(radius, 0)
+      ..lineTo(w - radius, 0)
+      ..quadraticBezierTo(w, 0, w, radius)
+      ..lineTo(w, boxH - radius)
+      ..quadraticBezierTo(w, boxH, w - radius, boxH)
+      ..lineTo(cx + pointerHalfW, boxH)
+      ..lineTo(cx, h)
+      ..lineTo(cx - pointerHalfW, boxH)
+      ..lineTo(radius, boxH)
+      ..quadraticBezierTo(0, boxH, 0, boxH - radius)
+      ..lineTo(0, radius)
+      ..quadraticBezierTo(0, 0, radius, 0)
+      ..close();
+
+    if (selected) {
+      canvas.drawShadow(pinPath, const Color(0x55000000), 4, true);
+    }
+
+    final fillPaint = Paint()
+      ..color = _ShalomEmbeddedMapState._shalomRed
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(pinPath, fillPaint);
+
+    final borderPaint = Paint()
+      ..color = selected ? Colors.white : const Color(0x88FFFFFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = selected ? 1.6 : 1.0
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(pinPath, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ShalomPinPainter oldDelegate) =>
+      oldDelegate.selected != selected;
 }

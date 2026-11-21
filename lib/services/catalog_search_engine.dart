@@ -266,8 +266,7 @@ abstract final class CatalogSearchEngine {
         }
       }
 
-      if (productMatchesAll &&
-          (!anyVariantSpecificToken || !expandFamilyMatches)) {
+      if (productMatchesAll && !expandFamilyMatches) {
         // Caso "cintas", "cinta satinada", "limpiapipas": devolver la familia
         // agrupada con máxima prioridad para evitar 80 tarjetas repetidas.
         if (anyVariantSpecificToken) {

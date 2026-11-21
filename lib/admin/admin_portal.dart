@@ -1231,7 +1231,7 @@ class _AdminNavigation extends StatelessWidget {
                         'Expresiones',
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
-                              fontFamily: 'PlusJakartaSans',
+                              fontFamily: AppTheme.bodyFont,
                               fontWeight: FontWeight.w700,
                             ),
                       ),

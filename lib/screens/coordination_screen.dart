@@ -9,6 +9,7 @@ import '../models/coordination_details.dart';
 import '../models/production_capacity.dart';
 import '../models/shalom_agency.dart';
 import '../models/storefront_settings.dart';
+import '../security/rate_limiter.dart';
 import '../services/legal_consent_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
@@ -74,6 +75,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   bool _termsAccepted = false;
   bool _privacyAccepted = false;
   bool _consentError = false;
+  bool _pickingAgency = false;
 
   @override
   void initState() {
@@ -362,21 +364,38 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   }
 
   Future<void> _pickAgency() async {
-    final agency = await Navigator.of(context).push<ShalomAgency>(
-      MaterialPageRoute(
-        builder: (context) => ShalomAgencyPicker(selectedId: _agencyId),
-      ),
-    );
-    if (agency == null || !mounted) return;
-    setState(() {
-      _agencyId = agency.id;
-      _agencyName = agency.displayName;
-      _agencyAddress = agency.address;
-      _agencyLocality = agency.localityLabel;
-      _agencyLatitude = agency.latitude;
-      _agencyLongitude = agency.longitude;
-      _agencyError = false;
-    });
+    if (_pickingAgency) return;
+    if (!ClientRateLimiter.instance.tryAcquire(
+      'shalom_picker_open',
+      maxAttempts: 8,
+      window: const Duration(seconds: 15),
+    )) {
+      showAppNotice(
+        context,
+        'Espera un momento antes de volver a cambiar la agencia.',
+      );
+      return;
+    }
+    _pickingAgency = true;
+    try {
+      final agency = await Navigator.of(context).push<ShalomAgency>(
+        MaterialPageRoute(
+          builder: (context) => ShalomAgencyPicker(selectedId: _agencyId),
+        ),
+      );
+      if (agency == null || !mounted) return;
+      setState(() {
+        _agencyId = agency.id;
+        _agencyName = agency.displayName;
+        _agencyAddress = agency.address;
+        _agencyLocality = agency.localityLabel;
+        _agencyLatitude = agency.latitude;
+        _agencyLongitude = agency.longitude;
+        _agencyError = false;
+      });
+    } finally {
+      _pickingAgency = false;
+    }
   }
 
   void _submit() {
@@ -403,6 +422,17 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         context,
         'La fecha elegida ya no está disponible. Elige una nueva fecha.',
         tone: AppNoticeTone.info,
+      );
+      return;
+    }
+    if (!ClientRateLimiter.instance.tryAcquire(
+      'coordination_submit',
+      maxAttempts: 10,
+      window: const Duration(seconds: 15),
+    )) {
+      showAppNotice(
+        context,
+        'Espera unos segundos antes de volver a enviar tus datos.',
       );
       return;
     }
@@ -1125,7 +1155,6 @@ class _PickupDestinationSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final details = Container(
-      constraints: const BoxConstraints(minHeight: 320),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -1237,6 +1266,11 @@ class _ShalomDestinationSection extends StatelessWidget {
       agencyName: agencyName,
       agencyAddress: agencyAddress,
       agencyLocality: agencyLocality,
+      transitEstimate: ShalomAgency.estimateTransitFromHuancayo(
+        locality: agencyLocality,
+        latitude: latitude,
+        longitude: longitude,
+      ),
       showError: showError,
       onTap: onChooseAgency,
     );
@@ -1290,6 +1324,7 @@ class _AgencySelectionCard extends StatelessWidget {
     required this.agencyName,
     required this.agencyAddress,
     required this.agencyLocality,
+    required this.transitEstimate,
     required this.showError,
     required this.onTap,
   });
@@ -1298,6 +1333,7 @@ class _AgencySelectionCard extends StatelessWidget {
   final String agencyName;
   final String agencyAddress;
   final String agencyLocality;
+  final String transitEstimate;
   final bool showError;
   final VoidCallback onTap;
 
@@ -1317,7 +1353,9 @@ class _AgencySelectionCard extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             width: double.infinity,
-            constraints: const BoxConstraints(minHeight: 330),
+            constraints: hasAgency
+                ? null
+                : const BoxConstraints(minHeight: 330),
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
@@ -1378,6 +1416,13 @@ class _AgencySelectionCard extends StatelessWidget {
                         _AgencyDetail(
                           icon: Icons.signpost_outlined,
                           text: agencyAddress,
+                        ),
+                      ],
+                      if (transitEstimate.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        _AgencyDetail(
+                          icon: Icons.schedule_rounded,
+                          text: transitEstimate,
                         ),
                       ],
                       const SizedBox(height: 12),
@@ -1455,8 +1500,6 @@ class _AgencyDetail extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ),
@@ -1642,12 +1685,13 @@ class _PickupTimeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _FieldLabel('Horario de atención *'),
-        const SizedBox(height: 8),
-        if (!enabled)
+        const _FieldLabel('Horario de recojo'),
+        const SizedBox(height: 10),
+        if (!enabled) ...[
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
@@ -1657,28 +1701,120 @@ class _PickupTimeSelector extends StatelessWidget {
             ),
             child: const Text('Elige primero el día de recojo.'),
           ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          const SizedBox(height: 10),
+        ],
+        Column(
           children: [
-            for (final slot in slots)
-              ChoiceChip(
-                label: Text(slot),
-                selected: selected == slot,
-                onSelected: enabled ? (_) => onSelected(slot) : null,
+            for (var i = 0; i < slots.length; i++) ...[
+              if (i > 0) const SizedBox(height: 10),
+              _PickupTimeCard(
+                label: slots[i],
+                selected: selected == slots[i],
+                enabled: enabled,
+                onTap: () => onSelected(slots[i]),
               ),
+            ],
           ],
         ),
         if (showError) ...[
           const SizedBox(height: 8),
           Text(
-            'Selecciona un horario de atención.',
-            style: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(color: Theme.of(context).colorScheme.error),
+            'Selecciona un horario de recojo.',
+            style: textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.error,
+            ),
           ),
         ],
       ],
+    );
+  }
+}
+
+class _PickupTimeCard extends StatelessWidget {
+  const _PickupTimeCard({
+    required this.label,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final bgColor = selected
+        ? AppColors.pinkSoft.withValues(alpha: .5)
+        : AppColors.surface;
+    final borderColor = selected ? AppColors.ink : AppColors.border;
+
+    return Opacity(
+      opacity: enabled ? 1 : 0.55,
+      child: Material(
+        color: bgColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: borderColor, width: selected ? 1.4 : 1),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: selected ? AppColors.ink : AppColors.muted,
+                      width: 1.6,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: selected
+                      ? Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.ink,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Gratis',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

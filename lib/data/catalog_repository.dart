@@ -34,6 +34,9 @@ class CatalogRepository {
   Object? _lastError;
   Future<List<CatalogProduct>>? _inFlightLoad;
   Future<List<CatalogProduct>>? _inFlightFetch;
+  DateTime? _lastRemoteFetchAt;
+  List<CatalogProduct>? _lastRemoteProducts;
+  static const Duration _remoteFetchCooldown = Duration(seconds: 15);
 
   CatalogDataSource get lastSource => _lastSource;
   Object? get lastError => _lastError;
@@ -221,6 +224,14 @@ class CatalogRepository {
       return _useFallback(includeInactive: includeInactive);
     }
 
+    final now = DateTime.now();
+    if (!includeInactive &&
+        _lastRemoteProducts != null &&
+        _lastRemoteFetchAt != null &&
+        now.difference(_lastRemoteFetchAt!) < _remoteFetchCooldown) {
+      return _lastRemoteProducts!;
+    }
+
     final rows = await Future.wait([
       _readRows(activeClient, 'families'),
       _readRows(activeClient, 'variants'),
@@ -240,12 +251,17 @@ class CatalogRepository {
       return includeInactive || _isActive(variant);
     }).toList();
 
-    return SupabaseCatalogMapper(resolveImage: _resolveImage).mapCatalog(
+    final mapped = SupabaseCatalogMapper(resolveImage: _resolveImage).mapCatalog(
       families: families,
       variants: variants,
       familyPriceTiers: rows[2],
       variantPriceTiers: rows[3],
     );
+    if (!includeInactive) {
+      _lastRemoteProducts = mapped;
+      _lastRemoteFetchAt = DateTime.now();
+    }
+    return mapped;
   }
 
   Future<List<Map<String, dynamic>>> _readRows(

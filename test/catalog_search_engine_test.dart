@@ -289,11 +289,19 @@ void main() {
         await tester.pump(const Duration(milliseconds: 200));
         expect(find.text('Resultados'), findsNothing);
 
-        // Después de 450ms muestra los resultados agrupados (4 cintas + cautín que sella cintas)
+        // Después de 450ms muestra los resultados expandidos (3 tonos de cinta satinada + 3 cintas + cautín)
         await tester.pump(const Duration(milliseconds: 350));
         expect(find.text('Resultados'), findsOneWidget);
-        expect(find.text('5 resultados'), findsOneWidget);
-        expect(find.text('CINTA SATINADA 100 M'), findsWidgets);
+        expect(find.text('7 resultados'), findsOneWidget);
+        expect(find.text('N.°1 BLANCO'), findsOneWidget);
+
+        // Pulsar el chip popular "Cintas satinadas" expande todos los tonos
+        await tester.tap(find.text('Cintas satinadas'));
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(find.text('3 resultados'), findsOneWidget);
+        expect(find.text('N.°1 BLANCO'), findsOneWidget);
+        expect(find.text('N.°2 ROJO PASIÓN'), findsOneWidget);
+        expect(find.text('N.°3 MARFIL'), findsOneWidget);
       },
     );
 

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../security/input_sanitizer.dart';
+import '../security/rate_limiter.dart';
 
 /// Versión oficial vigente de los textos legales (Términos, Privacidad,
 /// Reembolsos y Cookies) adecuados a la legislación peruana (Ley N° 29733,
@@ -148,21 +149,33 @@ class LegalConsentService {
 
     final client = supabaseClient ?? _tryGetSupabaseClient();
     if (client != null) {
-      try {
-        final userId = client.auth.currentUser?.id;
-        await client.from('legal_consents').insert({
-          'user_id': userId,
-          'context': record.context,
-          'customer_name': record.customerName,
-          'customer_phone': record.customerPhone,
-          'terms_accepted': record.termsAccepted,
-          'privacy_accepted': record.privacyAccepted,
-          'policy_version': record.policyVersion,
-          'accepted_via': record.acceptedVia,
-          'accepted_at': record.acceptedAtUtc.toIso8601String(),
-        });
-      } catch (_) {
-        // El respaldo queda garantizado en el snapshot de la orden, metadatos Auth y almacenamiento local.
+      final dedupKey =
+          'legal_consent:${record.context}:${record.customerPhone}:${record.policyVersion}';
+      final isNewInSession = ClientRateLimiter.instance.markOncePerSession(
+        dedupKey,
+      );
+      final withinRateLimit = ClientRateLimiter.instance.tryAcquire(
+        'legal_consent_insert',
+        maxAttempts: 4,
+        window: const Duration(minutes: 1),
+      );
+      if (isNewInSession && withinRateLimit) {
+        try {
+          final userId = client.auth.currentUser?.id;
+          await client.from('legal_consents').insert({
+            'user_id': userId,
+            'context': record.context,
+            'customer_name': record.customerName,
+            'customer_phone': record.customerPhone,
+            'terms_accepted': record.termsAccepted,
+            'privacy_accepted': record.privacyAccepted,
+            'policy_version': record.policyVersion,
+            'accepted_via': record.acceptedVia,
+            'accepted_at': record.acceptedAtUtc.toIso8601String(),
+          });
+        } catch (_) {
+          // El respaldo queda garantizado en el snapshot de la orden, metadatos Auth y almacenamiento local.
+        }
       }
     }
 

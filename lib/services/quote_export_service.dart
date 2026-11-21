@@ -8,19 +8,36 @@ import 'package:pdf/widgets.dart' as pw;
 import '../models/coordination_details.dart';
 import '../models/checkout_order.dart';
 import '../models/quote_line.dart';
+import '../security/rate_limiter.dart';
 
 /// Creates portable quote documents without sending customer data to a server.
 ///
 /// PDF and XLSX bytes are generated on the device. [savePdf] and [saveXlsx]
 /// then use the native/browser save mechanism exposed by `file_saver`.
 abstract final class QuoteExportService {
+  static pw.Font? _cachedRegularFont;
+  static pw.Font? _cachedBoldFont;
+
+  static Future<(pw.Font, pw.Font)> _loadFonts() async {
+    final regular = _cachedRegularFont ??= pw.Font.ttf(
+      await rootBundle.load('assets/fonts/Montserrat-Regular.ttf'),
+    );
+    final bold = _cachedBoldFont ??= pw.Font.ttf(
+      await rootBundle.load('assets/fonts/Montserrat-Bold.ttf'),
+    );
+    return (regular, bold);
+  }
+
+  static void _enforceExportRateLimit() {
+    ClientRateLimiter.instance.enforce(
+      'quote_export',
+      maxAttempts: 5,
+      window: const Duration(seconds: 30),
+    );
+  }
+
   static Future<Uint8List> buildOrderPdf(CheckoutOrder order) async {
-    final regularFont = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/PlusJakartaSans-Regular.ttf'),
-    );
-    final boldFont = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/PlusJakartaSans-Bold.ttf'),
-    );
+    final (regularFont, boldFont) = await _loadFonts();
     final document = pw.Document(
       title: 'Comprobante simulado ${order.id}',
       author: 'Expresiones',
@@ -203,12 +220,7 @@ abstract final class QuoteExportService {
   }) async {
     final createdAt = generatedAt ?? DateTime.now();
     final subtotal = _subtotal(lines);
-    final regularFont = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/PlusJakartaSans-Regular.ttf'),
-    );
-    final boldFont = pw.Font.ttf(
-      await rootBundle.load('assets/fonts/PlusJakartaSans-Bold.ttf'),
-    );
+    final (regularFont, boldFont) = await _loadFonts();
     final document = pw.Document(
       title: 'Cotización $quoteId',
       author: 'Expresiones',
@@ -673,6 +685,7 @@ abstract final class QuoteExportService {
     required List<ResolvedQuoteLine> lines,
     required CoordinationDetails details,
   }) async {
+    _enforceExportRateLimit();
     final bytes = await buildPdf(
       quoteId: quoteId,
       lines: lines,
@@ -692,6 +705,7 @@ abstract final class QuoteExportService {
     required List<ResolvedQuoteLine> lines,
     required CoordinationDetails details,
   }) {
+    _enforceExportRateLimit();
     final bytes = buildXlsx(quoteId: quoteId, lines: lines, details: details);
     return FileSaver.instance.saveToDownloads(
       name: _safeFileName('cotizacion_$quoteId'),
@@ -703,6 +717,7 @@ abstract final class QuoteExportService {
   }
 
   static Future<String?> saveOrderPdf(CheckoutOrder order) async {
+    _enforceExportRateLimit();
     final bytes = await buildOrderPdf(order);
     return FileSaver.instance.saveToDownloads(
       name: _safeFileName('comprobante_simulado_${order.id}'),
@@ -714,6 +729,7 @@ abstract final class QuoteExportService {
   }
 
   static Future<String?> saveOrderXlsx(CheckoutOrder order) {
+    _enforceExportRateLimit();
     return FileSaver.instance.saveToDownloads(
       name: _safeFileName('comprobante_simulado_${order.id}'),
       bytes: buildOrderXlsx(order),

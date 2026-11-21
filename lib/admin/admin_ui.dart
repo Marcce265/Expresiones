@@ -32,7 +32,7 @@ class AdminSectionIntro extends StatelessWidget {
           title,
           style: compact
               ? theme.textTheme.titleLarge?.copyWith(
-                  fontFamily: 'PlusJakartaSans',
+                  fontFamily: AppTheme.bodyFont,
                   fontWeight: FontWeight.w700,
                 )
               : theme.textTheme.headlineMedium,

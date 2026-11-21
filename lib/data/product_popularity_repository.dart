@@ -51,8 +51,18 @@ class SupabaseProductPopularityRepository
   }
 
   @override
-  Future<void> recordAdded(String productId, {required int quantity}) =>
-      _record(productId, action: 'add', quantity: quantity);
+  Future<void> recordAdded(String productId, {required int quantity}) {
+    final safeSlug = InputSanitizer.validateSafeSlug(productId);
+    if (safeSlug == null) return Future<void>.value();
+    if (!ClientRateLimiter.instance.tryAcquire(
+      'popularity_add:$safeSlug',
+      maxAttempts: 1,
+      window: const Duration(seconds: 20),
+    )) {
+      return Future<void>.value();
+    }
+    return _record(safeSlug, action: 'add', quantity: quantity);
+  }
 
   @override
   Future<void> recordCompleted(Map<String, int> quantitiesByProduct) async {
@@ -75,7 +85,7 @@ class SupabaseProductPopularityRepository
     if (activeClient == null || normalizedId == null || quantity < 1) return;
     if (!ClientRateLimiter.instance.tryAcquire(
       'popularity_rpc',
-      maxAttempts: 30,
+      maxAttempts: 15,
       window: const Duration(minutes: 1),
     )) {
       return;
