@@ -498,14 +498,20 @@ class _HomeIntro extends StatelessWidget {
           );
         }
 
-        return SizedBox(
-          height: 350,
-          child: Row(
-            children: [
-              Expanded(flex: 62, child: copyCard),
-              const SizedBox(width: 18),
-              Expanded(flex: 38, child: hero),
-            ],
+        return ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 350),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(flex: 62, child: copyCard),
+                const SizedBox(width: 18),
+                Expanded(
+                  flex: 38,
+                  child: Stack(children: [Positioned.fill(child: hero)]),
+                ),
+              ],
+            ),
           ),
         );
       },
