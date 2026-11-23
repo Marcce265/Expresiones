@@ -64,6 +64,15 @@ class _ProductCardState extends State<ProductCard> {
   @override
   Widget build(BuildContext context) {
     final variantId = widget.variant?.id;
+    final isFamily =
+        variantId == null &&
+        widget.product.variants.any((variant) => variant.isActive);
+    final onAdd = isFamily ? null : widget.onAdd;
+    final showArrow =
+        onAdd == null &&
+        (!widget.compact ||
+            widget.homePresentation ||
+            (isFamily && widget.onAdd != null));
     final status = widget.product.stockStatusFor(variantId);
     final unavailable =
         !widget.product.isActive || status == StockStatus.outOfStock;
@@ -283,30 +292,35 @@ class _ProductCardState extends State<ProductCard> {
                                       : 11,
                                 ),
                           ),
-                          if (widget.showPrice) ...[
+                          if (widget.showPrice || onAdd != null) ...[
                             SizedBox(height: widget.homePresentation ? 7 : 5),
-                            if (widget.homePresentation) ...[
+                            if (widget.showPrice &&
+                                widget.homePresentation) ...[
                               const Divider(),
                               const SizedBox(height: 7),
                             ],
                             Row(
                               children: [
-                                Expanded(
-                                  child: Text(
-                                    '$pricePrefix${_priceLabel(price)}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTheme.priceStyle(
-                                      fontSize: widget.homePresentation
-                                          ? 13.5
-                                          : widget.compact
-                                          ? 16
-                                          : 17,
+                                if (widget.showPrice)
+                                  Expanded(
+                                    child: Text(
+                                      '$pricePrefix${_priceLabel(price)}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTheme.priceStyle(
+                                        fontSize: widget.homePresentation
+                                            ? 13.5
+                                            : widget.compact
+                                            ? 16
+                                            : 17,
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                if (widget.onAdd != null) ...[
-                                  const SizedBox(width: 4),
+                                  )
+                                else
+                                  const Spacer(),
+                                if (onAdd != null) ...[
+                                  if (widget.showPrice)
+                                    const SizedBox(width: 4),
                                   IconButton.filledTonal(
                                     tooltip: 'Agregar $title al carrito',
                                     visualDensity: VisualDensity.standard,
@@ -321,18 +335,15 @@ class _ProductCardState extends State<ProductCard> {
                                     ),
                                     onPressed: unavailable
                                         ? null
-                                        : () => widget.onAdd!(
-                                            widget.product,
-                                            variantId,
-                                          ),
+                                        : () =>
+                                              onAdd(widget.product, variantId),
                                     icon: const Icon(
                                       Icons.add_shopping_cart_rounded,
                                       size: 17,
                                     ),
                                   ),
                                 ],
-                                if (!widget.compact ||
-                                    widget.homePresentation) ...[
+                                if (showArrow) ...[
                                   const SizedBox(width: 8),
                                   AnimatedContainer(
                                     duration: const Duration(milliseconds: 160),

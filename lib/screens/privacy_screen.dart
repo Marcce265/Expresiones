@@ -121,7 +121,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Borrar datos de este dispositivo'),
         content: Text(
-          FeatureFlags.demoPayment
+          FeatureFlags.appEndToEnd || FeatureFlags.demoPayment
               ? 'Se eliminarán el carrito, los datos de coordinación, el último comprobante de demostración y los eventos anónimos que todavía no se hayan enviado. Esta acción no puede deshacerse.'
               : 'Se eliminarán el carrito, los datos de coordinación y los eventos anónimos que todavía no se hayan enviado. Esta acción no puede deshacerse.',
         ),
@@ -311,7 +311,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
         for (final index
             in widget.customerAccountsEnabled
                 ? List.generate(
-                    FeatureFlags.demoPayment ? 8 : 7,
+                    FeatureFlags.appEndToEnd || FeatureFlags.demoPayment ? 8 : 7,
                     (index) => index + 1,
                   )
                 : const [1, 3, 4, 5, 6, 7])

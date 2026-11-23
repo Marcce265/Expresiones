@@ -24,6 +24,7 @@ import 'admin_analytics_screen.dart';
 import 'admin_catalog_repository.dart';
 import 'admin_checkout_settings_screen.dart';
 import 'admin_operations_repository.dart';
+import 'admin_pickup_verification_screen.dart';
 import 'admin_site_settings_repository.dart';
 import 'admin_site_settings_screen.dart';
 import '../data/customer_account_repository.dart';
@@ -56,9 +57,14 @@ class AdminPortalApp extends StatelessWidget {
 
 /// Authenticates staff and requires both an admin allowlist entry and TOTP.
 class AdminPortal extends StatefulWidget {
-  const AdminPortal({super.key, required this.client});
+  const AdminPortal({
+    super.key,
+    required this.client,
+    this.pickupVerificationOnly = false,
+  });
 
   final SupabaseClient client;
+  final bool pickupVerificationOnly;
 
   @override
   State<AdminPortal> createState() => _AdminPortalState();
@@ -84,22 +90,32 @@ class _AdminPortalState extends State<AdminPortal> {
         }
         final user =
             snapshot.data?.session?.user ?? widget.client.auth.currentUser;
-        if (snapshot.connectionState == ConnectionState.waiting &&
+        if (!widget.pickupVerificationOnly &&
+            snapshot.connectionState == ConnectionState.waiting &&
             user == null) {
           return const _AdminLoading();
         }
         if (user == null) return AdminLoginScreen(client: widget.client);
-        return _AdminSecurityGate(client: widget.client, user: user);
+        return _AdminSecurityGate(
+          client: widget.client,
+          user: user,
+          pickupVerificationOnly: widget.pickupVerificationOnly,
+        );
       },
     );
   }
 }
 
 class _AdminSecurityGate extends StatefulWidget {
-  const _AdminSecurityGate({required this.client, required this.user});
+  const _AdminSecurityGate({
+    required this.client,
+    required this.user,
+    required this.pickupVerificationOnly,
+  });
 
   final SupabaseClient client;
   final User user;
+  final bool pickupVerificationOnly;
 
   @override
   State<_AdminSecurityGate> createState() => _AdminSecurityGateState();
@@ -175,6 +191,10 @@ class _AdminSecurityGateState extends State<_AdminSecurityGate> {
             onVerified: _retry,
             onSignOut: _signOut,
           ),
+          _AdminAccessMode.allowed when widget.pickupVerificationOnly =>
+            AdminPickupVerificationScreen(
+              repository: CustomerAccountRepository(client: widget.client),
+            ),
           _AdminAccessMode.allowed => AdminDashboardScreen(
             client: widget.client,
             repository: AdminCatalogRepository(client: widget.client),
@@ -239,8 +259,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         'admin_login',
         maxAttempts: 5,
         window: const Duration(minutes: 1),
-        message:
-            'Demasiados intentos de inicio de sesión. Espera un minuto antes de reintentar.',
+        message: 'Demasiados intentos de inicio de sesión. Espera un minuto antes de reintentar.',
       );
       final cleanEmail = InputSanitizer.sanitizeText(
         _email.text,
@@ -251,10 +270,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         password: _password.text,
       );
     } on FormatException catch (error) {
+      if (!mounted) return;
       setState(() {
         _error = error.message;
       });
     } on AuthException catch (error) {
+      if (!mounted) return;
       setState(() {
         final message = error.message.toLowerCase();
         _error = message.contains('invalid login')
@@ -262,6 +283,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             : _friendlyAuthMessage(error);
       });
     } catch (error) {
+      if (!mounted) return;
       setState(() {
         _error = _friendlyAuthMessage(error);
       });
@@ -4773,8 +4795,7 @@ class _TotpChallengeScreenState extends State<_TotpChallengeScreen> {
         'admin_mfa_verify',
         maxAttempts: 5,
         window: const Duration(minutes: 1),
-        message:
-            'Demasiados intentos de código 2FA. Espera un minuto antes de reintentar.',
+        message: 'Demasiados intentos de código 2FA. Espera un minuto antes de reintentar.',
       );
       await widget.client.auth.mfa.challengeAndVerify(
         factorId: widget.factorId,

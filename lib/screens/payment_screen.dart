@@ -40,6 +40,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
   SimulatedPaymentMethod _method = SimulatedPaymentMethod.demoCard;
   bool _processing = false;
   bool _rejected = false;
+  SimulatedPayment? _approvedPayment;
+  String? _saveError;
 
   double get _subtotal =>
       widget.lines.fold(0, (total, line) => total + line.total);
@@ -49,23 +51,35 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() {
       _processing = true;
       _rejected = false;
+      _saveError = null;
     });
     try {
-      final payment = await widget.onProcessPayment(_method);
+      final payment =
+          _approvedPayment ?? await widget.onProcessPayment(_method);
       if (!payment.isApproved) {
         if (mounted) setState(() => _rejected = true);
         return;
       }
-      await widget.onApproved(payment.withMethodLabel(_methodLabel));
-    } catch (_) {
-      if (mounted) setState(() => _rejected = true);
+      _approvedPayment = payment.withMethodLabel(_methodLabel);
+      await widget.onApproved(_approvedPayment!);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        if (_approvedPayment == null && error is! FormatException) {
+          _rejected = true;
+        } else {
+          _saveError = error is FormatException
+              ? error.message
+              : 'No se pudo guardar el pedido. Intenta guardar de nuevo.';
+        }
+      });
     } finally {
       if (mounted) setState(() => _processing = false);
     }
   }
 
   void _selectMethod(SimulatedPaymentMethod method) {
-    if (_processing) return;
+    if (_processing || _approvedPayment != null) return;
     setState(() {
       _method = method;
       _rejected = false;
@@ -119,6 +133,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     subtotal: _subtotal,
                     processing: _processing,
                     rejected: _rejected,
+                    saveError: _saveError,
+                    paymentApproved: _approvedPayment != null,
                     settings: widget.settings,
                     onSelect: _selectMethod,
                     onSubmit: _submit,
@@ -417,6 +433,8 @@ class _PaymentPanel extends StatelessWidget {
     required this.subtotal,
     required this.processing,
     required this.rejected,
+    required this.saveError,
+    required this.paymentApproved,
     required this.settings,
     required this.onSelect,
     required this.onSubmit,
@@ -426,6 +444,8 @@ class _PaymentPanel extends StatelessWidget {
   final double subtotal;
   final bool processing;
   final bool rejected;
+  final String? saveError;
+  final bool paymentApproved;
   final StorefrontSettings settings;
   final ValueChanged<SimulatedPaymentMethod> onSelect;
   final VoidCallback onSubmit;
@@ -465,7 +485,7 @@ class _PaymentPanel extends StatelessWidget {
               title: settings.text(StorefrontText.paymentCardMethod),
               description: settings.text(StorefrontText.paymentCardDescription),
               selected: selectedMethod == SimulatedPaymentMethod.demoCard,
-              enabled: !processing,
+              enabled: !processing && !paymentApproved,
               onTap: () => onSelect(SimulatedPaymentMethod.demoCard),
             ),
             const SizedBox(height: 12),
@@ -474,12 +494,16 @@ class _PaymentPanel extends StatelessWidget {
               title: settings.text(StorefrontText.paymentYapeMethod),
               description: settings.text(StorefrontText.paymentYapeDescription),
               selected: selectedMethod == SimulatedPaymentMethod.demoYape,
-              enabled: !processing,
+              enabled: !processing && !paymentApproved,
               onTap: () => onSelect(SimulatedPaymentMethod.demoYape),
             ),
             if (rejected) ...[
               const SizedBox(height: 16),
               _RejectedMessage(settings: settings, onRetry: onSubmit),
+            ],
+            if (saveError != null) ...[
+              const SizedBox(height: 16),
+              Text(saveError!, style: const TextStyle(color: AppColors.error)),
             ],
             const SizedBox(height: 22),
             SizedBox(
@@ -498,6 +522,8 @@ class _PaymentPanel extends StatelessWidget {
                 label: Text(
                   processing
                       ? settings.text(StorefrontText.paymentProcessing)
+                      : paymentApproved
+                      ? 'Volver a guardar pedido'
                       : '${settings.text(StorefrontText.paymentSubmitButton)} · S/ ${subtotal.toStringAsFixed(2)}',
                 ),
               ),

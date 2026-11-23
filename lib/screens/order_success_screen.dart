@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/feature_flags.dart';
 import '../models/checkout_order.dart';
 import '../models/coordination_details.dart';
 import '../models/storefront_settings.dart';
@@ -7,6 +8,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
 import '../widgets/order_export_buttons.dart';
+import '../widgets/pickup_order_qr_card.dart';
 
 typedef OrderSuccessAction = Future<void> Function();
 
@@ -90,9 +92,11 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen> {
                 final wide = constraints.maxWidth >= 900;
                 final details = Column(
                   children: [
-                    _OrderReceiptCard(order: order),
+                    if (FeatureFlags.appEndToEnd)
+                      PickupOrderQrCard(order: order),
+                    OrderReceiptCard(order: order),
                     const SizedBox(height: 18),
-                    _DeliveryCard(details: order.details),
+                    OrderDeliveryCard(details: order.details),
                   ],
                 );
                 final actions = _ActionsCard(
@@ -235,8 +239,8 @@ class _SuccessHero extends StatelessWidget {
   }
 }
 
-class _OrderReceiptCard extends StatelessWidget {
-  const _OrderReceiptCard({required this.order});
+class OrderReceiptCard extends StatelessWidget {
+  const OrderReceiptCard({super.key, required this.order});
 
   final CheckoutOrder order;
 
@@ -428,8 +432,8 @@ class _ReceiptAmountRow extends StatelessWidget {
   }
 }
 
-class _DeliveryCard extends StatelessWidget {
-  const _DeliveryCard({required this.details});
+class OrderDeliveryCard extends StatelessWidget {
+  const OrderDeliveryCard({super.key, required this.details});
 
   final CoordinationDetails details;
 
@@ -478,6 +482,13 @@ class _DeliveryCard extends StatelessWidget {
                 icon: Icons.location_on_outlined,
                 text:
                     '$agency${details.shalomAgencyLocality.trim().isEmpty ? '' : ' · ${details.shalomAgencyLocality.trim()}'}',
+              ),
+            ],
+            if (details.shalomAgencyAddress.trim().isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _DetailRow(
+                icon: Icons.place_outlined,
+                text: details.shalomAgencyAddress.trim(),
               ),
             ],
             const SizedBox(height: 12),

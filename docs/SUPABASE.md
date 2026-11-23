@@ -256,16 +256,18 @@ el repositorio local debe continuar funcionando como respaldo.
 
 ## Perfil de cliente y fotos
 
-Después de incorporar la migración de avatares, las cuentas siguen siendo
-opcionales: las personas pueden explorar el catálogo y cotizar como invitadas.
-El perfil guarda la foto solo si la persona la captura o selecciona. Los
+En la app Android conectada a Supabase, es necesario iniciar sesión para
+entrar al catálogo y completar el pago simulado. En la web de producción se
+puede cotizar como invitado.
+El perfil de Android guarda la foto solo si la persona la captura o selecciona. Los
 archivos viven en el bucket privado `customer-avatars`, bajo una carpeta con el
 UUID del dueño. Las políticas de Storage permiten leer, subir o retirar
 únicamente objetos de esa carpeta. La app conserva la ruta en los metadatos de
 la cuenta y genera enlaces firmados de corta duración para mostrar la imagen.
+Antes de subirla, Android convierte la foto a WebP y limita su lado más largo
+a 512 píxeles. La migración `202611230001_customer_avatars_webp.sql` habilita
+WebP en el bucket y conserva la compatibilidad con archivos JPEG.
 
-La ubicación se solicita bajo demanda para ordenar agencias por distancia o
-orientar la brújula en Android. No se guarda ni se envía a Supabase. En Flutter
-Web, el sitio debe servirse por HTTPS y `web/_headers` permite geolocalización y
-cámara únicamente para el mismo sitio. La brújula usa el magnetómetro nativo de
-Android; en la web sigue disponible el mapa y el orden por cercanía.
+La ubicación se solicita bajo demanda para ordenar agencias por distancia en
+Android. No se guarda ni se envía a Supabase. En la web siguen disponibles
+el mapa y la búsqueda manual de agencias.

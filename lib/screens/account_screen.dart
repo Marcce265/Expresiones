@@ -1,15 +1,18 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as image_lib;
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/feature_flags.dart';
 import '../data/customer_account_repository.dart';
 import '../services/legal_consent_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/legal_consent_checkboxes.dart';
+import '../widgets/pickup_order_qr_card.dart';
+import 'order_success_screen.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({
@@ -20,6 +23,7 @@ class AccountScreen extends StatefulWidget {
     this.initialName = '',
     this.initialPhone = '',
     this.onAuthenticated,
+    this.onVerifyPickup,
   });
 
   final CustomerAccountRepository repository;
@@ -28,12 +32,16 @@ class AccountScreen extends StatefulWidget {
   final String initialName;
   final String initialPhone;
   final VoidCallback? onAuthenticated;
+  final VoidCallback? onVerifyPickup;
 
   @override
   State<AccountScreen> createState() => _AccountScreenState();
 }
 
 class _AccountScreenState extends State<AccountScreen> {
+  static const _avatarChannel = MethodChannel(
+    'pe.expresiones.expresiones/avatar',
+  );
   late final TextEditingController _name = TextEditingController(
     text: widget.initialName,
   );
@@ -52,6 +60,7 @@ class _AccountScreenState extends State<AccountScreen> {
   bool _privacyAccepted = false;
   bool _consentError = false;
   bool _savingAvatar = false;
+  int _refreshRequest = 0;
   String? _error;
 
   @override
@@ -71,12 +80,13 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _refresh() async {
+    final request = ++_refreshRequest;
     try {
       final profile = await widget.repository.currentProfile();
       final orders = profile == null
           ? const <StoredCustomerOrder>[]
           : await widget.repository.loadMyOrders();
-      if (!mounted) return;
+      if (!mounted || request != _refreshRequest) return;
       setState(() {
         _profile = profile;
         _orders = orders;
@@ -84,7 +94,7 @@ class _AccountScreenState extends State<AccountScreen> {
         _error = null;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || request != _refreshRequest) return;
       setState(() {
         _loading = false;
         _error = 'No se pudo cargar tu cuenta. Revisa tu conexión.';
@@ -147,6 +157,7 @@ class _AccountScreenState extends State<AccountScreen> {
   Future<void> _signOut() async {
     await widget.repository.signOut();
     if (!mounted) return;
+    _refreshRequest++;
     setState(() {
       _profile = null;
       _orders = const [];
@@ -155,6 +166,7 @@ class _AccountScreenState extends State<AccountScreen> {
   }
 
   Future<void> _changeAvatar() async {
+    if (!FeatureFlags.appEndToEnd || _savingAvatar) return;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       showDragHandle: true,
@@ -192,35 +204,13 @@ class _AccountScreenState extends State<AccountScreen> {
         preferredCameraDevice: CameraDevice.front,
       );
       if (picked == null) return;
-      final bytes = await picked.readAsBytes();
-      if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) {
-        throw const FormatException('Elige una foto de menos de 8 MB.');
-      }
-      final decoded = image_lib.decodeImage(bytes);
-      if (decoded == null) {
+      final optimized = await _avatarChannel.invokeMethod<Uint8List>(
+        'optimize',
+        {'path': picked.path},
+      );
+      if (optimized == null) {
         throw const FormatException('No pudimos leer esa imagen.');
       }
-      final oriented = image_lib.bakeOrientation(decoded);
-      final image_lib.Image resized;
-      const maxEdge = 512;
-      if (oriented.width > maxEdge || oriented.height > maxEdge) {
-        resized = oriented.width >= oriented.height
-            ? image_lib.copyResize(
-                oriented,
-                width: maxEdge,
-                interpolation: image_lib.Interpolation.average,
-              )
-            : image_lib.copyResize(
-                oriented,
-                height: maxEdge,
-                interpolation: image_lib.Interpolation.average,
-              );
-      } else {
-        resized = oriented;
-      }
-      final optimized = Uint8List.fromList(
-        image_lib.encodeJpg(resized, quality: 84),
-      );
       final profile = await widget.repository.saveAvatar(optimized);
       if (!mounted) return;
       setState(() {
@@ -229,8 +219,15 @@ class _AccountScreenState extends State<AccountScreen> {
       });
     } catch (error) {
       if (!mounted) return;
+      final message = switch (error) {
+        FormatException(:final message) => message.toString(),
+        PlatformException(code: 'invalid_image') =>
+          'No pudimos leer esa imagen. Prueba con un JPG o PNG.',
+        StorageException() => 'No se pudo subir la foto de perfil. Inténtalo de nuevo en unos minutos.',
+        _ => 'No se pudo guardar la foto. Vuelve a intentarlo.',
+      };
       setState(() {
-        _error = error is FormatException ? error.message.toString() : 'No se pudo guardar la foto. Revisa tu conexión y vuelve a intentarlo.';
+        _error = message;
       });
     } finally {
       if (mounted) setState(() => _savingAvatar = false);
@@ -412,6 +409,12 @@ class _AccountScreenState extends State<AccountScreen> {
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+                if (!_registering && widget.onVerifyPickup != null)
+                  TextButton.icon(
+                    onPressed: widget.onVerifyPickup,
+                    icon: const Icon(Icons.qr_code_scanner_rounded),
+                    label: const Text('Verificar QR de recojo'),
+                  ),
               ],
             ),
           ),
@@ -427,63 +430,65 @@ class _AccountScreenState extends State<AccountScreen> {
       children: [
         Row(
           children: [
-            Semantics(
-              button: true,
-              label: 'Cambiar foto de perfil',
-              child: SizedBox.square(
-                dimension: 56,
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _savingAvatar ? null : _changeAvatar,
-                    customBorder: const CircleBorder(),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: AppColors.pinkSoft,
-                          backgroundImage: profile.avatarUrl == null
-                              ? null
-                              : NetworkImage(profile.avatarUrl!),
-                          child: profile.avatarUrl == null
-                              ? const Icon(
-                                  Icons.person_rounded,
-                                  color: AppColors.ink,
-                                )
-                              : null,
-                        ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.border),
+            if (FeatureFlags.appEndToEnd)
+              Semantics(
+                button: true,
+                label: 'Cambiar foto de perfil',
+                child: SizedBox.square(
+                  dimension: 56,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _savingAvatar ? null : _changeAvatar,
+                      customBorder: const CircleBorder(),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: AppColors.pinkSoft,
+                            foregroundImage: profile.avatarUrl == null
+                                ? null
+                                : NetworkImage(profile.avatarUrl!),
+                            onForegroundImageError: profile.avatarUrl == null
+                                ? null
+                                : (_, _) {},
+                            child: const Icon(
+                              Icons.person_rounded,
+                              color: AppColors.ink,
                             ),
-                            alignment: Alignment.center,
-                            child: _savingAvatar
-                                ? const SizedBox.square(
-                                    dimension: 13,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(
-                                    Icons.photo_camera_outlined,
-                                    size: 14,
-                                  ),
                           ),
-                        ),
-                      ],
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              alignment: Alignment.center,
+                              child: _savingAvatar
+                                  ? const SizedBox.square(
+                                      dimension: 13,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.photo_camera_outlined,
+                                      size: 14,
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -567,32 +572,79 @@ class _OrderCard extends StatelessWidget {
     final dateLabel =
         '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            const CircleAvatar(
-              backgroundColor: AppColors.pinkSoft,
-              child: Icon(Icons.receipt_long_outlined),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(order.id, style: Theme.of(context).textTheme.labelLarge),
-                  Text(
-                    '$dateLabel · ${order.totalQuantity} ${order.totalQuantity == 1 ? 'producto' : 'productos'}',
-                    style: Theme.of(context).textTheme.bodySmall,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (context) => Scaffold(
+              appBar: AppBar(title: const Text('Detalle del pedido')),
+              body: SafeArea(
+                child: SingleChildScrollView(
+                  child: ResponsivePage(
+                    maxWidth: 760,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          order.id,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        Text(dateLabel),
+                        const SizedBox(height: 12),
+                        if (FeatureFlags.appEndToEnd)
+                          PickupOrderQrCard(order: order),
+                        OrderReceiptCard(order: order),
+                        const SizedBox(height: 12),
+                        OrderDeliveryCard(details: order.details),
+                        if (order.payment.reference.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Card(
+                            child: ListTile(
+                              title: Text(order.payment.methodLabel),
+                              subtitle: Text(order.payment.reference),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
-            Text(
-              'S/ ${order.simulatedTotal.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            children: [
+              const CircleAvatar(
+                backgroundColor: AppColors.pinkSoft,
+                child: Icon(Icons.receipt_long_outlined),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      order.id,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    Text(
+                      '$dateLabel · ${order.totalQuantity} ${order.totalQuantity == 1 ? 'producto' : 'productos'}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                'S/ ${order.simulatedTotal.toStringAsFixed(2)}',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
         ),
       ),
     );

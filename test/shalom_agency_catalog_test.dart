@@ -40,6 +40,9 @@ void main() {
       expect(huancayo.displayName, 'HUANCAYO JR. ICA');
       expect(huancayo.latitude, closeTo(-12.0739582, 0.0000001));
       expect(huancayo.longitude, closeTo(-75.2141862, 0.0000001));
+      final matches = catalog.searchPublicAgencies('huancáyo ica');
+      expect(matches, contains(huancayo));
+      expect(matches.where((agency) => !agency.isPublic), isEmpty);
     },
   );
 }

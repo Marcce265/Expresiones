@@ -103,7 +103,10 @@ class ShalomAgency {
       return 'Llega en 1 a 2 días';
     }
 
-    if (region == 'lima' || region == 'callao' || normalizedLoc.contains('lima') || normalizedLoc.contains('callao')) {
+    if (region == 'lima' ||
+        region == 'callao' ||
+        normalizedLoc.contains('lima') ||
+        normalizedLoc.contains('callao')) {
       if (distanceKm != null && distanceKm > 360) {
         return 'Llega en 2 a 3 días';
       }
@@ -128,14 +131,8 @@ class ShalomAgency {
     ].join(' '),
   );
 
-  bool matches(String query) {
-    final clean = query.trim();
-    if (clean.isEmpty) return true;
-    final capped = clean.length > 60 ? clean.substring(0, 60) : clean;
-    final normalized = _normalize(capped);
-    return normalized.isEmpty ||
-        normalized.split(' ').take(8).every(searchableText.contains);
-  }
+  bool matches(String query) =>
+      _searchTerms(query).every(searchableText.contains);
 
   factory ShalomAgency.fromJson(Map<String, Object?> json) {
     return ShalomAgency(
@@ -189,6 +186,14 @@ class ShalomAgencyCatalog {
   final List<ShalomAgency> agencies;
   final List<ShalomAgency> publicAgencies;
 
+  List<ShalomAgency> searchPublicAgencies(String query) {
+    final terms = _searchTerms(query);
+    if (terms.isEmpty) return publicAgencies;
+    return publicAgencies
+        .where((agency) => terms.every(agency.searchableText.contains))
+        .toList(growable: false);
+  }
+
   factory ShalomAgencyCatalog.fromJson(Map<String, Object?> json) {
     final rawAgencies = json['agencies'];
     final agencies = rawAgencies is List
@@ -211,6 +216,15 @@ class ShalomAgencyCatalog {
       agencies: agencies,
     );
   }
+}
+
+List<String> _searchTerms(String query) {
+  final clean = query.trim();
+  final capped = clean.length > 60 ? clean.substring(0, 60) : clean;
+  final normalized = _normalize(capped);
+  return normalized.isEmpty
+      ? const []
+      : normalized.split(' ').take(8).toList(growable: false);
 }
 
 String _string(Object? value) => value?.toString().trim() ?? '';

@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/checkout_order.dart';
+import '../models/coordination_details.dart';
+import '../models/pickup_order_qr.dart';
 import '../security/input_sanitizer.dart';
 import '../security/rate_limiter.dart';
 
@@ -67,7 +69,7 @@ class CustomerAccountRepository {
   static String loginEmail(String phone) =>
       '51${normalizePhone(phone)}@clientes.expresiones.app';
 
-  Future<CustomerProfile?> currentProfile() async {
+  Future<CustomerProfile?> currentProfile({bool includeAvatar = true}) async {
     final user = client.auth.currentUser;
     if (user == null) return null;
     final row = await client
@@ -78,7 +80,7 @@ class CustomerAccountRepository {
     if (row == null) return null;
     final avatarPath = user.userMetadata?['avatar_path']?.toString().trim();
     String? avatarUrl;
-    if (avatarPath != null && avatarPath.isNotEmpty) {
+    if (includeAvatar && avatarPath != null && avatarPath.isNotEmpty) {
       try {
         avatarUrl = await client.storage
             .from('customer-avatars')
@@ -94,40 +96,45 @@ class CustomerAccountRepository {
   Future<CustomerProfile> saveAvatar(Uint8List bytes) async {
     final user = client.auth.currentUser;
     if (user == null) throw StateError('Inicia sesión para guardar tu foto.');
-    if (bytes.isEmpty || bytes.length > 4 * 1024 * 1024) {
-      throw const FormatException('La foto debe pesar menos de 4 MB.');
+    if (bytes.isEmpty || bytes.length > 512 * 1024) {
+      throw const FormatException('No se pudo optimizar la foto de perfil.');
     }
+    final profile = await currentProfile(includeAvatar: false);
+    if (profile == null) throw StateError('No se encontró tu perfil.');
     final timestamp = DateTime.now().microsecondsSinceEpoch;
-    final path = '${user.id}/$timestamp.jpg';
-    await client.storage
-        .from('customer-avatars')
-        .uploadBinary(
-          path,
-          bytes,
-          fileOptions: const FileOptions(
-            cacheControl: '3600',
-            contentType: 'image/jpeg',
-            upsert: false,
-          ),
-        );
-    final metadata = Map<String, dynamic>.from(user.userMetadata ?? const {});
-    final oldPath = metadata['avatar_path']?.toString();
-    metadata['avatar_path'] = path;
+    final path = '${user.id}/$timestamp.webp';
+    final bucket = client.storage.from('customer-avatars');
+    await bucket.uploadBinary(
+      path,
+      bytes,
+      fileOptions: const FileOptions(
+        cacheControl: '3600',
+        contentType: 'image/webp',
+        upsert: false,
+      ),
+    );
+    final oldPath = user.userMetadata?['avatar_path']?.toString();
+    final String avatarUrl;
     try {
-      await client.auth.updateUser(UserAttributes(data: metadata));
+      avatarUrl = await bucket.createSignedUrl(path, 3600);
+      await client.auth.updateUser(UserAttributes(data: {'avatar_path': path}));
     } catch (_) {
       try {
-        await client.storage.from('customer-avatars').remove([path]);
+        await bucket.remove([path]);
       } catch (_) {}
       rethrow;
     }
     if (oldPath != null && oldPath.isNotEmpty && oldPath != path) {
       try {
-        await client.storage.from('customer-avatars').remove([oldPath]);
+        await bucket.remove([oldPath]);
       } catch (_) {}
     }
-    return await currentProfile() ??
-        (throw StateError('No se pudo actualizar tu foto de perfil.'));
+    return CustomerProfile(
+      userId: profile.userId,
+      fullName: profile.fullName,
+      phone: profile.phone,
+      avatarUrl: avatarUrl,
+    );
   }
 
   Future<CustomerProfile> register({
@@ -228,13 +235,48 @@ class CustomerAccountRepository {
     return rows.map<StoredCustomerOrder>(_storedOrderFromRow).toList();
   }
 
+  Future<StoredCustomerOrder?> verifyPickupQr(String payload) async {
+    final id = PickupOrderQr.decode(payload);
+    if (id == null) {
+      throw const FormatException(
+        'Este QR no es un código de recojo de Expresiones.',
+      );
+    }
+    ClientRateLimiter.instance.enforce(
+      'pickup_qr_lookup',
+      maxAttempts: 20,
+      window: const Duration(minutes: 1),
+    );
+    if (client.auth.currentSession == null ||
+        await client.rpc('can_admin_write') != true) {
+      throw const FormatException(
+        'Inicia sesión con el acceso administrativo para verificar el QR.',
+      );
+    }
+    final row = await client
+        .from('customer_orders')
+        .select('snapshot, customer_name, customer_phone, status')
+        .eq('id', id)
+        .eq('delivery_method', 'pickup')
+        .eq('status', 'paid_simulated')
+        .maybeSingle();
+    if (row == null) return null;
+    final entry = _storedOrderFromRow(row);
+    final order = entry.order;
+    return order.id == id &&
+            order.details.deliveryMethod == DeliveryMethod.pickup &&
+            order.payment.isApproved
+        ? entry
+        : null;
+  }
+
   Future<void> saveOrder(CheckoutOrder order) async {
     ClientRateLimiter.instance.enforce(
       'order_submit',
       maxAttempts: 4,
       window: const Duration(minutes: 1),
     );
-    final profile = await currentProfile();
+    final profile = await currentProfile(includeAvatar: false);
     if (profile == null) {
       throw StateError('Inicia sesión para guardar la compra.');
     }
@@ -260,8 +302,15 @@ class CustomerAccountRepository {
         'created_at': order.createdAt.toUtc().toIso8601String(),
       });
     } on PostgrestException catch (error) {
-      // Retrying the success callback must not duplicate a completed purchase.
       if (error.code != '23505') rethrow;
+      final saved = await client
+          .from('customer_orders')
+          .select('id')
+          .eq('id', order.id)
+          .eq('user_id', profile.userId)
+          .eq('payment_reference', order.payment.reference)
+          .maybeSingle();
+      if (saved == null) rethrow;
     }
   }
 

@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'admin/admin_portal.dart';
 import 'config/feature_flags.dart';
 import 'data/catalog_repository.dart';
 import 'data/customer_account_repository.dart';
@@ -115,6 +116,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   CustomerAccountRepository? _customerAccounts;
   StreamSubscription<AuthState>? _customerAuthSubscription;
   CustomerProfile? _customerProfile;
+  bool _customerAuthReady = false;
+  bool _openingPayment = false;
+  bool _openingPickupVerification = false;
+  int _profileRequest = 0;
   int _index = 0;
   ProductCategory? _catalogCategory;
   String? _catalogFamilyId;
@@ -122,21 +127,22 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   bool _assistantMuted = false;
 
   bool get _customerAccountsEnabled =>
-      FeatureFlags.customerAccounts && widget.supabaseClient != null;
+      (FeatureFlags.appEndToEnd || FeatureFlags.customerAccounts) &&
+      widget.supabaseClient != null;
+
+  bool get _paymentsEnabled =>
+      FeatureFlags.appEndToEnd && _customerAccounts != null;
 
   @override
   void initState() {
     super.initState();
-    if (_customerAccountsEnabled ||
-        (FeatureFlags.demoPayment && widget.supabaseClient != null)) {
+    if (_customerAccountsEnabled) {
       _customerAccounts = CustomerAccountRepository(
         client: widget.supabaseClient!,
       );
-    }
-    if (_customerAccountsEnabled) {
       _customerAuthSubscription = _customerAccounts!.authChanges.listen(
         (_) => unawaited(_refreshCustomerProfile()),
-        onError: (_, _) {},
+        onError: (_, _) => unawaited(_refreshCustomerProfile()),
       );
       unawaited(_refreshCustomerProfile());
     }
@@ -146,14 +152,22 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<void> _refreshCustomerProfile() async {
     final accounts = _customerAccounts;
     if (accounts == null) return;
+    final request = ++_profileRequest;
     try {
-      final profile = await accounts.currentProfile();
-      if (!mounted) return;
+      final profile = await accounts.currentProfile(includeAvatar: false);
+      if (!mounted || request != _profileRequest) return;
       setState(() {
         _customerProfile = profile;
+        _customerAuthReady = true;
       });
     } catch (_) {
-      // Profile loading stays optional so guests can use the public catalog.
+      if (!mounted || request != _profileRequest) return;
+      setState(() {
+        if (_customerProfile?.userId != accounts.client.auth.currentUser?.id) {
+          _customerProfile = null;
+        }
+        _customerAuthReady = true;
+      });
     }
   }
 
@@ -205,7 +219,19 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     CatalogProduct product,
     String? variantId,
   ) {
-    store.addProduct(product, variantId: variantId);
+    if (variantId == null &&
+        product.variants.any((variant) => variant.isActive)) {
+      _openCatalogFamily(product);
+      return;
+    }
+    if (!product.canRequest(1, variantId: variantId) ||
+        !store.addProduct(product, variantId: variantId)) {
+      showAppNotice(
+        context,
+        'No se pudo agregar otra unidad. Revisa el carrito.',
+      );
+      return;
+    }
     final variant = product.variantById(variantId);
     final label = variant == null ? product.name : variantDisplayName(variant);
     showAppNotice(
@@ -437,9 +463,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       MaterialPageRoute<void>(
         builder: (reviewContext) => _checkoutScaffold(
           routeContext: reviewContext,
-          assistantStep: const JashyTourStep(
+          assistantStep: JashyTourStep(
             title: 'Revisa y envía',
-            message: FeatureFlags.demoPayment
+            message: _paymentsEnabled
                 ? 'Verifica todo y finaliza la simulación.'
                 : 'Verifica todo y guarda tu cotización.',
             imageAsset: 'assets/images/jashy_chibi_writing.webp',
@@ -465,26 +491,29 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               details: details,
               sharePositionOrigin: sharePositionOrigin,
             ),
-            onSendWhatsapp: () async {
-              final number = store.storefrontSettings.normalizedWhatsappNumber;
-              final shortMessage = QuoteMessageBuilder.buildWhatsappIntro(
-                id: quoteId,
-                details: details,
-              );
-              final uri = Uri.https('wa.me', '/$number', {
-                'text': shortMessage,
-              });
-              final opened = await launchUrl(
-                uri,
-                mode: kIsWeb
-                    ? LaunchMode.platformDefault
-                    : LaunchMode.externalApplication,
-              );
-              if (!opened) {
-                throw StateError('No se pudo abrir WhatsApp.');
-              }
-              unawaited(store.recordQuoteSent());
-            },
+            onSendWhatsapp: FeatureFlags.appEndToEnd
+                ? null
+                : () async {
+                    final number =
+                        store.storefrontSettings.normalizedWhatsappNumber;
+                    final shortMessage = QuoteMessageBuilder.buildWhatsappIntro(
+                      id: quoteId,
+                      details: details,
+                    );
+                    final uri = Uri.https('wa.me', '/$number', {
+                      'text': shortMessage,
+                    });
+                    final opened = await launchUrl(
+                      uri,
+                      mode: kIsWeb
+                          ? LaunchMode.platformDefault
+                          : LaunchMode.externalApplication,
+                    );
+                    if (!opened) {
+                      throw StateError('No se pudo abrir WhatsApp.');
+                    }
+                    unawaited(store.recordQuoteSent());
+                  },
             onCopyMessage: () {
               Clipboard.setData(ClipboardData(text: message));
             },
@@ -492,7 +521,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               setState(() => _index = 2);
               Navigator.of(reviewContext).popUntil((route) => route.isFirst);
             },
-            onContinueToPayment: FeatureFlags.demoPayment
+            onContinueToPayment: _paymentsEnabled
                 ? () => unawaited(_openPayment(reviewContext, lines, details))
                 : null,
           ),
@@ -570,9 +599,30 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     List<ResolvedQuoteLine> lines,
     CoordinationDetails details,
   ) async {
+    if (_openingPayment) return;
+    _openingPayment = true;
+    try {
+      await _startPayment(reviewContext, lines, details);
+    } catch (_) {
+      if (reviewContext.mounted) {
+        showAppNotice(
+          reviewContext,
+          'No pudimos abrir el pago. Revisa tu conexión e inténtalo otra vez.',
+        );
+      }
+    } finally {
+      _openingPayment = false;
+    }
+  }
+
+  Future<void> _startPayment(
+    BuildContext reviewContext,
+    List<ResolvedQuoteLine> lines,
+    CoordinationDetails details,
+  ) async {
     final accounts = _customerAccounts;
     if (accounts == null) return;
-    final profile = await accounts.currentProfile();
+    final profile = await accounts.currentProfile(includeAvatar: false);
     if (profile == null) {
       if (!reviewContext.mounted) return;
       final authenticated = await Navigator.of(reviewContext).push<bool>(
@@ -596,7 +646,26 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final store = context.read<AppStore>();
     final service = SimulatedPaymentService();
     final amount = lines.fold<double>(0, (sum, line) => sum + line.total);
-    Navigator.of(reviewContext).push(
+    final quantity = lines.fold<int>(
+      0,
+      (sum, line) => sum + line.line.quantity,
+    );
+    if (amount <= 0 || amount > 100000 || quantity < 1 || quantity > 10000) {
+      showAppNotice(
+        reviewContext,
+        'Revisa las cantidades y el total del carrito antes de pagar.',
+      );
+      return;
+    }
+    if (!_isCheckoutCurrent(store, lines, details)) {
+      showAppNotice(
+        reviewContext,
+        'El catálogo o los horarios cambiaron. Vuelve al carrito para revisar tu pedido.',
+      );
+      return;
+    }
+    final orderId = service.createOrderId();
+    await Navigator.of(reviewContext).push(
       MaterialPageRoute<void>(
         builder: (paymentContext) => Scaffold(
           body: SafeArea(
@@ -605,11 +674,17 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               details: details,
               settings: store.storefrontSettings,
               onBack: () => Navigator.of(paymentContext).pop(),
-              onProcessPayment: (method) =>
-                  service.process(method: method, amount: amount),
+              onProcessPayment: (method) {
+                if (!_isCheckoutCurrent(store, lines, details)) {
+                  throw const FormatException(
+                    'El catálogo o los horarios cambiaron. Vuelve al carrito para revisar tu pedido.',
+                  );
+                }
+                return service.process(method: method, amount: amount);
+              },
               onApproved: (payment) async {
                 final order = CheckoutOrder.fromQuote(
-                  id: service.createOrderId(),
+                  id: orderId,
                   lines: lines,
                   details: details,
                   payment: payment,
@@ -633,6 +708,42 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         ),
       ),
     );
+  }
+
+  bool _isCheckoutCurrent(
+    AppStore store,
+    List<ResolvedQuoteLine> reviewed,
+    CoordinationDetails details,
+  ) {
+    final current = {
+      for (final item in store.resolvedLines) item.line.key: item,
+    };
+    if (current.length != reviewed.length) return false;
+    final quantities = <(String, String?), int>{};
+    for (final item in reviewed) {
+      final updated = current[item.line.key];
+      if (updated == null ||
+          updated.line.quantity != item.line.quantity ||
+          updated.unitPrice != item.unitPrice ||
+          (item.line.variantId != null && updated.variant?.isActive != true)) {
+        return false;
+      }
+      final key = (updated.product.id, updated.line.variantId);
+      final quantity = (quantities[key] ?? 0) + updated.line.quantity;
+      if (!updated.product.canRequest(quantity, variantId: key.$2)) {
+        return false;
+      }
+      quantities[key] = quantity;
+    }
+    final date = details.desiredDate;
+    if (date == null ||
+        !store.isDesiredDateAvailable(date, details.deliveryMethod)) {
+      return false;
+    }
+    return details.deliveryMethod != DeliveryMethod.pickup ||
+        store
+            .pickupTimeSlotsFor(date)
+            .contains(details.customFields['Horario de recojo']);
   }
 
   Widget _orderSuccessScreen(CheckoutOrder order) {
@@ -667,6 +778,29 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           : LaunchMode.externalApplication,
     );
     if (!opened) throw StateError('No se pudo abrir el acceso administrativo.');
+  }
+
+  Future<void> _openPickupVerification() async {
+    if (_openingPickupVerification) return;
+    final client = SupabaseBootstrap.pickupStaffClient();
+    _openingPickupVerification = true;
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) =>
+              AdminPortal(client: client, pickupVerificationOnly: true),
+        ),
+      );
+    } finally {
+      try {
+        if (client.auth.currentSession != null) await client.auth.signOut();
+      } on AuthException {
+        // The isolated session is discarded even when the server is unreachable.
+      } finally {
+        _openingPickupVerification = false;
+        await client.dispose();
+      }
+    }
   }
 
   void _scheduleAssistantOnboarding() {
@@ -842,6 +976,22 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final store = context.watch<AppStore>();
 
+    if (_paymentsEnabled && !_customerAuthReady) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_paymentsEnabled && _customerProfile == null) {
+      return Scaffold(
+        body: SafeArea(
+          child: AccountScreen(
+            repository: _customerAccounts!,
+            accessGate: true,
+            onVerifyPickup: () => unawaited(_openPickupVerification()),
+            onAuthenticated: () => unawaited(_refreshCustomerProfile()),
+          ),
+        ),
+      );
+    }
+
     if (store.isLoading) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
@@ -870,15 +1020,16 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         popularProducts: store.popularProducts,
         onBrowse: _showCatalog,
         onProduct: _openProduct,
-        onAddToCart: (product, variantId) =>
-            _addCardProduct(store, product, variantId),
+        onAddToCart: FeatureFlags.appEndToEnd
+            ? (product, variantId) => _addCardProduct(store, product, variantId)
+            : null,
         onOpenFamily: _openCatalogFamily,
         onOpenQuote: _showQuote,
         onOpenHelp: _showHelp,
         quoteQuantity: store.cartQuantity,
         onZeroResultSearch: store.recordZeroResultSearch,
-        lastOrder: FeatureFlags.demoPayment ? store.lastOrder : null,
-        onOpenLastOrder: FeatureFlags.demoPayment ? _openLastOrder : null,
+        lastOrder: _paymentsEnabled ? store.lastOrder : null,
+        onOpenLastOrder: _paymentsEnabled ? _openLastOrder : null,
       ),
       1 => CatalogScreen(
         settings: store.storefrontSettings,
@@ -893,8 +1044,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           _catalogSearchRequest = 0;
         }),
         onProduct: _openProduct,
-        onAddToCart: (product, variantId) =>
-            _addCardProduct(store, product, variantId),
+        onAddToCart: FeatureFlags.appEndToEnd
+            ? (product, variantId) => _addCardProduct(store, product, variantId)
+            : null,
         onBack: () => setState(() => _index = 0),
         onOpenQuote: _showQuote,
         onOpenHelp: _showHelp,
@@ -922,6 +1074,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onOpenQuote: _showQuote,
         onPrivacy: _openPrivacy,
         onAdminLogin: () => unawaited(_openAdminPortal()),
+        onVerifyPickup: _paymentsEnabled
+            ? () => unawaited(_openPickupVerification())
+            : null,
         assistantMuted: _assistantMuted,
         onAssistantGuide: () => _repeatAssistantTour(context),
       ),

@@ -14,6 +14,7 @@ class HelpScreen extends StatelessWidget {
     this.onContact,
     required this.onPrivacy,
     required this.onAdminLogin,
+    this.onVerifyPickup,
     required this.onAssistantGuide,
     required this.assistantMuted,
     this.onBack,
@@ -26,6 +27,7 @@ class HelpScreen extends StatelessWidget {
   final VoidCallback? onContact;
   final VoidCallback onPrivacy;
   final VoidCallback onAdminLogin;
+  final VoidCallback? onVerifyPickup;
   final VoidCallback onAssistantGuide;
   final bool assistantMuted;
   final VoidCallback? onBack;
@@ -40,7 +42,7 @@ class HelpScreen extends StatelessWidget {
       (
         icon: Icons.receipt_long_outlined,
         title: settings.text(StorefrontText.helpFaqTitle(1)),
-        body: FeatureFlags.demoPayment
+        body: FeatureFlags.appEndToEnd || FeatureFlags.demoPayment
             ? settings.text(StorefrontText.helpFaqBody(1))
             : 'Elige productos y cantidades. La app calcula el subtotal y prepara tu cotización.',
       ),
@@ -64,7 +66,7 @@ class HelpScreen extends StatelessWidget {
         title: settings.text(StorefrontText.helpFaqTitle(5)),
         body: settings.text(StorefrontText.helpFaqBody(5)),
       ),
-      if (FeatureFlags.demoPayment)
+      if (FeatureFlags.appEndToEnd || FeatureFlags.demoPayment)
         (
           icon: Icons.payments_outlined,
           title: settings.text(StorefrontText.helpFaqTitle(6)),
@@ -151,6 +153,7 @@ class HelpScreen extends StatelessWidget {
                     horizontal: constraints.maxWidth >= 620,
                     onPrivacy: onPrivacy,
                     onAdminLogin: onAdminLogin,
+                    onVerifyPickup: onVerifyPickup,
                     onAssistantGuide: onAssistantGuide,
                     assistantMuted: assistantMuted,
                     privacyLabel: settings.text(
@@ -217,6 +220,7 @@ class _HelpActions extends StatelessWidget {
     required this.horizontal,
     required this.onPrivacy,
     required this.onAdminLogin,
+    required this.onVerifyPickup,
     required this.onAssistantGuide,
     required this.assistantMuted,
     required this.privacyLabel,
@@ -225,6 +229,7 @@ class _HelpActions extends StatelessWidget {
   final bool horizontal;
   final VoidCallback onPrivacy;
   final VoidCallback onAdminLogin;
+  final VoidCallback? onVerifyPickup;
   final VoidCallback onAssistantGuide;
   final bool assistantMuted;
   final String privacyLabel;
@@ -273,6 +278,14 @@ class _HelpActions extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
+            if (onVerifyPickup != null)
+              Center(
+                child: OutlinedButton.icon(
+                  onPressed: onVerifyPickup,
+                  icon: const Icon(Icons.qr_code_scanner_rounded),
+                  label: const Text('Verificar QR de recojo'),
+                ),
+              ),
             Center(
               child: Semantics(
                 button: true,

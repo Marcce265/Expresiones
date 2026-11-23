@@ -25,6 +25,63 @@ void main() {
     sku: 'XS-34',
   );
 
+  testWidgets('el carrito rápido aparece solo en artículos individuales', (
+    tester,
+  ) async {
+    final individual = CatalogProduct(
+      id: 'coronita',
+      name: 'Coronita',
+      category: ProductCategory.materials,
+      basePrice: 4,
+    );
+    final added = <(String, String?)>[];
+    var openedFamily = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Row(
+            children: [
+              for (final tile in [
+                (product: product, variant: null),
+                (product: individual, variant: null),
+                (product: product, variant: variant),
+              ])
+                SizedBox(
+                  width: 180,
+                  height: 238,
+                  child: ProductCard(
+                    product: tile.product,
+                    variant: tile.variant,
+                    compact: true,
+                    showPrice: tile.variant == null,
+                    onTap: () => openedFamily = true,
+                    onAdd: (product, variantId) =>
+                        added.add((product.id, variantId)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    final familyCard = find.byWidgetPredicate(
+      (widget) =>
+          widget is ProductCard &&
+          widget.product == product &&
+          widget.variant == null,
+    );
+    final cartButton = find.byIcon(Icons.add_shopping_cart_rounded);
+    expect(find.descendant(of: familyCard, matching: cartButton), findsNothing);
+    expect(cartButton, findsNWidgets(2));
+
+    await tester.tap(familyCard);
+    expect(openedFamily, isTrue);
+    expect(added, isEmpty);
+    await tester.tap(cartButton.at(0));
+    await tester.tap(cartButton.at(1));
+    expect(added, [(individual.id, null), (product.id, variant.id)]);
+  });
+
   testWidgets('la foto de limpiapipas llena la tarjeta sin padding interno', (
     tester,
   ) async {

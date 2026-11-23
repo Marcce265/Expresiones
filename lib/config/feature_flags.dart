@@ -1,7 +1,14 @@
+import 'package:flutter/foundation.dart';
+
 abstract final class FeatureFlags {
+  static bool get appEndToEnd =>
+      !kIsWeb &&
+      defaultTargetPlatform == TargetPlatform.android &&
+      const bool.fromEnvironment('ENABLE_APP_END_TO_END', defaultValue: true);
+
   static const customerAccounts = bool.fromEnvironment(
     'ENABLE_CUSTOMER_ACCOUNTS',
-    defaultValue: true,
+    defaultValue: false,
   );
 
   static const demoPayment = bool.fromEnvironment(

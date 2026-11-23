@@ -145,7 +145,7 @@ class AppStore extends ChangeNotifier {
     }
   }
 
-  void addProduct(
+  bool addProduct(
     CatalogProduct product, {
     int quantity = 1,
     String? variantId,
@@ -164,7 +164,7 @@ class AppStore extends ChangeNotifier {
     );
     final current = _cart[incoming.key];
     if (current == null && _cart.length >= maxCartLines) {
-      return;
+      return false;
     }
     final previousQuantity = current?.quantity ?? 0;
     final nextQuantity = (previousQuantity + safeQuantity).clamp(
@@ -172,6 +172,7 @@ class AppStore extends ChangeNotifier {
       maxLineQuantity,
     );
     final addedDelta = nextQuantity - previousQuantity;
+    if (addedDelta == 0) return false;
     _cart[incoming.key] = incoming.copyWith(quantity: nextQuantity);
     _persistCart();
     if (addedDelta > 0) {
@@ -193,6 +194,7 @@ class AppStore extends ChangeNotifier {
       );
     }
     notifyListeners();
+    return true;
   }
 
   void updateQuantity(QuoteLine line, int quantity) {
@@ -585,10 +587,7 @@ class AppStore extends ChangeNotifier {
       final preferences = await SharedPreferences.getInstance();
       while (_detailsPersistDirty) {
         _detailsPersistDirty = false;
-        await preferences.setString(
-          _detailsKey,
-          jsonEncode(_details.toJson()),
-        );
+        await preferences.setString(_detailsKey, jsonEncode(_details.toJson()));
       }
     } finally {
       _detailsPersistInFlight = false;

@@ -118,6 +118,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final continueToPayment = widget.onContinueToPayment;
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -138,65 +139,80 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final wide = constraints.maxWidth >= 980;
-                    final overview = Column(
-                      children: [
-                        _RequestCard(lines: widget.lines, subtotal: _subtotal),
-                        const SizedBox(height: 14),
-                        _CoordinationCard(
-                          details: widget.details,
-                          settings: widget.settings,
-                        ),
-                      ],
-                    );
-                    final sendPanel = _SendPanel(
-                      quoteId: widget.quoteId,
-                      message: widget.message,
-                      lines: widget.lines,
-                      details: widget.details,
-                      sharing: _sharing,
-                      sending: _sending,
-                      onSharePdf: widget.onSharePdf == null ? null : _sharePdf,
-                      onSend: widget.onSendWhatsapp == null ? null : _send,
-                      onCopy: _copy,
-                      onEdit: widget.onEditQuote,
-                      onContinueToPayment: widget.onContinueToPayment,
-                      settings: widget.settings,
-                      customerAccountsEnabled: widget.customerAccountsEnabled,
-                    );
-
-                    if (!wide) {
-                      return Column(
+                if (continueToPayment != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: continueToPayment,
+                      icon: const Icon(Icons.lock_outline_rounded, size: 19),
+                      label: const Text('Continuar con el pago'),
+                    ),
+                  )
+                else
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wide = constraints.maxWidth >= 980;
+                      final overview = Column(
                         children: [
-                          overview,
-                          const SizedBox(height: 18),
-                          sendPanel,
+                          _RequestCard(
+                            lines: widget.lines,
+                            subtotal: _subtotal,
+                          ),
+                          const SizedBox(height: 14),
+                          _CoordinationCard(
+                            details: widget.details,
+                            settings: widget.settings,
+                          ),
                         ],
                       );
-                    }
+                      final sendPanel = _SendPanel(
+                        quoteId: widget.quoteId,
+                        message: widget.message,
+                        lines: widget.lines,
+                        details: widget.details,
+                        sharing: _sharing,
+                        sending: _sending,
+                        onSharePdf: widget.onSharePdf == null
+                            ? null
+                            : _sharePdf,
+                        onSend: widget.onSendWhatsapp == null ? null : _send,
+                        onCopy: _copy,
+                        onEdit: widget.onEditQuote,
+                        settings: widget.settings,
+                        customerAccountsEnabled: widget.customerAccountsEnabled,
+                      );
 
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 7, child: overview),
-                        const SizedBox(width: 28),
-                        Expanded(flex: 5, child: sendPanel),
-                      ],
-                    );
-                  },
-                ),
+                      if (!wide) {
+                        return Column(
+                          children: [
+                            overview,
+                            const SizedBox(height: 18),
+                            sendPanel,
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 7, child: overview),
+                          const SizedBox(width: 28),
+                          Expanded(flex: 5, child: sendPanel),
+                        ],
+                      );
+                    },
+                  ),
               ],
             ),
           ),
-          StoreFooter(
-            settings: widget.settings,
-            onSelectCategory: widget.onSelectCategory,
-            onOpenQuote: widget.onEditQuote,
-            onOpenHelp: widget.onOpenHelp,
-            whatsappNumber: widget.settings.whatsappNumber,
-          ),
+          if (continueToPayment == null)
+            StoreFooter(
+              settings: widget.settings,
+              onSelectCategory: widget.onSelectCategory,
+              onOpenQuote: widget.onEditQuote,
+              onOpenHelp: widget.onOpenHelp,
+              whatsappNumber: widget.settings.whatsappNumber,
+            ),
         ],
       ),
     );
@@ -498,7 +514,6 @@ class _SendPanel extends StatelessWidget {
     required this.onSend,
     required this.onCopy,
     required this.onEdit,
-    this.onContinueToPayment,
     required this.settings,
     required this.customerAccountsEnabled,
   });
@@ -513,7 +528,6 @@ class _SendPanel extends StatelessWidget {
   final VoidCallback? onSend;
   final VoidCallback onCopy;
   final VoidCallback onEdit;
-  final VoidCallback? onContinueToPayment;
   final StorefrontSettings settings;
   final bool customerAccountsEnabled;
 
@@ -580,17 +594,6 @@ class _SendPanel extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            if (onContinueToPayment != null) ...[
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: onContinueToPayment,
-                  icon: const Icon(Icons.lock_outline_rounded, size: 19),
-                  label: const Text('Continuar al pago simulado'),
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
             if (onSharePdf != null)
               Builder(
                 builder: (buttonContext) => SizedBox(
@@ -628,16 +631,6 @@ class _SendPanel extends StatelessWidget {
                   ),
                 ),
               ),
-            if (onContinueToPayment != null) ...[
-              const SizedBox(height: 10),
-              Center(
-                child: Text(
-                  settings.text(StorefrontText.reviewPaymentNote),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-            ],
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 18),
               child: Divider(),

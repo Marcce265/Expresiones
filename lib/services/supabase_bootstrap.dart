@@ -25,10 +25,16 @@ abstract final class SupabaseBootstrap {
   );
   static const _legacyAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
+  static String get _publicKey =>
+      (_publishableKey.isNotEmpty ? _publishableKey : _legacyAnonKey).trim();
+
+  /// A separate, in-memory staff session for the Android pickup scanner.
+  static SupabaseClient pickupStaffClient() =>
+      SupabaseClient(_url.trim(), _publicKey);
+
   static Future<SupabaseBootstrapResult> initialize() async {
     final url = _url.trim();
-    final key = (_publishableKey.isNotEmpty ? _publishableKey : _legacyAnonKey)
-        .trim();
+    final key = _publicKey;
 
     if (url.isEmpty || key.isEmpty) {
       return const SupabaseBootstrapResult(

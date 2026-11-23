@@ -15,8 +15,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
+  testWidgets('Android con Supabase pide una cuenta antes del catálogo', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final store = AppStore(() async => seedCatalogProducts);
+    await store.initialize();
+    addTearDown(store.dispose);
+    final client = (await tester.runAsync(
+      () async => SupabaseClient(
+        'https://example.supabase.co',
+        'test-publishable-key',
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+      ),
+    ))!;
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: store,
+        child: ExpresionesApp(supabaseClient: client),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Inicia sesión o crea una cuenta para entrar al catálogo.'),
+      findsOneWidget,
+    );
+    expect(find.byType(HomeScreen), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(client.dispose);
+  }, variant: TargetPlatformVariant({TargetPlatform.android}));
+
   test('aplica automáticamente los precios por volumen', () {
     final product = seedCatalogProducts.first;
 
@@ -109,7 +140,9 @@ void main() {
       cinta.variants.every(
         (variant) =>
             variant.imageUrl != null &&
-            variant.imageUrl!.contains('cinta-satinada-100m/variants/optimized/'),
+            variant.imageUrl!.contains(
+              'cinta-satinada-100m/variants/optimized/',
+            ),
       ),
       isTrue,
     );
@@ -341,12 +374,18 @@ void main() {
 
     expect(find.bySemanticsLabel('Expresiones, ir al inicio'), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
-    expect(find.byIcon(Icons.shopping_bag_outlined).hitTestable(), findsOneWidget);
+    expect(
+      find.byIcon(Icons.shopping_bag_outlined).hitTestable(),
+      findsOneWidget,
+    );
     final cartBadge = find.descendant(
       of: find.byTooltip('Abrir carrito'),
       matching: find.byType(Badge),
     );
-    expect(tester.widget<Badge>(cartBadge).backgroundColor, AppColors.pinkStrong);
+    expect(
+      tester.widget<Badge>(cartBadge).backgroundColor,
+      AppColors.pinkStrong,
+    );
     await tester.tap(find.byTooltip('Abrir menú'));
     await tester.pumpAndSettle();
     final drawer = find.byType(Drawer);

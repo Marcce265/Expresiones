@@ -8,6 +8,7 @@ import 'package:expresiones/models/simulated_payment.dart';
 import 'package:expresiones/models/storefront_settings.dart';
 import 'package:expresiones/screens/order_success_screen.dart';
 import 'package:expresiones/screens/payment_screen.dart';
+import 'package:expresiones/screens/review_screen.dart';
 import 'package:expresiones/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +26,34 @@ void main() {
     product: product,
   );
   const details = CoordinationDetails(name: 'María', phone: '999999999');
+
+  testWidgets('la revisión de compra solo ofrece continuar al pago', (
+    tester,
+  ) async {
+    var continued = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ReviewScreen(
+            lines: [line],
+            details: details,
+            quoteId: 'COT-01',
+            message: 'Cotización de prueba',
+            onCopyMessage: () =>
+                fail('La revisión de compra no copia cotizaciones'),
+            onEditQuote: () {},
+            onContinueToPayment: () => continued = true,
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Cotización de prueba'), findsNothing);
+    expect(find.text('Guardar PDF'), findsNothing);
+    expect(find.text('Copiar mensaje'), findsNothing);
+    expect(find.byType(FilledButton), findsOneWidget);
+    await tester.tap(find.text('Continuar con el pago'));
+    expect(continued, isTrue);
+  });
 
   testWidgets(
     'simula el pago sin pedir datos financieros y permite reintentar',
@@ -127,6 +156,51 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.text('Abrir pago'), findsOneWidget);
+  });
+
+  testWidgets('reintenta guardar con la misma referencia aprobada', (
+    tester,
+  ) async {
+    var paymentAttempts = 0;
+    final references = <String>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: PaymentScreen(
+            lines: [line],
+            details: details,
+            onBack: () {},
+            onProcessPayment: (method) async {
+              paymentAttempts++;
+              return SimulatedPayment(
+                reference: 'SIM-$paymentAttempts',
+                method: method,
+                status: SimulatedPaymentStatus.approved,
+                amount: 10,
+                processedAt: DateTime(2026, 10, 24),
+              );
+            },
+            onApproved: (payment) async {
+              references.add(payment.reference);
+              if (references.length == 1) throw StateError('Error temporal');
+            },
+          ),
+        ),
+      ),
+    );
+
+    final submit = find.textContaining('Simular pago');
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('No se pudo guardar el pedido'), findsOneWidget);
+    final retry = find.text('Volver a guardar pedido');
+    await tester.ensureVisible(retry);
+    await tester.tap(retry);
+    await tester.pumpAndSettle();
+    expect(paymentAttempts, 1);
+    expect(references, ['SIM-1', 'SIM-1']);
   });
 
   testWidgets('muestra comprobante, referencia y todas las acciones finales', (
