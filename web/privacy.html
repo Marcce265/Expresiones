@@ -38,6 +38,9 @@
     <ul>
       <li><strong>Recojo en Huancayo:</strong> Nombres, Apellidos, Celular y horario de recojo. No pedimos DNI ni dirección domiciliaria.</li>
       <li><strong>Envío por Shalom:</strong> Se añade el número de DNI (8 dígitos) únicamente porque la agencia de transporte exige identificación oficial de mayor de edad para entregar encomiendas.</li>
+      <li><strong>Cuenta opcional:</strong> Si eliges crear una cuenta, Supabase Auth gestiona tu acceso y Supabase guarda tu nombre, celular e historial de compras simuladas. Puedes seguir usando el catálogo y carrito como invitado.</li>
+      <li><strong>Foto de perfil opcional:</strong> Solo se toma o sube si la eliges. Se guarda en un bucket privado de Supabase asociado a tu cuenta y no se publica en el catálogo.</li>
+      <li><strong>Ubicación opcional:</strong> Solo se consulta cuando tocas “Agencias cerca de mí” o “Orientarme” para ordenar agencias y calcular distancia. La app no la guarda en tu perfil ni la envía a Expresiones.</li>
       <li><strong>Cero datos financieros sensibles:</strong> No solicitamos ni almacenamos tarjetas bancarias, CVV ni claves secretas.</li>
     </ul>
 
@@ -48,7 +51,7 @@
     <p>Puedes ejercer gratuitamente tus derechos de Acceso, Rectificación, Cancelación y Oposición (ARCO) o revocar tu consentimiento escribiendo a nuestro WhatsApp oficial <a href="https://wa.me/51956744914" rel="noopener noreferrer">+51 956 744 914</a>, o eliminar directamente tus datos locales desde la aplicación.</p>
 
     <h2>4. Seguridad e Infraestructura</h2>
-    <p>La información se resguarda en Supabase con políticas de seguridad a nivel de fila (RLS), contraseñas protegidas con hash bcrypt y entrega segura HTTPS mediante Cloudflare Pages.</p>
+    <p>La información se resguarda en Supabase con políticas de seguridad a nivel de fila (RLS), contraseñas protegidas con hash bcrypt, fotos de perfil en almacenamiento privado con acceso por cuenta y entrega segura HTTPS mediante Cloudflare Pages.</p>
 
     <div class="notice">
       Esta Política de Privacidad se mantiene actualizada conforme a los lineamientos de la Autoridad Nacional de Protección de Datos Personales del Perú (ANPD).

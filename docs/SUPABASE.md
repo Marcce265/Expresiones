@@ -1,9 +1,10 @@
 # Supabase para Expresiones
 
 Esta carpeta reemplaza la infraestructura prevista para Firestore sin cambiar
-el catálogo ni el flujo de cotización. La aplicación pública solo lee datos;
-las escrituras requieren una cuenta incluida en `public.admins` y una sesión
-MFA TOTP con nivel `aal2`.
+el catálogo ni el flujo de cotización. La aplicación pública no puede escribir
+el catálogo. La cuenta de cliente puede actualizar solo su perfil y foto; las
+escrituras administrativas requieren una cuenta incluida en `public.admins` y
+una sesión MFA TOTP con nivel `aal2`.
 
 ## Estado del catálogo fuente
 
@@ -34,8 +35,11 @@ diferentes.
 
 - `supabase/migrations/202610200001_catalog_backend.sql`: esquema, funciones,
   RLS, bucket y RPC administrativas.
+- `supabase/migrations/202611220001_customer_profile_avatars.sql`: bucket
+  privado para fotos de perfil, con lectura y escritura limitada al dueño.
 - `supabase/config.toml`: configuración del entorno local de Supabase; el
-  registro público está deshabilitado.
+  registro de clientes está habilitado, pero los administradores siguen siendo
+  cuentas manuales autorizadas por separado.
 - `scripts/seed_supabase.mjs`: validación, seed idempotente y carga opcional de
   imágenes optimizadas.
 
@@ -86,8 +90,13 @@ una lista debe preferir `thumb_path`.
 1. Crear un proyecto Supabase Free y elegir una región cercana disponible.
 2. No activar complementos pagados ni asociar la clave `service_role` al
    frontend.
-3. En **Authentication > Providers > Email**, mantener correo/contraseña y
-   desactivar el registro público. La creación de usuarios será manual.
+3. En **Authentication > Providers > Email**, mantener correo/contraseña. Los
+   administradores se crean manualmente y se autorizan mediante `public.admins`.
+   La cuenta de cliente es opcional en la app; si se usará, habilita el registro
+   público y desactiva la confirmación de correo, porque el formulario de
+   clientes no solicita correo (usa un identificador técnico basado en celular).
+   Los registros públicos solo reciben el rol autenticado; RLS mantiene el
+   catálogo administrativo restringido a `public.admins` + MFA TOTP.
 4. Activar MFA TOTP. No usar SMS.
 5. Instalar Supabase CLI para desarrollo local o vincular el repositorio al
    proyecto:
@@ -244,3 +253,19 @@ Solo estas dos variables públicas van en `--dart-define`:
 
 Nunca incluir `SUPABASE_SERVICE_ROLE_KEY`. Para desarrollo sin configuración,
 el repositorio local debe continuar funcionando como respaldo.
+
+## Perfil de cliente y fotos
+
+Después de incorporar la migración de avatares, las cuentas siguen siendo
+opcionales: las personas pueden explorar el catálogo y cotizar como invitadas.
+El perfil guarda la foto solo si la persona la captura o selecciona. Los
+archivos viven en el bucket privado `customer-avatars`, bajo una carpeta con el
+UUID del dueño. Las políticas de Storage permiten leer, subir o retirar
+únicamente objetos de esa carpeta. La app conserva la ruta en los metadatos de
+la cuenta y genera enlaces firmados de corta duración para mostrar la imagen.
+
+La ubicación se solicita bajo demanda para ordenar agencias por distancia o
+orientar la brújula en Android. No se guarda ni se envía a Supabase. En Flutter
+Web, el sitio debe servirse por HTTPS y `web/_headers` permite geolocalización y
+cámara únicamente para el mismo sitio. La brújula usa el magnetómetro nativo de
+Android; en la web sigue disponible el mapa y el orden por cercanía.

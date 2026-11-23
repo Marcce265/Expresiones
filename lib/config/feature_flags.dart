@@ -1,7 +1,7 @@
 abstract final class FeatureFlags {
   static const customerAccounts = bool.fromEnvironment(
     'ENABLE_CUSTOMER_ACCOUNTS',
-    defaultValue: false,
+    defaultValue: true,
   );
 
   static const demoPayment = bool.fromEnvironment(

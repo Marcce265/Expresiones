@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
@@ -7,6 +8,7 @@ import '../data/shalom_agency_repository.dart';
 import '../models/shalom_agency.dart';
 import '../security/rate_limiter.dart';
 import '../theme/app_theme.dart';
+import 'agency_compass_control.dart';
 
 /// Mapa interactivo de agencias Shalom que permanece dentro de la aplicación.
 ///
@@ -178,7 +180,9 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
                     agencies: widget.showOtherAgencies ? _agencies : const [],
                     selectedAgencyId: widget.selectedAgencyId,
                     selectedAgencyName: _selectedAgencyName,
-                    selectedPoint: _hasSelectedCoordinates ? _selectedPoint : null,
+                    selectedPoint: _hasSelectedCoordinates
+                        ? _selectedPoint
+                        : null,
                   ),
                   SimpleAttributionWidget(
                     source: const Text(
@@ -209,6 +213,12 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
                   onZoomOut: () => _changeZoom(-1),
                 ),
               ),
+              if (_hasSelectedCoordinates && !kIsWeb)
+                Positioned(
+                  right: 12,
+                  bottom: 12,
+                  child: AgencyCompassControl(target: _selectedPoint),
+                ),
               const Positioned(
                 left: 12,
                 bottom: 12,
@@ -220,7 +230,6 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
       ),
     );
   }
-
 }
 
 class _ShalomAgenciesLayer extends StatelessWidget {

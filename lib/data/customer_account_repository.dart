@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/checkout_order.dart';
@@ -9,17 +11,23 @@ class CustomerProfile {
     required this.userId,
     required this.fullName,
     required this.phone,
+    this.avatarUrl,
   });
 
   final String userId;
   final String fullName;
   final String phone;
+  final String? avatarUrl;
 
-  factory CustomerProfile.fromJson(Map<String, dynamic> json) {
+  factory CustomerProfile.fromJson(
+    Map<String, dynamic> json, {
+    String? avatarUrl,
+  }) {
     return CustomerProfile(
       userId: '${json['user_id'] ?? ''}',
       fullName: '${json['full_name'] ?? ''}',
       phone: '${json['phone'] ?? ''}',
+      avatarUrl: avatarUrl,
     );
   }
 }
@@ -67,7 +75,59 @@ class CustomerAccountRepository {
         .select('user_id, full_name, phone')
         .eq('user_id', user.id)
         .maybeSingle();
-    return row == null ? null : CustomerProfile.fromJson(row);
+    if (row == null) return null;
+    final avatarPath = user.userMetadata?['avatar_path']?.toString().trim();
+    String? avatarUrl;
+    if (avatarPath != null && avatarPath.isNotEmpty) {
+      try {
+        avatarUrl = await client.storage
+            .from('customer-avatars')
+            .createSignedUrl(avatarPath, 3600);
+      } catch (_) {
+        // A missing avatar or an unapplied storage migration must not lock out
+        // access to the rest of the customer account.
+      }
+    }
+    return CustomerProfile.fromJson(row, avatarUrl: avatarUrl);
+  }
+
+  Future<CustomerProfile> saveAvatar(Uint8List bytes) async {
+    final user = client.auth.currentUser;
+    if (user == null) throw StateError('Inicia sesión para guardar tu foto.');
+    if (bytes.isEmpty || bytes.length > 4 * 1024 * 1024) {
+      throw const FormatException('La foto debe pesar menos de 4 MB.');
+    }
+    final timestamp = DateTime.now().microsecondsSinceEpoch;
+    final path = '${user.id}/$timestamp.jpg';
+    await client.storage
+        .from('customer-avatars')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(
+            cacheControl: '3600',
+            contentType: 'image/jpeg',
+            upsert: false,
+          ),
+        );
+    final metadata = Map<String, dynamic>.from(user.userMetadata ?? const {});
+    final oldPath = metadata['avatar_path']?.toString();
+    metadata['avatar_path'] = path;
+    try {
+      await client.auth.updateUser(UserAttributes(data: metadata));
+    } catch (_) {
+      try {
+        await client.storage.from('customer-avatars').remove([path]);
+      } catch (_) {}
+      rethrow;
+    }
+    if (oldPath != null && oldPath.isNotEmpty && oldPath != path) {
+      try {
+        await client.storage.from('customer-avatars').remove([oldPath]);
+      } catch (_) {}
+    }
+    return await currentProfile() ??
+        (throw StateError('No se pudo actualizar tu foto de perfil.'));
   }
 
   Future<CustomerProfile> register({

@@ -20,6 +20,7 @@ class HelpScreen extends StatelessWidget {
     this.onSelectCategory,
     this.onOpenQuote,
     this.settings = const StorefrontSettings(),
+    this.customerAccountsEnabled = FeatureFlags.customerAccounts,
   });
 
   final VoidCallback? onContact;
@@ -31,6 +32,7 @@ class HelpScreen extends StatelessWidget {
   final ValueChanged<ProductCategory>? onSelectCategory;
   final VoidCallback? onOpenQuote;
   final StorefrontSettings settings;
+  final bool customerAccountsEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -91,16 +93,15 @@ class HelpScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   settings.text(StorefrontText.helpBody),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(color: AppColors.muted),
+                  style: Theme.of(context).textTheme.bodyLarge
+                      ?.copyWith(color: AppColors.muted),
                 ),
                 const SizedBox(height: 20),
                 InfoBanner(
-                  title: FeatureFlags.customerAccounts
+                  title: customerAccountsEnabled
                       ? settings.text(StorefrontText.helpBannerTitle)
                       : 'Cotización sin registro',
-                  message: FeatureFlags.customerAccounts
+                  message: customerAccountsEnabled
                       ? settings.text(StorefrontText.helpBannerBody)
                       : 'Puedes explorar, calcular cantidades y preparar tu cotización sin iniciar sesión.',
                   icon: Icons.lock_open_rounded,
@@ -115,7 +116,8 @@ class HelpScreen extends StatelessWidget {
                         ],
                       );
                     }
-                    final left = <({IconData icon, String title, String body})>[];
+                    final left =
+                        <({IconData icon, String title, String body})>[];
                     final right =
                         <({IconData icon, String title, String body})>[];
                     for (var index = 0; index < items.length; index++) {
@@ -151,7 +153,9 @@ class HelpScreen extends StatelessWidget {
                     onAdminLogin: onAdminLogin,
                     onAssistantGuide: onAssistantGuide,
                     assistantMuted: assistantMuted,
-                    privacyLabel: settings.text(StorefrontText.helpPrivacyButton),
+                    privacyLabel: settings.text(
+                      StorefrontText.helpPrivacyButton,
+                    ),
                   ),
                 ),
               ],
@@ -240,7 +244,10 @@ class _HelpActions extends StatelessWidget {
               icon: const Icon(Icons.privacy_tip_outlined, size: 18),
               label: Text(privacyLabel),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -251,10 +258,15 @@ class _HelpActions extends StatelessWidget {
               onPressed: onAssistantGuide,
               icon: const Icon(Icons.support_agent_rounded, size: 18),
               label: Text(
-                assistantMuted ? 'Activar guía de Jashy' : 'Repetir guía de Jashy',
+                assistantMuted
+                    ? 'Activar guía de Jashy'
+                    : 'Repetir guía de Jashy',
               ),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -275,7 +287,10 @@ class _HelpActions extends StatelessWidget {
                       vertical: 10,
                     ),
                   ),
-                  icon: const Icon(Icons.admin_panel_settings_outlined, size: 16),
+                  icon: const Icon(
+                    Icons.admin_panel_settings_outlined,
+                    size: 16,
+                  ),
                   label: const Text('Iniciar sesión administrativa'),
                 ),
               ),

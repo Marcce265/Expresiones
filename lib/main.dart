@@ -62,13 +62,18 @@ Future<void> main() async {
   );
 
   runApp(
-    ChangeNotifierProvider.value(value: store, child: const ExpresionesApp()),
+    ChangeNotifierProvider.value(
+      value: store,
+      child: ExpresionesApp(supabaseClient: supabase.client),
+    ),
   );
   unawaited(store.initialize());
 }
 
 class ExpresionesApp extends StatelessWidget {
-  const ExpresionesApp({super.key});
+  const ExpresionesApp({super.key, this.supabaseClient});
+
+  final SupabaseClient? supabaseClient;
 
   @override
   Widget build(BuildContext context) {
@@ -84,13 +89,15 @@ class ExpresionesApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const AppShell(),
+      home: AppShell(supabaseClient: supabaseClient),
     );
   }
 }
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  const AppShell({super.key, this.supabaseClient});
+
+  final SupabaseClient? supabaseClient;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -108,31 +115,30 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   CustomerAccountRepository? _customerAccounts;
   StreamSubscription<AuthState>? _customerAuthSubscription;
   CustomerProfile? _customerProfile;
-  bool _customerAuthReady = false;
   int _index = 0;
   ProductCategory? _catalogCategory;
   String? _catalogFamilyId;
   bool _guideCheckScheduled = false;
   bool _assistantMuted = false;
 
+  bool get _customerAccountsEnabled =>
+      FeatureFlags.customerAccounts && widget.supabaseClient != null;
+
   @override
   void initState() {
     super.initState();
-    if (FeatureFlags.customerAccounts || FeatureFlags.demoPayment) {
+    if (_customerAccountsEnabled ||
+        (FeatureFlags.demoPayment && widget.supabaseClient != null)) {
       _customerAccounts = CustomerAccountRepository(
-        client: Supabase.instance.client,
+        client: widget.supabaseClient!,
       );
     }
-    if (FeatureFlags.customerAccounts) {
+    if (_customerAccountsEnabled) {
       _customerAuthSubscription = _customerAccounts!.authChanges.listen(
         (_) => unawaited(_refreshCustomerProfile()),
-        onError: (_, _) {
-          if (mounted) setState(() => _customerAuthReady = true);
-        },
+        onError: (_, _) {},
       );
       unawaited(_refreshCustomerProfile());
-    } else {
-      _customerAuthReady = true;
     }
     WidgetsBinding.instance.addObserver(this);
   }
@@ -145,10 +151,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       if (!mounted) return;
       setState(() {
         _customerProfile = profile;
-        _customerAuthReady = true;
       });
     } catch (_) {
-      if (mounted) setState(() => _customerAuthReady = true);
+      // Profile loading stays optional so guests can use the public catalog.
     }
   }
 
@@ -195,7 +200,23 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   void _showQuote() => _selectDestination(2);
 
-  void _showHelp() => _selectDestination(FeatureFlags.customerAccounts ? 4 : 3);
+  void _addCardProduct(
+    AppStore store,
+    CatalogProduct product,
+    String? variantId,
+  ) {
+    store.addProduct(product, variantId: variantId);
+    final variant = product.variantById(variantId);
+    final label = variant == null ? product.name : variantDisplayName(variant);
+    showAppNotice(
+      context,
+      '$label agregado a tu carrito.',
+      actionLabel: 'Ver carrito',
+      onAction: _showQuote,
+    );
+  }
+
+  void _showHelp() => _selectDestination(_customerAccountsEnabled ? 4 : 3);
 
   void _openLastOrder(CheckoutOrder order) {
     Navigator.of(context).push(
@@ -212,6 +233,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       MaterialPageRoute<void>(
         builder: (privacyContext) => PrivacyScreen(
           settings: store.storefrontSettings,
+          customerAccountsEnabled: _customerAccountsEnabled,
           onBack: () => Navigator.of(privacyContext).pop(),
           onClearLocalData: store.clearLocalData,
           onAdminLogin: () => unawaited(_openAdminPortal()),
@@ -322,6 +344,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                           currentIndex: _index,
                           catalogCategory: product.category,
                           quoteQuantity: store.cartQuantity,
+                          showAccount: _customerAccountsEnabled,
                           onSelect: (index) {
                             Navigator.of(routeContext).pop();
                             _selectDestination(index);
@@ -366,6 +389,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           ),
           child: CoordinationScreen(
             settings: store.storefrontSettings,
+            customerAccountsEnabled: _customerAccountsEnabled,
             onSelectCategory: (category) {
               Navigator.of(coordinationContext).popUntil((r) => r.isFirst);
               _showCatalog(category);
@@ -422,6 +446,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           ),
           child: ReviewScreen(
             settings: store.storefrontSettings,
+            customerAccountsEnabled: _customerAccountsEnabled,
             onSelectCategory: (category) {
               Navigator.of(reviewContext).popUntil((r) => r.isFirst);
               _showCatalog(category);
@@ -489,6 +514,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           Navigator.of(routeContext).popUntil((route) => route.isFirst);
           _selectDestination(destination);
         }
+
         final showMobileHeader = constraints.maxWidth < 768;
 
         return Scaffold(
@@ -504,7 +530,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 )
               : null,
           drawer: showMobileHeader
-              ? _MobileStoreMenu(selectedIndex: 2, onSelect: leaveCheckout)
+              ? _MobileStoreMenu(
+                  selectedIndex: 2,
+                  onSelect: leaveCheckout,
+                  showAccount: _customerAccountsEnabled,
+                )
               : null,
           body: SafeArea(
             child: Row(
@@ -514,6 +544,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     settings: store.storefrontSettings,
                     currentIndex: 2,
                     quoteQuantity: store.cartQuantity,
+                    showAccount: _customerAccountsEnabled,
                     onSelect: leaveCheckout,
                   ),
                 Expanded(child: child),
@@ -526,6 +557,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                   selectedIndex: 2,
                   quoteQuantity: store.cartQuantity,
                   onSelect: leaveCheckout,
+                  showAccount: _customerAccountsEnabled,
                 ),
           floatingActionButton: _assistantHelpButton(assistantStep),
         );
@@ -679,7 +711,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       targetKey: _guideNavigationKey(2),
       imageAsset: 'assets/images/jashy_chibi_writing.webp',
     ),
-    if (FeatureFlags.customerAccounts)
+    if (_customerAccountsEnabled)
       JashyTourStep(
         title: 'Cuenta',
         message: 'Revisa tus compras guardadas.',
@@ -689,7 +721,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     JashyTourStep(
       title: 'Ayuda',
       message: 'Encuentra respuestas o escríbenos.',
-      targetKey: _guideNavigationKey(FeatureFlags.customerAccounts ? 4 : 3),
+      targetKey: _guideNavigationKey(_customerAccountsEnabled ? 4 : 3),
       imageAsset: 'assets/images/jashy_chibi_question.webp',
     ),
     JashyTourStep(
@@ -707,22 +739,21 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       hasQuote
           ? 'Cambia cantidades y toca Continuar.'
           : 'Agrega productos desde Catálogo.',
-      if (FeatureFlags.customerAccounts) 'Inicia sesión y revisa tus compras.',
+      if (_customerAccountsEnabled) 'Inicia sesión y revisa tus compras.',
       'Abre una pregunta o escríbenos.',
     ];
     final titles = <String>[
       'Inicio',
       'Catálogo',
       'Carrito',
-      if (FeatureFlags.customerAccounts) 'Cuenta',
+      if (_customerAccountsEnabled) 'Cuenta',
       'Ayuda',
     ];
     final assets = <String>[
       'assets/images/jashy_chibi_assistant.webp',
       'assets/images/jashy_chibi_book.webp',
       'assets/images/jashy_chibi_writing.webp',
-      if (FeatureFlags.customerAccounts)
-        'assets/images/jashy_chibi_writing.webp',
+      if (_customerAccountsEnabled) 'assets/images/jashy_chibi_writing.webp',
       'assets/images/jashy_chibi_question.webp',
     ];
     return JashyTourStep(
@@ -785,7 +816,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         '🚚 Elige recojo local en Huancayo o envío a tu agencia favorita.',
       ],
       3: [
-        if (FeatureFlags.customerAccounts)
+        if (_customerAccountsEnabled)
           '👤 Revisa tu historial de compras y pedidos registrados.'
         else
           '❓ ¿Tienes dudas sobre pagos o envíos? Revisa las preguntas frecuentes.',
@@ -811,20 +842,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final store = context.watch<AppStore>();
 
-    if (FeatureFlags.customerAccounts && !_customerAuthReady) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-    if (FeatureFlags.customerAccounts && _customerProfile == null) {
-      return Scaffold(
-        body: SafeArea(
-          child: AccountScreen(
-            repository: _customerAccounts!,
-            accessGate: true,
-            onAuthenticated: () => unawaited(_refreshCustomerProfile()),
-          ),
-        ),
-      );
-    }
     if (store.isLoading) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
@@ -853,6 +870,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         popularProducts: store.popularProducts,
         onBrowse: _showCatalog,
         onProduct: _openProduct,
+        onAddToCart: (product, variantId) =>
+            _addCardProduct(store, product, variantId),
         onOpenFamily: _openCatalogFamily,
         onOpenQuote: _showQuote,
         onOpenHelp: _showHelp,
@@ -874,6 +893,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           _catalogSearchRequest = 0;
         }),
         onProduct: _openProduct,
+        onAddToCart: (product, variantId) =>
+            _addCardProduct(store, product, variantId),
         onBack: () => setState(() => _index = 0),
         onOpenQuote: _showQuote,
         onOpenHelp: _showHelp,
@@ -890,11 +911,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onSelectCategory: _showCatalog,
         onOpenHelp: _showHelp,
       ),
-      3 when FeatureFlags.customerAccounts => AccountScreen(
+      3 when _customerAccountsEnabled => AccountScreen(
         repository: _customerAccounts!,
       ),
       _ => HelpScreen(
         settings: store.storefrontSettings,
+        customerAccountsEnabled: _customerAccountsEnabled,
         onBack: () => setState(() => _index = 0),
         onSelectCategory: _showCatalog,
         onOpenQuote: _showQuote,
@@ -926,6 +948,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               ? _MobileStoreMenu(
                   selectedIndex: _index,
                   onSelect: _selectDestination,
+                  showAccount: _customerAccountsEnabled,
                 )
               : null,
           body: SafeArea(
@@ -937,6 +960,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     currentIndex: _index,
                     catalogCategory: _catalogCategory,
                     quoteQuantity: store.cartQuantity,
+                    showAccount: _customerAccountsEnabled,
                     onSelect: _selectDestination,
                     onSelectCatalogCategory: _showCatalog,
                     itemKeys: _navigationKeys,
@@ -960,6 +984,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                   selectedIndex: _index,
                   quoteQuantity: store.cartQuantity,
                   onSelect: _selectDestination,
+                  showAccount: _customerAccountsEnabled,
                   itemKeys: _navigationKeys,
                 ),
           floatingActionButton: _assistantHelpButton(
@@ -993,10 +1018,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 }
 
 class _MobileStoreMenu extends StatelessWidget {
-  const _MobileStoreMenu({required this.selectedIndex, required this.onSelect});
+  const _MobileStoreMenu({
+    required this.selectedIndex,
+    required this.onSelect,
+    required this.showAccount,
+  });
 
   final int selectedIndex;
   final ValueChanged<int> onSelect;
+  final bool showAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -1009,13 +1039,8 @@ class _MobileStoreMenu extends StatelessWidget {
               (0, Icons.home_outlined, 'Inicio'),
               (1, Icons.grid_view_outlined, 'Catálogo'),
               (2, Icons.shopping_bag_outlined, 'Carrito'),
-              if (FeatureFlags.customerAccounts)
-                (3, Icons.person_outline_rounded, 'Cuenta'),
-              (
-                FeatureFlags.customerAccounts ? 4 : 3,
-                Icons.help_outline_rounded,
-                'Ayuda',
-              ),
+              if (showAccount) (3, Icons.person_outline_rounded, 'Cuenta'),
+              (showAccount ? 4 : 3, Icons.help_outline_rounded, 'Ayuda'),
             ])
               ListTile(
                 leading: Icon(destination.$2),
@@ -1172,17 +1197,19 @@ class _MobileNavigation extends StatelessWidget {
     required this.selectedIndex,
     required this.quoteQuantity,
     required this.onSelect,
+    required this.showAccount,
     this.itemKeys,
   });
 
   final int selectedIndex;
   final int quoteQuantity;
   final ValueChanged<int> onSelect;
+  final bool showAccount;
   final List<GlobalKey>? itemKeys;
 
   @override
   Widget build(BuildContext context) {
-    final helpIndex = FeatureFlags.customerAccounts ? 4 : 3;
+    final helpIndex = showAccount ? 4 : 3;
     return NavigationBar(
       selectedIndex: selectedIndex,
       onDestinationSelected: onSelect,
@@ -1213,7 +1240,7 @@ class _MobileNavigation extends StatelessWidget {
           ),
           label: 'Carrito',
         ),
-        if (FeatureFlags.customerAccounts)
+        if (showAccount)
           NavigationDestination(
             key: itemKeys?[3],
             icon: const Icon(Icons.person_outline_rounded),
@@ -1267,6 +1294,7 @@ class _DesktopNavigation extends StatelessWidget {
     required this.settings,
     required this.currentIndex,
     required this.quoteQuantity,
+    required this.showAccount,
     required this.onSelect,
     this.catalogCategory,
     this.onSelectCatalogCategory,
@@ -1277,13 +1305,14 @@ class _DesktopNavigation extends StatelessWidget {
   final int currentIndex;
   final ProductCategory? catalogCategory;
   final int quoteQuantity;
+  final bool showAccount;
   final ValueChanged<int> onSelect;
   final ValueChanged<ProductCategory>? onSelectCatalogCategory;
   final List<GlobalKey>? itemKeys;
 
   @override
   Widget build(BuildContext context) {
-    final helpIndex = FeatureFlags.customerAccounts ? 4 : 3;
+    final helpIndex = showAccount ? 4 : 3;
     final isMaterialsSelected =
         currentIndex == 1 &&
         (catalogCategory == ProductCategory.materials ||
@@ -1371,7 +1400,7 @@ class _DesktopNavigation extends StatelessWidget {
                       badgeCount: quoteQuantity,
                       onTap: () => onSelect(2),
                     ),
-                    if (FeatureFlags.customerAccounts) ...[
+                    if (showAccount) ...[
                       const SizedBox(height: 4),
                       _DesktopNavigationItem(
                         key: itemKeys?[3],
@@ -1411,21 +1440,21 @@ class _DesktopNavigation extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
-                    FeatureFlags.customerAccounts
+                    showAccount
                         ? Icons.account_circle_outlined
                         : Icons.lock_open_rounded,
                     size: 20,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    FeatureFlags.customerAccounts
+                    showAccount
                         ? settings.text(StorefrontText.homeSidebarTitle)
                         : 'Cotiza libremente',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    FeatureFlags.customerAccounts
+                    showAccount
                         ? settings.text(StorefrontText.homeSidebarBody)
                         : 'Elige materiales y prepara tu cotización sin iniciar sesión.',
                     style: Theme.of(context).textTheme.bodySmall,

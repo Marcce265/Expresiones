@@ -7,7 +7,7 @@
   Cross-Origin-Opener-Policy: same-origin
   X-Permitted-Cross-Domain-Policies: none
   X-Robots-Tag: noai, noimageai
-  Permissions-Policy: accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), usb=(), browsing-topics=(), interest-cohort=()
+  Permissions-Policy: accelerometer=(), autoplay=(), camera=(self), display-capture=(), encrypted-media=(), fullscreen=(self), geolocation=(self), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), usb=(), browsing-topics=(), interest-cohort=()
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.gstatic.com https://fonts.gstatic.com https://tile.openstreetmap.org https://*.tile.openstreetmap.org; img-src 'self' data: blob: https://*.supabase.co https://tile.openstreetmap.org https://*.tile.openstreetmap.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
 
 /admin/*

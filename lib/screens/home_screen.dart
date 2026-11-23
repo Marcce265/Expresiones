@@ -18,6 +18,7 @@ class HomeScreen extends StatefulWidget {
     this.popularProducts = const [],
     required this.onBrowse,
     required this.onProduct,
+    this.onAddToCart,
     required this.onOpenQuote,
     required this.quoteQuantity,
     this.onOpenFamily,
@@ -32,6 +33,7 @@ class HomeScreen extends StatefulWidget {
   final List<CatalogProduct> popularProducts;
   final ValueChanged<ProductCategory> onBrowse;
   final ProductSelected onProduct;
+  final ProductSelected? onAddToCart;
   final VoidCallback onOpenQuote;
   final int quoteQuantity;
   final ValueChanged<CatalogProduct>? onOpenFamily;
@@ -173,6 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           )
                         : null,
                     onProduct: _handleSearchTileTap,
+                    onAddToCart: widget.onAddToCart,
                   ),
                 ] else ...[
                   if (showTrustRow) ...[
@@ -192,13 +195,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     const EmptyState(
                       icon: Icons.inventory_2_outlined,
                       title: 'El catálogo se está preparando',
-                      message:
-                          'Los productos aparecerán aquí cuando estén disponibles.',
+                      message: 'Los productos aparecerán aquí cuando estén disponibles.',
                     )
                   else
                     _FeaturedProducts(
                       products: featured,
                       onProduct: widget.onProduct,
+                      onAddToCart: widget.onAddToCart,
                     ),
                 ],
               ],
@@ -621,15 +624,12 @@ class _HomeSearchField extends StatelessWidget {
               onChanged: onChanged,
               onSubmitted: onSubmitted,
               textInputAction: TextInputAction.search,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.ink, fontSize: 12.5),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: AppColors.ink, fontSize: 12.5),
               decoration: InputDecoration(
                 hintText: hintText,
-                hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                  fontSize: 12.5,
-                ),
+                hintStyle: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: AppColors.muted, fontSize: 12.5),
                 isDense: true,
                 filled: false,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -884,20 +884,16 @@ class _HomeTrustItem extends StatelessWidget {
                   content.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context).textTheme.labelLarge
+                      ?.copyWith(fontSize: 12.5, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   content.description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 11,
-                    height: 1.35,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(fontSize: 11, height: 1.35),
                 ),
               ],
             ),
@@ -965,9 +961,8 @@ class _FeaturedHeader extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               'Los favoritos de nuestros artesanos y decoradores',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontSize: 12),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(fontSize: 12),
             ),
           ],
         );
@@ -1015,10 +1010,15 @@ class _FeaturedHeader extends StatelessWidget {
 }
 
 class _FeaturedProducts extends StatelessWidget {
-  const _FeaturedProducts({required this.products, required this.onProduct});
+  const _FeaturedProducts({
+    required this.products,
+    required this.onProduct,
+    this.onAddToCart,
+  });
 
   final List<CatalogTile> products;
   final ProductSelected onProduct;
+  final ProductSelected? onAddToCart;
 
   @override
   Widget build(BuildContext context) {
@@ -1043,10 +1043,10 @@ class _FeaturedProducts extends StatelessWidget {
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns == 0 ? 1 : columns,
             mainAxisExtent: isDesktop
-                ? 304
+                ? 312
                 : isTablet
-                ? 304
-                : 250,
+                ? 312
+                : 266,
             crossAxisSpacing: isDesktop ? 16 : 12,
             mainAxisSpacing: isDesktop ? 16 : 12,
           ),
@@ -1058,6 +1058,7 @@ class _FeaturedProducts extends StatelessWidget {
               compact: !isTablet,
               showCategory: true,
               onTap: () => onProduct(tile.product, tile.variant?.id),
+              onAdd: onAddToCart,
             );
           },
         );
@@ -1071,12 +1072,14 @@ class _SearchResults extends StatelessWidget {
     required this.results,
     required this.totalCount,
     required this.onProduct,
+    this.onAddToCart,
     this.onLoadMore,
   });
 
   final List<CatalogTile> results;
   final int totalCount;
   final ProductSelected onProduct;
+  final ProductSelected? onAddToCart;
   final VoidCallback? onLoadMore;
 
   @override
@@ -1097,7 +1100,7 @@ class _SearchResults extends StatelessWidget {
             itemCount: results.length,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: constraints.maxWidth < 600 ? 210 : 250,
-              mainAxisExtent: constraints.maxWidth < 600 ? 248 : 292,
+              mainAxisExtent: constraints.maxWidth < 600 ? 266 : 300,
               crossAxisSpacing: constraints.maxWidth < 600 ? 12 : 16,
               mainAxisSpacing: constraints.maxWidth < 600 ? 12 : 16,
             ),
@@ -1108,6 +1111,7 @@ class _SearchResults extends StatelessWidget {
                 variant: tile.variant,
                 compact: constraints.maxWidth < 600,
                 onTap: () => onProduct(tile.product, tile.variant?.id),
+                onAdd: onAddToCart,
               );
             },
           ),

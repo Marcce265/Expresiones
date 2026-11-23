@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as image_lib;
+import 'package:image_picker/image_picker.dart';
 
 import '../data/customer_account_repository.dart';
 import '../services/legal_consent_service.dart';
@@ -48,6 +51,7 @@ class _AccountScreenState extends State<AccountScreen> {
   bool _termsAccepted = false;
   bool _privacyAccepted = false;
   bool _consentError = false;
+  bool _savingAvatar = false;
   String? _error;
 
   @override
@@ -93,8 +97,7 @@ class _AccountScreenState extends State<AccountScreen> {
     if (_registering && (!_termsAccepted || !_privacyAccepted)) {
       setState(() {
         _consentError = true;
-        _error =
-            'Marca ambas casillas por separado (Términos y Condiciones y Política de Privacidad) para crear tu cuenta.';
+        _error = 'Marca ambas casillas por separado (Términos y Condiciones y Política de Privacidad) para crear tu cuenta.';
       });
       return;
     }
@@ -149,6 +152,89 @@ class _AccountScreenState extends State<AccountScreen> {
       _orders = const [];
       _password.clear();
     });
+  }
+
+  Future<void> _changeAvatar() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Tomar una foto'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Elegir de la galería'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    setState(() {
+      _savingAvatar = true;
+      _error = null;
+    });
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 88,
+        preferredCameraDevice: CameraDevice.front,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      if (bytes.isEmpty || bytes.length > 8 * 1024 * 1024) {
+        throw const FormatException('Elige una foto de menos de 8 MB.');
+      }
+      final decoded = image_lib.decodeImage(bytes);
+      if (decoded == null) {
+        throw const FormatException('No pudimos leer esa imagen.');
+      }
+      final oriented = image_lib.bakeOrientation(decoded);
+      final image_lib.Image resized;
+      const maxEdge = 512;
+      if (oriented.width > maxEdge || oriented.height > maxEdge) {
+        resized = oriented.width >= oriented.height
+            ? image_lib.copyResize(
+                oriented,
+                width: maxEdge,
+                interpolation: image_lib.Interpolation.average,
+              )
+            : image_lib.copyResize(
+                oriented,
+                height: maxEdge,
+                interpolation: image_lib.Interpolation.average,
+              );
+      } else {
+        resized = oriented;
+      }
+      final optimized = Uint8List.fromList(
+        image_lib.encodeJpg(resized, quality: 84),
+      );
+      final profile = await widget.repository.saveAvatar(optimized);
+      if (!mounted) return;
+      setState(() {
+        _profile = profile;
+        _error = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error is FormatException ? error.message.toString() : 'No se pudo guardar la foto. Revisa tu conexión y vuelve a intentarlo.';
+      });
+    } finally {
+      if (mounted) setState(() => _savingAvatar = false);
+    }
   }
 
   @override
@@ -341,10 +427,62 @@ class _AccountScreenState extends State<AccountScreen> {
       children: [
         Row(
           children: [
-            const CircleAvatar(
-              radius: 24,
-              backgroundColor: AppColors.pinkSoft,
-              child: Icon(Icons.person_rounded, color: AppColors.ink),
+            Semantics(
+              button: true,
+              label: 'Cambiar foto de perfil',
+              child: SizedBox.square(
+                dimension: 56,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _savingAvatar ? null : _changeAvatar,
+                    customBorder: const CircleBorder(),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppColors.pinkSoft,
+                          backgroundImage: profile.avatarUrl == null
+                              ? null
+                              : NetworkImage(profile.avatarUrl!),
+                          child: profile.avatarUrl == null
+                              ? const Icon(
+                                  Icons.person_rounded,
+                                  color: AppColors.ink,
+                                )
+                              : null,
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            alignment: Alignment.center,
+                            child: _savingAvatar
+                                ? const SizedBox.square(
+                                    dimension: 13,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.photo_camera_outlined,
+                                    size: 14,
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -369,6 +507,14 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ],
         ),
+        if (_error != null) ...[
+          const SizedBox(height: 10),
+          Text(
+            _error!,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppColors.error),
+          ),
+        ],
         if (widget.checkoutMode) ...[
           const SizedBox(height: 18),
           InfoBanner(

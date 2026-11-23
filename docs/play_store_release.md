@@ -86,8 +86,10 @@ confirman con Expresiones antes de convertir la cotización en un pedido.
 ```
 
 Categoría sugerida: `Compras`. La aplicación no contiene anuncios ni exige una
-cuenta al público. Falta proporcionar en Play Console el correo de soporte del
-propietario, la gráfica destacada de 1024 × 500 y las capturas finales.
+cuenta para explorar el catálogo o cotizar como invitado. La cuenta de cliente
+es opcional y permite guardar perfil e historial de compras simuladas. Falta
+proporcionar en Play Console el correo de soporte del propietario, la gráfica
+destacada de 1024 × 500 y las capturas finales.
 
 La URL de privacidad será:
 
@@ -105,13 +107,14 @@ SDK o cambia la telemetría antes de enviarlo a Google Play.
 
 | Tema | Declaración preparada |
 | --- | --- |
-| Datos de contacto y coordinación | Se procesan localmente. La aplicación no los sube a Supabase. El usuario decide si los transfiere a WhatsApp. |
+| Datos de contacto y coordinación | El borrador de cotización se guarda localmente. Si la persona crea una cuenta, nombre y celular se guardan en su perfil; la cotización solo se transfiere a WhatsApp cuando la persona lo decide. |
 | Actividad en la aplicación | La analítica está desactivada en el MVP. No se envían búsquedas, vistas, productos agregados ni cotizaciones abandonadas. Revisar de nuevo este punto antes de la fase 9. |
-| Vinculación con identidad | No existe cuenta pública ni identificador de usuario para clientes. |
+| Vinculación con identidad | Cuenta opcional con celular como identificador de acceso, nombre, contraseña gestionada por Supabase Auth y foto de perfil privada opcional. |
 | Datos compartidos | Supabase aloja el catálogo y Cloudflare distribuye la web. Confirmar en el formulario el tratamiento de la transferencia iniciada por el usuario hacia WhatsApp. |
 | Cifrado | Supabase y Cloudflare Pages usan HTTPS durante la transferencia. |
-| Pagos, ubicación y contactos del dispositivo | No se recopilan. La aplicación no procesa pagos ni solicita GPS o libreta de contactos. |
-| Eliminación | El usuario puede borrar cotización y datos locales desde la aplicación. No se crean cuentas públicas. |
+| Pagos, ubicación y contactos del dispositivo | No se recopilan datos de pago ni libreta de contactos. La ubicación se consulta solo tras una acción explícita para mostrar agencias cercanas y no se guarda. |
+| Fotos y cámara | La persona puede tomar o elegir una foto de perfil; se sube a almacenamiento privado de Supabase asociado a su cuenta. |
+| Eliminación | El usuario puede borrar cotización y datos locales desde la aplicación. Para eliminar una cuenta o foto, contacta a Expresiones por WhatsApp. |
 
 Play Console exige completar este formulario incluso para aplicaciones sin
 datos de usuario. La declaración debe incluir el comportamiento de todos los

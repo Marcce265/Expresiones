@@ -29,6 +29,7 @@ class ProductCard extends StatefulWidget {
     super.key,
     required this.product,
     required this.onTap,
+    this.onAdd,
     this.variant,
     this.imageAsset,
     this.compact = false,
@@ -44,6 +45,7 @@ class ProductCard extends StatefulWidget {
   final ProductVariant? variant;
   final String? imageAsset;
   final VoidCallback onTap;
+  final ProductSelected? onAdd;
   final bool compact;
   final bool showCategory;
   final bool showPrice;
@@ -303,6 +305,32 @@ class _ProductCardState extends State<ProductCard> {
                                     ),
                                   ),
                                 ),
+                                if (widget.onAdd != null) ...[
+                                  const SizedBox(width: 4),
+                                  IconButton.filledTonal(
+                                    tooltip: 'Agregar $title al carrito',
+                                    visualDensity: VisualDensity.standard,
+                                    constraints: const BoxConstraints.tightFor(
+                                      width: 48,
+                                      height: 48,
+                                    ),
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: AppColors.pinkSoft,
+                                      foregroundColor: AppColors.ink,
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                    onPressed: unavailable
+                                        ? null
+                                        : () => widget.onAdd!(
+                                            widget.product,
+                                            variantId,
+                                          ),
+                                    icon: const Icon(
+                                      Icons.add_shopping_cart_rounded,
+                                      size: 17,
+                                    ),
+                                  ),
+                                ],
                                 if (!widget.compact ||
                                     widget.homePresentation) ...[
                                   const SizedBox(width: 8),

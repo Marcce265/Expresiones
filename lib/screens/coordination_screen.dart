@@ -35,6 +35,7 @@ class CoordinationScreen extends StatefulWidget {
     this.onSelectCategory,
     this.onOpenHelp,
     this.settings = const StorefrontSettings(),
+    this.customerAccountsEnabled = FeatureFlags.customerAccounts,
   });
 
   final CoordinationDetails initial;
@@ -47,6 +48,7 @@ class CoordinationScreen extends StatefulWidget {
   final ValueChanged<ProductCategory>? onSelectCategory;
   final VoidCallback? onOpenHelp;
   final StorefrontSettings settings;
+  final bool customerAccountsEnabled;
 
   @override
   State<CoordinationScreen> createState() => _CoordinationScreenState();
@@ -759,7 +761,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
                     title: widget.settings.text(
                       StorefrontText.coordinationContactTitle,
                     ),
-                    description: FeatureFlags.customerAccounts
+                    description: widget.customerAccountsEnabled
                         ? widget.settings.text(
                             StorefrontText.coordinationContactBody,
                           )
@@ -1498,10 +1500,7 @@ class _AgencyDetail extends StatelessWidget {
         Icon(icon, size: 17, color: AppColors.muted),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          child: Text(text, style: Theme.of(context).textTheme.bodySmall),
         ),
       ],
     );

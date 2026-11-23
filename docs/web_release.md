@@ -147,7 +147,10 @@ Cuando Cloudflare entregue la URL final:
 1. abre **Authentication > URL Configuration** en Supabase;
 2. establece como Site URL la dirección `https://<proyecto>.pages.dev`;
 3. agrega `https://<proyecto>.pages.dev/admin/**` a Redirect URLs; y
-4. confirma que el registro público esté desactivado.
+4. habilita el registro de cuentas de cliente y desactiva la confirmación por
+   correo, ya que el formulario de clientes solo pide celular, nombre y
+   contraseña. Los administradores siguen siendo creados manualmente y su
+   acceso de escritura depende de `public.admins` y TOTP `aal2`.
 
 La ruta `/admin/` no se enlaza desde el catálogo, pero ocultarla no es una medida
 de seguridad. Supabase RLS exige que la cuenta figure en `admins` y que la sesión

@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../data/shalom_agency_repository.dart';
 import '../models/shalom_agency.dart';
 import '../security/input_sanitizer.dart';
+import '../services/device_location_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 
@@ -28,6 +30,10 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
   Timer? _searchDebounce;
   String _query = '';
   bool _selecting = false;
+  bool _findingNearby = false;
+  double? _userLatitude;
+  double? _userLongitude;
+  String? _locationError;
 
   @override
   void dispose() {
@@ -59,6 +65,46 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
     Navigator.of(context).pop(agency);
   }
 
+  Future<void> _findNearby() async {
+    if (_findingNearby) return;
+    setState(() {
+      _findingNearby = true;
+      _locationError = null;
+    });
+    try {
+      final position = await const DeviceLocationService().currentPosition();
+      if (!mounted) return;
+      _searchDebounce?.cancel();
+      setState(() {
+        _userLatitude = position.latitude;
+        _userLongitude = position.longitude;
+        _query = '';
+        _searchController.clear();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _locationError = error.toString());
+    } finally {
+      if (mounted) setState(() => _findingNearby = false);
+    }
+  }
+
+  double? _distanceKm(ShalomAgency agency) {
+    final latitude = _userLatitude;
+    final longitude = _userLongitude;
+    if (latitude == null || longitude == null) return null;
+    final agencyLatitude = agency.latitude;
+    final agencyLongitude = agency.longitude;
+    if (agencyLatitude == null || agencyLongitude == null) return null;
+    return Geolocator.distanceBetween(
+          latitude,
+          longitude,
+          agencyLatitude,
+          agencyLongitude,
+        ) /
+        1000;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,9 +125,26 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
 
           final catalog = snapshot.data!;
           final publicAgencies = catalog.publicAgencies;
+          final searchableAgencies = List<ShalomAgency>.of(
+            _userLatitude == null
+                ? publicAgencies
+                : publicAgencies.where(
+                    (agency) =>
+                        agency.canReceive &&
+                        agency.latitude != null &&
+                        agency.longitude != null,
+                  ),
+          );
+          if (_userLatitude != null) {
+            searchableAgencies.sort((a, b) {
+              final firstDistance = _distanceKm(a) ?? double.infinity;
+              final secondDistance = _distanceKm(b) ?? double.infinity;
+              return firstDistance.compareTo(secondDistance);
+            });
+          }
           final filtered = _query.isEmpty
-              ? publicAgencies
-              : publicAgencies
+              ? searchableAgencies
+              : searchableAgencies
                     .where((agency) => agency.matches(_query))
                     .toList(growable: false);
 
@@ -107,6 +170,41 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
                   message: 'Mostramos el directorio disponible de Shalom. Toca una tarjeta para usarla en tu cotización.',
                 ),
                 const SizedBox(height: 18),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 6,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _findingNearby ? null : _findNearby,
+                      icon: _findingNearby
+                          ? const SizedBox.square(
+                              dimension: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.my_location_rounded, size: 18),
+                      label: Text(
+                        _findingNearby
+                            ? 'Buscando…'
+                            : _userLatitude == null
+                            ? 'Agencias cerca de mí'
+                            : 'Actualizar cercanía',
+                      ),
+                    ),
+                    if (_userLatitude != null && !_findingNearby)
+                      Text(
+                        'Ordenadas por distancia aproximada. Tu ubicación no se guarda.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    if (_locationError != null)
+                      Text(
+                        _locationError!,
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: AppColors.error),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: _searchController,
                   textInputAction: TextInputAction.search,
@@ -157,11 +255,14 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
                 const SizedBox(height: 8),
                 Expanded(
                   child: filtered.isEmpty
-                      ? const EmptyState(
+                      ? EmptyState(
                           icon: Icons.search_off_rounded,
-                          title: 'Sin resultados',
-                          message:
-                              'Prueba con otra ciudad, agencia o dirección.',
+                          title: _query.isNotEmpty || _userLatitude == null
+                              ? 'Sin resultados'
+                              : 'No hay agencias cercanas disponibles',
+                          message: _query.isNotEmpty || _userLatitude == null
+                              ? 'Prueba con otra ciudad, agencia o dirección.'
+                              : 'No encontramos agencias de destino con ubicación registrada. Puedes buscar manualmente por ciudad.',
                         )
                       : LayoutBuilder(
                           builder: (context, constraints) {
@@ -170,6 +271,7 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
                               return _AgencyCard(
                                 agency: agency,
                                 selected: agency.id == widget.selectedId,
+                                distanceKm: _distanceKm(agency),
                                 onTap: agency.canReceive
                                     ? () => _selectAgency(agency)
                                     : null,
@@ -216,11 +318,13 @@ class _AgencyCard extends StatelessWidget {
   const _AgencyCard({
     required this.agency,
     required this.selected,
+    this.distanceKm,
     required this.onTap,
   });
 
   final ShalomAgency agency;
   final bool selected;
+  final double? distanceKm;
   final VoidCallback? onTap;
 
   @override
@@ -265,6 +369,19 @@ class _AgencyCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
+                    if (distanceKm != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        distanceKm! < 1
+                            ? '${(distanceKm! * 1000).round()} m de distancia'
+                            : '${distanceKm!.toStringAsFixed(1)} km de distancia',
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: AppColors.pinkStrong,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
                     if (agency.address.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(

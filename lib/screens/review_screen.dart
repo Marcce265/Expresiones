@@ -29,6 +29,7 @@ class ReviewScreen extends StatefulWidget {
     this.onSelectCategory,
     this.onOpenHelp,
     this.settings = const StorefrontSettings(),
+    this.customerAccountsEnabled = FeatureFlags.customerAccounts,
   });
 
   final List<ResolvedQuoteLine> lines;
@@ -44,6 +45,7 @@ class ReviewScreen extends StatefulWidget {
   final ValueChanged<ProductCategory>? onSelectCategory;
   final VoidCallback? onOpenHelp;
   final StorefrontSettings settings;
+  final bool customerAccountsEnabled;
 
   @override
   State<ReviewScreen> createState() => _ReviewScreenState();
@@ -162,6 +164,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       onEdit: widget.onEditQuote,
                       onContinueToPayment: widget.onContinueToPayment,
                       settings: widget.settings,
+                      customerAccountsEnabled: widget.customerAccountsEnabled,
                     );
 
                     if (!wide) {
@@ -497,6 +500,7 @@ class _SendPanel extends StatelessWidget {
     required this.onEdit,
     this.onContinueToPayment,
     required this.settings,
+    required this.customerAccountsEnabled,
   });
 
   final String quoteId;
@@ -511,6 +515,7 @@ class _SendPanel extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback? onContinueToPayment;
   final StorefrontSettings settings;
+  final bool customerAccountsEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -531,7 +536,7 @@ class _SendPanel extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
-                        FeatureFlags.customerAccounts
+                        customerAccountsEnabled
                             ? settings.text(StorefrontText.reviewMessageBody)
                             : 'Detalle listo para guardar, copiar o exportar',
                         style: Theme.of(context).textTheme.bodySmall,

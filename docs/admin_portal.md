@@ -40,8 +40,11 @@ con una aplicación autenticadora y es la opción elegida para las dos cuentas.
 
 ## Crear los dos administradores
 
-1. En Supabase abre **Authentication > Providers > Email** y desactiva el
-   registro público de usuarios.
+1. En Supabase abre **Authentication > Providers > Email**. Si la tienda tendrá
+   cuentas opcionales para clientes, permite el registro de clientes y desactiva
+   la confirmación por correo porque el formulario no solicita una dirección de
+   correo. Los administradores se crean manualmente; los registros de clientes
+   no obtienen privilegios administrativos.
 2. En **Authentication > Users**, crea manualmente dos cuentas separadas: una
    del propietario y otra de la copropietaria.
 3. Marca ambos correos como verificados.

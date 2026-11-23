@@ -8,9 +8,13 @@ precios por volumen y generación de cotizaciones para WhatsApp.
 - Inicio y catálogo adaptable a celular y computadora.
 - Búsqueda por nombre, color, código y etiquetas.
 - Variantes, cantidades, precios por volumen y subtotal automático.
-- Carrito guardado localmente, sin cuenta para el público.
+- Carrito guardado localmente y disponible como invitado; cuenta de cliente
+  opcional para perfil e historial de compras simuladas.
 - Recojo en Huancayo o envío nacional por Shalom.
 - Directorio de agencias disponible sin conexión.
+- Agencias Shalom ordenadas por cercanía con permiso puntual de ubicación; la
+  app Android también puede orientar hacia la agencia con la brújula del equipo.
+- Foto de perfil opcional en almacenamiento privado de Supabase.
 - Revisión final, exportación a PDF o Excel y envío voluntario a WhatsApp.
 - Catálogo y capacidad pública desde Supabase, con respaldo local cuando no hay
   conexión.
@@ -69,10 +73,11 @@ panel administrativo requiere una conexión válida con Supabase.
 
 ## Supabase
 
-La base usa Postgres, Auth, Storage y Row Level Security. El público solo puede
-leer el catálogo activo. Las dos cuentas administrativas se crean manualmente y
-toda escritura exige una sesión administradora con segundo factor TOTP
-(`aal2`). SMS no se usa porque agrega costo y dependencia de un proveedor.
+La base usa Postgres, Auth, Storage y Row Level Security. El público puede leer
+el catálogo activo y una cuenta de cliente solo puede editar su perfil. Las dos
+cuentas administrativas se crean manualmente y toda escritura administrativa
+exige un segundo factor TOTP (`aal2`). SMS no se usa porque agrega costo y
+dependencia de un proveedor.
 
 Las migraciones, la carga inicial y la creación segura de administradores están
 documentadas en [`docs/SUPABASE.md`](docs/SUPABASE.md).
