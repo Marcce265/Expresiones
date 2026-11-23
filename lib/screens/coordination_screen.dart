@@ -19,7 +19,6 @@ import '../widgets/checkout_field_icons.dart';
 import '../widgets/legal_consent_checkboxes.dart';
 import '../widgets/pickup_location_map.dart';
 import '../widgets/shalom_embedded_map.dart';
-import '../widgets/store_footer.dart';
 import 'shalom_agency_picker.dart';
 
 class CoordinationScreen extends StatefulWidget {
@@ -995,13 +994,6 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          StoreFooter(
-            settings: widget.settings,
-            onSelectCategory: widget.onSelectCategory,
-            onOpenQuote: () => Navigator.maybePop(context),
-            onOpenHelp: widget.onOpenHelp,
-            whatsappNumber: widget.settings.whatsappNumber,
-          ),
         ],
       ),
     );

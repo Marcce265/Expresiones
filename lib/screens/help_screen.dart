@@ -84,6 +84,25 @@ class HelpScreen extends StatelessWidget {
                 AppBreadcrumbBar(
                   onBack: onBack ?? () => Navigator.maybePop(context),
                   items: const [BreadcrumbItem(label: 'Ayuda')],
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.pinkSoft,
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Text(
+                      'v1.0.5',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.roseDeep,
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Eyebrow(settings.text(StorefrontText.helpEyebrow)),
@@ -306,6 +325,16 @@ class _HelpActions extends StatelessWidget {
                   ),
                   label: const Text('Iniciar sesión administrativa'),
                 ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Center(
+              child: Text(
+                'Expresiones App · Versión 1.0.5',
+                key: const ValueKey('app-version-label'),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
               ),
             ),
           ],

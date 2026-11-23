@@ -126,23 +126,19 @@ class _ProductCardState extends State<ProductCard> {
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(cardRadius),
               border: Border.all(
-                color: widget.homePresentation
-                    ? _hovered
-                          ? AppColors.pinkStrong.withValues(alpha: .45)
-                          : AppColors.border
-                    : _hovered
-                    ? AppColors.border
-                    : const Color(0xFFF0EDE8),
+                color: _hovered && !unavailable
+                    ? AppColors.rose.withValues(alpha: .45)
+                    : AppColors.border,
               ),
               boxShadow: widget.homePresentation
                   ? const <BoxShadow>[]
                   : [
                       BoxShadow(
-                        color: Colors.black.withValues(
-                          alpha: _hovered && !unavailable ? .11 : .055,
+                        color: AppColors.ink.withValues(
+                          alpha: _hovered && !unavailable ? .08 : .035,
                         ),
-                        blurRadius: _hovered ? 22 : 12,
-                        offset: Offset(0, _hovered ? 9 : 5),
+                        blurRadius: _hovered ? 18 : 10,
+                        offset: Offset(0, _hovered ? 6 : 3),
                       ),
                     ],
             ),
@@ -325,12 +321,12 @@ class _ProductCardState extends State<ProductCard> {
                                     tooltip: 'Agregar $title al carrito',
                                     visualDensity: VisualDensity.standard,
                                     constraints: const BoxConstraints.tightFor(
-                                      width: 48,
-                                      height: 48,
+                                      width: 44,
+                                      height: 44,
                                     ),
                                     style: IconButton.styleFrom(
                                       backgroundColor: AppColors.pinkSoft,
-                                      foregroundColor: AppColors.ink,
+                                      foregroundColor: AppColors.roseDeep,
                                       padding: EdgeInsets.zero,
                                     ),
                                     onPressed: unavailable
@@ -339,7 +335,7 @@ class _ProductCardState extends State<ProductCard> {
                                               onAdd(widget.product, variantId),
                                     icon: const Icon(
                                       Icons.add_shopping_cart_rounded,
-                                      size: 17,
+                                      size: 18,
                                     ),
                                   ),
                                 ],
@@ -351,8 +347,8 @@ class _ProductCardState extends State<ProductCard> {
                                     height: widget.homePresentation ? 24 : 28,
                                     decoration: BoxDecoration(
                                       color: _hovered
-                                          ? AppColors.ink
-                                          : AppColors.canvas,
+                                          ? AppColors.rose
+                                          : AppColors.pinkSoft,
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
@@ -360,7 +356,7 @@ class _ProductCardState extends State<ProductCard> {
                                       size: widget.homePresentation ? 14 : 15,
                                       color: _hovered
                                           ? Colors.white
-                                          : AppColors.ink,
+                                          : AppColors.roseDeep,
                                     ),
                                   ),
                                 ],

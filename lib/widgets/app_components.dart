@@ -4,8 +4,11 @@ import '../config/feature_flags.dart';
 import '../theme/app_theme.dart';
 
 class ResponsivePage extends StatelessWidget {
-  static const storefrontMaxWidth = 1180.0;
-  static const storefrontGutter = 20.0;
+  /// La tienda se muestra como una app: columna tipo móvil, centrada en
+  /// tablets y navegadores. El portal administrativo usa [ResponsivePage]
+  /// con su propio ancho.
+  static const storefrontMaxWidth = AppSpacing.maxContentWidth;
+  static const storefrontGutter = AppSpacing.gutter;
 
   static double storefrontInset(double viewportWidth) =>
       viewportWidth > storefrontMaxWidth
@@ -246,7 +249,7 @@ class StepProgress extends StatelessWidget {
                         color: index == 0
                             ? Colors.transparent
                             : step <= current
-                            ? AppColors.ink
+                            ? AppColors.rose
                             : AppColors.border,
                       ),
                     ),
@@ -255,9 +258,9 @@ class StepProgress extends StatelessWidget {
                       height: 28,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: active ? AppColors.ink : AppColors.surface,
+                        color: active ? AppColors.rose : AppColors.surface,
                         border: Border.all(
-                          color: active ? AppColors.ink : AppColors.border,
+                          color: active ? AppColors.rose : AppColors.border,
                         ),
                         shape: BoxShape.circle,
                       ),
@@ -276,7 +279,7 @@ class StepProgress extends StatelessWidget {
                         color: index == labels.length - 1
                             ? Colors.transparent
                             : step < current
-                            ? AppColors.ink
+                            ? AppColors.rose
                             : AppColors.border,
                       ),
                     ),
@@ -289,7 +292,7 @@ class StepProgress extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: active ? AppColors.ink : AppColors.muted,
+                  color: active ? AppColors.roseDeep : AppColors.muted,
                   fontWeight: active ? FontWeight.w700 : FontWeight.w400,
                 ),
               ),

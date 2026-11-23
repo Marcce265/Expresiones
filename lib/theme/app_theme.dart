@@ -1,15 +1,37 @@
 import 'package:flutter/material.dart';
 
+/// Paleta de la app: blanco humo + rosado.
+///
+/// - [rose] es el color de acción (botones, pestaña activa). Tiene 5.0:1 con
+///   texto blanco.
+/// - [roseDeep] es para texto rosado pequeño (6.3:1 sobre [canvas]).
+/// - [pinkStrong] es solo decorativo (iconos, ilustración): con texto blanco
+///   no llega a 4.5:1.
 abstract final class AppColors {
   static const canvas = Color(0xFFF7F4EF);
   static const surface = Color(0xFFFFFEFC);
   static const ink = Color(0xFF191816);
-  static const muted = Color(0xFF7B7771);
+  static const muted = Color(0xFF6B665F);
   static const border = Color(0xFFE3DED6);
   static const pinkSoft = Color(0xFFF7E5EB);
   static const pinkStrong = Color(0xFFD76582);
+  static const rose = Color(0xFFBE4467);
+  static const roseDeep = Color(0xFF9E3355);
   static const whatsapp = Color(0xFF218A5B);
   static const error = Color(0xFFB42318);
+}
+
+/// Medidas compartidas para que todas las pantallas respiren igual.
+abstract final class AppSpacing {
+  /// Margen horizontal de las pantallas.
+  static const gutter = 16.0;
+
+  /// Ancho máximo del contenido: columna tipo móvil también en tablet/web.
+  static const maxContentWidth = 640.0;
+
+  static const radiusCard = 18.0;
+  static const radiusControl = 16.0;
+  static const radiusPill = 99.0;
 }
 
 abstract final class AppTheme {
@@ -39,8 +61,10 @@ abstract final class AppTheme {
           surface: AppColors.surface,
           error: AppColors.error,
         ).copyWith(
-          primary: AppColors.ink,
+          primary: AppColors.rose,
           onPrimary: Colors.white,
+          primaryContainer: AppColors.pinkSoft,
+          onPrimaryContainer: AppColors.roseDeep,
           secondary: AppColors.pinkStrong,
           onSecondary: Colors.white,
           surface: AppColors.surface,
@@ -183,12 +207,12 @@ abstract final class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         titleTextStyle: TextStyle(
-          fontFamily: displayFont,
-          fontSize: 22,
+          fontFamily: bodyFont,
+          fontSize: 17,
           height: 1.2,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w700,
           color: AppColors.ink,
         ),
       ),
@@ -230,7 +254,7 @@ abstract final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: AppColors.ink, width: 1.4),
+          borderSide: BorderSide(color: AppColors.rose, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
@@ -241,23 +265,32 @@ abstract final class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(0, 50),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
-          shape: const StadiumBorder(),
+          backgroundColor: AppColors.rose,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.border,
+          disabledForegroundColor: AppColors.muted,
+          minimumSize: const Size(0, 52),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
+          ),
           textStyle: const TextStyle(
             fontFamily: bodyFont,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.1,
           ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(0, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           foregroundColor: AppColors.ink,
           side: const BorderSide(color: AppColors.border, width: 1.2),
-          shape: const StadiumBorder(),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
+          ),
           textStyle: const TextStyle(
             fontFamily: bodyFont,
             fontWeight: FontWeight.w600,
@@ -267,7 +300,7 @@ abstract final class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           minimumSize: const Size(44, 44),
-          foregroundColor: AppColors.ink,
+          foregroundColor: AppColors.roseDeep,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -288,7 +321,7 @@ abstract final class AppTheme {
       ),
       chipTheme: base.chipTheme.copyWith(
         backgroundColor: AppColors.surface,
-        selectedColor: AppColors.ink,
+        selectedColor: AppColors.rose,
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
@@ -315,25 +348,27 @@ abstract final class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 72,
+        height: 68,
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         indicatorColor: AppColors.pinkSoft,
+        indicatorShape: const StadiumBorder(),
         elevation: 0,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           return IconThemeData(
             color: states.contains(WidgetState.selected)
-                ? AppColors.ink
+                ? AppColors.roseDeep
                 : AppColors.muted,
-            size: 23,
+            size: 24,
           );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           return TextStyle(
             fontFamily: bodyFont,
             color: states.contains(WidgetState.selected)
-                ? AppColors.ink
+                ? AppColors.roseDeep
                 : AppColors.muted,
             fontSize: 11,
             fontWeight: states.contains(WidgetState.selected)
@@ -358,7 +393,7 @@ abstract final class AppTheme {
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.ink,
+        backgroundColor: AppColors.rose,
         foregroundColor: Colors.white,
         elevation: 5,
         shape: RoundedRectangleBorder(
@@ -377,10 +412,56 @@ abstract final class AppTheme {
         ),
         waitDuration: const Duration(milliseconds: 450),
       ),
-      snackBarTheme: const SnackBarThemeData(
+      snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.ink,
-        contentTextStyle: TextStyle(fontFamily: bodyFont, color: Colors.white),
+        contentTextStyle: const TextStyle(
+          fontFamily: bodyFont,
+          color: Colors.white,
+        ),
+        actionTextColor: AppColors.pinkSoft,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: true,
+        dragHandleColor: AppColors.border,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        ),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.rose,
+        linearTrackColor: AppColors.pinkSoft,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? Colors.white
+              : AppColors.muted,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.rose
+              : AppColors.border,
+        ),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? AppColors.rose : null,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.rose
+              : AppColors.muted,
+        ),
       ),
     );
   }

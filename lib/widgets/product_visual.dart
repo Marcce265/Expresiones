@@ -4,24 +4,30 @@ import '../models/catalog_models.dart';
 import '../theme/app_theme.dart';
 import 'skeleton_loader.dart';
 
-String? productFamilyHeroAsset(CatalogProduct product) => switch (product.id) {
-  'limpiapipas-premium-8mm' => 'assets/images/family_heroes/limpiapipas.webp',
-  'cinta-satinada-100m' =>
-    'assets/images/family_heroes/cinta_satinada_todos_colores.webp',
-  'papel-coreano-impermeable' ||
-  'papel-coreano' => 'assets/images/family_heroes/papel_coreano.webp',
-  _ =>
-    product.category == ProductCategory.koreanPaper
-        ? 'assets/images/family_heroes/papel_coreano.webp'
-        : null,
-};
+String? _remoteCatalogImage(String? value) {
+  final clean = value?.trim();
+  if (clean == null || clean.isEmpty || clean.startsWith('assets/')) {
+    return null;
+  }
+  return clean;
+}
+
+String? productFamilyHeroAsset(CatalogProduct product) => null;
 
 /// Image shown for a family card or overview.
 ///
-/// The administrator's current cover is authoritative. Editorial assets are
-/// only offline fallbacks for seed products that do not publish a cover.
-String? productFamilyCoverImage(CatalogProduct product) =>
-    product.previewImageUrl ?? productFamilyHeroAsset(product);
+/// All dynamic catalog covers come from Supabase (either the family cover or
+/// the first active variant image), never from bundled project assets.
+String? productFamilyCoverImage(CatalogProduct product) {
+  final direct = _remoteCatalogImage(product.previewImageUrl);
+  if (direct != null) return direct;
+  for (final variant in product.variants) {
+    if (!variant.isActive) continue;
+    final variantImage = _remoteCatalogImage(variant.previewImageUrl);
+    if (variantImage != null) return variantImage;
+  }
+  return null;
+}
 
 BoxFit productImageFit(CatalogProduct product, {ProductVariant? variant}) {
   if (product.category == ProductCategory.koreanPaper) {
@@ -134,23 +140,19 @@ class ProductVisual extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final asset = imageAsset;
-    if (asset != null && asset.isNotEmpty) {
-      final ImageProvider provider =
-          asset.startsWith('http://') || asset.startsWith('https://')
-          ? NetworkImage(asset)
-          : AssetImage(asset);
+    final asset = _remoteCatalogImage(imageAsset);
+    if (asset != null &&
+        (asset.startsWith('http://') || asset.startsWith('https://'))) {
+      final ImageProvider provider = NetworkImage(asset);
 
-      final placeholderAsset = placeholderImageAsset;
+      final placeholderAsset = _remoteCatalogImage(placeholderImageAsset);
       final ImageProvider? placeholderProvider =
           placeholderAsset == null ||
-              placeholderAsset.isEmpty ||
-              placeholderAsset == asset
+              placeholderAsset == asset ||
+              (!placeholderAsset.startsWith('http://') &&
+                  !placeholderAsset.startsWith('https://'))
           ? null
-          : placeholderAsset.startsWith('http://') ||
-                placeholderAsset.startsWith('https://')
-          ? NetworkImage(placeholderAsset)
-          : AssetImage(placeholderAsset);
+          : NetworkImage(placeholderAsset);
 
       Widget buildPlaceholder() => placeholderProvider == null
           ? const ProductVisualSkeleton()

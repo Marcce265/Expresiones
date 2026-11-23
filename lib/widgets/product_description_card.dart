@@ -84,16 +84,15 @@ class ProductDescriptionCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.canvas,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.border),
+                      color: AppColors.pinkSoft,
+                      borderRadius: BorderRadius.circular(99),
                     ),
                     child: Text(
                       badge,
                       style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.ink,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.roseDeep,
                       ),
                     ),
                   ),

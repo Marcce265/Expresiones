@@ -102,7 +102,8 @@ abstract final class StorefrontText {
     homeEyebrow: 'Catálogo de materiales para manualidades',
     homeTitle: 'Encuentra lo que necesitas para crear y expresar más.',
     homeSubtitle: 'Limpiapipas premium, cintas finas, coronas y envolturas seleccionadas. Prepara tu lista y cotiza al instante sin registros engorrosos.',
-    homeHeroImage: 'assets/images/catalog_hero.webp',
+    homeHeroImage:
+        'https://wxoaedvqeuynzinzazsj.supabase.co/storage/v1/object/public/catalog/site/home/1792885314568000-1000397889.jpg',
     homeSearchHint: 'Buscar por material, color o código (ej: CAT-076)...',
     homeFeaturedTitle: 'Más consultados',
     homeSidebarTitle: 'Tu cuenta te acompaña',

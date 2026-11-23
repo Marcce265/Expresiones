@@ -9,7 +9,6 @@ import '../services/catalog_search_engine.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/product_card.dart';
-import '../widgets/store_footer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -65,8 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final usesDesktopNavigation = MediaQuery.sizeOf(context).width >= 1024;
-    final showTrustRow = MediaQuery.sizeOf(context).width >= 700;
     final products =
         widget.products
             .where(
@@ -106,116 +103,94 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     return SingleChildScrollView(
-      child: Column(
-        children: [
-          ResponsivePage.storefront(
-            top: 14,
-            bottom: 36,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (!usesDesktopNavigation &&
-                    MediaQuery.sizeOf(context).width >= 768) ...[
-                  _TopBar(
-                    settings: widget.settings,
-                    quoteQuantity: widget.quoteQuantity,
-                    onOpenQuote: widget.onOpenQuote,
-                  ),
-                  const SizedBox(height: 28),
-                ],
-                if (widget.lastOrder != null &&
-                    widget.onOpenLastOrder != null) ...[
-                  _LastOrderCard(
-                    order: widget.lastOrder!,
-                    onOpen: () => widget.onOpenLastOrder!(widget.lastOrder!),
-                  ),
-                  const SizedBox(height: 18),
-                ],
-                _HomeIntro(
-                  settings: widget.settings,
-                  searchController: _searchController,
-                  query: _query,
-                  onSearchChanged: _onSearchChanged,
-                  onSearchSubmitted: _onSearchSubmitted,
-                  onClearSearch: () {
-                    _filterDebounce?.cancel();
-                    _telemetryDebounce?.cancel();
-                    _searchController.clear();
-                    setState(() {
-                      _query = '';
-                      _visibleResultLimit = CatalogSearchEngine.defaultPageSize;
-                    });
-                  },
-                  showHero: query.isEmpty,
-                ),
-                if (query.isNotEmpty) ...[
-                  const SizedBox(height: 30),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Resultados',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                      Text(
-                        '${results.length} ${results.length == 1 ? 'resultado' : 'resultados'}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _SearchResults(
-                    results: visibleResults,
-                    totalCount: results.length,
-                    onLoadMore: results.length > visibleResults.length
-                        ? () => setState(
-                            () => _visibleResultLimit +=
-                                CatalogSearchEngine.defaultPageSize,
-                          )
-                        : null,
-                    onProduct: _handleSearchTileTap,
-                    onAddToCart: widget.onAddToCart,
-                  ),
-                ] else ...[
-                  if (showTrustRow) ...[
-                    const SizedBox(height: 24),
-                    const _HomeTrustRow(),
-                    const SizedBox(height: 32),
-                  ] else
-                    const SizedBox(height: 28),
-                  _FeaturedHeader(
-                    title: widget.settings.text(
-                      StorefrontText.homeFeaturedTitle,
-                    ),
-                    onAction: () => widget.onBrowse(ProductCategory.materials),
-                  ),
-                  const SizedBox(height: 12),
-                  if (featured.isEmpty)
-                    const EmptyState(
-                      icon: Icons.inventory_2_outlined,
-                      title: 'El catálogo se está preparando',
-                      message: 'Los productos aparecerán aquí cuando estén disponibles.',
-                    )
-                  else
-                    _FeaturedProducts(
-                      products: featured,
-                      onProduct: widget.onProduct,
-                      onAddToCart: widget.onAddToCart,
-                    ),
-                ],
-              ],
+      child: ResponsivePage.storefront(
+        top: 12,
+        bottom: 28,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _AppHomeTopBar(
+              onBrowse: widget.onBrowse,
             ),
-          ),
-          const SizedBox(height: 12),
-          StoreFooter(
-            settings: widget.settings,
-            onSelectCategory: widget.onBrowse,
-            onOpenQuote: widget.onOpenQuote,
-            onOpenHelp: widget.onOpenHelp,
-            whatsappNumber: widget.settings.whatsappNumber,
-          ),
-        ],
+            const SizedBox(height: 14),
+            if (widget.lastOrder != null && widget.onOpenLastOrder != null) ...[
+              _LastOrderCard(
+                order: widget.lastOrder!,
+                onOpen: () => widget.onOpenLastOrder!(widget.lastOrder!),
+              ),
+              const SizedBox(height: 14),
+            ],
+            _HomeIntro(
+              settings: widget.settings,
+              searchController: _searchController,
+              query: _query,
+              onSearchChanged: _onSearchChanged,
+              onSearchSubmitted: _onSearchSubmitted,
+              onClearSearch: () {
+                _filterDebounce?.cancel();
+                _telemetryDebounce?.cancel();
+                _searchController.clear();
+                setState(() {
+                  _query = '';
+                  _visibleResultLimit = CatalogSearchEngine.defaultPageSize;
+                });
+              },
+              showHero: query.isEmpty,
+            ),
+            if (query.isNotEmpty) ...[
+              const SizedBox(height: 22),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Resultados',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  Text(
+                    '${results.length} ${results.length == 1 ? 'resultado' : 'resultados'}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _SearchResults(
+                results: visibleResults,
+                totalCount: results.length,
+                onLoadMore: results.length > visibleResults.length
+                    ? () => setState(
+                        () => _visibleResultLimit +=
+                            CatalogSearchEngine.defaultPageSize,
+                      )
+                    : null,
+                onProduct: _handleSearchTileTap,
+                onAddToCart: widget.onAddToCart,
+              ),
+            ] else ...[
+              const SizedBox(height: 22),
+              _FeaturedHeader(
+                title: widget.settings.text(
+                  StorefrontText.homeFeaturedTitle,
+                ),
+                onAction: () => widget.onBrowse(ProductCategory.materials),
+              ),
+              const SizedBox(height: 12),
+              if (featured.isEmpty)
+                const EmptyState(
+                  icon: Icons.inventory_2_outlined,
+                  title: 'El catálogo se está preparando',
+                  message:
+                      'Los productos aparecerán aquí cuando estén disponibles.',
+                )
+              else
+                _FeaturedProducts(
+                  products: featured,
+                  onProduct: widget.onProduct,
+                  onAddToCart: widget.onAddToCart,
+                ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -331,52 +306,80 @@ class _LastOrderCard extends StatelessWidget {
   }
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({
-    required this.settings,
-    required this.quoteQuantity,
-    required this.onOpenQuote,
-  });
+class _AppHomeTopBar extends StatelessWidget {
+  const _AppHomeTopBar({required this.onBrowse});
 
-  final StorefrontSettings settings;
-  final int quoteQuantity;
-  final VoidCallback onOpenQuote;
+  final ValueChanged<ProductCategory> onBrowse;
 
   @override
   Widget build(BuildContext context) {
-    final usesDesktopNavigation = MediaQuery.sizeOf(context).width >= 1024;
-    return LayoutBuilder(
-      builder: (context, constraints) => Row(
-        children: [
-          if (!usesDesktopNavigation)
-            Expanded(
-              child: Text(
-                settings.text(StorefrontText.brandName),
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w500,
+    return Row(
+      children: [
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Image.asset(
+              'assets/images/brand/expresiones_mobile_v2.webp',
+              height: 36,
+              fit: BoxFit.contain,
+              semanticLabel: 'Expresiones, ir al inicio',
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        _CategoryQuickChip(
+          icon: Icons.auto_awesome_rounded,
+          label: 'Materiales',
+          onTap: () => onBrowse(ProductCategory.materials),
+        ),
+        const SizedBox(width: 6),
+        _CategoryQuickChip(
+          icon: Icons.layers_rounded,
+          label: 'Papel',
+          onTap: () => onBrowse(ProductCategory.koreanPaper),
+        ),
+      ],
+    );
+  }
+}
+
+class _CategoryQuickChip extends StatelessWidget {
+  const _CategoryQuickChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.pinkSoft,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: AppColors.roseDeep),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.roseDeep,
                 ),
               ),
-            )
-          else
-            const Spacer(),
-          Badge.count(
-            count: quoteQuantity,
-            isLabelVisible: quoteQuantity > 0,
-            backgroundColor: AppColors.pinkStrong,
-            child: constraints.maxWidth >= 560
-                ? OutlinedButton.icon(
-                    onPressed: onOpenQuote,
-                    icon: const Icon(Icons.shopping_bag_outlined, size: 19),
-                    label: const Text('Mi carrito'),
-                  )
-                : IconButton.outlined(
-                    onPressed: onOpenQuote,
-                    tooltip: 'Mi carrito',
-                    icon: const Icon(Icons.shopping_bag_outlined, size: 20),
-                  ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -657,14 +660,14 @@ class _HomeSearchField extends StatelessWidget {
               child: FilledButton(
                 onPressed: () => onSubmitted(controller.text),
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.ink,
+                  backgroundColor: AppColors.rose,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(78, 36),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   shape: const StadiumBorder(),
                   textStyle: const TextStyle(
                     fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 child: const Text('Buscar'),
@@ -720,17 +723,21 @@ class _PopularChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.canvas,
-      shape: StadiumBorder(side: BorderSide(color: AppColors.border)),
+      color: AppColors.pinkSoft,
+      shape: const StadiumBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
           child: Text(
             label,
-            style: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(color: AppColors.ink, fontSize: 9.5, height: 1),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.roseDeep,
+              fontWeight: FontWeight.w600,
+              fontSize: 10.5,
+              height: 1,
+            ),
           ),
         ),
       ),
@@ -743,162 +750,35 @@ class _HomeHeroImage extends StatelessWidget {
 
   final String source;
 
+  static const _defaultRemoteHero =
+      'https://wxoaedvqeuynzinzazsj.supabase.co/storage/v1/object/public/catalog/site/home/1792885314568000-1000397889.jpg';
+
   @override
   Widget build(BuildContext context) {
-    final clean = source.isEmpty ? 'assets/images/catalog_hero.webp' : source;
-    if (clean.startsWith('http://') || clean.startsWith('https://')) {
-      return Image.network(
-        clean,
-        fit: BoxFit.cover,
-        filterQuality: FilterQuality.high,
-        errorBuilder: (_, _, _) => Image.asset(
-          'assets/images/catalog_hero.webp',
-          fit: BoxFit.cover,
-          filterQuality: FilterQuality.high,
-        ),
-      );
-    }
-    return Image.asset(
-      clean,
+    final trimmed = source.trim();
+    final url =
+        (trimmed.startsWith('http://') || trimmed.startsWith('https://'))
+        ? trimmed
+        : _defaultRemoteHero;
+    return Image.network(
+      url,
       fit: BoxFit.cover,
       filterQuality: FilterQuality.high,
-      errorBuilder: (_, _, _) => Image.asset(
-        'assets/images/catalog_hero.webp',
-        fit: BoxFit.cover,
-        filterQuality: FilterQuality.high,
-      ),
-    );
-  }
-}
-
-class _HomeTrustRow extends StatelessWidget {
-  const _HomeTrustRow();
-
-  static const _items = [
-    _TrustContent(
-      icon: Icons.check_rounded,
-      iconBackground: AppColors.ink,
-      iconColor: Colors.white,
-      title: 'Cotiza sin registro',
-      description:
-          'Selecciona tus materiales y coordina directo sin contraseñas.',
-    ),
-    _TrustContent(
-      icon: Icons.percent_rounded,
-      iconBackground: AppColors.ink,
-      iconColor: Colors.white,
-      title: 'Precios por volumen',
-      description:
-          'Escalas automáticas por mayor en limpiapipas, cintas y accesorios.',
-    ),
-    _TrustContent(
-      icon: Icons.local_shipping_outlined,
-      iconBackground: AppColors.ink,
-      iconColor: Colors.white,
-      title: 'Recojo y envíos Shalom',
-      description:
-          'Recojo en nuestro local de Huancayo o envío seguro a todo el Perú.',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 900) {
-          return Column(
-            children: [
-              for (var index = 0; index < _items.length; index++) ...[
-                _HomeTrustItem(content: _items[index]),
-                if (index != _items.length - 1) const SizedBox(height: 10),
-              ],
-            ],
-          );
-        }
-        return SizedBox(
-          height: 88,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var index = 0; index < _items.length; index++) ...[
-                Expanded(child: _HomeTrustItem(content: _items[index])),
-                if (index != _items.length - 1) const SizedBox(width: 14),
-              ],
-            ],
+      errorBuilder: (_, _, _) => DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.pinkSoft, AppColors.canvas],
           ),
-        );
-      },
-    );
-  }
-}
-
-class _TrustContent {
-  const _TrustContent({
-    required this.icon,
-    required this.iconBackground,
-    required this.iconColor,
-    required this.title,
-    required this.description,
-  });
-
-  final IconData icon;
-  final Color iconBackground;
-  final Color iconColor;
-  final String title;
-  final String description;
-}
-
-class _HomeTrustItem extends StatelessWidget {
-  const _HomeTrustItem({required this.content});
-
-  final _TrustContent content;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: content.iconBackground,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(content.icon, size: 18, color: content.iconColor),
+        ),
+        child: Center(
+          child: Icon(
+            Icons.auto_awesome_outlined,
+            size: 56,
+            color: AppColors.pinkStrong.withValues(alpha: .65),
           ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  content.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge
-                      ?.copyWith(fontSize: 12.5, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  content.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(fontSize: 11, height: 1.35),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -969,15 +849,15 @@ class _FeaturedHeader extends StatelessWidget {
         final actionButton = FilledButton.icon(
           onPressed: onAction,
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.ink,
+            backgroundColor: AppColors.rose,
             foregroundColor: Colors.white,
             minimumSize: const Size(0, 44),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
             shape: const StadiumBorder(),
             textStyle: const TextStyle(
               fontFamily: AppTheme.bodyFont,
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               letterSpacing: 0.15,
             ),
           ),
@@ -1043,10 +923,10 @@ class _FeaturedProducts extends StatelessWidget {
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns == 0 ? 1 : columns,
             mainAxisExtent: isDesktop
-                ? 312
-                : isTablet
-                ? 312
-                : 266,
+                ? 324
+                : constraints.maxWidth >= 500
+                ? 324
+                : 268,
             crossAxisSpacing: isDesktop ? 16 : 12,
             mainAxisSpacing: isDesktop ? 16 : 12,
           ),

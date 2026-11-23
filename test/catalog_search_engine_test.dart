@@ -282,7 +282,7 @@ void main() {
 
         expect(find.byType(AppBreadcrumbBar), findsNothing);
         expect(find.text('INICIO'), findsNothing);
-        expect(find.byType(StoreFooter), findsOneWidget);
+        expect(find.byType(StoreFooter), findsNothing);
 
         await tester.enterText(find.byType(TextField).first, 'cintas');
         // Antes de los 450ms no reconstruye los resultados todavía
@@ -328,13 +328,11 @@ void main() {
       expect(find.byType(AppBreadcrumbBar), findsOneWidget);
       expect(find.text('INICIO'), findsNothing);
       expect(find.text('MATERIALES'), findsWidgets);
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, -1200));
-      await tester.pumpAndSettle();
-      expect(find.byType(StoreFooter), findsOneWidget);
+      expect(find.byType(StoreFooter), findsNothing);
     });
 
     testWidgets(
-      'QuoteScreen, CoordinationScreen, ReviewScreen y HelpScreen comparten breadcrumb y footer',
+      'QuoteScreen, CoordinationScreen, ReviewScreen y HelpScreen muestran su cabecera sin footer repetido salvo en Ayuda',
       (tester) async {
         tester.view.physicalSize = const Size(1440, 1200);
         tester.view.devicePixelRatio = 1.0;
@@ -367,7 +365,7 @@ void main() {
         expect(find.byType(AppBreadcrumbBar), findsOneWidget);
         expect(find.text('INICIO'), findsNothing);
         expect(find.text('CARRITO'), findsOneWidget);
-        expect(find.byType(StoreFooter), findsOneWidget);
+        expect(find.byType(StoreFooter), findsNothing);
 
         // Datos
         await tester.pumpWidget(
@@ -384,7 +382,7 @@ void main() {
         expect(find.text('INICIO'), findsNothing);
         expect(find.text('CARRITO'), findsOneWidget);
         expect(find.text('DATOS'), findsOneWidget);
-        expect(find.byType(StoreFooter), findsOneWidget);
+        expect(find.byType(StoreFooter), findsNothing);
 
         // Revisión
         await tester.pumpWidget(
@@ -408,9 +406,9 @@ void main() {
         expect(find.text('CARRITO'), findsOneWidget);
         expect(find.text('DATOS'), findsOneWidget);
         expect(find.text('REVISIÓN'), findsOneWidget);
-        expect(find.byType(StoreFooter), findsOneWidget);
+        expect(find.byType(StoreFooter), findsNothing);
 
-        // Ayuda
+        // Ayuda (única sección donde vive la información legal y de contacto)
         await tester.pumpWidget(
           wrap(
             HelpScreen(

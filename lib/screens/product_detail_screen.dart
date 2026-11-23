@@ -4,12 +4,12 @@ import '../models/catalog_models.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/app_ui.dart';
 import '../widgets/assistant_guide.dart';
 import '../widgets/breadcrumb_bar.dart';
 import '../widgets/product_description_card.dart';
 import '../widgets/product_visual.dart';
 import '../widgets/quantity_input.dart';
-import '../widgets/store_footer.dart';
 
 typedef AddProductCallback = void Function({
   required int quantity,
@@ -80,10 +80,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           width: 38,
           height: 38,
           decoration: const BoxDecoration(
-            color: AppColors.ink,
+            color: AppColors.surface,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 18, color: Colors.white),
+          child: Icon(icon, size: 18, color: AppColors.roseDeep),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -362,9 +362,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
-                                  color: AppColors.canvas,
+                                  color: AppColors.pinkSoft,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: AppColors.border),
+                                  border: Border.all(
+                                    color: AppColors.rose.withValues(
+                                      alpha: .28,
+                                    ),
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -374,7 +378,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         const Icon(
                                           Icons.loyalty_outlined,
                                           size: 16,
-                                          color: AppColors.ink,
+                                          color: AppColors.roseDeep,
                                         ),
                                         const SizedBox(width: 6),
                                         Text(
@@ -384,6 +388,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                               .labelLarge
                                               ?.copyWith(
                                                 fontWeight: FontWeight.w700,
+                                                color: AppColors.roseDeep,
                                               ),
                                         ),
                                       ],
@@ -400,99 +405,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           .textTheme
                                           .bodySmall
                                           ?.copyWith(
-                                            color: AppColors.muted,
+                                            color: AppColors.ink,
                                             height: 1.35,
                                           ),
                                     ),
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 16),
                             ],
 
-                            // Botones de compra estilo Rosatel
-                            // Fila 1: Selector de Cantidad + Botón Comprar Ahora
-                            Row(
-                              children: [
-                                SizedBox(
-                                  width: 130,
-                                  child: _QuantitySelector(
-                                    value: _quantity,
-                                    onDecrease: _quantity == 1
-                                        ? null
-                                        : () => setState(() => _quantity--),
-                                    onIncrease:
-                                        product.canRequest(
-                                          _quantity + 1,
-                                          variantId: _variantId,
-                                        )
-                                        ? () => setState(() => _quantity++)
-                                        : null,
-                                    onQuantityEntered: (val) {
-                                      if (product.canRequest(
-                                        val,
-                                        variantId: _variantId,
-                                      )) {
-                                        setState(() => _quantity = val);
-                                      }
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 48,
-                                    child: OutlinedButton(
-                                      onPressed: canAdd ? _handleBuyNow : null,
-                                      style: OutlinedButton.styleFrom(
-                                        shape: const StadiumBorder(),
-                                        side: const BorderSide(
-                                          color: AppColors.ink,
-                                          width: 1.5,
-                                        ),
-                                        foregroundColor: AppColors.ink,
-                                      ),
-                                      child: const Text(
-                                        'Comprar ahora',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-
-                            // Fila 2: Botón Primario Añadir al Carrito (full width pill)
-                            SizedBox(
-                              width: double.infinity,
-                              height: 50,
-                              child: FilledButton.icon(
-                                onPressed: canAdd ? _handleAdd : null,
-                                icon: const Icon(
-                                  Icons.shopping_bag_outlined,
-                                  size: 20,
-                                ),
-                                label: Text(
-                                  canAdd
-                                      ? 'Añadir al carrito · S/ ${total.toStringAsFixed(2)}'
-                                      : 'No disponible por ahora',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                                style: FilledButton.styleFrom(
-                                  shape: const StadiumBorder(),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-
-                            // Tarjeta de Entrega y Programación estilo Rosatel
+                            // Tarjeta de Entrega y Programación
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(
@@ -508,7 +431,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 children: [
                                   const Icon(
                                     Icons.calendar_month_outlined,
-                                    color: AppColors.ink,
+                                    color: AppColors.roseDeep,
                                     size: 22,
                                   ),
                                   const SizedBox(width: 12),
@@ -625,23 +548,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     },
                   ),
                 ),
-                const SizedBox(height: 40),
-
-                // SECCIÓN 3: Pie de Página Integral (Estilo Rosatel)
-                StoreFooter(
-                  settings: widget.settings ?? const StorefrontSettings(),
-                  onSelectCategory: widget.onNavigateCategory,
-                  onOpenQuote: widget.onOpenQuote,
-                  onOpenHelp: widget.onOpenHelp,
-                  whatsappNumber: widget.settings?.normalizedWhatsappNumber,
-                ),
+                const SizedBox(height: 28),
               ]),
             ),
           ],
         ),
         const Positioned(
           right: 18,
-          bottom: 24,
+          bottom: 138,
           child: AssistantHelpButton(
             title: 'Consejo de Jashy 💕',
             message: '¡Me parece un excelente producto! 💕 Elige la cantidad y aprovecha los descuentos por mayor.',
@@ -651,6 +565,87 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               '📦 Precios especiales por mayor automáticos a partir de 12 unidades.',
             ],
             imageAsset: 'assets/images/jashy_chibi_assistant.webp',
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: StickyActionBar(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 130,
+                      child: _QuantitySelector(
+                        value: _quantity,
+                        onDecrease: _quantity == 1
+                            ? null
+                            : () => setState(() => _quantity--),
+                        onIncrease:
+                            product.canRequest(
+                              _quantity + 1,
+                              variantId: _variantId,
+                            )
+                            ? () => setState(() => _quantity++)
+                            : null,
+                        onQuantityEntered: (val) {
+                          if (product.canRequest(
+                            val,
+                            variantId: _variantId,
+                          )) {
+                            setState(() => _quantity = val);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: OutlinedButton(
+                          onPressed: canAdd ? _handleBuyNow : null,
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                              color: AppColors.rose,
+                              width: 1.4,
+                            ),
+                            foregroundColor: AppColors.roseDeep,
+                          ),
+                          child: const Text(
+                            'Comprar ahora',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: FilledButton.icon(
+                    onPressed: canAdd ? _handleAdd : null,
+                    icon: const Icon(Icons.shopping_bag_outlined, size: 19),
+                    label: Text(
+                      canAdd
+                          ? 'Añadir al carrito · S/ ${total.toStringAsFixed(2)}'
+                          : 'No disponible por ahora',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],

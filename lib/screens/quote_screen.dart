@@ -5,10 +5,10 @@ import '../models/quote_line.dart';
 import '../models/storefront_settings.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
+import '../widgets/app_ui.dart';
 import '../widgets/breadcrumb_bar.dart';
 import '../widgets/product_visual.dart';
 import '../widgets/quantity_input.dart';
-import '../widgets/store_footer.dart';
 
 typedef QuantityChanged = void Function(QuoteLine line, int quantity);
 
@@ -40,95 +40,67 @@ class QuoteScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     if (lines.isEmpty) {
       return SingleChildScrollView(
-        child: Column(
-          children: [
-            ResponsivePage.storefront(
+        child: ResponsivePage.storefront(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _PageHeading(itemCount: 0, onBack: onBack),
+              const SizedBox(height: 16),
+              EmptyState(
+                icon: Icons.shopping_bag_outlined,
+                title: settings.text(StorefrontText.quoteEmptyTitle),
+                message: settings.text(StorefrontText.quoteEmptyBody),
+                action: FilledButton.icon(
+                  onPressed: onBrowse,
+                  icon: const Icon(Icons.grid_view_rounded),
+                  label: const Text('Explorar catálogo'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final subtotal = lines.fold<double>(0, (sum, item) => sum + item.total);
+
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            child: ResponsivePage.storefront(
+              bottom: 24,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _PageHeading(itemCount: 0, onBack: onBack),
+                  _PageHeading(itemCount: lines.length, onBack: onBack),
                   const SizedBox(height: 16),
-                  EmptyState(
-                    icon: Icons.shopping_bag_outlined,
-                    title: settings.text(StorefrontText.quoteEmptyTitle),
-                    message: settings.text(StorefrontText.quoteEmptyBody),
-                    action: FilledButton.icon(
+                  _QuoteItemsSection(
+                    lines: lines,
+                    onQuantityChanged: onQuantityChanged,
+                    onRemove: onRemove,
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
                       onPressed: onBrowse,
-                      icon: const Icon(Icons.grid_view_rounded),
-                      label: const Text('Explorar catálogo'),
+                      icon: const Icon(Icons.add_rounded, size: 19),
+                      label: const Text('Agregar más productos'),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 36),
-            StoreFooter(
-              settings: settings,
-              onSelectCategory: onSelectCategory,
-              onOpenHelp: onOpenHelp,
-              whatsappNumber: settings.whatsappNumber,
-            ),
-          ],
+          ),
         ),
-      );
-    }
-
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          ResponsivePage.storefront(
-            bottom: 48,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _PageHeading(itemCount: lines.length, onBack: onBack),
-                const SizedBox(height: 24),
-                // Info de precios mostrada en la tarjeta de resumen
-                const SizedBox(height: 8),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final wide = constraints.maxWidth >= 940;
-                    final items = _QuoteItemsSection(
-                      lines: lines,
-                      onQuantityChanged: onQuantityChanged,
-                      onRemove: onRemove,
-                    );
-                    final nextStep = _QuoteNextStep(
-                      onContinue: onContinue,
-                      onBrowse: onBrowse,
-                    );
-
-                    if (!wide) {
-                      return Column(
-                        children: [
-                          items,
-                          const SizedBox(height: 22),
-                          nextStep,
-                        ],
-                      );
-                    }
-
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(flex: 7, child: items),
-                        const SizedBox(width: 28),
-                        Expanded(flex: 3, child: nextStep),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          StoreFooter(
-            settings: settings,
-            onSelectCategory: onSelectCategory,
-            onOpenHelp: onOpenHelp,
-            whatsappNumber: settings.whatsappNumber,
-          ),
-        ],
-      ),
+        TotalActionBar(
+          totalLabel: 'Siguiente: datos para coordinar',
+          total: 'S/ ${subtotal.toStringAsFixed(2)}',
+          actionLabel: 'Continuar con la cotización',
+          onPressed: onContinue,
+        ),
+      ],
     );
   }
 }
@@ -502,111 +474,6 @@ class _QuantityControl extends StatelessWidget {
         onIncrease: canIncrease ? onIncrease : null,
         backgroundColor: AppColors.canvas,
       ),
-    );
-  }
-}
-
-class _QuoteNextStep extends StatelessWidget {
-  const _QuoteNextStep({required this.onContinue, required this.onBrowse});
-
-  final VoidCallback onContinue;
-  final VoidCallback onBrowse;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(22),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(
-                    color: AppColors.pinkSoft,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.arrow_forward_rounded, size: 21),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Siguiente: datos para coordinar',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      Text(
-                        'Elige cómo recibir tu cotización y la fecha que prefieres.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 18),
-              child: Divider(),
-            ),
-            const _NextStepItem(
-              icon: Icons.person_outline_rounded,
-              text: 'Datos de contacto',
-            ),
-            const SizedBox(height: 12),
-            const _NextStepItem(
-              icon: Icons.local_shipping_outlined,
-              text: 'Recojo o envío por Shalom',
-            ),
-            const SizedBox(height: 12),
-            const _NextStepItem(
-              icon: Icons.calendar_today_outlined,
-              text: 'Fecha disponible',
-            ),
-            const SizedBox(height: 22),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: onContinue,
-                child: const Text(
-                  'Continuar con la cotización',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: onBrowse,
-                child: const Text('Agregar más productos'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NextStepItem extends StatelessWidget {
-  const _NextStepItem({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: AppColors.muted),
-        const SizedBox(width: 10),
-        Expanded(child: Text(text)),
-      ],
     );
   }
 }

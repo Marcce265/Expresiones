@@ -162,24 +162,26 @@ void main() {
     expect(usesSharedFamilyPricing(limpiapipas), isTrue);
     expect(usesSharedFamilyPricing(cinta), isTrue);
     expect(usesSharedFamilyPricing(alambre), isFalse);
-    expect(
-      productFamilyHeroAsset(limpiapipas),
-      'assets/images/family_heroes/limpiapipas.webp',
-    );
-    expect(
-      productFamilyHeroAsset(cinta),
-      'assets/images/family_heroes/cinta_satinada_todos_colores.webp',
-    );
+    expect(productFamilyHeroAsset(limpiapipas), isNull);
+    expect(productFamilyHeroAsset(cinta), isNull);
   });
 
   test(
-    'la portada administrada tiene prioridad sobre el recurso editorial',
+    'la portada administrada usa únicamente URLs remotas y nunca assets locales',
     () {
       final withoutManagedCover = CatalogProduct(
         id: 'limpiapipas-premium-8mm',
         name: 'Limpiapipas premium 8 mm',
         category: ProductCategory.materials,
         basePrice: 5,
+        imageUrl: 'assets/images/family_heroes/limpiapipas.webp',
+        variants: [
+          ProductVariant(
+            id: 'verde-militar',
+            name: 'Verde militar',
+            imageUrl: 'https://cdn.example/variant-cover.webp',
+          ),
+        ],
       );
       final updated = CatalogProduct(
         id: 'limpiapipas-premium-8mm',
@@ -196,12 +198,12 @@ void main() {
       );
       expect(
         productFamilyCoverImage(withoutManagedCover),
-        productFamilyHeroAsset(withoutManagedCover),
+        'https://cdn.example/variant-cover.webp',
       );
     },
   );
 
-  test('todas las familias del catálogo tienen imágenes para su portada', () {
+  test('todas las familias del catálogo tienen imágenes remotas para su portada', () {
     final families = seedCatalogProducts.where(
       (product) =>
           product.isActive &&
@@ -211,16 +213,11 @@ void main() {
 
     expect(families, isNotEmpty);
     for (final product in families) {
-      final hasVariantImage = product.variants.any(
-        (variant) =>
-            variant.isActive &&
-            variant.imageUrl != null &&
-            variant.imageUrl!.isNotEmpty,
-      );
+      final cover = productFamilyCoverImage(product);
       expect(
-        productFamilyHeroAsset(product) != null || hasVariantImage,
+        cover != null && cover.startsWith('https://'),
         isTrue,
-        reason: '${product.name} necesita una portada',
+        reason: '${product.name} necesita una portada en Supabase Storage',
       );
     }
   });
@@ -277,12 +274,13 @@ void main() {
     await tester.tap(find.text('Listo'));
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('Expresiones, ir al inicio'), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
-    await tester.tap(find.byTooltip('Abrir menú'));
-    await tester.pumpAndSettle();
+    expect(find.byType(NavigationBar), findsOneWidget);
     for (final label in ['Inicio', 'Catálogo', 'Carrito', 'Ayuda']) {
       expect(
-        find.descendant(of: find.byType(Drawer), matching: find.text(label)),
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text(label),
+        ),
         findsOneWidget,
       );
     }
@@ -320,10 +318,11 @@ void main() {
     await tester.tap(find.byTooltip('Cerrar ayuda de Jashy'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Abrir menú'));
-    await tester.pumpAndSettle();
     await tester.tap(
-      find.descendant(of: find.byType(Drawer), matching: find.text('Ayuda')),
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Ayuda'),
+      ),
     );
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Repetir guía de Jashy'));
@@ -355,7 +354,7 @@ void main() {
     expect(find.byTooltip('Abrir ayuda de Jashy'), findsOneWidget);
   });
 
-  testWidgets('la cabecera móvil abre el menú y enfoca la búsqueda', (
+  testWidgets('la barra inferior navega directamente entre pestañas sin menú duplicado', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -364,7 +363,7 @@ void main() {
     await store.initialize();
 
     tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(320, 720);
+    tester.view.physicalSize = const Size(360, 760);
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
@@ -373,52 +372,43 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('Expresiones, ir al inicio'), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
-    expect(
-      find.byIcon(Icons.shopping_bag_outlined).hitTestable(),
-      findsOneWidget,
-    );
-    final cartBadge = find.descendant(
-      of: find.byTooltip('Abrir carrito'),
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(Drawer), findsNothing);
+
+    final cartBadges = find.descendant(
+      of: find.byType(NavigationBar),
       matching: find.byType(Badge),
     );
     expect(
-      tester.widget<Badge>(cartBadge).backgroundColor,
-      AppColors.pinkStrong,
+      tester.widget<Badge>(cartBadges.first).backgroundColor,
+      AppColors.rose,
     );
-    await tester.tap(find.byTooltip('Abrir menú'));
-    await tester.pumpAndSettle();
-    final drawer = find.byType(Drawer);
-    expect(drawer, findsOneWidget);
+
     await tester.tap(
-      find.descendant(of: drawer, matching: find.text('Catálogo')),
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Catálogo'),
+      ),
     );
     await tester.pumpAndSettle();
-    expect(drawer, findsNothing);
+    expect(find.byType(CatalogScreen), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Buscar productos'));
-    await tester.pumpAndSettle();
-    final field = find.descendant(
-      of: find.byType(CatalogScreen),
-      matching: find.byType(TextField),
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Carrito'),
+      ),
     );
-    expect(tester.widget<TextField>(field).focusNode?.hasFocus, isTrue);
-
-    await tester.tap(find.byTooltip('Abrir carrito'));
     await tester.pumpAndSettle();
     expect(find.text('Tu carrito está vacío'), findsOneWidget);
     expect(tester.takeException(), isNull);
-
-    tester.view.physicalSize = const Size(1280, 800);
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('Abrir menú'), findsNothing);
   });
 
   testWidgets(
-    'la portada pública usa la imagen configurada por administración',
+    'la portada pública usa la imagen remota configurada por administración',
     (tester) async {
-      const configuredAsset =
-          'assets/images/family_heroes/cinta_satinada_todos_colores.webp';
+      const configuredUrl =
+          'https://wxoaedvqeuynzinzazsj.supabase.co/storage/v1/object/public/catalog/site/home/custom-hero.webp';
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -426,7 +416,7 @@ void main() {
               products: const [],
               popularProducts: const [],
               settings: const StorefrontSettings(
-                texts: {StorefrontText.homeHeroImage: configuredAsset},
+                texts: {StorefrontText.homeHeroImage: configuredUrl},
               ),
               onBrowse: (_) {},
               onProduct: (_, _) {},
@@ -442,8 +432,8 @@ void main() {
         find.byWidgetPredicate(
           (widget) =>
               widget is Image &&
-              widget.image is AssetImage &&
-              (widget.image as AssetImage).assetName == configuredAsset,
+              widget.image is NetworkImage &&
+              (widget.image as NetworkImage).url == configuredUrl,
         ),
         findsOneWidget,
       );

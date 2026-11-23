@@ -34,15 +34,20 @@ class AppBreadcrumbBar extends StatelessWidget {
       child: Row(
         children: [
           if (onBack != null) ...[
-            IconButton.outlined(
+            IconButton.filledTonal(
               onPressed: onBack,
               tooltip: 'Volver',
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.pinkSoft,
+                foregroundColor: AppColors.roseDeep,
+                minimumSize: const Size.square(40),
+              ),
               icon: const Icon(
                 Icons.arrow_back_ios_new_rounded,
-                size: 18,
+                size: 16,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
           ],
           Expanded(
             child: SingleChildScrollView(
@@ -87,21 +92,30 @@ class _BreadcrumbSegment extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = TextStyle(
-      fontSize: 13.5,
-      color: isActive ? AppColors.ink : AppColors.muted,
+      fontSize: 12.5,
+      color: isActive ? AppColors.roseDeep : AppColors.muted,
       fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-      letterSpacing: 0.8,
+      letterSpacing: 0.7,
     );
 
-    final text = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+    final text = Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isActive ? 10 : 4,
+        vertical: isActive ? 4 : 2,
+      ),
+      decoration: isActive
+          ? BoxDecoration(
+              color: AppColors.pinkSoft,
+              borderRadius: BorderRadius.circular(99),
+            )
+          : null,
       child: Text(item.label.toUpperCase(), style: style),
     );
 
     if (isActive || item.onTap == null) return text;
     return InkWell(
       onTap: item.onTap,
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(6),
       child: text,
     );
   }

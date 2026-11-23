@@ -284,13 +284,8 @@ class CatalogRepository {
 
   String? _resolveImage(Object? rawPath) {
     var path = rawPath?.toString().trim() ?? '';
-    if (path.isEmpty) return null;
-    if (path.startsWith('assets/images/module_covers/') &&
-        path.endsWith('.jpg')) {
-      path = '${path.substring(0, path.length - 4)}.webp';
-    }
-    if (path.startsWith('assets/') ||
-        path.startsWith('http://') ||
+    if (path.isEmpty || path.startsWith('assets/')) return null;
+    if (path.startsWith('http://') ||
         path.startsWith('https://') ||
         path.startsWith('data:')) {
       return path;

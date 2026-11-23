@@ -104,20 +104,12 @@ void main() {
     // 7. Carrusel pesado removido para evitar congelamientos en web
     expect(find.text('Más opciones de esta sección'), findsNothing);
 
-    // 8. Banners removidos y footer limpio
+    // 8. Banners removidos y sin footer web repetido en detalle de producto
     expect(find.byType(StoreDisclaimerBanner), findsNothing);
     expect(find.text('Fotos referenciales'), findsNothing);
     expect(find.byType(StoreSpecialOrderBanner), findsNothing);
     expect(find.text('¿Buscas un diseño o pedido a medida?'), findsNothing);
-    expect(find.byType(StoreFooter), findsOneWidget);
-    expect(find.text('Catálogo'), findsNothing);
-    expect(find.text('Políticas'), findsOneWidget);
-    expect(find.text('Libro de reclamaciones'), findsOneWidget);
-    expect(find.textContaining('Todos los derechos reservados'), findsNothing);
-    expect(find.text('Formas de pago'), findsOneWidget);
-    expect(find.byTooltip('Yape'), findsOneWidget);
-    expect(find.byTooltip('Plin'), findsOneWidget);
-    expect(find.byTooltip('Interbank'), findsOneWidget);
+    expect(find.byType(StoreFooter), findsNothing);
 
     // 9. Jashy presente en la pantalla de detalle
     expect(find.byType(AssistantHelpButton), findsOneWidget);

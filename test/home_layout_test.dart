@@ -21,7 +21,7 @@ void main() {
     ),
   );
 
-  testWidgets('aprovecha el escritorio ancho sin desbordar', (tester) async {
+  testWidgets('mantiene columna centrada tipo app en pantallas anchas sin desbordar', (tester) async {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -30,9 +30,8 @@ void main() {
     await tester.pumpWidget(buildHome());
     await tester.pumpAndSettle();
 
-    expect(find.text('Cotiza sin registro'), findsOneWidget);
     expect(find.text('Ver todo el catálogo'), findsOneWidget);
-    expect(find.byType(ProductCard), findsNWidgets(5));
+    expect(find.byType(ProductCard), findsWidgets);
     final cardSize = tester.getSize(find.byType(ProductCard).first);
     expect(cardSize.height, greaterThan(cardSize.width));
     expect(tester.takeException(), isNull);

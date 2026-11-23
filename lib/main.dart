@@ -108,10 +108,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   final _guidePreferences = const GuidePreferences();
   final _navigationKeys = List<GlobalKey>.generate(5, (_) => GlobalKey());
   final _assistantButtonKey = GlobalKey();
-  final _mobileMenuKey = GlobalKey();
-  final _mobileSearchKey = GlobalKey();
-  final _mobileCartKey = GlobalKey();
-  final _mobileHomeKey = GlobalKey();
   int _catalogSearchRequest = 0;
   CustomerAccountRepository? _customerAccounts;
   StreamSubscription<AuthState>? _customerAuthSubscription;
@@ -203,15 +199,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     });
   }
 
-  void _openCatalogSearch() {
-    setState(() {
-      _index = 1;
-      _catalogFamilyId = null;
-      _catalogCategory ??= ProductCategory.materials;
-      _catalogSearchRequest++;
-    });
-  }
-
   void _showQuote() => _selectDestination(2);
 
   void _addCardProduct(
@@ -271,10 +258,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void _openProduct(CatalogProduct product, String? variantId) {
     final store = context.read<AppStore>();
     Navigator.of(context).push(
-      PageRouteBuilder<void>(
-        transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
-        pageBuilder: (routeContext, _, _) {
+      MaterialPageRoute<void>(
+        builder: (routeContext) {
           final currentGroup = product.attributes['catalogGroup']
               ?.toUpperCase()
               .trim();
@@ -357,40 +342,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             },
           );
 
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final desktop = constraints.maxWidth >= 1024;
-              if (desktop) {
-                return Scaffold(
-                  body: SafeArea(
-                    child: Row(
-                      children: [
-                        _DesktopNavigation(
-                          settings: store.storefrontSettings,
-                          currentIndex: _index,
-                          catalogCategory: product.category,
-                          quoteQuantity: store.cartQuantity,
-                          showAccount: _customerAccountsEnabled,
-                          onSelect: (index) {
-                            Navigator.of(routeContext).pop();
-                            _selectDestination(index);
-                          },
-                          onSelectCatalogCategory: (category) {
-                            Navigator.of(routeContext).pop();
-                            _showCatalog(category);
-                          },
-                          itemKeys: null,
-                        ),
-                        Expanded(child: detailScreen),
-                      ],
-                    ),
-                  ),
-                );
-              }
-
-              return Scaffold(body: SafeArea(child: detailScreen));
-            },
-          );
+          return detailScreen;
         },
       ),
     );
@@ -406,14 +358,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (coordinationContext) => _checkoutScaffold(
-          routeContext: coordinationContext,
-          assistantStep: const JashyTourStep(
-            title: 'Completa tus datos',
-            message: 'Llena los campos y elige entrega y fecha.',
-            imageAsset: 'assets/images/jashy_chibi_writing.webp',
-          ),
-          child: CoordinationScreen(
+        builder: (coordinationContext) => _flowScreen(
+          CoordinationScreen(
             settings: store.storefrontSettings,
             customerAccountsEnabled: _customerAccountsEnabled,
             onSelectCategory: (category) {
@@ -461,16 +407,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
     Navigator.of(coordinationContext).push(
       MaterialPageRoute<void>(
-        builder: (reviewContext) => _checkoutScaffold(
-          routeContext: reviewContext,
-          assistantStep: JashyTourStep(
-            title: 'Revisa y envía',
-            message: _paymentsEnabled
-                ? 'Verifica todo y finaliza la simulación.'
-                : 'Verifica todo y guarda tu cotización.',
-            imageAsset: 'assets/images/jashy_chibi_writing.webp',
-          ),
-          child: ReviewScreen(
+        builder: (reviewContext) => _flowScreen(
+          ReviewScreen(
             settings: store.storefrontSettings,
             customerAccountsEnabled: _customerAccountsEnabled,
             onSelectCategory: (category) {
@@ -530,69 +468,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     );
   }
 
-  Widget _checkoutScaffold({
-    required BuildContext routeContext,
-    required Widget child,
-    required JashyTourStep assistantStep,
-  }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final store = context.watch<AppStore>();
-        final desktop = constraints.maxWidth >= 1024;
-        void leaveCheckout(int destination) {
-          Navigator.of(routeContext).popUntil((route) => route.isFirst);
-          _selectDestination(destination);
-        }
-
-        final showMobileHeader = constraints.maxWidth < 768;
-
-        return Scaffold(
-          appBar: showMobileHeader
-              ? _MobileStoreHeader(
-                  quoteQuantity: store.cartQuantity,
-                  onHome: () => leaveCheckout(0),
-                  onSearch: () {
-                    leaveCheckout(1);
-                    _openCatalogSearch();
-                  },
-                  onCart: () => leaveCheckout(2),
-                )
-              : null,
-          drawer: showMobileHeader
-              ? _MobileStoreMenu(
-                  selectedIndex: 2,
-                  onSelect: leaveCheckout,
-                  showAccount: _customerAccountsEnabled,
-                )
-              : null,
-          body: SafeArea(
-            child: Row(
-              children: [
-                if (desktop)
-                  _DesktopNavigation(
-                    settings: store.storefrontSettings,
-                    currentIndex: 2,
-                    quoteQuantity: store.cartQuantity,
-                    showAccount: _customerAccountsEnabled,
-                    onSelect: leaveCheckout,
-                  ),
-                Expanded(child: child),
-              ],
-            ),
-          ),
-          bottomNavigationBar: desktop || showMobileHeader
-              ? null
-              : _MobileNavigation(
-                  selectedIndex: 2,
-                  quoteQuantity: store.cartQuantity,
-                  onSelect: leaveCheckout,
-                  showAccount: _customerAccountsEnabled,
-                ),
-          floatingActionButton: _assistantHelpButton(assistantStep),
-        );
-      },
-    );
-  }
+  /// Pantallas del flujo de compra: se abren encima de las pestañas y
+  /// dibujan su propia barra superior con flecha de regreso.
+  Widget _flowScreen(Widget child) => Scaffold(body: SafeArea(child: child));
 
   Future<void> _openPayment(
     BuildContext reviewContext,
@@ -1082,72 +960,35 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       ),
     };
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= 1024;
-        final showMobileHeader = constraints.maxWidth < 768;
-        return Scaffold(
-          appBar: showMobileHeader
-              ? _MobileStoreHeader(
-                  quoteQuantity: store.cartQuantity,
-                  onHome: () => _selectDestination(0),
-                  onSearch: _openCatalogSearch,
-                  onCart: _showQuote,
-                  menuKey: _mobileMenuKey,
-                  searchKey: _mobileSearchKey,
-                  cartKey: _mobileCartKey,
-                  homeKey: _mobileHomeKey,
-                )
-              : null,
-          drawer: showMobileHeader
-              ? _MobileStoreMenu(
-                  selectedIndex: _index,
-                  onSelect: _selectDestination,
-                  showAccount: _customerAccountsEnabled,
-                )
-              : null,
-          body: SafeArea(
-            child: Row(
-              children: [
-                if (desktop)
-                  _DesktopNavigation(
-                    settings: store.storefrontSettings,
-                    currentIndex: _index,
-                    catalogCategory: _catalogCategory,
-                    quoteQuantity: store.cartQuantity,
-                    showAccount: _customerAccountsEnabled,
-                    onSelect: _selectDestination,
-                    onSelectCatalogCategory: _showCatalog,
-                    itemKeys: _navigationKeys,
-                  ),
-                Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 220),
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    transitionBuilder: (child, animation) =>
-                        FadeTransition(opacity: animation, child: child),
-                    child: KeyedSubtree(key: ValueKey(_index), child: page),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          bottomNavigationBar: desktop || showMobileHeader
-              ? null
-              : _MobileNavigation(
-                  selectedIndex: _index,
-                  quoteQuantity: store.cartQuantity,
-                  onSelect: _selectDestination,
-                  showAccount: _customerAccountsEnabled,
-                  itemKeys: _navigationKeys,
-                ),
-          floatingActionButton: _assistantHelpButton(
-            _sectionGuideStep(hasQuote: store.hasQuote),
-            key: _assistantButtonKey,
-          ),
-        );
-      },
+    // Jashy flota solo donde no tapa una barra de acción (el carrito tiene su
+    // propio botón "Continuar" fijo).
+    final helpIndex = _customerAccountsEnabled ? 4 : 3;
+    final showAssistant = _index == 0 || _index == 1 || _index == helpIndex;
+    return Scaffold(
+      body: SafeArea(
+        bottom: false,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) =>
+              FadeTransition(opacity: animation, child: child),
+          child: KeyedSubtree(key: ValueKey(_index), child: page),
+        ),
+      ),
+      bottomNavigationBar: _AppTabBar(
+        selectedIndex: _index,
+        quoteQuantity: store.cartQuantity,
+        onSelect: _selectDestination,
+        showAccount: _customerAccountsEnabled,
+        itemKeys: _navigationKeys,
+      ),
+      floatingActionButton: showAssistant
+          ? _assistantHelpButton(
+              _sectionGuideStep(hasQuote: store.hasQuote),
+              key: _assistantButtonKey,
+            )
+          : null,
     );
   }
 
@@ -1161,194 +1002,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     });
   }
 
-  GlobalKey _guideNavigationKey(int index) {
-    if (MediaQuery.sizeOf(context).width >= 768) return _navigationKeys[index];
-    return switch (index) {
-      0 => _mobileHomeKey,
-      1 => _mobileSearchKey,
-      2 => _mobileCartKey,
-      _ => _mobileMenuKey,
-    };
-  }
+  GlobalKey _guideNavigationKey(int index) => _navigationKeys[index];
 }
 
-class _MobileStoreMenu extends StatelessWidget {
-  const _MobileStoreMenu({
-    required this.selectedIndex,
-    required this.onSelect,
-    required this.showAccount,
-  });
-
-  final int selectedIndex;
-  final ValueChanged<int> onSelect;
-  final bool showAccount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          children: [
-            for (final destination in [
-              (0, Icons.home_outlined, 'Inicio'),
-              (1, Icons.grid_view_outlined, 'Catálogo'),
-              (2, Icons.shopping_bag_outlined, 'Carrito'),
-              if (showAccount) (3, Icons.person_outline_rounded, 'Cuenta'),
-              (showAccount ? 4 : 3, Icons.help_outline_rounded, 'Ayuda'),
-            ])
-              ListTile(
-                leading: Icon(destination.$2),
-                title: Text(destination.$3),
-                selected: selectedIndex == destination.$1,
-                onTap: () {
-                  Scaffold.of(context).closeDrawer();
-                  onSelect(destination.$1);
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MobileStoreHeader extends StatelessWidget
-    implements PreferredSizeWidget {
-  const _MobileStoreHeader({
-    required this.quoteQuantity,
-    required this.onHome,
-    required this.onSearch,
-    required this.onCart,
-    this.menuKey,
-    this.searchKey,
-    this.cartKey,
-    this.homeKey,
-  });
-
-  final int quoteQuantity;
-  final VoidCallback onHome;
-  final VoidCallback onSearch;
-  final VoidCallback onCart;
-  final Key? menuKey;
-  final Key? searchKey;
-  final Key? cartKey;
-  final Key? homeKey;
-
-  @override
-  Size get preferredSize => const Size.fromHeight(64);
-
-  @override
-  Widget build(BuildContext context) {
-    return AppBar(
-      automaticallyImplyLeading: false,
-      toolbarHeight: preferredSize.height,
-      backgroundColor: AppColors.surface,
-      titleSpacing: 8,
-      title: Row(
-        children: [
-          SizedBox(
-            width: 96,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: IconButton(
-                key: menuKey,
-                tooltip: 'Abrir menú',
-                color: AppColors.ink,
-                onPressed: () => Scaffold.of(context).openDrawer(),
-                icon: const _HamburgerMenuIcon(color: AppColors.ink),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Center(
-              child: InkWell(
-                key: homeKey,
-                onTap: onHome,
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Image.asset(
-                    'assets/images/brand/expresiones_mobile_v2.png',
-                    width: 220,
-                    height: 54,
-                    fit: BoxFit.contain,
-                    semanticLabel: 'Expresiones, ir al inicio',
-                  ),
-                ),
-              ),
-            ),
-          ),
-          IconButton(
-            key: searchKey,
-            tooltip: 'Buscar productos',
-            onPressed: onSearch,
-            icon: const Icon(Icons.search_rounded),
-          ),
-          IconButton(
-            key: cartKey,
-            tooltip: 'Abrir carrito',
-            onPressed: onCart,
-            icon: Badge.count(
-              backgroundColor: AppColors.pinkStrong,
-              count: quoteQuantity,
-              isLabelVisible: quoteQuantity > 0,
-              child: const Icon(Icons.shopping_bag_outlined),
-            ),
-          ),
-        ],
-      ),
-      bottom: const PreferredSize(
-        preferredSize: Size.zero,
-        child: Divider(height: 1, color: AppColors.border),
-      ),
-    );
-  }
-}
-
-/// Ícono hamburguesa vectorial nativo que no depende de la caché de
-/// MaterialIcons-Regular.otf en navegadores móviles.
-class _HamburgerMenuIcon extends StatelessWidget {
-  const _HamburgerMenuIcon({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: const Size(22, 16),
-      painter: _HamburgerMenuPainter(color: color),
-    );
-  }
-}
-
-class _HamburgerMenuPainter extends CustomPainter {
-  const _HamburgerMenuPainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 2.1
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    const ys = [0.12, 0.5, 0.88];
-    for (final factor in ys) {
-      final y = size.height * factor;
-      canvas.drawLine(Offset(1.5, y), Offset(size.width - 1.5, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _HamburgerMenuPainter oldDelegate) =>
-      oldDelegate.color != color;
-}
-
-class _MobileNavigation extends StatelessWidget {
-  const _MobileNavigation({
+/// Barra inferior de la app: única navegación principal.
+///
+/// En tablets y navegadores se limita al ancho de la columna de contenido para
+/// que los destinos no queden separados por cientos de píxeles.
+class _AppTabBar extends StatelessWidget {
+  const _AppTabBar({
     required this.selectedIndex,
     required this.quoteQuantity,
     required this.onSelect,
@@ -1365,355 +1027,63 @@ class _MobileNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final helpIndex = showAccount ? 4 : 3;
-    return NavigationBar(
-      selectedIndex: selectedIndex,
-      onDestinationSelected: onSelect,
-      destinations: [
-        NavigationDestination(
-          key: itemKeys?[0],
-          icon: const Icon(Icons.home_outlined),
-          selectedIcon: const Icon(Icons.home_rounded),
-          label: 'Inicio',
-        ),
-        NavigationDestination(
-          key: itemKeys?[1],
-          icon: const Icon(Icons.grid_view_outlined),
-          selectedIcon: const Icon(Icons.grid_view_rounded),
-          label: 'Catálogo',
-        ),
-        NavigationDestination(
-          key: itemKeys?[2],
-          icon: Badge.count(
-            count: quoteQuantity,
-            isLabelVisible: quoteQuantity > 0,
-            child: const Icon(Icons.shopping_bag_outlined),
-          ),
-          selectedIcon: Badge.count(
-            count: quoteQuantity,
-            isLabelVisible: quoteQuantity > 0,
-            child: const Icon(Icons.shopping_bag_rounded),
-          ),
-          label: 'Carrito',
-        ),
-        if (showAccount)
-          NavigationDestination(
-            key: itemKeys?[3],
-            icon: const Icon(Icons.person_outline_rounded),
-            selectedIcon: const Icon(Icons.person_rounded),
-            label: 'Cuenta',
-          ),
-        NavigationDestination(
-          key: itemKeys?[helpIndex],
-          icon: const Icon(Icons.help_outline_rounded),
-          selectedIcon: const Icon(Icons.help_rounded),
-          label: 'Ayuda',
-        ),
-      ],
-    );
-  }
-}
-
-class _NavSectionDivider extends StatelessWidget {
-  const _NavSectionDivider({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-      child: Row(
-        children: [
-          const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.1,
-              ),
-            ),
-          ),
-          const Expanded(child: Divider(color: AppColors.border, thickness: 1)),
-        ],
-      ),
-    );
-  }
-}
-
-class _DesktopNavigation extends StatelessWidget {
-  const _DesktopNavigation({
-    required this.settings,
-    required this.currentIndex,
-    required this.quoteQuantity,
-    required this.showAccount,
-    required this.onSelect,
-    this.catalogCategory,
-    this.onSelectCatalogCategory,
-    this.itemKeys,
-  });
-
-  final StorefrontSettings settings;
-  final int currentIndex;
-  final ProductCategory? catalogCategory;
-  final int quoteQuantity;
-  final bool showAccount;
-  final ValueChanged<int> onSelect;
-  final ValueChanged<ProductCategory>? onSelectCatalogCategory;
-  final List<GlobalKey>? itemKeys;
-
-  @override
-  Widget build(BuildContext context) {
-    final helpIndex = showAccount ? 4 : 3;
-    final isMaterialsSelected =
-        currentIndex == 1 &&
-        (catalogCategory == ProductCategory.materials ||
-            catalogCategory == null);
-    final isKoreanPaperSelected =
-        currentIndex == 1 && catalogCategory == ProductCategory.koreanPaper;
-
-    return Container(
-      width: 248,
+    return DecoratedBox(
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        border: Border(right: BorderSide(color: AppColors.border)),
+        border: Border(top: BorderSide(color: AppColors.border)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 22, 16, 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Semantics(
-                label: settings.text(StorefrontText.brandName),
-                header: true,
-                child: Image.asset(
-                  'assets/images/brand_lockup_black.webp',
-                  width: 140,
-                  height: 140,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
-                  excludeFromSemantics: true,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _DesktopNavigationItem(
-                      key: itemKeys?[0],
-                      icon: currentIndex == 0
-                          ? Icons.home_rounded
-                          : Icons.home_outlined,
-                      label: 'Inicio',
-                      selected: currentIndex == 0,
-                      onTap: () => onSelect(0),
-                    ),
-                    const SizedBox(height: 6),
-                    const _NavSectionDivider(label: 'PARA EMPRENDER'),
-                    const SizedBox(height: 4),
-                    _DesktopNavigationItem(
-                      key: itemKeys?[1],
-                      icon: isMaterialsSelected
-                          ? Icons.auto_awesome_rounded
-                          : Icons.auto_awesome_outlined,
-                      label: 'Materiales',
-                      selected: isMaterialsSelected,
-                      onTap: () => onSelectCatalogCategory != null
-                          ? onSelectCatalogCategory!(ProductCategory.materials)
-                          : onSelect(1),
-                    ),
-                    const SizedBox(height: 4),
-                    _DesktopNavigationItem(
-                      icon: isKoreanPaperSelected
-                          ? Icons.layers_rounded
-                          : Icons.layers_outlined,
-                      label: 'Papel Coreano',
-                      selected: isKoreanPaperSelected,
-                      onTap: () => onSelectCatalogCategory != null
-                          ? onSelectCatalogCategory!(
-                              ProductCategory.koreanPaper,
-                            )
-                          : onSelect(1),
-                    ),
-                    const SizedBox(height: 6),
-                    const _NavSectionDivider(label: 'MI PEDIDO'),
-                    const SizedBox(height: 4),
-                    _DesktopNavigationItem(
-                      key: itemKeys?[2],
-                      icon: currentIndex == 2
-                          ? Icons.shopping_bag_rounded
-                          : Icons.shopping_bag_outlined,
-                      label: 'Carrito',
-                      selected: currentIndex == 2,
-                      badgeCount: quoteQuantity,
-                      onTap: () => onSelect(2),
-                    ),
-                    if (showAccount) ...[
-                      const SizedBox(height: 4),
-                      _DesktopNavigationItem(
-                        key: itemKeys?[3],
-                        icon: currentIndex == 3
-                            ? Icons.person_rounded
-                            : Icons.person_outline_rounded,
-                        label: 'Cuenta',
-                        selected: currentIndex == 3,
-                        onTap: () => onSelect(3),
-                      ),
-                    ],
-                    const SizedBox(height: 6),
-                    const _NavSectionDivider(label: 'SOPORTE'),
-                    const SizedBox(height: 4),
-                    _DesktopNavigationItem(
-                      key: itemKeys?[helpIndex],
-                      icon: currentIndex == helpIndex
-                          ? Icons.help_rounded
-                          : Icons.help_outline_rounded,
-                      label: 'Ayuda',
-                      selected: currentIndex == helpIndex,
-                      onTap: () => onSelect(helpIndex),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.pinkSoft,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    showAccount
-                        ? Icons.account_circle_outlined
-                        : Icons.lock_open_rounded,
-                    size: 20,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    showAccount
-                        ? settings.text(StorefrontText.homeSidebarTitle)
-                        : 'Cotiza libremente',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    showAccount
-                        ? settings.text(StorefrontText.homeSidebarBody)
-                        : 'Elige materiales y prepara tu cotización sin iniciar sesión.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DesktopNavigationItem extends StatefulWidget {
-  const _DesktopNavigationItem({
-    super.key,
-    this.icon,
-    this.iconWidget,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.badgeCount = 0,
-  }) : assert(icon != null || iconWidget != null);
-
-  final IconData? icon;
-  final Widget? iconWidget;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final int badgeCount;
-
-  @override
-  State<_DesktopNavigationItem> createState() => _DesktopNavigationItemState();
-}
-
-class _DesktopNavigationItemState extends State<_DesktopNavigationItem> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final isSelected = widget.selected;
-    final bgColor = isSelected
-        ? AppColors.ink
-        : (_isHovered
-              ? AppColors.pinkSoft.withValues(alpha: 0.6)
-              : Colors.transparent);
-    final fgColor = isSelected ? Colors.white : AppColors.ink;
-
-    return Semantics(
-      selected: isSelected,
-      button: true,
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        cursor: SystemMouseCursors.click,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 140),
-          curve: Curves.easeOut,
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(14),
+      child: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: AppSpacing.maxContentWidth,
           ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-            child: InkWell(
-              onTap: widget.onTap,
-              canRequestFocus: false,
-              borderRadius: BorderRadius.circular(14),
-              hoverColor: Colors.transparent,
-              focusColor: Colors.transparent,
-              highlightColor: Colors.transparent,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                child: Row(
-                  children: [
-                    Badge.count(
-                      count: widget.badgeCount,
-                      isLabelVisible: widget.badgeCount > 0,
-                      backgroundColor: AppColors.pinkStrong,
-                      child:
-                          widget.iconWidget ??
-                          Icon(widget.icon, size: 20, color: fgColor),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        widget.label,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: fgColor,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+          child: NavigationBar(
+            selectedIndex: selectedIndex,
+            onDestinationSelected: onSelect,
+            destinations: [
+              NavigationDestination(
+                key: itemKeys?[0],
+                icon: const Icon(Icons.home_outlined),
+                selectedIcon: const Icon(Icons.home_rounded),
+                label: 'Inicio',
               ),
-            ),
+              NavigationDestination(
+                key: itemKeys?[1],
+                icon: const Icon(Icons.grid_view_outlined),
+                selectedIcon: const Icon(Icons.grid_view_rounded),
+                label: 'Catálogo',
+              ),
+              NavigationDestination(
+                key: itemKeys?[2],
+                icon: Badge.count(
+                  backgroundColor: AppColors.rose,
+                  count: quoteQuantity,
+                  isLabelVisible: quoteQuantity > 0,
+                  child: const Icon(Icons.shopping_bag_outlined),
+                ),
+                selectedIcon: Badge.count(
+                  backgroundColor: AppColors.rose,
+                  count: quoteQuantity,
+                  isLabelVisible: quoteQuantity > 0,
+                  child: const Icon(Icons.shopping_bag_rounded),
+                ),
+                label: 'Carrito',
+              ),
+              if (showAccount)
+                NavigationDestination(
+                  key: itemKeys?[3],
+                  icon: const Icon(Icons.person_outline_rounded),
+                  selectedIcon: const Icon(Icons.person_rounded),
+                  label: 'Cuenta',
+                ),
+              NavigationDestination(
+                key: itemKeys?[helpIndex],
+                icon: const Icon(Icons.help_outline_rounded),
+                selectedIcon: const Icon(Icons.help_rounded),
+                label: 'Ayuda',
+              ),
+            ],
           ),
         ),
       ),

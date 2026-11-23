@@ -12,7 +12,6 @@ import '../widgets/app_notice.dart';
 import '../widgets/breadcrumb_bar.dart';
 import '../widgets/quote_export_buttons.dart';
 import '../widgets/shalom_embedded_map.dart';
-import '../widgets/store_footer.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({
@@ -205,14 +204,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
               ],
             ),
           ),
-          if (continueToPayment == null)
-            StoreFooter(
-              settings: widget.settings,
-              onSelectCategory: widget.onSelectCategory,
-              onOpenQuote: widget.onEditQuote,
-              onOpenHelp: widget.onOpenHelp,
-              whatsappNumber: widget.settings.whatsappNumber,
-            ),
         ],
       ),
     );

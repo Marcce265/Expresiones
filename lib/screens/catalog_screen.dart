@@ -12,7 +12,6 @@ import '../widgets/crown_icon.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_description_card.dart';
 import '../widgets/product_visual.dart';
-import '../widgets/store_footer.dart';
 
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({
@@ -278,15 +277,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   ),
                 ),
               ],
-              SliverToBoxAdapter(
-                child: StoreFooter(
-                  settings: widget.settings,
-                  onSelectCategory: _switchCategory,
-                  onOpenQuote: widget.onOpenQuote,
-                  onOpenHelp: widget.onOpenHelp,
-                  whatsappNumber: widget.settings.whatsappNumber,
-                ),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
             ],
           ),
         ),
@@ -735,9 +726,9 @@ class _ModuleChip extends StatelessWidget {
     final color = isSelected ? Colors.white : AppColors.ink;
 
     return Material(
-      color: isSelected ? AppColors.ink : AppColors.surface,
+      color: isSelected ? AppColors.rose : AppColors.surface,
       borderRadius: BorderRadius.circular(20),
-      elevation: isSelected ? 1 : 0,
+      elevation: 0,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
@@ -746,13 +737,13 @@ class _ModuleChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isSelected ? AppColors.ink : AppColors.border,
+              color: isSelected ? AppColors.rose : AppColors.border,
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _icon(color),
+              _icon(isSelected ? Colors.white : AppColors.roseDeep),
               const SizedBox(width: 6),
               Text(
                 label,

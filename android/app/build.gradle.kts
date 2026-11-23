@@ -59,8 +59,10 @@ android {
         release {
             // Un build local puede generarse sin credenciales. Para Play Store,
             // android/key.properties activa la firma privada de release.
-            if (hasReleaseSigning) {
-                signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
             }
         }
     }
