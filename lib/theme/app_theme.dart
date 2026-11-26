@@ -4,10 +4,12 @@ abstract final class AppColors {
   static const canvas = Color(0xFFF7F4EF);
   static const surface = Color(0xFFFFFEFC);
   static const ink = Color(0xFF191816);
-  static const muted = Color(0xFF7B7771);
+  static const muted = Color(0xFF6B665F);
   static const border = Color(0xFFE3DED6);
   static const pinkSoft = Color(0xFFF7E5EB);
   static const pinkStrong = Color(0xFFD76582);
+  static const rose = Color(0xFFBE4467);
+  static const roseDeep = Color(0xFF9E3355);
   static const whatsapp = Color(0xFF218A5B);
   static const error = Color(0xFFB42318);
 }
@@ -39,8 +41,10 @@ abstract final class AppTheme {
           surface: AppColors.surface,
           error: AppColors.error,
         ).copyWith(
-          primary: AppColors.ink,
+          primary: AppColors.rose,
           onPrimary: Colors.white,
+          primaryContainer: AppColors.pinkSoft,
+          onPrimaryContainer: AppColors.roseDeep,
           secondary: AppColors.pinkStrong,
           onSecondary: Colors.white,
           surface: AppColors.surface,
@@ -230,7 +234,7 @@ abstract final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: AppColors.ink, width: 1.4),
+          borderSide: BorderSide(color: AppColors.rose, width: 1.4),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),

@@ -103,7 +103,7 @@ abstract final class StorefrontText {
     homeTitle: 'Encuentra lo que necesitas para crear y expresar más.',
     homeSubtitle: 'Limpiapipas premium, cintas finas, coronas y envolturas seleccionadas. Prepara tu lista y cotiza al instante sin registros engorrosos.',
     homeHeroImage: 'assets/images/catalog_hero.webp',
-    homeSearchHint: 'Buscar por material, color o código (ej: CAT-076)...',
+    homeSearchHint: 'Buscar por material, color o modelo',
     homeFeaturedTitle: 'Más consultados',
     homeSidebarTitle: 'Tu cuenta te acompaña',
     homeSidebarBody:

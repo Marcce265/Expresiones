@@ -4,11 +4,26 @@ import 'package:expresiones/screens/coordination_screen.dart';
 import 'package:expresiones/screens/review_screen.dart';
 import 'package:expresiones/services/quote_pdf_share_service.dart';
 import 'package:expresiones/theme/app_theme.dart';
+import 'package:expresiones/widgets/shalom_embedded_map.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+DateTime get _testDate => DateTime(2026, 11, 25);
+DateTime _morningInLima() => DateTime.utc(2026, 11, 25, 11);
+
 void main() {
+  testWidgets('Datos pide la forma de entrega antes del contacto', (
+    tester,
+  ) async {
+    await _pumpCoordination(tester);
+    final delivery = tester.getTopLeft(find.text('Forma de entrega'));
+    final contact = tester.getTopLeft(find.text('Tus datos de contacto'));
+    expect(delivery.dy, lessThan(contact.dy));
+    expect(find.text('Tu pedido'), findsNothing);
+    expect(find.textContaining('Revisar mi cotización'), findsOneWidget);
+  });
+
   testWidgets('recojo no solicita datos de identidad de Shalom', (
     tester,
   ) async {
@@ -34,10 +49,9 @@ void main() {
     expect(find.text('DNI *'), findsOneWidget);
     expect(find.text('FECHA DE NACIMIENTO *'), findsNothing);
     expect(find.text('HORARIO DE RECOJO'), findsNothing);
-    expect(
-      find.textContaining('el DNI debe pertenecer a una persona mayor de edad'),
-      findsOneWidget,
-    );
+    expect(find.text('Buscar agencia'), findsOneWidget);
+    expect(find.byType(ShalomEmbeddedMap), findsOneWidget);
+    expect(find.textContaining('La agencia entregará el envío'), findsNothing);
 
     await tester.enterText(
       find.widgetWithText(TextFormField, '¿Cómo te llamas?'),
@@ -92,6 +106,39 @@ void main() {
     expect(find.text('REFERENCIA DE SHALOM *'), findsOneWidget);
   });
 
+  testWidgets(
+    'Shalom abre su pantalla anterior desde el botón Cambiar agencia',
+    (tester) async {
+      await _pumpCoordination(
+        tester,
+        initial: const CoordinationDetails(
+          deliveryMethod: DeliveryMethod.shalom,
+          shalomAgencyId: 'agency-test',
+          shalomAgencyName: 'Bagua Grande',
+          shalomAgencyLatitude: -5.75,
+          shalomAgencyLongitude: -78.44,
+        ),
+        cartQuantity: 100,
+      );
+
+      final changeAgency = find.text('Cambiar agencia');
+      await tester.ensureVisible(changeAgency);
+      await tester.tap(changeAgency);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('Agencias Shalom'), findsOneWidget);
+      Navigator.of(tester.element(find.text('Agencias Shalom'))).pop();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(changeAgency, findsOneWidget);
+      expect(find.textContaining('Embalaje: S/ 7.00'), findsOneWidget);
+      final map = tester.widget<ShalomEmbeddedMap>(
+        find.byType(ShalomEmbeddedMap),
+      );
+      expect(map.selectedAgencyId, 'agency-test');
+      expect(map.showOtherAgencies, isTrue);
+    },
+  );
+
   testWidgets('la fecha deseada es obligatoria', (tester) async {
     var submitted = false;
     await _pumpCoordination(tester, onSubmit: (_) => submitted = true);
@@ -123,7 +170,7 @@ void main() {
 
     final calendar = find.byKey(const ValueKey('delivery-calendar'));
     expect(calendar, findsOneWidget);
-    final today = DateTime.now();
+    final today = _testDate;
     final next = DateTime(today.year, today.month + 1);
     final forward = find.byTooltip('Mes siguiente');
     await tester.ensureVisible(forward);
@@ -150,7 +197,7 @@ void main() {
     CoordinationDetails? submitted;
     await _pumpCoordination(
       tester,
-      initial: CoordinationDetails(desiredDate: DateTime.now()),
+      initial: CoordinationDetails(desiredDate: _testDate),
       onSubmit: (details) => submitted = details,
     );
     await tester.enterText(
@@ -222,13 +269,41 @@ void main() {
   ) async {
     await _pumpCoordination(
       tester,
-      initial: CoordinationDetails(desiredDate: DateTime.now()),
+      initial: CoordinationDetails(desiredDate: _testDate),
       pickupTimeSlotsForDate: (_) => const ['10:00 - 11:00', '11:00 - 12:00'],
     );
 
     expect(find.text('10:00 - 11:00'), findsOneWidget);
     expect(find.text('11:00 - 12:00'), findsOneWidget);
     expect(find.text('07:00 - 08:00'), findsNothing);
+  });
+
+  testWidgets('recojo retira los horarios vencidos según la hora de Lima', (
+    tester,
+  ) async {
+    var now = DateTime.utc(2026, 11, 25, 18, 5);
+    await _pumpCoordination(
+      tester,
+      initial: CoordinationDetails(desiredDate: _testDate),
+      now: () => now,
+      pickupTimeSlotsForDate: (_) => const ['12:00 - 13:00', '14:00 - 15:00'],
+    );
+
+    expect(find.text('12:00 - 13:00'), findsNothing);
+    expect(find.text('14:00 - 15:00'), findsOneWidget);
+
+    // 01:00 UTC the next day is still 20:00 of the 25th in Lima.
+    now = DateTime.utc(2026, 11, 26, 1);
+    await tester.pump(const Duration(minutes: 1));
+    final today = find.widgetWithText(TextButton, '25');
+    expect(tester.widget<TextButton>(today).onPressed, isNull);
+    expect(find.text('14:00 - 15:00'), findsNothing);
+
+    final tomorrow = find.widgetWithText(TextButton, '26');
+    await tester.ensureVisible(tomorrow);
+    await tester.tap(tomorrow);
+    await tester.pumpAndSettle();
+    expect(find.text('12:00 - 13:00'), findsOneWidget);
   });
 
   testWidgets('la revisión comercial no muestra el pago de prueba', (
@@ -248,7 +323,6 @@ void main() {
             return QuotePdfShareOutcome.shared;
           },
           onSendWhatsapp: () async {},
-          onCopyMessage: () {},
           onEditQuote: () {},
         ),
       ),
@@ -259,6 +333,7 @@ void main() {
     expect(find.text('Enviar mensaje por WhatsApp'), findsOneWidget);
     expect(find.text('Guardar PDF'), findsOneWidget);
     expect(find.text('Guardar Excel'), findsNothing);
+    expect(find.text('Copiar mensaje'), findsNothing);
     expect(find.text('Continuar al pago de prueba'), findsNothing);
     expect(find.text('Pago'), findsNothing);
     expect(find.text('Listo'), findsNothing);
@@ -271,6 +346,34 @@ void main() {
     expect(shared, isTrue);
     expect(find.text('Cotización PDF compartida.'), findsOneWidget);
   });
+
+  testWidgets(
+    'actualiza el horario publicado mientras el formulario está abierto',
+    (tester) async {
+      final date = _testDate;
+      var slots = const ['07:00 - 08:00'];
+      List<String> slotsForDate(DateTime _) => slots;
+      final initial = CoordinationDetails(
+        desiredDate: date,
+        customFields: const {'Horario de recojo': '07:00 - 08:00'},
+      );
+      await _pumpCoordination(
+        tester,
+        initial: initial,
+        pickupTimeSlotsForDate: slotsForDate,
+      );
+      expect(find.text('07:00 - 08:00'), findsOneWidget);
+
+      slots = const ['12:00 - 13:00'];
+      await _pumpCoordination(
+        tester,
+        initial: initial,
+        pickupTimeSlotsForDate: slotsForDate,
+      );
+      expect(find.text('07:00 - 08:00'), findsNothing);
+      expect(find.text('12:00 - 13:00'), findsOneWidget);
+    },
+  );
 }
 
 Future<void> _pumpCoordination(
@@ -279,6 +382,8 @@ Future<void> _pumpCoordination(
   CoordinationDetails initial = const CoordinationDetails(),
   StorefrontSettings settings = const StorefrontSettings(),
   List<String> Function(DateTime date)? pickupTimeSlotsForDate,
+  DateTime Function() now = _morningInLima,
+  int cartQuantity = 0,
 }) async {
   await tester.binding.setSurfaceSize(const Size(1200, 1000));
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -294,7 +399,9 @@ Future<void> _pumpCoordination(
       ],
       home: CoordinationScreen(
         initial: initial,
-        earliestDate: DateTime.now(),
+        earliestDate: _testDate,
+        now: now,
+        cartQuantity: cartQuantity,
         deliveryWeekdays: (_) => const {
           DateTime.monday,
           DateTime.tuesday,

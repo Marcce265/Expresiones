@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../config/feature_flags.dart';
 import '../models/catalog_models.dart';
 import '../models/checkout_order.dart';
 import '../models/storefront_settings.dart';
@@ -192,8 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const EmptyState(
                       icon: Icons.inventory_2_outlined,
                       title: 'El catálogo se está preparando',
-                      message:
-                          'Los productos aparecerán aquí cuando estén disponibles.',
+                      message: 'Los productos aparecerán aquí cuando estén disponibles.',
                     )
                   else
                     _FeaturedProducts(
@@ -307,7 +307,9 @@ class _LastOrderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tu última compra simulada',
+                  FeatureFlags.appEndToEnd
+                      ? 'Tu última compra'
+                      : 'Tu última compra simulada',
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
                 const SizedBox(height: 2),
@@ -621,15 +623,12 @@ class _HomeSearchField extends StatelessWidget {
               onChanged: onChanged,
               onSubmitted: onSubmitted,
               textInputAction: TextInputAction.search,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.ink, fontSize: 12.5),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: AppColors.ink, fontSize: 12.5),
               decoration: InputDecoration(
                 hintText: hintText,
-                hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.muted,
-                  fontSize: 12.5,
-                ),
+                hintStyle: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: AppColors.muted, fontSize: 12.5),
                 isDense: true,
                 filled: false,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -657,7 +656,7 @@ class _HomeSearchField extends StatelessWidget {
               child: FilledButton(
                 onPressed: () => onSubmitted(controller.text),
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.ink,
+                  backgroundColor: AppColors.rose,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(78, 36),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -884,20 +883,16 @@ class _HomeTrustItem extends StatelessWidget {
                   content.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context).textTheme.labelLarge
+                      ?.copyWith(fontSize: 12.5, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   content.description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 11,
-                    height: 1.35,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(fontSize: 11, height: 1.35),
                 ),
               ],
             ),
@@ -965,16 +960,15 @@ class _FeaturedHeader extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               'Los favoritos de nuestros artesanos y decoradores',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontSize: 12),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(fontSize: 12),
             ),
           ],
         );
         final actionButton = FilledButton.icon(
           onPressed: onAction,
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.ink,
+            backgroundColor: AppColors.rose,
             foregroundColor: Colors.white,
             minimumSize: const Size(0, 44),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
@@ -1085,7 +1079,7 @@ class _SearchResults extends StatelessWidget {
       return const EmptyState(
         icon: Icons.search_off_rounded,
         title: 'No encontramos coincidencias',
-        message: 'Prueba con un color, código o nombre de producto.',
+        message: 'Prueba con un color, modelo o nombre de producto.',
       );
     }
     return Column(

@@ -226,9 +226,11 @@ class StepProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const labels = FeatureFlags.demoPayment
-        ? ['Carrito', 'Datos', 'Revisión', 'Pago', 'Listo']
-        : ['Carrito', 'Datos', 'Revisión'];
+    final labels = FeatureFlags.appEndToEnd
+        ? const ['Carrito', 'Datos', 'Pago', 'Listo']
+        : FeatureFlags.paymentsEnabled
+        ? const ['Carrito', 'Datos', 'Revisión', 'Pago', 'Listo']
+        : const ['Carrito', 'Datos', 'Revisión'];
     return Row(
       children: List.generate(labels.length, (index) {
         final step = index + 1;

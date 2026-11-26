@@ -47,11 +47,17 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
   @override
   void initState() {
     super.initState();
-    _loadAgencies();
+    if (widget.showOtherAgencies) _loadAgencies();
   }
 
   Future<void> _loadAgencies() async {
-    final catalog = await ShalomAgencyRepository.load();
+    final ShalomAgencyCatalog catalog;
+    try {
+      catalog = await ShalomAgencyRepository.load();
+    } catch (_) {
+      // The selected agency can still be shown if the directory fails to load.
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _agencies = [
@@ -84,6 +90,11 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
   @override
   void didUpdateWidget(covariant ShalomEmbeddedMap oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.showOtherAgencies &&
+        !oldWidget.showOtherAgencies &&
+        _agencies.isEmpty) {
+      _loadAgencies();
+    }
     final changed =
         oldWidget.latitude != widget.latitude ||
         oldWidget.longitude != widget.longitude ||
@@ -96,6 +107,17 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
   void _centerSelection() {
     if (!mounted || !_mapReady) return;
     _controller.move(_selectedPoint, _hasSelectedCoordinates ? 17.0 : 5.2);
+  }
+
+  void _recenterSelectedAgency() {
+    if (!_mapReady || !_hasSelectedCoordinates) return;
+    if (ClientRateLimiter.instance.tryAcquire(
+      'shalom_map_recenter',
+      maxAttempts: 2,
+      window: const Duration(seconds: 2),
+    )) {
+      _centerSelection();
+    }
   }
 
   void _changeZoom(double delta) {
@@ -142,53 +164,60 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
           ),
           child: Stack(
             children: [
-              FlutterMap(
-                mapController: _controller,
-                options: MapOptions(
-                  initialCenter: _selectedPoint,
-                  initialZoom: _hasSelectedCoordinates ? 17.0 : 5.2,
-                  minZoom: 4.5,
-                  maxZoom: 18,
-                  cameraConstraint: CameraConstraint.containCenter(
-                    bounds: LatLngBounds(
-                      const LatLng(-19.5, -82.5),
-                      const LatLng(0.5, -67.5),
+              RepaintBoundary(
+                child: FlutterMap(
+                  mapController: _controller,
+                  options: MapOptions(
+                    initialCenter: _selectedPoint,
+                    initialZoom: _hasSelectedCoordinates ? 17.0 : 5.2,
+                    minZoom: 4.5,
+                    maxZoom: 18,
+                    cameraConstraint: CameraConstraint.containCenter(
+                      bounds: LatLngBounds(
+                        const LatLng(-19.5, -82.5),
+                        const LatLng(0.5, -67.5),
+                      ),
                     ),
+                    backgroundColor: const Color(0xFFE6EEF0),
+                    interactionOptions: const InteractionOptions(
+                      flags:
+                          (InteractiveFlag.all &
+                          ~InteractiveFlag.rotate &
+                          ~InteractiveFlag.flingAnimation),
+                    ),
+                    onMapReady: () {
+                      _mapReady = true;
+                      _centerSelection();
+                    },
                   ),
-                  backgroundColor: const Color(0xFFE6EEF0),
-                  interactionOptions: const InteractionOptions(
-                    flags:
-                        (InteractiveFlag.all &
-                        ~InteractiveFlag.rotate &
-                        ~InteractiveFlag.flingAnimation),
-                  ),
-                  onMapReady: () {
-                    _mapReady = true;
-                    _centerSelection();
-                  },
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'pe.com.expresiones.catalogo',
+                      maxNativeZoom: 18,
+                      keepBuffer: 1,
+                      tileDisplay: const TileDisplay.instantaneous(),
+                    ),
+                    _ShalomAgenciesLayer(
+                      agencies: widget.showOtherAgencies ? _agencies : const [],
+                      selectedAgencyId: widget.selectedAgencyId,
+                      selectedAgencyName: _selectedAgencyName,
+                      onSelectedPinTap: _recenterSelectedAgency,
+                      selectedPoint: _hasSelectedCoordinates
+                          ? _selectedPoint
+                          : null,
+                    ),
+                    SimpleAttributionWidget(
+                      source: const Text(
+                        'OpenStreetMap',
+                        style: TextStyle(fontSize: 9),
+                      ),
+                      onTap: _openAttribution,
+                      backgroundColor: Colors.white.withValues(alpha: .88),
+                    ),
+                  ],
                 ),
-                children: [
-                  TileLayer(
-                    urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'pe.com.expresiones.catalogo',
-                    maxNativeZoom: 18,
-                  ),
-                  _ShalomAgenciesLayer(
-                    agencies: widget.showOtherAgencies ? _agencies : const [],
-                    selectedAgencyId: widget.selectedAgencyId,
-                    selectedAgencyName: _selectedAgencyName,
-                    selectedPoint: _hasSelectedCoordinates ? _selectedPoint : null,
-                  ),
-                  SimpleAttributionWidget(
-                    source: const Text(
-                      'OpenStreetMap',
-                      style: TextStyle(fontSize: 9),
-                    ),
-                    onTap: _openAttribution,
-                    backgroundColor: Colors.white.withValues(alpha: .88),
-                  ),
-                ],
               ),
               Positioned(
                 top: 12,
@@ -199,6 +228,9 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
                   hasSelection: _hasSelection,
                   agencyName: _selectedAgencyName,
                   agencyLocality: widget.selectedAgencyLocality,
+                  onRecenter: _hasSelectedCoordinates
+                      ? _recenterSelectedAgency
+                      : null,
                 ),
               ),
               Positioned(
@@ -220,88 +252,126 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
       ),
     );
   }
-
 }
 
-class _ShalomAgenciesLayer extends StatelessWidget {
+class _ShalomAgenciesLayer extends StatefulWidget {
   const _ShalomAgenciesLayer({
     required this.agencies,
     required this.selectedAgencyId,
     required this.selectedAgencyName,
     required this.selectedPoint,
+    required this.onSelectedPinTap,
   });
-
-  static const _pinZoomThreshold = 10.5;
-  static const _maxVisiblePins = 45;
 
   final List<ShalomAgency> agencies;
   final String selectedAgencyId;
   final String selectedAgencyName;
   final LatLng? selectedPoint;
+  final VoidCallback onSelectedPinTap;
+
+  @override
+  State<_ShalomAgenciesLayer> createState() => _ShalomAgenciesLayerState();
+}
+
+class _ShalomAgenciesLayerState extends State<_ShalomAgenciesLayer> {
+  static const _pinZoomThreshold = 10.5;
+  static const _maxVisiblePins = 45;
+  final _overviewByZoom = <int, List<CircleMarker>>{};
+
+  @override
+  void didUpdateWidget(covariant _ShalomAgenciesLayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.agencies != oldWidget.agencies ||
+        widget.selectedAgencyId != oldWidget.selectedAgencyId) {
+      _overviewByZoom.clear();
+    }
+  }
+
+  List<CircleMarker> _overviewCircles(int zoom) {
+    return _overviewByZoom.putIfAbsent(zoom, () {
+      // A geographic grid keeps overlapping pins to one dot per cell.
+      final cellSize = 360 / ((1 << zoom) * 8);
+      final cells = <(int, int)>{};
+      return [
+        for (final agency in widget.agencies)
+          if (agency.id != widget.selectedAgencyId &&
+              cells.add((
+                (agency.latitude! / cellSize).floor(),
+                (agency.longitude! / cellSize).floor(),
+              )))
+            _circle(agency, zoom >= 8 ? 5.5 : 4.2),
+      ];
+    });
+  }
+
+  CircleMarker _circle(ShalomAgency agency, double radius) => CircleMarker(
+    point: LatLng(agency.latitude!, agency.longitude!),
+    radius: radius,
+    color: _ShalomEmbeddedMapState._shalomRed,
+    borderColor: Colors.white,
+    borderStrokeWidth: 1.2,
+  );
 
   @override
   Widget build(BuildContext context) {
     final camera = MapCamera.of(context);
-    final bounds = camera.visibleBounds;
-    final showDetailedPins = camera.zoom >= _pinZoomThreshold;
-
-    final visibleOthers = <ShalomAgency>[];
-    for (final agency in agencies) {
-      if (agency.id == selectedAgencyId) continue;
-      final lat = agency.latitude!;
-      final lng = agency.longitude!;
-      if (lat >= bounds.south - 0.05 &&
-          lat <= bounds.north + 0.05 &&
-          lng >= bounds.west - 0.05 &&
-          lng <= bounds.east + 0.05) {
-        visibleOthers.add(agency);
-      }
-    }
-
     final markers = <Marker>[];
-    final circles = <CircleMarker>[];
-
-    if (showDetailedPins && visibleOthers.length <= _maxVisiblePins) {
-      for (final agency in visibleOthers) {
-        markers.add(
-          Marker(
-            key: ValueKey(agency.id),
-            point: LatLng(agency.latitude!, agency.longitude!),
-            width: 26,
-            height: 31,
-            alignment: Alignment.topCenter,
-            child: Tooltip(
-              message: agency.displayName,
-              child: const _ShalomMarker(selected: false),
-            ),
-          ),
-        );
-      }
+    final List<CircleMarker> circles;
+    if (camera.zoom < _pinZoomThreshold) {
+      circles = _overviewCircles(camera.zoom.floor());
     } else {
-      for (final agency in visibleOthers) {
-        circles.add(
-          CircleMarker(
-            point: LatLng(agency.latitude!, agency.longitude!),
-            radius: camera.zoom >= 8 ? 5.5 : 4.2,
-            color: _ShalomEmbeddedMapState._shalomRed,
-            borderColor: Colors.white,
-            borderStrokeWidth: 1.2,
-          ),
-        );
+      final bounds = camera.visibleBounds;
+      final visibleOthers = widget.agencies
+          .where(
+            (agency) =>
+                agency.id != widget.selectedAgencyId &&
+                agency.latitude! >= bounds.south &&
+                agency.latitude! <= bounds.north &&
+                agency.longitude! >= bounds.west &&
+                agency.longitude! <= bounds.east,
+          )
+          .toList(growable: false);
+      if (visibleOthers.length <= _maxVisiblePins) {
+        circles = const [];
+        for (final agency in visibleOthers) {
+          markers.add(
+            Marker(
+              key: ValueKey(agency.id),
+              point: LatLng(agency.latitude!, agency.longitude!),
+              width: 26,
+              height: 31,
+              alignment: Alignment.topCenter,
+              child: Tooltip(
+                message: agency.displayName,
+                child: const _ShalomMarker(selected: false),
+              ),
+            ),
+          );
+        }
+      } else {
+        circles = [for (final agency in visibleOthers) _circle(agency, 5.5)];
       }
     }
 
+    final selectedPoint = widget.selectedPoint;
     if (selectedPoint != null) {
       markers.add(
         Marker(
-          key: ValueKey('selected-$selectedAgencyId'),
-          point: selectedPoint!,
+          key: ValueKey('selected-${widget.selectedAgencyId}'),
+          point: selectedPoint,
           width: 36,
           height: 42,
           alignment: Alignment.topCenter,
-          child: Tooltip(
-            message: selectedAgencyName,
-            child: const _ShalomMarker(selected: true),
+          child: Semantics(
+            button: true,
+            child: Tooltip(
+              message: 'Centrar mapa en ${widget.selectedAgencyName}',
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.onSelectedPinTap,
+                child: const _ShalomMarker(selected: true),
+              ),
+            ),
           ),
         ),
       );
@@ -322,12 +392,14 @@ class _MapSelectionLabel extends StatelessWidget {
     required this.hasSelection,
     required this.agencyName,
     required this.agencyLocality,
+    required this.onRecenter,
   });
 
   final bool hasCoordinates;
   final bool hasSelection;
   final String agencyName;
   final String agencyLocality;
+  final VoidCallback? onRecenter;
 
   @override
   Widget build(BuildContext context) {
@@ -340,53 +412,57 @@ class _MapSelectionLabel extends StatelessWidget {
           elevation: 5,
           shadowColor: Colors.black.withValues(alpha: .14),
           borderRadius: BorderRadius.circular(14),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: const BoxDecoration(
-                    color: AppColors.pinkSoft,
-                    shape: BoxShape.circle,
+          child: InkWell(
+            onTap: onRecenter,
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: const BoxDecoration(
+                      color: AppColors.pinkSoft,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      hasCoordinates
+                          ? Icons.location_on_rounded
+                          : Icons.travel_explore_rounded,
+                      size: 19,
+                    ),
                   ),
-                  child: Icon(
-                    hasCoordinates
-                        ? Icons.location_on_rounded
-                        : Icons.travel_explore_rounded,
-                    size: 19,
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          hasSelection
+                              ? agencyName
+                              : 'Agencias Shalom en el Perú',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        Text(
+                          hasSelection && agencyLocality.isNotEmpty
+                              ? agencyLocality
+                              : hasSelection && !hasCoordinates
+                              ? 'Esta agencia todavía no tiene coordenadas.'
+                              : 'Elige una agencia para centrar el mapa.',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        hasSelection
-                            ? agencyName
-                            : 'Agencias Shalom en el Perú',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                      Text(
-                        hasSelection && agencyLocality.isNotEmpty
-                            ? agencyLocality
-                            : hasSelection && !hasCoordinates
-                            ? 'Esta agencia todavía no tiene coordenadas.'
-                            : 'Elige una agencia para centrar el mapa.',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

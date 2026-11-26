@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../models/shalom_agency.dart';
@@ -10,13 +11,23 @@ class ShalomAgencyRepository {
   static Future<ShalomAgencyCatalog>? _catalog;
 
   static Future<ShalomAgencyCatalog> load() {
-    return _catalog ??= _loadFromAssets();
+    return _catalog ??= _loadFromAssets().catchError((
+      Object error,
+      StackTrace stack,
+    ) {
+      _catalog = null;
+      Error.throwWithStackTrace(error, stack);
+    });
   }
 
   static Future<ShalomAgencyCatalog> _loadFromAssets() async {
     final source = await rootBundle.loadString(
       'assets/data/shalom_agencies.json',
     );
+    return compute(_parseCatalog, source);
+  }
+
+  static ShalomAgencyCatalog _parseCatalog(String source) {
     final decoded = jsonDecode(source);
     if (decoded is! Map) {
       throw const FormatException('El directorio de Shalom no es válido.');
@@ -26,6 +37,10 @@ class ShalomAgencyRepository {
     );
     if (catalog.agencies.isEmpty) {
       throw const FormatException('El directorio de Shalom está vacío.');
+    }
+    for (final agency in catalog.publicAgencies) {
+      // Warm the normalized search index before exposing the catalog to the UI.
+      agency.searchableText;
     }
     return catalog;
   }

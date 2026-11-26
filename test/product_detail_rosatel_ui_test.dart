@@ -7,133 +7,141 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('el detalle de producto despliega la experiencia UI/UX estilo Rosatel', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(1200, 1000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'el detalle de producto despliega la experiencia UI/UX estilo Rosatel',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final product = CatalogProduct(
-      id: 'ramo-primaveral',
-      name: 'Ramo Primaveral Girasoles',
-      category: ProductCategory.bouquets,
-      description: 'Hermoso ramo de girasoles con follaje fresco y envoltura de regalo.',
-      sku: 'FC-AMA-2-PRI',
-      basePrice: 95.0,
-      unitLabel: 'ramo',
-      variants: [
-        ProductVariant(
-          id: 'clasico',
-          name: 'Clásico',
-          sku: 'FC-AMA-2-PRI-C',
-        ),
-        ProductVariant(
-          id: 'especial',
-          name: 'Especial con dedicatoria',
-          sku: 'FC-AMA-2-PRI-E',
-        ),
-      ],
-    );
-
-    final related = [
-      CatalogProduct(
-        id: 'ramo-rosas',
-        name: 'Ramo Premium 12 Rosas',
+      final product = CatalogProduct(
+        id: 'ramo-primaveral',
+        name: 'Ramo Primaveral Girasoles',
         category: ProductCategory.bouquets,
-        description: 'Docena de rosas eternas rojas.',
-        basePrice: 85.0,
-      ),
-    ];
+        description: 'Hermoso ramo de girasoles con follaje fresco y envoltura de regalo.',
+        sku: 'FC-AMA-2-PRI',
+        basePrice: 95.0,
+        unitLabel: 'ramo',
+        variants: [
+          ProductVariant(id: 'clasico', name: 'Clásico', sku: 'FC-AMA-2-PRI-C'),
+          ProductVariant(
+            id: 'especial',
+            name: 'Especial con dedicatoria',
+            sku: 'FC-AMA-2-PRI-E',
+          ),
+        ],
+      );
 
-    bool addedToCart = false;
-    bool boughtNow = false;
+      final related = [
+        CatalogProduct(
+          id: 'ramo-rosas',
+          name: 'Ramo Premium 12 Rosas',
+          category: ProductCategory.bouquets,
+          description: 'Docena de rosas eternas rojas.',
+          basePrice: 85.0,
+        ),
+      ];
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        home: Scaffold(
-          body: ProductDetailScreen(
-            product: product,
-            relatedProducts: related,
-            onAdd: ({required quantity, variantId, required customization}) {
-              addedToCart = true;
-            },
-            onBuyNow: ({required quantity, variantId, required customization}) {
-              boughtNow = true;
-            },
+      bool addedToCart = false;
+      bool boughtNow = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: ProductDetailScreen(
+              product: product,
+              relatedProducts: related,
+              onAdd: ({required quantity, variantId, required customization}) {
+                addedToCart = true;
+              },
+              onBuyNow:
+                  ({required quantity, variantId, required customization}) {
+                    boughtNow = true;
+                  },
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    // 1. Breadcrumbs en mayúsculas sin INICIO
-    expect(find.text('INICIO'), findsNothing);
-    expect(find.text('RAMOS'), findsWidgets);
-    expect(find.textContaining('PRIMAVERAL GIRASOLES'), findsWidgets);
+      // 1. Breadcrumbs en mayúsculas sin INICIO
+      expect(find.text('INICIO'), findsNothing);
+      expect(find.text('RAMOS'), findsWidgets);
+      expect(find.textContaining('PRIMAVERAL GIRASOLES'), findsWidgets);
 
-    // 2. Buy Box: Título, SKU y Precio
-    expect(find.text('SKU: FC-AMA-2-PRI-C'), findsOneWidget);
-    expect(find.text('S/ 95.00'), findsWidgets);
-    expect(find.text('por RAMO'), findsOneWidget);
+      // 2. Buy Box: Título, SKU y Precio
+      expect(find.textContaining('FC-AMA-2-PRI-C'), findsNothing);
+      expect(find.text('S/ 95.00'), findsWidgets);
+      expect(find.text('por RAMO'), findsOneWidget);
 
-    // 3. Botones estilo Rosatel
-    expect(find.text('Comprar ahora'), findsOneWidget);
-    expect(find.textContaining('Añadir al carrito · S/ 95.00'), findsOneWidget);
+      // 3. Botones estilo Rosatel
+      expect(find.text('Comprar ahora'), findsOneWidget);
+      expect(
+        find.textContaining('Añadir al carrito · S/ 95.00'),
+        findsOneWidget,
+      );
 
-    // 4. Tarjeta de entrega y programación
-    expect(
-      find.text('Puedes programar la fecha y horario de entrega o recojo en tu carrito.'),
-      findsOneWidget,
-    );
+      // 4. Tarjeta de entrega y programación
+      expect(
+        find.text(
+          'Puedes programar la fecha y horario de entrega o recojo en tu carrito.',
+        ),
+        findsOneWidget,
+      );
 
-    // 5. Sellos de confianza integrados a la derecha de la descripción (sin botón contáctanos)
-    expect(find.text('Calidad premium'), findsOneWidget);
-    expect(find.text('Productos seleccionados'), findsOneWidget);
-    expect(find.text('Atención personalizada'), findsOneWidget);
-    expect(find.widgetWithText(OutlinedButton, 'Contáctanos'), findsNothing);
+      // 5. Sellos de confianza integrados a la derecha de la descripción (sin botón contáctanos)
+      expect(find.text('Calidad premium'), findsOneWidget);
+      expect(find.text('Productos seleccionados'), findsOneWidget);
+      expect(find.text('Atención personalizada'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Contáctanos'), findsNothing);
 
-    // 6. Sección "Descripción del producto"
-    expect(find.text('Descripción del producto'), findsOneWidget);
-    expect(find.text('Línea Ramos · Expresiones'), findsOneWidget);
-    expect(find.text(product.description), findsOneWidget);
+      // 6. Sección "Descripción del producto"
+      expect(find.text('Descripción del producto'), findsOneWidget);
+      expect(find.text('Línea Ramos · Expresiones'), findsOneWidget);
+      expect(find.text(product.description), findsOneWidget);
 
-    // 7. Carrusel pesado removido para evitar congelamientos en web
-    expect(find.text('Más opciones de esta sección'), findsNothing);
+      // 7. Carrusel pesado removido para evitar congelamientos en web
+      expect(find.text('Más opciones de esta sección'), findsNothing);
 
-    // 8. Banners removidos y footer limpio
-    expect(find.byType(StoreDisclaimerBanner), findsNothing);
-    expect(find.text('Fotos referenciales'), findsNothing);
-    expect(find.byType(StoreSpecialOrderBanner), findsNothing);
-    expect(find.text('¿Buscas un diseño o pedido a medida?'), findsNothing);
-    expect(find.byType(StoreFooter), findsOneWidget);
-    expect(find.text('Catálogo'), findsNothing);
-    expect(find.text('Políticas'), findsOneWidget);
-    expect(find.text('Libro de reclamaciones'), findsOneWidget);
-    expect(find.textContaining('Todos los derechos reservados'), findsNothing);
-    expect(find.text('Formas de pago'), findsOneWidget);
-    expect(find.byTooltip('Yape'), findsOneWidget);
-    expect(find.byTooltip('Plin'), findsOneWidget);
-    expect(find.byTooltip('Interbank'), findsOneWidget);
+      // 8. Banners removidos y footer limpio
+      expect(find.byType(StoreDisclaimerBanner), findsNothing);
+      expect(find.text('Fotos referenciales'), findsNothing);
+      expect(find.byType(StoreSpecialOrderBanner), findsNothing);
+      expect(find.text('¿Buscas un diseño o pedido a medida?'), findsNothing);
+      expect(find.byType(StoreFooter), findsOneWidget);
+      expect(find.text('Catálogo'), findsNothing);
+      expect(find.text('Políticas'), findsOneWidget);
+      expect(find.text('Libro de reclamaciones'), findsOneWidget);
+      expect(
+        find.textContaining('Todos los derechos reservados'),
+        findsNothing,
+      );
+      expect(find.text('Formas de pago'), findsOneWidget);
+      expect(find.byTooltip('Yape'), findsOneWidget);
+      expect(find.byTooltip('Plin'), findsOneWidget);
+      expect(find.byTooltip('Interbank'), findsOneWidget);
 
-    // 9. Jashy presente en la pantalla de detalle
-    expect(find.byType(AssistantHelpButton), findsOneWidget);
+      // 9. Jashy presente en la pantalla de detalle
+      expect(find.byType(AssistantHelpButton), findsOneWidget);
 
-    // 9. Acciones interactivas: Añadir al carrito y Comprar ahora
-    await tester.tap(find.widgetWithText(FilledButton, 'Añadir al carrito · S/ 95.00'));
-    expect(addedToCart, isTrue);
+      // 9. Acciones interactivas: Añadir al carrito y Comprar ahora
+      await tester.tap(
+        find.widgetWithText(FilledButton, 'Añadir al carrito · S/ 95.00'),
+      );
+      expect(addedToCart, isTrue);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Comprar ahora'));
-    expect(boughtNow, isTrue);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Comprar ahora'));
+      expect(boughtNow, isTrue);
 
-    // 10. Favoritos toggle
-    final heart = find.byTooltip('Guardar en favoritos');
-    expect(heart, findsOneWidget);
-    await tester.tap(heart);
-    await tester.pump();
-    expect(find.byTooltip('Quitar de favoritos'), findsOneWidget);
-  });
+      // 10. Favoritos toggle
+      final heart = find.byTooltip('Guardar en favoritos');
+      expect(heart, findsOneWidget);
+      await tester.tap(heart);
+      await tester.pump();
+      expect(find.byTooltip('Quitar de favoritos'), findsOneWidget);
+    },
+  );
 }

@@ -20,8 +20,16 @@ String? productFamilyHeroAsset(CatalogProduct product) => switch (product.id) {
 ///
 /// The administrator's current cover is authoritative. Editorial assets are
 /// only offline fallbacks for seed products that do not publish a cover.
-String? productFamilyCoverImage(CatalogProduct product) =>
-    product.previewImageUrl ?? productFamilyHeroAsset(product);
+String? productFamilyCoverImage(CatalogProduct product) {
+  final cover = product.previewImageUrl ?? productFamilyHeroAsset(product);
+  if (cover != null && cover.isNotEmpty) return cover;
+  for (final variant in product.variants) {
+    if (variant.isActive && (variant.previewImageUrl?.isNotEmpty ?? false)) {
+      return variant.previewImageUrl;
+    }
+  }
+  return null;
+}
 
 BoxFit productImageFit(CatalogProduct product, {ProductVariant? variant}) {
   if (product.category == ProductCategory.koreanPaper) {
@@ -152,8 +160,11 @@ class ProductVisual extends StatelessWidget {
           ? NetworkImage(placeholderAsset)
           : AssetImage(placeholderAsset);
 
-      Widget buildPlaceholder() => placeholderProvider == null
-          ? const ProductVisualSkeleton()
+      Widget fallback() => _Fallback(accent: accent, icon: icon, label: label);
+
+      Widget buildPlaceholder({bool failed = false}) =>
+          placeholderProvider == null
+          ? (failed ? fallback() : const ProductVisualSkeleton())
           : Image(
               image: placeholderProvider,
               fit: fit,
@@ -162,7 +173,8 @@ class ProductVisual extends StatelessWidget {
               gaplessPlayback: true,
               width: double.infinity,
               height: double.infinity,
-              errorBuilder: (_, _, _) => const ProductVisualSkeleton(),
+              errorBuilder: (_, _, _) =>
+                  failed ? fallback() : const ProductVisualSkeleton(),
             );
 
       Widget buildImage(ImageProvider imageProvider) => Image(
@@ -179,8 +191,7 @@ class ProductVisual extends StatelessWidget {
           if (wasSynchronouslyLoaded || frame != null) return child;
           return buildPlaceholder();
         },
-        errorBuilder: (_, _, _) =>
-            _Fallback(accent: accent, icon: icon, label: label),
+        errorBuilder: (_, _, _) => buildPlaceholder(failed: true),
       );
 
       final Widget image = decodeToLayout

@@ -2,17 +2,26 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../data/shalom_agency_repository.dart';
 import '../models/shalom_agency.dart';
 import '../security/input_sanitizer.dart';
+import '../services/device_location_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 
 class ShalomAgencyPicker extends StatefulWidget {
-  const ShalomAgencyPicker({super.key, this.selectedId = ''});
+  const ShalomAgencyPicker({
+    super.key,
+    this.selectedId = '',
+    this.locationService = const DeviceLocationService(),
+    this.loadCatalog = ShalomAgencyRepository.load,
+  });
 
   final String selectedId;
+  final DeviceLocationService locationService;
+  final Future<ShalomAgencyCatalog> Function() loadCatalog;
 
   @override
   State<ShalomAgencyPicker> createState() => _ShalomAgencyPickerState();
@@ -23,11 +32,14 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
   static const Duration _searchDebounceDuration = Duration(milliseconds: 200);
 
   final _searchController = TextEditingController();
-  late final Future<ShalomAgencyCatalog> _catalog =
-      ShalomAgencyRepository.load();
+  late final Future<ShalomAgencyCatalog> _catalog = widget.loadCatalog();
   Timer? _searchDebounce;
   String _query = '';
   bool _selecting = false;
+  bool _findingNearby = false;
+  List<ShalomAgency>? _nearbyAgencies;
+  Map<String, double> _distancesKm = const {};
+  String? _locationError;
 
   @override
   void dispose() {
@@ -59,6 +71,60 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
     Navigator.of(context).pop(agency);
   }
 
+  Future<void> _findNearby() async {
+    if (_findingNearby) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _findingNearby = true;
+      _locationError = null;
+    });
+    try {
+      final position = await widget.locationService.currentPosition();
+      if (!mounted) return;
+      final agencies = (await _catalog).publicAgencies;
+      if (!mounted) return;
+      final distances = <String, double>{};
+      final nearby = <ShalomAgency>[];
+      for (final agency in agencies) {
+        final latitude = agency.latitude;
+        final longitude = agency.longitude;
+        if (!agency.canReceive || latitude == null || longitude == null) {
+          continue;
+        }
+        distances[agency.id] =
+            Geolocator.distanceBetween(
+              position.latitude,
+              position.longitude,
+              latitude,
+              longitude,
+            ) /
+            1000;
+        nearby.add(agency);
+      }
+      nearby.sort((a, b) => distances[a.id]!.compareTo(distances[b.id]!));
+      _searchDebounce?.cancel();
+      setState(() {
+        _nearbyAgencies = nearby;
+        _distancesKm = distances;
+        _query = '';
+        _searchController.clear();
+      });
+    } on LocationPermissionException catch (error) {
+      if (!mounted) return;
+      setState(() => _locationError = error.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(
+        () => _locationError =
+            'No pudimos obtener tu ubicación. Puedes buscar por ciudad.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _findingNearby = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,12 +144,10 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
           }
 
           final catalog = snapshot.data!;
-          final publicAgencies = catalog.publicAgencies;
+          final nearby = _query.isEmpty && _nearbyAgencies != null;
           final filtered = _query.isEmpty
-              ? publicAgencies
-              : publicAgencies
-                    .where((agency) => agency.matches(_query))
-                    .toList(growable: false);
+              ? _nearbyAgencies ?? catalog.publicAgencies
+              : catalog.searchPublicAgencies(_query);
 
           return ResponsivePage(
             maxWidth: 1180,
@@ -107,6 +171,28 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
                   message: 'Mostramos el directorio disponible de Shalom. Toca una tarjeta para usarla en tu cotización.',
                 ),
                 const SizedBox(height: 18),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: _findingNearby ? null : _findNearby,
+                    icon: const Icon(Icons.my_location_rounded, size: 18),
+                    label: Text(
+                      _findingNearby ? 'Buscando…' : 'Agencias cerca de mí',
+                    ),
+                  ),
+                ),
+                if (_locationError != null)
+                  Text(
+                    _locationError!,
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: AppColors.error),
+                  ),
+                if (nearby)
+                  Text(
+                    'Ordenadas por distancia aproximada.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: _searchController,
                   textInputAction: TextInputAction.search,
@@ -170,6 +256,7 @@ class _ShalomAgencyPickerState extends State<ShalomAgencyPicker> {
                               return _AgencyCard(
                                 agency: agency,
                                 selected: agency.id == widget.selectedId,
+                                distanceKm: _distancesKm[agency.id],
                                 onTap: agency.canReceive
                                     ? () => _selectAgency(agency)
                                     : null,
@@ -216,11 +303,13 @@ class _AgencyCard extends StatelessWidget {
   const _AgencyCard({
     required this.agency,
     required this.selected,
+    this.distanceKm,
     required this.onTap,
   });
 
   final ShalomAgency agency;
   final bool selected;
+  final double? distanceKm;
   final VoidCallback? onTap;
 
   @override
@@ -265,6 +354,19 @@ class _AgencyCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
+                    if (distanceKm != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        distanceKm! < 1
+                            ? '${(distanceKm! * 1000).round()} m de distancia'
+                            : '${distanceKm!.toStringAsFixed(1)} km de distancia',
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: AppColors.roseDeep,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
                     if (agency.address.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(

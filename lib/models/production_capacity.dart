@@ -271,6 +271,10 @@ class ProductionPlan {
   int get unscheduledPoints => math.max(0, requiredPoints - scheduledPoints);
 }
 
+// Keep calendar dates and pickup hours in the store's time zone on every device.
+DateTime limaClockTime(DateTime instant) =>
+    instant.toUtc().subtract(const Duration(hours: 5));
+
 DateTime dateOnly(DateTime value) =>
     DateTime(value.year, value.month, value.day);
 

@@ -1,4 +1,6 @@
+import 'package:expresiones/models/catalog_models.dart';
 import 'package:expresiones/models/coordination_details.dart';
+import 'package:expresiones/models/quote_line.dart';
 import 'package:expresiones/services/quote_message.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -18,10 +20,23 @@ void main() {
     },
   );
 
-  test('el mensaje completo conserva datos y costo variable de Shalom', () {
+  test('el mensaje incluye un solo cargo de transporte y embalaje', () {
+    final product = CatalogProduct(
+      id: 'test',
+      name: 'Limpiapipas',
+      sku: 'SKU-INTERNO',
+      category: ProductCategory.materials,
+      unitLabel: 'paquete',
+      basePrice: 5,
+    );
     final message = QuoteMessageBuilder.build(
       id: 'COT-TEST',
-      lines: const [],
+      lines: [
+        ResolvedQuoteLine(
+          line: const QuoteLine(productId: 'test', quantity: 99),
+          product: product,
+        ),
+      ],
       details: details,
     );
 
@@ -32,8 +47,21 @@ void main() {
     expect(message, isNot(contains('\nNombre:')));
     expect(message, isNot(contains('\nApellidos:')));
     expect(message, contains('DNI: 42555477'));
-    expect(message, contains('desde S/ 5.00'));
-    expect(message, contains('tamaño y peso'));
+    expect(message.split('\n').first, 'Resumen de cotización - COT-TEST');
+    expect(message, isNot(contains('Hola, buen día')));
+    expect(
+      message,
+      contains(
+        'Subtotal de productos: S/ 495.00\n'
+        'Transporte y embalaje: S/ 5.00\n'
+        'Total: S/ 500.00',
+      ),
+    );
+    expect('Transporte y embalaje'.allMatches(message), hasLength(1));
+    expect(message, isNot(contains('Embalaje para Shalom')));
+    expect(message, isNot(contains('SKU-INTERNO')));
+    expect(message, isNot(contains('Flete de Shalom')));
+    expect(shalomPackingFee(100), 7);
   });
 
   test('WhatsApp recibe solo una introducción corta sin datos sensibles', () {

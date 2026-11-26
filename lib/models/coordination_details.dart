@@ -2,6 +2,9 @@ import '../security/input_sanitizer.dart';
 
 enum DeliveryMethod { pickup, shalom }
 
+double shalomPackingFee(int quantity) =>
+    quantity <= 0 ? 0 : (quantity >= 100 ? 7 : 5);
+
 class CoordinationDetails {
   const CoordinationDetails({
     this.name = '',

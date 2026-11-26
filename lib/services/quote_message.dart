@@ -14,59 +14,98 @@ abstract final class QuoteMessageBuilder {
     return 'COT-$date-$code';
   }
 
+  static String heading(String id) => 'Resumen de cotización - $id';
+
   static String build({
     required String id,
     required List<ResolvedQuoteLine> lines,
     required CoordinationDetails details,
-    String brandName = 'Expresiones',
   }) {
-    final safeBrandName = brandName.trim().isEmpty
-        ? 'Expresiones'
-        : brandName.trim();
     final buffer = StringBuffer()
-      ..writeln('Resumen de cotización · $safeBrandName')
-      ..writeln()
-      ..writeln(id)
+      ..writeln(heading(id))
       ..writeln();
 
-    for (final item in lines) {
-      final code = item.code == null ? '' : ' · ${item.code}';
-      final unitNote = item.line.quantity > 1
-          ? ' · S/ ${item.unitPrice.toStringAsFixed(2)} c/u'
-          : '';
-      buffer
-        ..writeln('• ${item.line.quantity} × ${item.displayName}$code')
-        ..writeln(
-          '  ${item.priceTierLabel}: S/ ${item.total.toStringAsFixed(2)}'
-          '$unitNote',
+    for (final items in groupQuoteLines(lines)) {
+      final first = items.first;
+      final quantity = items.fold(0, (sum, item) => sum + item.line.quantity);
+      final total = items.fold<double>(0, (sum, item) => sum + item.total);
+      final hasVariants = items.any((item) => item.variant != null);
+      final showBreakdown = hasVariants || items.length > 1;
+      final sharedPrice = items.every(
+        (item) => item.unitPrice == first.unitPrice,
+      );
+      final sharedTier = items.every(
+        (item) => item.priceTierLabel == first.priceTierLabel,
+      );
+      final unitPrice = 'S/ ${first.unitPrice.toStringAsFixed(2)} c/u';
+      final tier = sharedTier && first.priceTierLabel.toUpperCase() == 'DOCENA';
+      final unit = first.product.unitLabel;
+      final count = quantity == 12 && tier && unit == 'PAQUETE'
+          ? '1 docena (12 paquetes)'
+          : '$quantity × $unit';
+      buffer.writeln(
+        '• ${first.product.name} · $count · S/ ${total.toStringAsFixed(2)}',
+      );
+      if (quantity > 1 && sharedPrice) {
+        buffer.writeln(
+          tier ? '  Precio de docena: $unitPrice' : '  $unitPrice',
         );
-      if (item.line.customization.trim().isNotEmpty) {
-        buffer.writeln('  Detalle: ${item.line.customization.trim()}');
+      }
+      final breakdown = <(String?, String, double), int>{};
+      for (final item in items) {
+        final key = (
+          item.line.variantId,
+          item.line.customization.trim(),
+          item.unitPrice,
+        );
+        breakdown.update(
+          key,
+          (quantity) => quantity + item.line.quantity,
+          ifAbsent: () => item.line.quantity,
+        );
+      }
+      for (final entry in breakdown.entries) {
+        final (variantId, customization, pricePerUnit) = entry.key;
+        if (showBreakdown) {
+          final variant = first.product.variantById(variantId);
+          final price = sharedPrice
+              ? ''
+              : ' · S/ ${pricePerUnit.toStringAsFixed(2)} c/u';
+          buffer.writeln('  - ${entry.value} × ${variant?.name ?? unit}$price');
+        }
+        if (customization.isNotEmpty) {
+          buffer.writeln('    Detalle: $customization');
+        }
       }
       buffer.writeln();
     }
 
-    final subtotal = lines.fold<double>(0, (sum, item) => sum + item.total);
+    final amounts = quoteAmounts(lines, details.deliveryMethod);
+    final shalom = details.deliveryMethod == DeliveryMethod.shalom;
+    buffer.writeln(
+      'Subtotal de productos: S/ ${amounts.subtotal.toStringAsFixed(2)}',
+    );
+    if (shalom) {
+      buffer.writeln(
+        'Transporte y embalaje: S/ ${amounts.transportAndPacking.toStringAsFixed(2)}',
+      );
+    } else {
+      buffer.writeln('Entrega: ${details.deliveryLabel} (gratis)');
+    }
     buffer
-      ..writeln('Subtotal de productos: S/ ${subtotal.toStringAsFixed(2)}')
-      ..writeln('Envío: por confirmar')
+      ..writeln('Total: S/ ${amounts.total.toStringAsFixed(2)}')
       ..writeln()
       ..writeln('Nombres y apellidos: ${details.name.trim()}')
-      ..writeln('Teléfono: ${details.phone.trim()}')
-      ..writeln('Entrega: ${details.deliveryLabel}');
+      ..writeln('Teléfono: ${details.phone.trim()}');
+    if (shalom) buffer.writeln('Entrega: ${details.deliveryLabel}');
 
     if (details.deliveryMethod == DeliveryMethod.shalom &&
         details.shalomAgencyId.isNotEmpty) {
       buffer
         ..writeln('Agencia Shalom: ${details.shalomAgencyName}')
         ..writeln('Ubicación: ${details.shalomAgencyLocality}')
-        ..writeln('Dirección: ${details.shalomAgencyAddress}')
-        ..writeln(
-          'Envío Shalom: desde S/ 5.00; el monto final depende del '
-          'tamaño y peso y se confirma por WhatsApp.',
-        );
+        ..writeln('Dirección: ${details.shalomAgencyAddress}');
     }
-
     if (details.desiredDate != null) {
       buffer.writeln(
         'Fecha deseada: ${DateFormat('dd/MM/yyyy').format(details.desiredDate!)}',
@@ -87,7 +126,7 @@ abstract final class QuoteMessageBuilder {
     buffer
       ..writeln()
       ..write(
-        'Stock, tarifa de envío y disponibilidad final están sujetos a confirmación.',
+        '¿Me confirman la disponibilidad y la fecha, por favor? ¡Gracias!',
       );
     return buffer.toString();
   }

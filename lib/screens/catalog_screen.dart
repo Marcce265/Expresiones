@@ -19,6 +19,7 @@ class CatalogScreen extends StatefulWidget {
     super.key,
     required this.products,
     required this.onProduct,
+    this.onAddToCart,
     required this.onBack,
     required this.onOpenQuote,
     this.onOpenHelp,
@@ -36,6 +37,7 @@ class CatalogScreen extends StatefulWidget {
   final int searchRequest;
   final ValueChanged<ProductCategory>? onCategoryChanged;
   final ProductSelected onProduct;
+  final ProductSelected? onAddToCart;
   final VoidCallback onBack;
   final VoidCallback onOpenQuote;
   final VoidCallback? onOpenHelp;
@@ -114,8 +116,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final family = _selectedFamily;
     final sharedPricing = family != null && usesSharedFamilyPricing(family);
     final availableProducts = widget.products.where(
-      (product) =>
-          product.isActive && product.category == _selectedCategory,
+      (product) => product.isActive && product.category == _selectedCategory,
     );
     final List<CatalogTile> tiles;
     if (query.isEmpty) {
@@ -214,8 +215,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   hasScrollBody: false,
                   child:
                       _query.isEmpty &&
-                          (_selectedCategory ==
-                                  ProductCategory.koreanPaper ||
+                          (_selectedCategory == ProductCategory.koreanPaper ||
                               _selectedCategory == ProductCategory.crowns)
                       ? _ConstructionModuleState(category: _selectedCategory)
                       : EmptyState(
@@ -235,8 +235,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     builder: (context, constraints) {
                       final viewportWidth = constraints.crossAxisExtent;
                       final compact = viewportWidth < 640;
-                      final horizontalPadding =
-                          ResponsivePage.storefrontInset(viewportWidth);
+                      final horizontalPadding = ResponsivePage.storefrontInset(
+                        viewportWidth,
+                      );
                       return SliverPadding(
                         padding: EdgeInsets.fromLTRB(
                           horizontalPadding,
@@ -255,6 +256,14 @@ class _CatalogScreenState extends State<CatalogScreen> {
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
                               final tile = tiles[index];
+                              final activeVariants = tile.product.variants
+                                  .where((variant) => variant.isActive);
+                              final isIndividual =
+                                  tile.variant != null ||
+                                  activeVariants.length <= 1;
+                              final variantId =
+                                  tile.variant?.id ??
+                                  activeVariants.firstOrNull?.id;
                               return ProductCard(
                                 product: tile.product,
                                 variant: tile.variant,
@@ -264,6 +273,13 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                     tile.product.category ==
                                         ProductCategory.materials,
                                 showPrice: !sharedPricing,
+                                onAdd:
+                                    isIndividual && widget.onAddToCart != null
+                                    ? () => widget.onAddToCart!(
+                                        tile.product,
+                                        variantId,
+                                      )
+                                    : null,
                                 onTap: () => _openTile(tile),
                               );
                             },
@@ -340,8 +356,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final query = rawQuery.trim().toLowerCase();
     if (query.length < 2 || _reportedEmptySearches.contains(query)) return;
     final availableProducts = widget.products.where(
-      (product) =>
-          product.isActive && product.category == _selectedCategory,
+      (product) => product.isActive && product.category == _selectedCategory,
     );
     final family = _selectedFamily;
     final hasResult = family == null
@@ -362,7 +377,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final variants = tile.product.variants
         .where((variant) => variant.isActive)
         .toList();
-    if (_selectedFamilyId == null && tile.variant == null && variants.length > 1) {
+    if (_selectedFamilyId == null &&
+        tile.variant == null &&
+        variants.length > 1) {
       _searchController.clear();
       setState(() {
         _selectedFamilyId = tile.product.id;
@@ -399,11 +416,11 @@ String _familyOptionLabel(CatalogProduct family) => switch (family.id) {
   'limpiapipas-premium-8mm' ||
   'cinta-satinada-100m' ||
   'papel-coreano-impermeable' ||
-  'papel-coreano' =>
-    'Elige un color',
-  _ => family.category == ProductCategory.koreanPaper
-      ? 'Elige un color'
-      : 'Elige una opción',
+  'papel-coreano' => 'Elige un color',
+  _ =>
+    family.category == ProductCategory.koreanPaper
+        ? 'Elige un color'
+        : 'Elige una opción',
 };
 
 class _FamilyOverview extends StatelessWidget {
@@ -414,7 +431,8 @@ class _FamilyOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isSquare = product.id == 'limpiapipas-premium-8mm' ||
+    final isSquare =
+        product.id == 'limpiapipas-premium-8mm' ||
         product.category == ProductCategory.koreanPaper;
     final cover = AspectRatio(
       aspectRatio: isSquare ? 1 : 4 / 3,
@@ -424,10 +442,7 @@ class _FamilyOverview extends StatelessWidget {
       product: product,
       sharedPricing: sharedPricing,
     );
-    final description = ProductDescriptionCard(
-      product: product,
-      compact: true,
-    );
+    final description = ProductDescriptionCard(product: product, compact: true);
 
     return KeyedSubtree(
       key: ValueKey('family-overview-${product.id}'),
@@ -448,20 +463,13 @@ class _FamilyOverview extends StatelessWidget {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                flex: 3,
-                child: cover,
-              ),
+              Expanded(flex: 3, child: cover),
               const SizedBox(width: 16),
               Expanded(
                 flex: 2,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    prices,
-                    const SizedBox(height: 14),
-                    description,
-                  ],
+                  children: [prices, const SizedBox(height: 14), description],
                 ),
               ),
             ],
@@ -741,7 +749,7 @@ class _ModuleChip extends StatelessWidget {
     final color = isSelected ? Colors.white : AppColors.ink;
 
     return Material(
-      color: isSelected ? AppColors.ink : AppColors.surface,
+      color: isSelected ? AppColors.rose : AppColors.surface,
       borderRadius: BorderRadius.circular(20),
       elevation: isSelected ? 1 : 0,
       child: InkWell(
@@ -752,7 +760,7 @@ class _ModuleChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isSelected ? AppColors.ink : AppColors.border,
+              color: isSelected ? AppColors.rose : AppColors.border,
             ),
           ),
           child: Row(
@@ -790,8 +798,10 @@ class _ConstructionModuleState extends StatelessWidget {
     final media = MediaQuery.sizeOf(context);
     final compact = media.width < 700;
     final availableHeight = media.height - (compact ? 290 : 310);
-    final imageHeight = (availableHeight * (compact ? 0.50 : 0.55))
-        .clamp(compact ? 160.0 : 200.0, compact ? 280.0 : 360.0);
+    final imageHeight = (availableHeight * (compact ? 0.50 : 0.55)).clamp(
+      compact ? 160.0 : 200.0,
+      compact ? 280.0 : 360.0,
+    );
     final haloSize = imageHeight * 0.92;
 
     return Center(

@@ -24,6 +24,7 @@ class PickupLocationMap extends StatefulWidget {
 }
 
 class _PickupLocationMapState extends State<PickupLocationMap> {
+  static const _pickupZoom = 17.2;
   final MapController _controller = MapController();
   bool _ready = false;
 
@@ -38,7 +39,9 @@ class _PickupLocationMapState extends State<PickupLocationMap> {
             oldWidget.location.longitude != widget.location.longitude) &&
         widget.location.hasCoordinates) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _ready) _controller.move(_point, 17.5);
+        if (mounted && _ready && widget.location.hasCoordinates) {
+          _controller.move(_point, _pickupZoom);
+        }
       });
     }
   }
@@ -93,7 +96,7 @@ class _PickupLocationMapState extends State<PickupLocationMap> {
                 mapController: _controller,
                 options: MapOptions(
                   initialCenter: _point,
-                  initialZoom: 17.2,
+                  initialZoom: _pickupZoom,
                   minZoom: 11,
                   maxZoom: 18.5,
                   cameraConstraint: CameraConstraint.containCenter(
@@ -124,7 +127,17 @@ class _PickupLocationMapState extends State<PickupLocationMap> {
                         width: 30,
                         height: 35,
                         alignment: Alignment.topCenter,
-                        child: const _ExpresionesStorePin(),
+                        child: Semantics(
+                          button: true,
+                          child: Tooltip(
+                            message: 'Centrar mapa en la tienda',
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _recenter,
+                              child: const _ExpresionesStorePin(),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -168,45 +181,52 @@ class _PickupLocationMapState extends State<PickupLocationMap> {
                       elevation: 4,
                       color: Colors.white.withValues(alpha: .96),
                       borderRadius: BorderRadius.circular(14),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 13,
-                          vertical: 10,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const CircleAvatar(
-                              radius: 17,
-                              backgroundColor: AppColors.pinkSoft,
-                              child: Icon(Icons.storefront_outlined, size: 18),
-                            ),
-                            const SizedBox(width: 10),
-                            Flexible(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    widget.location.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelLarge,
-                                  ),
-                                  Text(
-                                    widget.location.address,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall,
-                                  ),
-                                ],
+                      child: InkWell(
+                        onTap: _recenter,
+                        borderRadius: BorderRadius.circular(14),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 13,
+                            vertical: 10,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircleAvatar(
+                                radius: 17,
+                                backgroundColor: AppColors.pinkSoft,
+                                child: Icon(
+                                  Icons.storefront_outlined,
+                                  size: 18,
+                                ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 10),
+                              Flexible(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.location.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge,
+                                    ),
+                                    Text(
+                                      widget.location.address,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -250,6 +270,17 @@ class _PickupLocationMapState extends State<PickupLocationMap> {
     );
   }
 
+  void _recenter() {
+    if (!_ready || !widget.location.hasCoordinates) return;
+    if (ClientRateLimiter.instance.tryAcquire(
+      'pickup_map_recenter',
+      maxAttempts: 2,
+      window: const Duration(seconds: 2),
+    )) {
+      _controller.move(_point, _pickupZoom);
+    }
+  }
+
   void _changeZoom(double delta) {
     if (!_ready) return;
     if (!ClientRateLimiter.instance.tryAcquire(
@@ -279,11 +310,7 @@ class _ExpresionesStorePin extends StatelessWidget {
         painter: const _StorePinPainter(),
         child: const Align(
           alignment: Alignment(0, -0.26),
-          child: Icon(
-            Icons.storefront_rounded,
-            size: 14,
-            color: AppColors.ink,
-          ),
+          child: Icon(Icons.storefront_rounded, size: 14, color: AppColors.ink),
         ),
       ),
     );

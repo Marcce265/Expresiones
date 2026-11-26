@@ -619,7 +619,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             repository: AdminSiteSettingsRepository(client: widget.client),
             operations: widget.operations,
           ),
-          3 when FeatureFlags.demoPayment => AdminCustomerOrdersScreen(
+          3 when FeatureFlags.paymentsEnabled => AdminCustomerOrdersScreen(
             repository: CustomerAccountRepository(client: widget.client),
           ),
           _ => AdminAuditLogScreen(repository: widget.operations),
@@ -683,7 +683,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       selectedIcon: Icon(Icons.shopping_bag_rounded),
                       label: 'Carrito',
                     ),
-                    if (FeatureFlags.demoPayment)
+                    if (FeatureFlags.paymentsEnabled)
                       NavigationDestination(
                         icon: Icon(Icons.receipt_long_outlined),
                         selectedIcon: Icon(Icons.receipt_long_rounded),
@@ -1192,7 +1192,7 @@ class _AdminNavigation extends StatelessWidget {
       (Icons.home_outlined, Icons.home_rounded, 'Inicio'),
       (Icons.grid_view_outlined, Icons.grid_view_rounded, 'Catálogo'),
       (Icons.shopping_bag_outlined, Icons.shopping_bag_rounded, 'Carrito'),
-      if (FeatureFlags.demoPayment)
+      if (FeatureFlags.paymentsEnabled)
         (Icons.receipt_long_outlined, Icons.receipt_long_rounded, 'Compras'),
       (Icons.history_outlined, Icons.history_rounded, 'Auditoría'),
     ];

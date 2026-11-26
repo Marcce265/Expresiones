@@ -21,6 +21,7 @@ import '../widgets/pickup_location_map.dart';
 import '../widgets/shalom_embedded_map.dart';
 import '../widgets/store_footer.dart';
 import 'shalom_agency_picker.dart';
+import 'shalom_destination_picker.dart';
 
 class CoordinationScreen extends StatefulWidget {
   const CoordinationScreen({
@@ -35,6 +36,9 @@ class CoordinationScreen extends StatefulWidget {
     this.onSelectCategory,
     this.onOpenHelp,
     this.settings = const StorefrontSettings(),
+    this.cartQuantity = 0,
+    this.useInlineAgencyPicker = false,
+    this.now = DateTime.now,
   });
 
   final CoordinationDetails initial;
@@ -47,6 +51,9 @@ class CoordinationScreen extends StatefulWidget {
   final ValueChanged<ProductCategory>? onSelectCategory;
   final VoidCallback? onOpenHelp;
   final StorefrontSettings settings;
+  final int cartQuantity;
+  final bool useInlineAgencyPicker;
+  final DateTime Function() now;
 
   @override
   State<CoordinationScreen> createState() => _CoordinationScreenState();
@@ -70,12 +77,16 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   double? _agencyLatitude;
   double? _agencyLongitude;
   bool _agencyError = false;
+  bool _pickingAgency = false;
   bool _desiredDateError = false;
   bool _pickupTimeSlotError = false;
   bool _termsAccepted = false;
   bool _privacyAccepted = false;
   bool _consentError = false;
-  bool _pickingAgency = false;
+  late final Timer _scheduleTimer;
+
+  DateTime get _limaNow => limaClockTime(widget.now());
+  DateTime get _today => dateOnly(_limaNow);
 
   @override
   void initState() {
@@ -129,6 +140,10 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     _pickupTimeSlot = _availablePickupTimeSlots.contains(savedPickupTime)
         ? savedPickupTime
         : null;
+    _scheduleTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => setState(_clearUnavailableSelection),
+    );
   }
 
   @override
@@ -137,10 +152,13 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     if (oldWidget.settings.checkoutFields != widget.settings.checkoutFields) {
       _syncCustomControllers(initialValues: widget.initial.customFields);
     }
-    if ((oldWidget.pickupTimeSlots != widget.pickupTimeSlots ||
-            oldWidget.pickupTimeSlotsForDate !=
-                widget.pickupTimeSlotsForDate) &&
-        !_availablePickupTimeSlots.contains(_pickupTimeSlot)) {
+    _clearUnavailableSelection();
+  }
+
+  void _clearUnavailableSelection() {
+    final date = _desiredDate;
+    if (date != null && !_isSelectable(date)) _desiredDate = null;
+    if (!_availablePickupTimeSlots.contains(_pickupTimeSlot)) {
       _pickupTimeSlot = null;
     }
   }
@@ -278,6 +296,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
 
   @override
   void dispose() {
+    _scheduleTimer.cancel();
     _nameController.dispose();
     _lastNameController.dispose();
     _phoneController.dispose();
@@ -290,7 +309,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   }
 
   DateTime get _firstDate {
-    final today = _dateOnly(DateTime.now());
+    final today = _today;
     final earliest = _dateOnly(widget.earliestDate);
     return earliest.isBefore(today) ? today : earliest;
   }
@@ -316,7 +335,25 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
   List<String> get _availablePickupTimeSlots {
     final date = _desiredDate;
     if (date == null) return const [];
-    return widget.pickupTimeSlotsForDate?.call(date) ?? widget.pickupTimeSlots;
+    return _pickupTimeSlotsFor(date);
+  }
+
+  List<String> _pickupTimeSlotsFor(DateTime date) {
+    final slots =
+        widget.pickupTimeSlotsForDate?.call(date) ?? widget.pickupTimeSlots;
+    final now = _limaNow;
+    if (!DateUtils.isSameDay(date, now)) return slots;
+
+    final elapsedMinutes = now.hour * 60 + now.minute;
+    return slots
+        .where((slot) {
+          final start = RegExp(r'^(\d{2}):(\d{2})').firstMatch(slot);
+          if (start == null) return false;
+          final startMinutes =
+              int.parse(start.group(1)!) * 60 + int.parse(start.group(2)!);
+          return startMinutes > elapsedMinutes;
+        })
+        .toList(growable: false);
   }
 
   bool _isSelectable(DateTime date) {
@@ -324,7 +361,9 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
     return !value.isBefore(_firstDate) &&
         !value.isAfter(_firstDate.add(const Duration(days: 365))) &&
         _allowedWeekdays.contains(value.weekday) &&
-        (widget.isDateAvailable?.call(value, _deliveryMethod) ?? true);
+        (widget.isDateAvailable?.call(value, _deliveryMethod) ?? true) &&
+        (_deliveryMethod != DeliveryMethod.pickup ||
+            _pickupTimeSlotsFor(value).isNotEmpty);
   }
 
   void _selectDeliveryMethod(DeliveryMethod method) {
@@ -384,22 +423,41 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         ),
       );
       if (agency == null || !mounted) return;
-      setState(() {
-        _agencyId = agency.id;
-        _agencyName = agency.displayName;
-        _agencyAddress = agency.address;
-        _agencyLocality = agency.localityLabel;
-        _agencyLatitude = agency.latitude;
-        _agencyLongitude = agency.longitude;
-        _agencyError = false;
-      });
+      _setAgency(agency);
     } finally {
       _pickingAgency = false;
     }
   }
 
+  void _setAgency(ShalomAgency? agency) {
+    if (agency == null && _agencyId.isEmpty) return;
+    setState(() {
+      _agencyId = agency?.id ?? '';
+      _agencyName = agency?.displayName ?? '';
+      _agencyAddress = agency?.address ?? '';
+      _agencyLocality = agency?.localityLabel ?? '';
+      _agencyLatitude = agency?.latitude;
+      _agencyLongitude = agency?.longitude;
+      _agencyError = false;
+    });
+  }
+
   void _submit() {
     FocusManager.instance.primaryFocus?.unfocus();
+    final previousDate = _desiredDate;
+    final previousSlot = _pickupTimeSlot;
+    _clearUnavailableSelection();
+    if (previousDate != _desiredDate ||
+        (_deliveryMethod == DeliveryMethod.pickup &&
+            previousSlot != _pickupTimeSlot)) {
+      showAppNotice(
+        context,
+        previousDate != _desiredDate
+            ? 'La fecha elegida ya no está disponible. Elige otra para continuar.'
+            : 'El horario elegido ya no está disponible. Elige otro para continuar.',
+        tone: AppNoticeTone.info,
+      );
+    }
     final formValid = _formKey.currentState!.validate();
     final needsShippingIdentity = _deliveryMethod == DeliveryMethod.shalom;
     setState(() {
@@ -414,15 +472,6 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         _pickupTimeSlotError ||
         _agencyError ||
         _consentError) {
-      return;
-    }
-    if (_desiredDate != null && !_isSelectable(_desiredDate!)) {
-      setState(() => _desiredDate = null);
-      showAppNotice(
-        context,
-        'La fecha elegida ya no está disponible. Elige una nueva fecha.',
-        tone: AppNoticeTone.info,
-      );
       return;
     }
     if (!ClientRateLimiter.instance.tryAcquire(
@@ -660,33 +709,7 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
         ),
       );
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          dniField,
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.pinkSoft,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.info_outline_rounded, size: 18),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'La agencia entregará el envío únicamente a la persona indicada. El nombre, teléfono y DNI deben coincidir, y el DNI debe pertenecer a una persona mayor de edad.',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
+      return dniField;
     }
 
     final controller = _customControllers[field.id];
@@ -741,262 +764,267 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    void onBack() {
+      Navigator.maybePop(context);
+    }
+
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _FormSectionCard(
+          number: '1',
+          icon: Icons.local_shipping_outlined,
+          title: widget.settings.text(StorefrontText.coordinationDeliveryTitle),
+          description: widget.settings.text(
+            StorefrontText.coordinationDeliveryBody,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final horizontal = constraints.maxWidth >= 620;
+                  final pickup = _DeliveryOption(
+                    title: widget.settings.text(
+                      StorefrontText.coordinationPickupTitle,
+                    ),
+                    subtitle: widget.settings.text(
+                      StorefrontText.coordinationPickupBody,
+                    ),
+                    icon: Icons.storefront_outlined,
+                    selected: _deliveryMethod == DeliveryMethod.pickup,
+                    onTap: () => _selectDeliveryMethod(DeliveryMethod.pickup),
+                  );
+                  final shipping = _DeliveryOption(
+                    title: widget.settings.text(
+                      StorefrontText.coordinationShalomTitle,
+                    ),
+                    subtitle: widget.settings.text(
+                      StorefrontText.coordinationShalomBody,
+                    ),
+                    icon: Icons.local_shipping_outlined,
+                    selected: _deliveryMethod == DeliveryMethod.shalom,
+                    onTap: () => _selectDeliveryMethod(DeliveryMethod.shalom),
+                  );
+
+                  if (horizontal) {
+                    return Row(
+                      children: [
+                        Expanded(child: pickup),
+                        const SizedBox(width: 14),
+                        Expanded(child: shipping),
+                      ],
+                    );
+                  }
+                  return Column(
+                    children: [pickup, const SizedBox(height: 10), shipping],
+                  );
+                },
+              ),
+              if (!widget.useInlineAgencyPicker &&
+                  _deliveryMethod == DeliveryMethod.shalom &&
+                  widget.cartQuantity > 0) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Embalaje: S/ ${shalomPackingFee(widget.cartQuantity).toStringAsFixed(2)}. Flete de Shalom por confirmar.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                child: _deliveryMethod == DeliveryMethod.shalom
+                    ? widget.useInlineAgencyPicker
+                          ? ShalomDestinationPicker(
+                              selectedId: _agencyId,
+                              showError: _agencyError,
+                              onSelected: _setAgency,
+                            )
+                          : _ShalomDestinationSection(
+                              key: const ValueKey('destination'),
+                              agencyId: _agencyId,
+                              agencyName: _agencyName,
+                              agencyAddress: _agencyAddress,
+                              agencyLocality: _agencyLocality,
+                              latitude: _agencyLatitude,
+                              longitude: _agencyLongitude,
+                              showError: _agencyError,
+                              onChooseAgency: _pickAgency,
+                            )
+                    : _PickupDestinationSection(
+                        key: const ValueKey('pickup'),
+                        location: widget.settings.pickupLocation,
+                      ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        _FormSectionCard(
+          number: '2',
+          icon: Icons.person_outline_rounded,
+          title: widget.settings.text(StorefrontText.coordinationContactTitle),
+          description: FeatureFlags.accountsEnabled
+              ? widget.settings.text(StorefrontText.coordinationContactBody)
+              : 'Usaremos estos datos solo para coordinar tu cotización.',
+          child: _buildUnifiedContactFields(),
+        ),
+        const SizedBox(height: 18),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final dateSection = _FormSectionCard(
+              number: '3',
+              icon: Icons.calendar_month_outlined,
+              title: widget.settings.text(StorefrontText.coordinationDateTitle),
+              description:
+                  widget.settings.texts[StorefrontText.coordinationDateBody]
+                          ?.trim()
+                          .isNotEmpty ==
+                      true
+                  ? widget.settings.text(StorefrontText.coordinationDateBody)
+                  : _deliveryScheduleMessage(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _DeliveryCalendar(
+                    key: ValueKey(_deliveryMethod),
+                    first: _firstDate,
+                    last: _firstDate.add(const Duration(days: 365)),
+                    initial: _desiredDate ?? _firstSelectableDate ?? _firstDate,
+                    selected: _desiredDate,
+                    today: _today,
+                    isSelectable: _isSelectable,
+                    onSelected: _selectDate,
+                  ),
+                  if (_desiredDateError) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Selecciona una fecha.',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
+                  if (_firstSelectableDate == null) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      'No hay fechas disponibles para esta forma de entrega.',
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  if (_deliveryMethod == DeliveryMethod.pickup)
+                    _PickupTimeSelector(
+                      slots: _availablePickupTimeSlots,
+                      selected: _pickupTimeSlot,
+                      enabled: _desiredDate != null,
+                      showError: _pickupTimeSlotError,
+                      onSelected: (slot) => setState(() {
+                        _pickupTimeSlot = slot;
+                        _pickupTimeSlotError = false;
+                      }),
+                    )
+                  else ...[
+                    const _FieldLabel('Horario de envío'),
+                    const SizedBox(height: 8),
+                    const _ShalomDispatchNotice(),
+                  ],
+                ],
+              ),
+            );
+            final noteSection = _FormSectionCard(
+              number: '4',
+              icon: Icons.notes_rounded,
+              title: widget.settings.text(
+                StorefrontText.coordinationDetailsTitle,
+              ),
+              description: widget.settings.text(
+                StorefrontText.coordinationDetailsBody,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    controller: _noteController,
+                    minLines: 4,
+                    maxLines: 7,
+                    maxLength: 500,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      hintText: widget.settings.text(
+                        StorefrontText.coordinationDetailsHint,
+                      ),
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  LegalConsentCheckboxes(
+                    termsAccepted: _termsAccepted,
+                    privacyAccepted: _privacyAccepted,
+                    showError: _consentError,
+                    settings: widget.settings,
+                    onTermsChanged: (checked) => setState(() {
+                      _termsAccepted = checked;
+                      if (_termsAccepted && _privacyAccepted) {
+                        _consentError = false;
+                      }
+                    }),
+                    onPrivacyChanged: (checked) => setState(() {
+                      _privacyAccepted = checked;
+                      if (_termsAccepted && _privacyAccepted) {
+                        _consentError = false;
+                      }
+                    }),
+                  ),
+                  const SizedBox(height: 18),
+                  _SubmitArea(onPressed: _submit),
+                ],
+              ),
+            );
+
+            if (constraints.maxWidth < 900) {
+              return Column(
+                children: [
+                  dateSection,
+                  const SizedBox(height: 18),
+                  noteSection,
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 5, child: dateSection),
+                const SizedBox(width: 18),
+                Expanded(flex: 6, child: noteSection),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+
     return SingleChildScrollView(
       child: Column(
         children: [
           ResponsivePage.storefront(
-            child: Form(
-              key: _formKey,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _Heading(onBack: () => Navigator.maybePop(context)),
-                  const SizedBox(height: 26),
-                  _FormSectionCard(
-                    number: '1',
-                    icon: Icons.person_outline_rounded,
-                    title: widget.settings.text(
-                      StorefrontText.coordinationContactTitle,
-                    ),
-                    description: FeatureFlags.customerAccounts
-                        ? widget.settings.text(
-                            StorefrontText.coordinationContactBody,
-                          )
-                        : 'Usaremos estos datos solo para coordinar tu cotización.',
-                    child: _buildUnifiedContactFields(),
-                  ),
-                  const SizedBox(height: 18),
-                  _FormSectionCard(
-                    number: '2',
-                    icon: Icons.local_shipping_outlined,
-                    title: widget.settings.text(
-                      StorefrontText.coordinationDeliveryTitle,
-                    ),
-                    description: widget.settings.text(
-                      StorefrontText.coordinationDeliveryBody,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final horizontal = constraints.maxWidth >= 620;
-                            final pickup = _DeliveryOption(
-                              title: widget.settings.text(
-                                StorefrontText.coordinationPickupTitle,
-                              ),
-                              subtitle: widget.settings.text(
-                                StorefrontText.coordinationPickupBody,
-                              ),
-                              icon: Icons.storefront_outlined,
-                              selected:
-                                  _deliveryMethod == DeliveryMethod.pickup,
-                              onTap: () =>
-                                  _selectDeliveryMethod(DeliveryMethod.pickup),
-                            );
-                            final shipping = _DeliveryOption(
-                              title: widget.settings.text(
-                                StorefrontText.coordinationShalomTitle,
-                              ),
-                              subtitle: widget.settings.text(
-                                StorefrontText.coordinationShalomBody,
-                              ),
-                              icon: Icons.local_shipping_outlined,
-                              selected:
-                                  _deliveryMethod == DeliveryMethod.shalom,
-                              onTap: () =>
-                                  _selectDeliveryMethod(DeliveryMethod.shalom),
-                            );
-
-                            if (horizontal) {
-                              return Row(
-                                children: [
-                                  Expanded(child: pickup),
-                                  const SizedBox(width: 14),
-                                  Expanded(child: shipping),
-                                ],
-                              );
-                            }
-                            return Column(
-                              children: [
-                                pickup,
-                                const SizedBox(height: 10),
-                                shipping,
-                              ],
-                            );
-                          },
-                        ),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 220),
-                          child: _deliveryMethod == DeliveryMethod.shalom
-                              ? _ShalomDestinationSection(
-                                  key: const ValueKey('destination'),
-                                  agencyId: _agencyId,
-                                  agencyName: _agencyName,
-                                  agencyAddress: _agencyAddress,
-                                  agencyLocality: _agencyLocality,
-                                  latitude: _agencyLatitude,
-                                  longitude: _agencyLongitude,
-                                  showError: _agencyError,
-                                  onChooseAgency: _pickAgency,
-                                )
-                              : _PickupDestinationSection(
-                                  key: const ValueKey('pickup'),
-                                  location: widget.settings.pickupLocation,
-                                ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final dateSection = _FormSectionCard(
-                        number: '3',
-                        icon: Icons.calendar_month_outlined,
-                        title: widget.settings.text(
-                          StorefrontText.coordinationDateTitle,
-                        ),
-                        description:
-                            widget
-                                    .settings
-                                    .texts[StorefrontText.coordinationDateBody]
-                                    ?.trim()
-                                    .isNotEmpty ==
-                                true
-                            ? widget.settings.text(
-                                StorefrontText.coordinationDateBody,
-                              )
-                            : _deliveryScheduleMessage(),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _DeliveryCalendar(
-                              key: ValueKey(_deliveryMethod),
-                              first: _firstDate,
-                              last: _firstDate.add(const Duration(days: 365)),
-                              initial:
-                                  _desiredDate ??
-                                  _firstSelectableDate ??
-                                  _firstDate,
-                              selected: _desiredDate,
-                              isSelectable: _isSelectable,
-                              onSelected: _selectDate,
-                            ),
-                            if (_desiredDateError) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                'Selecciona una fecha.',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                            ],
-                            if (_firstSelectableDate == null) ...[
-                              const SizedBox(height: 8),
-                              const Text(
-                                'No hay fechas disponibles para esta forma de entrega.',
-                              ),
-                            ],
-                            const SizedBox(height: 18),
-                            if (_deliveryMethod == DeliveryMethod.pickup)
-                              _PickupTimeSelector(
-                                slots: _availablePickupTimeSlots,
-                                selected: _pickupTimeSlot,
-                                enabled: _desiredDate != null,
-                                showError: _pickupTimeSlotError,
-                                onSelected: (slot) => setState(() {
-                                  _pickupTimeSlot = slot;
-                                  _pickupTimeSlotError = false;
-                                }),
-                              )
-                            else ...[
-                              const _FieldLabel('Horario de envío'),
-                              const SizedBox(height: 8),
-                              const _ShalomDispatchNotice(),
-                            ],
-                          ],
-                        ),
-                      );
-                      final noteSection = _FormSectionCard(
-                        number: '4',
-                        icon: Icons.notes_rounded,
-                        title: widget.settings.text(
-                          StorefrontText.coordinationDetailsTitle,
-                        ),
-                        description: widget.settings.text(
-                          StorefrontText.coordinationDetailsBody,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            TextFormField(
-                              controller: _noteController,
-                              minLines: 4,
-                              maxLines: 7,
-                              maxLength: 500,
-                              textCapitalization: TextCapitalization.sentences,
-                              decoration: InputDecoration(
-                                hintText: widget.settings.text(
-                                  StorefrontText.coordinationDetailsHint,
-                                ),
-                                alignLabelWithHint: true,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            LegalConsentCheckboxes(
-                              termsAccepted: _termsAccepted,
-                              privacyAccepted: _privacyAccepted,
-                              showError: _consentError,
-                              settings: widget.settings,
-                              onTermsChanged: (checked) => setState(() {
-                                _termsAccepted = checked;
-                                if (_termsAccepted && _privacyAccepted) {
-                                  _consentError = false;
-                                }
-                              }),
-                              onPrivacyChanged: (checked) => setState(() {
-                                _privacyAccepted = checked;
-                                if (_termsAccepted && _privacyAccepted) {
-                                  _consentError = false;
-                                }
-                              }),
-                            ),
-                            const SizedBox(height: 18),
-                            _SubmitArea(onPressed: _submit),
-                          ],
-                        ),
-                      );
-
-                      if (constraints.maxWidth < 900) {
-                        return Column(
-                          children: [
-                            dateSection,
-                            const SizedBox(height: 18),
-                            noteSection,
-                          ],
-                        );
-                      }
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(flex: 5, child: dateSection),
-                          const SizedBox(width: 18),
-                          Expanded(flex: 6, child: noteSection),
-                        ],
-                      );
-                    },
-                  ),
-                ],
-              ),
+            top: 12,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Heading(onBack: onBack),
+                const SizedBox(height: 18),
+                Form(
+                  key: _formKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: details,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 24),
           StoreFooter(
             settings: widget.settings,
             onSelectCategory: widget.onSelectCategory,
-            onOpenQuote: () => Navigator.maybePop(context),
+            onOpenQuote: onBack,
             onOpenHelp: widget.onOpenHelp,
             whatsappNumber: widget.settings.whatsappNumber,
           ),
@@ -1498,10 +1526,7 @@ class _AgencyDetail extends StatelessWidget {
         Icon(icon, size: 17, color: AppColors.muted),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          child: Text(text, style: Theme.of(context).textTheme.bodySmall),
         ),
       ],
     );
@@ -1515,11 +1540,12 @@ class _DeliveryCalendar extends StatefulWidget {
     required this.last,
     required this.initial,
     required this.selected,
+    required this.today,
     required this.isSelectable,
     required this.onSelected,
   });
 
-  final DateTime first, last, initial;
+  final DateTime first, last, initial, today;
   final DateTime? selected;
   final bool Function(DateTime) isSelectable;
   final ValueChanged<DateTime> onSelected;
@@ -1632,7 +1658,7 @@ class _DeliveryCalendarState extends State<_DeliveryCalendar> {
         !date.isAfter(widget.last) &&
         widget.isSelectable(date);
     final selected = enabled && DateUtils.isSameDay(date, widget.selected);
-    final today = enabled && DateUtils.isSameDay(date, DateTime.now());
+    final today = enabled && DateUtils.isSameDay(date, widget.today);
     return Padding(
       padding: const EdgeInsets.all(1),
       child: Semantics(
@@ -1646,7 +1672,7 @@ class _DeliveryCalendarState extends State<_DeliveryCalendar> {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             foregroundColor: selected ? Colors.white : AppColors.ink,
             disabledForegroundColor: AppColors.muted,
-            backgroundColor: selected ? AppColors.ink : AppColors.surface,
+            backgroundColor: selected ? AppColors.rose : AppColors.surface,
             side: today && !selected
                 ? const BorderSide(color: AppColors.ink)
                 : null,
@@ -1658,7 +1684,11 @@ class _DeliveryCalendarState extends State<_DeliveryCalendar> {
             child: Text(
               '$day',
               style: TextStyle(
+                fontSize: selected ? 15 : null,
+                fontWeight: selected ? FontWeight.w800 : null,
                 decoration: enabled ? null : TextDecoration.lineThrough,
+                decorationThickness: enabled ? null : 2.2,
+                decorationColor: enabled ? null : AppColors.muted,
               ),
             ),
           ),
@@ -1749,7 +1779,7 @@ class _PickupTimeCard extends StatelessWidget {
     final bgColor = selected
         ? AppColors.pinkSoft.withValues(alpha: .5)
         : AppColors.surface;
-    final borderColor = selected ? AppColors.ink : AppColors.border;
+    final borderColor = selected ? AppColors.rose : AppColors.border;
 
     return Opacity(
       opacity: enabled ? 1 : 0.55,
@@ -1863,14 +1893,20 @@ class _SubmitArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hint = Text(
-      'Revisa tus datos antes de continuar al resumen.',
+      FeatureFlags.appEndToEnd
+          ? 'Revisa tus datos antes de continuar al pago.'
+          : 'Revisa tus datos antes de continuar al resumen.',
       textAlign: TextAlign.center,
       style: Theme.of(context).textTheme.bodySmall,
     );
     final button = FilledButton.icon(
       onPressed: onPressed,
       icon: const Icon(Icons.arrow_forward_rounded, size: 19),
-      label: const Text('Revisar mi cotización'),
+      label: Text(
+        FeatureFlags.appEndToEnd
+            ? 'Continuar al pago'
+            : 'Revisar mi cotización',
+      ),
     );
 
     return LayoutBuilder(
@@ -1960,15 +1996,15 @@ class _DeliveryOption extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 104),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: selected ? AppColors.ink : AppColors.surface,
+            color: selected ? AppColors.pinkSoft : AppColors.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: selected ? AppColors.ink : AppColors.border,
+              color: selected ? AppColors.rose : AppColors.border,
             ),
           ),
           child: Row(
             children: [
-              Icon(icon, color: selected ? Colors.white : AppColors.ink),
+              Icon(icon, color: selected ? AppColors.roseDeep : AppColors.ink),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -1978,23 +2014,24 @@ class _DeliveryOption extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: selected ? Colors.white : AppColors.ink,
+                        color: selected ? AppColors.roseDeep : AppColors.ink,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: selected
-                            ? Colors.white.withValues(alpha: .72)
-                            : AppColors.muted,
+                        color: selected ? AppColors.roseDeep : AppColors.muted,
                       ),
                     ),
                   ],
                 ),
               ),
               if (selected)
-                const Icon(Icons.check_circle_rounded, color: Colors.white),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.roseDeep,
+                ),
             ],
           ),
         ),

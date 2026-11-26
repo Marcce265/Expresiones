@@ -26,21 +26,13 @@ List<CatalogProduct> _sampleCatalog() {
       basePrice: 29,
       tags: ['cinta', 'satinada', 'liston', 'rollo'],
       variants: [
-        ProductVariant(
-          id: 'sat-01',
-          name: 'N.°1 BLANCO',
-          sku: 'SAT-01',
-        ),
+        ProductVariant(id: 'sat-01', name: 'N.°1 BLANCO', sku: 'SAT-01'),
         ProductVariant(
           id: 'sat-02',
           name: 'N.°2 ROJO PASI\u00d3N',
           sku: 'SAT-02',
         ),
-        ProductVariant(
-          id: 'sat-03',
-          name: 'N.°3 MARFIL',
-          sku: 'SAT-03',
-        ),
+        ProductVariant(id: 'sat-03', name: 'N.°3 MARFIL', sku: 'SAT-03'),
       ],
     ),
     CatalogProduct(
@@ -78,16 +70,8 @@ List<CatalogProduct> _sampleCatalog() {
       unitLabel: 'paquete',
       basePrice: 5,
       variants: [
-        ProductVariant(
-          id: 'xs-14',
-          name: 'VINO',
-          sku: 'XS-14',
-        ),
-        ProductVariant(
-          id: 'xs-22',
-          name: 'AMARILLO MOSTAZA',
-          sku: 'XS-22',
-        ),
+        ProductVariant(id: 'xs-14', name: 'VINO', sku: 'XS-14'),
+        ProductVariant(id: 'xs-22', name: 'AMARILLO MOSTAZA', sku: 'XS-22'),
       ],
     ),
     CatalogProduct(
@@ -133,23 +117,26 @@ void main() {
   group('CatalogSearchEngine', () {
     final catalog = _sampleCatalog();
 
-    test('buscar "cintas" encuentra todas las cintas agrupadas sin saturar', () {
-      final results = CatalogSearchEngine.searchProducts(catalog, 'cintas');
-      final ids = results.map((tile) => tile.product.id).toSet();
+    test(
+      'buscar "cintas" encuentra todas las cintas agrupadas sin saturar',
+      () {
+        final results = CatalogSearchEngine.searchProducts(catalog, 'cintas');
+        final ids = results.map((tile) => tile.product.id).toSet();
 
-      expect(ids, contains('cinta-satinada'));
-      expect(ids, contains('cinta-organza'));
-      expect(ids, contains('cinta-eternal'));
-      expect(ids, contains('cinta-doble'));
+        expect(ids, contains('cinta-satinada'));
+        expect(ids, contains('cinta-organza'));
+        expect(ids, contains('cinta-eternal'));
+        expect(ids, contains('cinta-doble'));
 
-      // La familia con variantes no debe expandirse a todas sus variantes
-      // cuando la búsqueda es general ("cintas").
-      final satinMatches = results
-          .where((tile) => tile.product.id == 'cinta-satinada')
-          .toList();
-      expect(satinMatches.length, 1);
-      expect(satinMatches.single.variant, isNull);
-    });
+        // La familia con variantes no debe expandirse a todas sus variantes
+        // cuando la búsqueda es general ("cintas").
+        final satinMatches = results
+            .where((tile) => tile.product.id == 'cinta-satinada')
+            .toList();
+        expect(satinMatches.length, 1);
+        expect(satinMatches.single.variant, isNull);
+      },
+    );
 
     test('búsqueda combinada familia + color encuentra la variante exacta', () {
       final cintaRoja = CatalogSearchEngine.searchProducts(
@@ -221,212 +208,223 @@ void main() {
       expect(CatalogSearchEngine.defaultPageSize, 24);
     });
 
-    test('funciona correctamente sobre el catálogo real seedCatalogProducts', () {
-      final cintas = CatalogSearchEngine.searchProducts(
-        seedCatalogProducts,
-        'cintas',
-      );
-      expect(cintas, isNotEmpty);
-      expect(
-        cintas.any((t) => t.product.name.toUpperCase().contains('CINTA')),
-        isTrue,
-      );
-      // No debe inundar con las 46 variantes de cinta satinada al buscar "cintas"
-      expect(cintas.length, lessThan(20));
-
-      final limpiapipas = CatalogSearchEngine.searchProducts(
-        seedCatalogProducts,
-        'limpiapipas',
-      );
-      expect(limpiapipas, isNotEmpty);
-      expect(limpiapipas.first.product.name.toUpperCase(), contains('LIMPIAPIPAS'));
-
-      final cintaBlanca = CatalogSearchEngine.searchProducts(
-        seedCatalogProducts,
-        'cinta blanco',
-      );
-      expect(cintaBlanca, isNotEmpty);
-      expect(cintaBlanca.first.variant, isNotNull);
-    });
-  });
-
-  group('Breadcrumbs uniformes (sin INICIO) y StoreFooter en todos los módulos', () {
-    final catalog = _sampleCatalog();
-
-    Widget wrap(Widget child) {
-      return MaterialApp(
-        theme: AppTheme.light,
-        home: Scaffold(body: child),
-      );
-    }
-
-    testWidgets(
-      'HomeScreen no tiene breadcrumb, busca con debounce y muestra StoreFooter',
-      (tester) async {
-        tester.view.physicalSize = const Size(1440, 1200);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.reset);
-
-        await tester.pumpWidget(
-          wrap(
-            HomeScreen(
-              products: catalog,
-              onBrowse: (_) {},
-              onProduct: (_, _) {},
-              onOpenQuote: () {},
-              quoteQuantity: 0,
-            ),
-          ),
+    test(
+      'funciona correctamente sobre el catálogo real seedCatalogProducts',
+      () {
+        final cintas = CatalogSearchEngine.searchProducts(
+          seedCatalogProducts,
+          'cintas',
         );
-        await tester.pumpAndSettle();
+        expect(cintas, isNotEmpty);
+        expect(
+          cintas.any((t) => t.product.name.toUpperCase().contains('CINTA')),
+          isTrue,
+        );
+        // No debe inundar con las 46 variantes de cinta satinada al buscar "cintas"
+        expect(cintas.length, lessThan(20));
 
-        expect(find.byType(AppBreadcrumbBar), findsNothing);
-        expect(find.text('INICIO'), findsNothing);
-        expect(find.byType(StoreFooter), findsOneWidget);
+        final limpiapipas = CatalogSearchEngine.searchProducts(
+          seedCatalogProducts,
+          'limpiapipas',
+        );
+        expect(limpiapipas, isNotEmpty);
+        expect(
+          limpiapipas.first.product.name.toUpperCase(),
+          contains('LIMPIAPIPAS'),
+        );
 
-        await tester.enterText(find.byType(TextField).first, 'cintas');
-        // Antes de los 450ms no reconstruye los resultados todavía
-        await tester.pump(const Duration(milliseconds: 200));
-        expect(find.text('Resultados'), findsNothing);
-
-        // Después de 450ms muestra los resultados expandidos (3 tonos de cinta satinada + 3 cintas + cautín)
-        await tester.pump(const Duration(milliseconds: 350));
-        expect(find.text('Resultados'), findsOneWidget);
-        expect(find.text('7 resultados'), findsOneWidget);
-        expect(find.text('N.°1 BLANCO'), findsOneWidget);
-
-        // Pulsar el chip popular "Cintas satinadas" expande todos los tonos
-        await tester.tap(find.text('Cintas satinadas'));
-        await tester.pump(const Duration(milliseconds: 50));
-        expect(find.text('3 resultados'), findsOneWidget);
-        expect(find.text('N.°1 BLANCO'), findsOneWidget);
-        expect(find.text('N.°2 ROJO PASIÓN'), findsOneWidget);
-        expect(find.text('N.°3 MARFIL'), findsOneWidget);
+        final cintaBlanca = CatalogSearchEngine.searchProducts(
+          seedCatalogProducts,
+          'cinta blanco',
+        );
+        expect(cintaBlanca, isNotEmpty);
+        expect(cintaBlanca.first.variant, isNotNull);
       },
     );
+  });
 
-    testWidgets('CatalogScreen muestra MATERIALES sin INICIO y StoreFooter', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(1440, 1200);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
+  group(
+    'Breadcrumbs uniformes (sin INICIO) y StoreFooter en todos los módulos',
+    () {
+      final catalog = _sampleCatalog();
 
-      await tester.pumpWidget(
-        wrap(
-          CatalogScreen(
-            products: catalog,
-            initialCategory: ProductCategory.materials,
-            onProduct: (_, _) {},
-            onBack: () {},
-            onOpenQuote: () {},
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byType(AppBreadcrumbBar), findsOneWidget);
-      expect(find.text('INICIO'), findsNothing);
-      expect(find.text('MATERIALES'), findsWidgets);
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, -1200));
-      await tester.pumpAndSettle();
-      expect(find.byType(StoreFooter), findsOneWidget);
-    });
-
-    testWidgets(
-      'QuoteScreen, CoordinationScreen, ReviewScreen y HelpScreen comparten breadcrumb y footer',
-      (tester) async {
-        tester.view.physicalSize = const Size(1440, 1200);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.reset);
-
-        final resolved = [
-          ResolvedQuoteLine(
-            line: QuoteLine(
-              productId: catalog.first.id,
-              variantId: catalog.first.variants.first.id,
-              quantity: 2,
-            ),
-            product: catalog.first,
-          ),
-        ];
-
-        // Carrito
-        await tester.pumpWidget(
-          wrap(
-            QuoteScreen(
-              lines: resolved,
-              onQuantityChanged: (_, _) {},
-              onRemove: (_) {},
-              onContinue: () {},
-              onBrowse: () {},
-            ),
-          ),
+      Widget wrap(Widget child) {
+        return MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(body: child),
         );
-        await tester.pumpAndSettle();
-        expect(find.byType(AppBreadcrumbBar), findsOneWidget);
-        expect(find.text('INICIO'), findsNothing);
-        expect(find.text('CARRITO'), findsOneWidget);
-        expect(find.byType(StoreFooter), findsOneWidget);
+      }
 
-        // Datos
-        await tester.pumpWidget(
-          wrap(
-            CoordinationScreen(
-              initial: const CoordinationDetails(),
-              earliestDate: DateTime(2026, 11, 20),
-              onSubmit: (_) {},
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(find.byType(AppBreadcrumbBar), findsOneWidget);
-        expect(find.text('INICIO'), findsNothing);
-        expect(find.text('CARRITO'), findsOneWidget);
-        expect(find.text('DATOS'), findsOneWidget);
-        expect(find.byType(StoreFooter), findsOneWidget);
+      testWidgets(
+        'HomeScreen no tiene breadcrumb, busca con debounce y muestra StoreFooter',
+        (tester) async {
+          tester.view.physicalSize = const Size(1440, 1200);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.reset);
 
-        // Revisión
-        await tester.pumpWidget(
-          wrap(
-            ReviewScreen(
-              lines: resolved,
-              details: const CoordinationDetails(
-                name: 'Ana',
-                phone: '987654321',
+          await tester.pumpWidget(
+            wrap(
+              HomeScreen(
+                products: catalog,
+                onBrowse: (_) {},
+                onProduct: (_, _) {},
+                onOpenQuote: () {},
+                quoteQuantity: 0,
               ),
-              quoteId: 'EXP-100',
-              message: 'Cotización',
-              onCopyMessage: () {},
-              onEditQuote: () {},
             ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(find.byType(AppBreadcrumbBar), findsOneWidget);
-        expect(find.text('INICIO'), findsNothing);
-        expect(find.text('CARRITO'), findsOneWidget);
-        expect(find.text('DATOS'), findsOneWidget);
-        expect(find.text('REVISIÓN'), findsOneWidget);
-        expect(find.byType(StoreFooter), findsOneWidget);
+          );
+          await tester.pumpAndSettle();
 
-        // Ayuda
+          expect(find.byType(AppBreadcrumbBar), findsNothing);
+          expect(find.text('INICIO'), findsNothing);
+          expect(find.byType(StoreFooter), findsOneWidget);
+
+          await tester.enterText(find.byType(TextField).first, 'cintas');
+          // Antes de los 450ms no reconstruye los resultados todavía
+          await tester.pump(const Duration(milliseconds: 200));
+          expect(find.text('Resultados'), findsNothing);
+
+          // Después de 450ms muestra los resultados expandidos (3 tonos de cinta satinada + 3 cintas + cautín)
+          await tester.pump(const Duration(milliseconds: 350));
+          expect(find.text('Resultados'), findsOneWidget);
+          expect(find.text('7 resultados'), findsOneWidget);
+          expect(find.text('N.°1 BLANCO'), findsOneWidget);
+
+          // Pulsar el chip popular "Cintas satinadas" expande todos los tonos
+          await tester.tap(find.text('Cintas satinadas'));
+          await tester.pump(const Duration(milliseconds: 50));
+          expect(find.text('3 resultados'), findsOneWidget);
+          expect(find.text('N.°1 BLANCO'), findsOneWidget);
+          expect(find.text('N.°2 ROJO PASIÓN'), findsOneWidget);
+          expect(find.text('N.°3 MARFIL'), findsOneWidget);
+        },
+      );
+
+      testWidgets('CatalogScreen muestra MATERIALES sin INICIO y StoreFooter', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(1440, 1200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
         await tester.pumpWidget(
           wrap(
-            HelpScreen(
-              onPrivacy: () {},
-              onAdminLogin: () {},
-              onAssistantGuide: () {},
-              assistantMuted: false,
+            CatalogScreen(
+              products: catalog,
+              initialCategory: ProductCategory.materials,
+              onProduct: (_, _) {},
+              onBack: () {},
+              onOpenQuote: () {},
             ),
           ),
         );
         await tester.pumpAndSettle();
+
         expect(find.byType(AppBreadcrumbBar), findsOneWidget);
         expect(find.text('INICIO'), findsNothing);
-        expect(find.text('AYUDA'), findsOneWidget);
+        expect(find.text('MATERIALES'), findsWidgets);
+        await tester.drag(
+          find.byType(CustomScrollView),
+          const Offset(0, -1200),
+        );
+        await tester.pumpAndSettle();
         expect(find.byType(StoreFooter), findsOneWidget);
-      },
-    );
-  });
+      });
+
+      testWidgets(
+        'QuoteScreen, CoordinationScreen, ReviewScreen y HelpScreen comparten breadcrumb y footer',
+        (tester) async {
+          tester.view.physicalSize = const Size(1440, 1200);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.reset);
+
+          final resolved = [
+            ResolvedQuoteLine(
+              line: QuoteLine(
+                productId: catalog.first.id,
+                variantId: catalog.first.variants.first.id,
+                quantity: 2,
+              ),
+              product: catalog.first,
+            ),
+          ];
+
+          // Carrito
+          await tester.pumpWidget(
+            wrap(
+              QuoteScreen(
+                lines: resolved,
+                onQuantityChanged: (_, _) {},
+                onRemove: (_) {},
+                onContinue: () {},
+                onBrowse: () {},
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.byType(AppBreadcrumbBar), findsOneWidget);
+          expect(find.text('INICIO'), findsNothing);
+          expect(find.text('CARRITO'), findsOneWidget);
+          expect(find.byType(StoreFooter), findsOneWidget);
+
+          // Datos
+          await tester.pumpWidget(
+            wrap(
+              CoordinationScreen(
+                initial: const CoordinationDetails(),
+                earliestDate: DateTime(2026, 11, 20),
+                onSubmit: (_) {},
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.byType(AppBreadcrumbBar), findsOneWidget);
+          expect(find.text('INICIO'), findsNothing);
+          expect(find.text('CARRITO'), findsOneWidget);
+          expect(find.text('DATOS'), findsOneWidget);
+          expect(find.byType(StoreFooter), findsOneWidget);
+
+          // Revisión
+          await tester.pumpWidget(
+            wrap(
+              ReviewScreen(
+                lines: resolved,
+                details: const CoordinationDetails(
+                  name: 'Ana',
+                  phone: '987654321',
+                ),
+                quoteId: 'EXP-100',
+                message: 'Cotización',
+                onEditQuote: () {},
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.byType(AppBreadcrumbBar), findsOneWidget);
+          expect(find.text('INICIO'), findsNothing);
+          expect(find.text('CARRITO'), findsOneWidget);
+          expect(find.text('DATOS'), findsOneWidget);
+          expect(find.text('REVISIÓN'), findsOneWidget);
+          expect(find.byType(StoreFooter), findsOneWidget);
+
+          // Ayuda
+          await tester.pumpWidget(
+            wrap(
+              HelpScreen(
+                onPrivacy: () {},
+                onAdminLogin: () {},
+                onAssistantGuide: () {},
+                assistantMuted: false,
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.byType(AppBreadcrumbBar), findsOneWidget);
+          expect(find.text('INICIO'), findsNothing);
+          expect(find.text('AYUDA'), findsOneWidget);
+          expect(find.byType(StoreFooter), findsOneWidget);
+        },
+      );
+    },
+  );
 }

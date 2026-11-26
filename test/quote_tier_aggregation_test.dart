@@ -100,7 +100,13 @@ void main() {
 
       expect(resolved.first.total, 9);
       expect(resolved.first.unitPrice, 4.5);
-      expect(message, contains('DOCENA: S/ 9.00 · S/ 4.50 c/u'));
+      expect(message, contains('1 docena (12 paquetes) · S/ 54.00'));
+      expect(message, contains('Precio de docena: S/ 4.50 c/u'));
+      expect(
+        RegExp(RegExp.escape(product.name)).allMatches(message),
+        hasLength(1),
+      );
+      expect(message, contains('2 × ${product.variants.first.name}'));
       expect(message, contains('Subtotal de productos: S/ 54.00'));
       expect(message, isNot(contains('Por PAQUETE: S/ 5.00')));
     },
@@ -131,5 +137,11 @@ void main() {
 
     expect(resolved.take(6).every((line) => line.unitPrice == 5), isTrue);
     expect(resolved.skip(6).every((line) => line.unitPrice == 3), isTrue);
+    final message = QuoteMessageBuilder.build(
+      id: 'COT-PRUEBA',
+      lines: resolved,
+      details: const CoordinationDetails(),
+    );
+    expect(message, contains('6 × ESPECIAL · S/ 3.00 c/u'));
   });
 }

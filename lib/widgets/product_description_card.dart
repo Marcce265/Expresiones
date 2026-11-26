@@ -27,6 +27,9 @@ class ProductDescriptionCard extends StatelessWidget {
     'palettenumber',
     'sourceimage',
     'imagesource',
+    'sku',
+    'codigo',
+    'código',
   };
 
   @override
@@ -56,20 +59,14 @@ class ProductDescriptionCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'Línea ${product.category.label} · Expresiones',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: AppColors.muted,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: AppColors.muted, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 14),
           Text(
-            product.description.isNotEmpty
-                ? product.description
-                : 'Elaborado artesanalmente con materiales seleccionados de la más alta calidad para garantizar acabados impecables.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.ink,
-              height: 1.55,
-            ),
+            product.description.isNotEmpty ? product.description : 'Elaborado artesanalmente con materiales seleccionados de la más alta calidad para garantizar acabados impecables.',
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: AppColors.ink, height: 1.55),
           ),
           if (badges.isNotEmpty) ...[
             const SizedBox(height: 18),
@@ -108,16 +105,13 @@ class ProductDescriptionCard extends StatelessWidget {
   List<String> _badges() {
     final entries = product.attributes.entries.where((entry) {
       final key = entry.key.toLowerCase();
-      if (key.startsWith('merged') ||
-          _hiddenAttributeKeys.contains(key)) {
+      if (key.startsWith('merged') || _hiddenAttributeKeys.contains(key)) {
         return false;
       }
       return entry.value.trim().isNotEmpty;
     });
 
-    return [
-      for (final entry in entries) _formatBadge(entry.key, entry.value),
-    ];
+    return [for (final entry in entries) _formatBadge(entry.key, entry.value)];
   }
 
   String _formatBadge(String key, String value) {

@@ -29,6 +29,7 @@ class ProductCard extends StatefulWidget {
     super.key,
     required this.product,
     required this.onTap,
+    this.onAdd,
     this.variant,
     this.imageAsset,
     this.compact = false,
@@ -36,7 +37,6 @@ class ProductCard extends StatefulWidget {
     this.showPrice = true,
     this.showUnavailableOverlay = true,
     this.homePresentation = false,
-    this.showSkuBadge = false,
     this.trailingIcon = Icons.arrow_forward_rounded,
   });
 
@@ -44,12 +44,12 @@ class ProductCard extends StatefulWidget {
   final ProductVariant? variant;
   final String? imageAsset;
   final VoidCallback onTap;
+  final VoidCallback? onAdd;
   final bool compact;
   final bool showCategory;
   final bool showPrice;
   final bool showUnavailableOverlay;
   final bool homePresentation;
-  final bool showSkuBadge;
   final IconData trailingIcon;
 
   @override
@@ -57,6 +57,7 @@ class ProductCard extends StatefulWidget {
 }
 
 class _ProductCardState extends State<ProductCard> {
+  static const _actionSize = 39.0;
   bool _hovered = false;
 
   @override
@@ -68,11 +69,6 @@ class _ProductCardState extends State<ProductCard> {
     final title = widget.variant == null
         ? widget.product.name
         : variantDisplayName(widget.variant!);
-    final hideInternalPaletteCode =
-        widget.variant?.attributes.containsKey('paletteNumber') ?? false;
-    final sku = hideInternalPaletteCode
-        ? null
-        : widget.variant?.sku ?? widget.product.sku;
     final image =
         widget.imageAsset ??
         widget.variant?.previewImageUrl ??
@@ -83,10 +79,33 @@ class _ProductCardState extends State<ProductCard> {
     final content = widget.product.attributes['contenido']?.trim();
     final detailLine = widget.homePresentation
         ? 'Por ${widget.product.unitLabel}${content == null || content.isEmpty ? '' : ' ($content)'}'
-        : sku == null
-        ? 'Por ${widget.product.unitLabel}'
-        : 'Código $sku · por ${widget.product.unitLabel}';
+        : 'Por ${widget.product.unitLabel}';
     final cardRadius = widget.homePresentation ? 14.0 : 18.0;
+    final actionButton = unavailable
+        ? const SizedBox.square(dimension: _actionSize)
+        : IconButton(
+            onPressed: widget.onAdd ?? widget.onTap,
+            tooltip: widget.onAdd == null
+                ? 'Ver $title'
+                : 'Añadir $title al carrito',
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.pinkSoft,
+              foregroundColor: AppColors.roseDeep,
+              minimumSize: const Size.square(_actionSize),
+              fixedSize: const Size.square(_actionSize),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            icon: Icon(
+              widget.onAdd == null
+                  ? widget.trailingIcon
+                  : Icons.add_shopping_cart_rounded,
+              size: 17,
+            ),
+          );
 
     return Semantics(
       button: true,
@@ -167,36 +186,6 @@ class _ProductCardState extends State<ProductCard> {
                               decodeToLayout: true,
                             ),
                           ),
-                          if (widget.showSkuBadge && sku != null)
-                            Positioned(
-                              top: 8,
-                              left: 8,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface.withValues(
-                                    alpha: .94,
-                                  ),
-                                  borderRadius: BorderRadius.circular(99),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  child: Text(
-                                    sku,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelMedium
-                                        ?.copyWith(
-                                          fontSize: 8.5,
-                                          letterSpacing: 0,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                  ),
-                                ),
-                              ),
-                            ),
                           if (unavailable && widget.showUnavailableOverlay)
                             Positioned.fill(
                               child: ColoredBox(
@@ -253,33 +242,13 @@ class _ProductCardState extends State<ProductCard> {
                             ),
                             const SizedBox(height: 4),
                           ],
-                          Text(
+                          _buildTitleAndDetail(
+                            context,
                             title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(
-                                  fontSize: widget.homePresentation
-                                      ? 11.5
-                                      : widget.compact
-                                      ? 13
-                                      : 14,
-                                  height: 1.22,
-                                ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
                             detailLine,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  fontSize: widget.homePresentation
-                                      ? 9
-                                      : widget.compact
-                                      ? 10
-                                      : 11,
-                                ),
+                            trailing: !widget.showPrice && widget.onAdd != null
+                                ? actionButton
+                                : null,
                           ),
                           if (widget.showPrice) ...[
                             SizedBox(height: widget.homePresentation ? 7 : 5),
@@ -303,28 +272,8 @@ class _ProductCardState extends State<ProductCard> {
                                     ),
                                   ),
                                 ),
-                                if (!widget.compact ||
-                                    widget.homePresentation) ...[
-                                  const SizedBox(width: 8),
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 160),
-                                    width: widget.homePresentation ? 24 : 28,
-                                    height: widget.homePresentation ? 24 : 28,
-                                    decoration: BoxDecoration(
-                                      color: _hovered
-                                          ? AppColors.ink
-                                          : AppColors.canvas,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      widget.trailingIcon,
-                                      size: widget.homePresentation ? 14 : 15,
-                                      color: _hovered
-                                          ? Colors.white
-                                          : AppColors.ink,
-                                    ),
-                                  ),
-                                ],
+                                const SizedBox(width: 8),
+                                actionButton,
                               ],
                             ),
                           ],
@@ -339,6 +288,55 @@ class _ProductCardState extends State<ProductCard> {
         ),
       ),
     );
+  }
+
+  Widget _buildTitleAndDetail(
+    BuildContext context,
+    String title,
+    String detail, {
+    Widget? trailing,
+  }) {
+    final theme = Theme.of(context).textTheme;
+    final text = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: theme.labelLarge?.copyWith(
+            fontSize: widget.homePresentation
+                ? 11.5
+                : widget.compact
+                ? 13
+                : 14,
+            height: 1.22,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          detail,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.bodySmall?.copyWith(
+            fontSize: widget.homePresentation
+                ? 9
+                : widget.compact
+                ? 10
+                : 11,
+          ),
+        ),
+      ],
+    );
+    return trailing == null
+        ? text
+        : Row(
+            children: [
+              Expanded(child: text),
+              const SizedBox(width: 8),
+              trailing,
+            ],
+          );
   }
 }
 

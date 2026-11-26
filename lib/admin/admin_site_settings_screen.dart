@@ -510,7 +510,7 @@ const _sections = <_ContentSection>[
         StorefrontText.reviewMessageBody,
         'Descripción del mensaje',
       ),
-      if (FeatureFlags.demoPayment)
+      if (FeatureFlags.paymentsEnabled)
         _TextFieldSpec(
           StorefrontText.reviewPaymentNote,
           'Nota sobre el pago',
@@ -518,7 +518,7 @@ const _sections = <_ContentSection>[
         ),
     ],
   ),
-  if (FeatureFlags.demoPayment)
+  if (FeatureFlags.paymentsEnabled)
     _ContentSection(
       title: 'Pago simulado y confirmación',
       description:
@@ -637,7 +637,7 @@ const _sections = <_ContentSection>[
       _TextFieldSpec('help.faq4.body', 'Respuesta 4', multiline: true),
       _TextFieldSpec('help.faq5.title', 'Pregunta 5'),
       _TextFieldSpec('help.faq5.body', 'Respuesta 5', multiline: true),
-      if (FeatureFlags.demoPayment) ...[
+      if (FeatureFlags.paymentsEnabled) ...[
         _TextFieldSpec('help.faq6.title', 'Pregunta 6'),
         _TextFieldSpec('help.faq6.body', 'Respuesta 6', multiline: true),
       ],
@@ -693,7 +693,7 @@ const _sections = <_ContentSection>[
         'Sección 7 · contenido',
         multiline: true,
       ),
-      if (FeatureFlags.demoPayment) ...[
+      if (FeatureFlags.paymentsEnabled) ...[
         _TextFieldSpec('privacy.section8.title', 'Sección 8 · título'),
         _TextFieldSpec(
           'privacy.section8.body',

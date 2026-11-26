@@ -77,7 +77,11 @@ void main() {
       sheet.cell(CellIndex.indexByString('A5')).value?.toString(),
       contains('CINTA SATINADA'),
     );
-    expect(sheet.cell(CellIndex.indexByString('C5')).value?.toString(), '12');
+    expect(sheet.cell(CellIndex.indexByString('B5')).value?.toString(), '12');
+    expect(
+      sheet.rows.expand((row) => row).map((cell) => cell?.value?.toString()),
+      isNot(contains('SAT-17')),
+    );
   });
 
   test(

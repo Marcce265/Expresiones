@@ -53,6 +53,9 @@ class AppStore extends ChangeNotifier {
   StreamSubscription<List<CatalogProduct>>? _catalogSubscription;
   StreamSubscription<ProductionCapacitySnapshot>? _capacitySubscription;
   StreamSubscription<StorefrontSettings>? _siteSettingsSubscription;
+  DateTime? _capacityCheckedAt;
+  Future<void>? _capacityRefresh;
+  bool _disposed = false;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -101,7 +104,7 @@ class AppStore extends ChangeNotifier {
   int get cartQuantity =>
       _cart.values.fold(0, (sum, line) => sum + line.quantity);
   double get subtotal => resolvedLines.fold(0, (sum, item) => sum + item.total);
-  DateTime get earliestDesiredDate => dateOnly(DateTime.now());
+  DateTime get earliestDesiredDate => dateOnly(limaClockTime(DateTime.now()));
 
   Set<int> deliveryWeekdaysFor(DeliveryMethod method) =>
       _capacitySnapshot.weekdaysForDelivery(method.name);
@@ -145,7 +148,7 @@ class AppStore extends ChangeNotifier {
     }
   }
 
-  void addProduct(
+  bool addProduct(
     CatalogProduct product, {
     int quantity = 1,
     String? variantId,
@@ -164,7 +167,7 @@ class AppStore extends ChangeNotifier {
     );
     final current = _cart[incoming.key];
     if (current == null && _cart.length >= maxCartLines) {
-      return;
+      return false;
     }
     final previousQuantity = current?.quantity ?? 0;
     final nextQuantity = (previousQuantity + safeQuantity).clamp(
@@ -172,6 +175,10 @@ class AppStore extends ChangeNotifier {
       maxLineQuantity,
     );
     final addedDelta = nextQuantity - previousQuantity;
+    if (addedDelta == 0 ||
+        !product.canRequest(nextQuantity, variantId: variantId)) {
+      return false;
+    }
     _cart[incoming.key] = incoming.copyWith(quantity: nextQuantity);
     _persistCart();
     if (addedDelta > 0) {
@@ -193,6 +200,7 @@ class AppStore extends ChangeNotifier {
       );
     }
     notifyListeners();
+    return true;
   }
 
   void updateQuantity(QuoteLine line, int quantity) {
@@ -396,6 +404,38 @@ class AppStore extends ChangeNotifier {
     );
   }
 
+  Future<void> refreshCapacityIfNeeded() async {
+    final repository = capacityRepository;
+    if (repository == null || _disposed) return;
+    final pending = _capacityRefresh;
+    if (pending != null) return pending;
+    final checkedAt = _capacityCheckedAt;
+    if (checkedAt != null &&
+        DateTime.now().difference(checkedAt) < const Duration(minutes: 2)) {
+      return;
+    }
+    _capacityCheckedAt = DateTime.now();
+    final refresh = _refreshCapacity(repository);
+    _capacityRefresh = refresh;
+    try {
+      await refresh;
+    } finally {
+      _capacityRefresh = null;
+    }
+  }
+
+  Future<void> _refreshCapacity(CapacityRepository repository) async {
+    final previous = _capacitySnapshot;
+    try {
+      final snapshot = await repository.load();
+      if (_disposed || !identical(_capacitySnapshot, previous)) return;
+      _capacitySnapshot = snapshot;
+      notifyListeners();
+    } catch (_) {
+      // Keep the latest published schedule when the network is unavailable.
+    }
+  }
+
   Future<void> _startCapacityWatch() async {
     final repository = capacityRepository;
     if (repository == null) return;
@@ -403,6 +443,7 @@ class AppStore extends ChangeNotifier {
     final ready = Completer<void>();
     _capacitySubscription = repository.watch().listen(
       (snapshot) {
+        _capacityCheckedAt = DateTime.now();
         _capacitySnapshot = snapshot;
         if (ready.isCompleted) {
           notifyListeners();
@@ -411,6 +452,7 @@ class AppStore extends ChangeNotifier {
         }
       },
       onError: (_) {
+        _capacityCheckedAt = null;
         if (!ready.isCompleted) ready.complete();
         // Keep the last valid snapshot or the conservative local fallback.
       },
@@ -585,10 +627,7 @@ class AppStore extends ChangeNotifier {
       final preferences = await SharedPreferences.getInstance();
       while (_detailsPersistDirty) {
         _detailsPersistDirty = false;
-        await preferences.setString(
-          _detailsKey,
-          jsonEncode(_details.toJson()),
-        );
+        await preferences.setString(_detailsKey, jsonEncode(_details.toJson()));
       }
     } finally {
       _detailsPersistInFlight = false;
@@ -597,6 +636,7 @@ class AppStore extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     unawaited(_catalogSubscription?.cancel());
     unawaited(_capacitySubscription?.cancel());
     unawaited(_siteSettingsSubscription?.cancel());

@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/production_capacity.dart';
 
 abstract interface class CapacityRepository {
+  Future<ProductionCapacitySnapshot> load();
   Stream<ProductionCapacitySnapshot> watch();
 }
 
@@ -23,28 +24,27 @@ class SupabaseCapacityRepository implements CapacityRepository {
   final ProductionCapacitySnapshot fallback;
 
   @override
-  Stream<ProductionCapacitySnapshot> watch() async* {
+  Future<ProductionCapacitySnapshot> load() async {
     final activeClient = client;
-    if (activeClient == null) {
-      yield fallback;
-      return;
-    }
+    if (activeClient == null) return fallback;
+    final row = await activeClient
+        .from('availability')
+        .select('data')
+        .eq('id', 'public')
+        .maybeSingle()
+        .timeout(const Duration(seconds: 5));
+    return _snapshotFromRow(row);
+  }
 
-    try {
-      await for (final rows
-          in activeClient
-              .from('availability')
-              .stream(primaryKey: const ['id'])
-              .eq('id', 'public')) {
-        if (rows.isEmpty) {
-          yield fallback;
-        } else {
-          yield _snapshotFromRow(rows.first);
-        }
-      }
-    } catch (_) {
-      yield fallback;
-    }
+  @override
+  Stream<ProductionCapacitySnapshot> watch() {
+    final activeClient = client;
+    if (activeClient == null) return Stream.value(fallback);
+    return activeClient
+        .from('availability')
+        .stream(primaryKey: const ['id'])
+        .eq('id', 'public')
+        .map((rows) => _snapshotFromRow(rows.isEmpty ? null : rows.first));
   }
 
   ProductionCapacitySnapshot _snapshotFromRow(Map<String, dynamic>? row) {

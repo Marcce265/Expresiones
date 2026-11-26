@@ -4,10 +4,12 @@ class SimulatedPaymentService {
   SimulatedPaymentService({
     DateTime Function()? now,
     this.processingDelay = const Duration(milliseconds: 900),
+    this.referencePrefix = 'SIM',
   }) : _now = now ?? DateTime.now;
 
   final DateTime Function() _now;
   final Duration processingDelay;
+  final String referencePrefix;
 
   String createOrderId() => _reference('PED', _now());
 
@@ -24,7 +26,7 @@ class SimulatedPaymentService {
     }
     final processedAt = _now();
     return SimulatedPayment(
-      reference: _reference('SIM', processedAt),
+      reference: _reference(referencePrefix, processedAt),
       method: method,
       status: result,
       amount: amount,

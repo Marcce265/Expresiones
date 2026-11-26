@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/feature_flags.dart';
 import '../models/coordination_details.dart';
 import '../models/quote_line.dart';
 import '../models/simulated_payment.dart';
@@ -72,11 +73,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
     });
   }
 
-  String get _methodLabel => widget.settings.text(
-    _method == SimulatedPaymentMethod.demoCard
-        ? StorefrontText.paymentCardMethod
-        : StorefrontText.paymentYapeMethod,
-  );
+  String get _methodLabel {
+    if (FeatureFlags.appEndToEnd) {
+      return _method == SimulatedPaymentMethod.demoCard ? 'Tarjeta' : 'Yape';
+    }
+    return widget.settings.text(
+      _method == SimulatedPaymentMethod.demoCard
+          ? StorefrontText.paymentCardMethod
+          : StorefrontText.paymentYapeMethod,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,19 +95,33 @@ class _PaymentScreenState extends State<PaymentScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _PageHeading(
-                eyebrow: widget.settings.text(StorefrontText.paymentEyebrow),
-                title: widget.settings.text(StorefrontText.paymentTitle),
-                body: widget.settings.text(StorefrontText.paymentBody),
+                eyebrow: FeatureFlags.appEndToEnd
+                    ? 'Pago'
+                    : widget.settings.text(StorefrontText.paymentEyebrow),
+                title: FeatureFlags.appEndToEnd
+                    ? 'Finaliza tu compra'
+                    : widget.settings.text(StorefrontText.paymentTitle),
+                body: FeatureFlags.appEndToEnd
+                    ? 'Elige tu método de pago y confirma tu pedido.'
+                    : widget.settings.text(StorefrontText.paymentBody),
                 onBack: _processing ? null : widget.onBack,
               ),
               const SizedBox(height: 20),
-              _StepBadge(current: 4, total: 5, label: 'Pago'),
-              const SizedBox(height: 18),
-              InfoBanner(
-                title: widget.settings.text(StorefrontText.paymentDemoBadge),
-                message: widget.settings.text(StorefrontText.paymentDisclaimer),
-                icon: Icons.science_outlined,
+              _StepBadge(
+                current: FeatureFlags.appEndToEnd ? 3 : 4,
+                total: FeatureFlags.appEndToEnd ? 4 : 5,
+                label: 'Pago',
               ),
+              if (!FeatureFlags.appEndToEnd) ...[
+                const SizedBox(height: 18),
+                InfoBanner(
+                  title: widget.settings.text(StorefrontText.paymentDemoBadge),
+                  message: widget.settings.text(
+                    StorefrontText.paymentDisclaimer,
+                  ),
+                  icon: Icons.science_outlined,
+                ),
+              ],
               const SizedBox(height: 20),
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -167,7 +187,9 @@ class _PageHeading extends StatelessWidget {
       children: [
         IconButton(
           onPressed: onBack,
-          tooltip: 'Volver a la revisión',
+          tooltip: FeatureFlags.appEndToEnd
+              ? 'Volver a tus datos'
+              : 'Volver a la revisión',
           icon: const Icon(Icons.arrow_back_rounded),
         ),
         const SizedBox(width: 6),
@@ -257,7 +279,9 @@ class _OrderSummary extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Resumen de la cotización',
+                        FeatureFlags.appEndToEnd
+                            ? 'Resumen de tu pedido'
+                            : 'Resumen de la cotización',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
@@ -318,7 +342,7 @@ class _OrderSummary extends StatelessWidget {
               child: Divider(),
             ),
             _AmountRow(
-              label: 'Total simulado',
+              label: FeatureFlags.appEndToEnd ? 'Total' : 'Total simulado',
               value: subtotal,
               emphasized: true,
             ),
@@ -447,11 +471,15 @@ class _PaymentPanel extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Elige cómo simular el pago',
+                        FeatureFlags.appEndToEnd
+                            ? 'Elige tu método de pago'
+                            : 'Elige cómo simular el pago',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
-                        'No solicitaremos datos financieros.',
+                        FeatureFlags.appEndToEnd
+                            ? 'Selecciona cómo deseas pagar.'
+                            : 'No solicitaremos datos financieros.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -462,8 +490,12 @@ class _PaymentPanel extends StatelessWidget {
             const SizedBox(height: 20),
             _MethodTile(
               icon: Icons.credit_card_rounded,
-              title: settings.text(StorefrontText.paymentCardMethod),
-              description: settings.text(StorefrontText.paymentCardDescription),
+              title: FeatureFlags.appEndToEnd
+                  ? 'Tarjeta'
+                  : settings.text(StorefrontText.paymentCardMethod),
+              description: FeatureFlags.appEndToEnd
+                  ? 'Paga con tu tarjeta de crédito o débito.'
+                  : settings.text(StorefrontText.paymentCardDescription),
               selected: selectedMethod == SimulatedPaymentMethod.demoCard,
               enabled: !processing,
               onTap: () => onSelect(SimulatedPaymentMethod.demoCard),
@@ -471,8 +503,12 @@ class _PaymentPanel extends StatelessWidget {
             const SizedBox(height: 12),
             _MethodTile(
               icon: Icons.phone_android_rounded,
-              title: settings.text(StorefrontText.paymentYapeMethod),
-              description: settings.text(StorefrontText.paymentYapeDescription),
+              title: FeatureFlags.appEndToEnd
+                  ? 'Yape'
+                  : settings.text(StorefrontText.paymentYapeMethod),
+              description: FeatureFlags.appEndToEnd
+                  ? 'Paga con Yape desde tu celular.'
+                  : settings.text(StorefrontText.paymentYapeDescription),
               selected: selectedMethod == SimulatedPaymentMethod.demoYape,
               enabled: !processing,
               onTap: () => onSelect(SimulatedPaymentMethod.demoYape),
@@ -497,29 +533,35 @@ class _PaymentPanel extends StatelessWidget {
                     : const Icon(Icons.check_circle_outline_rounded),
                 label: Text(
                   processing
-                      ? settings.text(StorefrontText.paymentProcessing)
+                      ? FeatureFlags.appEndToEnd
+                            ? 'Procesando pago…'
+                            : settings.text(StorefrontText.paymentProcessing)
+                      : FeatureFlags.appEndToEnd
+                      ? 'Pagar S/ ${subtotal.toStringAsFixed(2)}'
                       : '${settings.text(StorefrontText.paymentSubmitButton)} · S/ ${subtotal.toStringAsFixed(2)}',
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.shield_outlined,
-                  size: 18,
-                  color: AppColors.muted,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    settings.text(StorefrontText.paymentDisclaimer),
-                    style: Theme.of(context).textTheme.bodySmall,
+            if (!FeatureFlags.appEndToEnd) ...[
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.shield_outlined,
+                    size: 18,
+                    color: AppColors.muted,
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      settings.text(StorefrontText.paymentDisclaimer),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -635,13 +677,17 @@ class _RejectedMessage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  settings.text(StorefrontText.paymentRejectedTitle),
+                  FeatureFlags.appEndToEnd
+                      ? 'No pudimos procesar el pago'
+                      : settings.text(StorefrontText.paymentRejectedTitle),
                   style: Theme.of(context).textTheme.labelLarge
                       ?.copyWith(color: AppColors.error),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  settings.text(StorefrontText.paymentRejectedBody),
+                  FeatureFlags.appEndToEnd
+                      ? 'Puedes elegir otro método y volver a intentarlo.'
+                      : settings.text(StorefrontText.paymentRejectedBody),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 5),

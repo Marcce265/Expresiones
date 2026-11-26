@@ -1,4 +1,5 @@
 import 'catalog_models.dart';
+import 'coordination_details.dart';
 
 class QuoteLine {
   const QuoteLine({
@@ -72,7 +73,7 @@ class ResolvedQuoteLine {
   int get productionPoints =>
       product.productionPointsFor(line.variantId) * line.quantity;
 
-  String get priceTierLabel {
+  String? get appliedPriceTierLabel {
     final tiers = variant != null && variant!.priceTiers.isNotEmpty
         ? variant!.priceTiers
         : product.priceTiers;
@@ -80,11 +81,44 @@ class ResolvedQuoteLine {
     for (final tier in tiers) {
       if (tier.appliesTo(tierQuantity)) selected = tier;
     }
-    if (selected != null) {
-      return selected.label ?? 'Desde ${selected.minQuantity}';
-    }
-    return line.quantity == 1 ? 'Por ${product.unitLabel}' : 'Precio aplicado';
+    if (selected == null) return null;
+    return selected.label ?? 'Desde ${selected.minQuantity}';
   }
+
+  String get priceTierLabel =>
+      appliedPriceTierLabel ??
+      (line.quantity == 1 ? 'Por ${product.unitLabel}' : 'Precio aplicado');
+}
+
+Iterable<List<ResolvedQuoteLine>> groupQuoteLines(
+  Iterable<ResolvedQuoteLine> lines,
+) {
+  final families = <String, List<ResolvedQuoteLine>>{};
+  for (final line in lines) {
+    families.putIfAbsent(line.product.id, () => []).add(line);
+  }
+  return families.values;
+}
+
+bool sharesQuoteUnitPrice(List<ResolvedQuoteLine> family) => family.every(
+  (line) =>
+      line.unitPrice == family.first.unitPrice &&
+      line.appliedPriceTierLabel == family.first.appliedPriceTierLabel,
+);
+
+({double subtotal, double transportAndPacking, double total}) quoteAmounts(
+  List<ResolvedQuoteLine> lines,
+  DeliveryMethod? method,
+) {
+  final subtotal = lines.fold<double>(0, (sum, line) => sum + line.total);
+  final transportAndPacking = method == DeliveryMethod.shalom
+      ? shalomPackingFee(lines.fold(0, (sum, line) => sum + line.line.quantity))
+      : 0.0;
+  return (
+    subtotal: subtotal,
+    transportAndPacking: transportAndPacking,
+    total: subtotal + transportAndPacking,
+  );
 }
 
 /// Resolves every quote line against the catalog.

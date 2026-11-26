@@ -18,6 +18,7 @@ import 'data/site_settings_repository.dart';
 import 'models/catalog_models.dart';
 import 'models/checkout_order.dart';
 import 'models/coordination_details.dart';
+import 'models/production_capacity.dart';
 import 'models/quote_line.dart';
 import 'models/storefront_settings.dart';
 import 'screens/catalog_screen.dart';
@@ -118,12 +119,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    if (FeatureFlags.customerAccounts || FeatureFlags.demoPayment) {
+    if (FeatureFlags.accountsEnabled || FeatureFlags.paymentsEnabled) {
       _customerAccounts = CustomerAccountRepository(
         client: Supabase.instance.client,
       );
     }
-    if (FeatureFlags.customerAccounts) {
+    if (_customerAccounts != null) {
       _customerAuthSubscription = _customerAccounts!.authChanges.listen(
         (_) => unawaited(_refreshCustomerProfile()),
         onError: (_, _) {
@@ -195,7 +196,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   void _showQuote() => _selectDestination(2);
 
-  void _showHelp() => _selectDestination(FeatureFlags.customerAccounts ? 4 : 3);
+  void _showHelp() => _selectDestination(FeatureFlags.accountsEnabled ? 4 : 3);
 
   void _openLastOrder(CheckoutOrder order) {
     Navigator.of(context).push(
@@ -275,14 +276,25 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               _showHelp();
             },
             onBuyNow: ({required quantity, variantId, required customization}) {
-              store.addProduct(
+              final added = store.addProduct(
                 product,
                 quantity: quantity,
                 variantId: variantId,
                 customization: customization,
               );
+              if (!added) {
+                showAppNotice(
+                  routeContext,
+                  'Revisa la disponibilidad o el límite del carrito.',
+                );
+                return;
+              }
               Navigator.of(routeContext).pop();
-              _openCoordination();
+              if (kIsWeb) {
+                _showQuote();
+              } else {
+                _openCoordination();
+              }
             },
             onHelp: () => _showContextGuide(
               routeContext,
@@ -293,12 +305,19 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               ),
             ),
             onAdd: ({required quantity, variantId, required customization}) {
-              store.addProduct(
+              final added = store.addProduct(
                 product,
                 quantity: quantity,
                 variantId: variantId,
                 customization: customization,
               );
+              if (!added) {
+                showAppNotice(
+                  routeContext,
+                  'Revisa la disponibilidad o el límite del carrito.',
+                );
+                return;
+              }
               Navigator.of(routeContext).pop();
               showAppNotice(
                 context,
@@ -353,45 +372,70 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void _openCoordination() {
     final store = context.read<AppStore>();
     if (!store.hasQuote) return;
-    final profile = _customerProfile;
-
+    unawaited(store.refreshCapacityIfNeeded());
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (coordinationContext) => _checkoutScaffold(
           routeContext: coordinationContext,
           assistantStep: const JashyTourStep(
             title: 'Completa tus datos',
-            message: 'Llena los campos y elige entrega y fecha.',
+            message: 'Elige la entrega y completa tus datos.',
             imageAsset: 'assets/images/jashy_chibi_writing.webp',
           ),
-          child: CoordinationScreen(
-            settings: store.storefrontSettings,
-            onSelectCategory: (category) {
-              Navigator.of(coordinationContext).popUntil((r) => r.isFirst);
-              _showCatalog(category);
-            },
-            onOpenHelp: () {
-              Navigator.of(coordinationContext).popUntil((r) => r.isFirst);
-              _showHelp();
-            },
-            initial: profile == null
-                ? store.details
-                : store.details.copyWith(
-                    name: profile.fullName,
-                    phone: profile.phone,
-                  ),
-            earliestDate: store.earliestDesiredDate,
-            deliveryWeekdays: store.deliveryWeekdaysFor,
-            pickupTimeSlots: store.pickupTimeSlots,
-            pickupTimeSlotsForDate: store.pickupTimeSlotsFor,
-            isDateAvailable: store.isDesiredDateAvailable,
-            onSubmit: (details) {
-              store.updateDetails(details);
-              _openReview(coordinationContext, details);
-            },
-          ),
+          child:
+              Selector<
+                AppStore,
+                (ProductionCapacitySnapshot, StorefrontSettings, int)
+              >(
+                selector: (_, value) => (
+                  value.capacitySnapshot,
+                  value.storefrontSettings,
+                  value.cartQuantity,
+                ),
+                builder: (_, selection, _) =>
+                    _coordinationScreen(store, coordinationContext),
+              ),
         ),
       ),
+    );
+  }
+
+  Widget _coordinationScreen(AppStore store, BuildContext checkoutContext) {
+    final profile = _customerProfile;
+    return CoordinationScreen(
+      settings: store.storefrontSettings,
+      cartQuantity: store.cartQuantity,
+      useInlineAgencyPicker: kIsWeb,
+      onSelectCategory: (category) {
+        Navigator.of(checkoutContext).popUntil((route) => route.isFirst);
+        _showCatalog(category);
+      },
+      onOpenHelp: () {
+        Navigator.of(checkoutContext).popUntil((route) => route.isFirst);
+        _showHelp();
+      },
+      initial: profile == null
+          ? store.details
+          : store.details.copyWith(
+              name: profile.fullName,
+              phone: profile.phone,
+            ),
+      earliestDate: store.earliestDesiredDate,
+      deliveryWeekdays: store.deliveryWeekdaysFor,
+      pickupTimeSlots: store.pickupTimeSlots,
+      pickupTimeSlotsForDate: store.pickupTimeSlotsFor,
+      isDateAvailable: store.isDesiredDateAvailable,
+      onSubmit: (details) {
+        if (!store.hasQuote) return;
+        store.updateDetails(details);
+        if (FeatureFlags.appEndToEnd) {
+          unawaited(
+            _openPayment(checkoutContext, store.resolvedLines, details),
+          );
+          return;
+        }
+        _openReview(checkoutContext, details);
+      },
     );
   }
 
@@ -406,7 +450,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       id: quoteId,
       lines: lines,
       details: details,
-      brandName: store.storefrontSettings.text(StorefrontText.brandName),
     );
 
     Navigator.of(coordinationContext).push(
@@ -415,7 +458,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           routeContext: reviewContext,
           assistantStep: const JashyTourStep(
             title: 'Revisa y envía',
-            message: FeatureFlags.demoPayment
+            message: FeatureFlags.paymentsEnabled
                 ? 'Verifica todo y finaliza la simulación.'
                 : 'Verifica todo y guarda tu cotización.',
             imageAsset: 'assets/images/jashy_chibi_writing.webp',
@@ -442,13 +485,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             ),
             onSendWhatsapp: () async {
               final number = store.storefrontSettings.normalizedWhatsappNumber;
-              final shortMessage = QuoteMessageBuilder.buildWhatsappIntro(
-                id: quoteId,
-                details: details,
-              );
-              final uri = Uri.https('wa.me', '/$number', {
-                'text': shortMessage,
-              });
+              final uri = Uri.https('wa.me', '/$number', {'text': message});
               final opened = await launchUrl(
                 uri,
                 mode: kIsWeb
@@ -460,14 +497,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               }
               unawaited(store.recordQuoteSent());
             },
-            onCopyMessage: () {
-              Clipboard.setData(ClipboardData(text: message));
-            },
             onEditQuote: () {
               setState(() => _index = 2);
               Navigator.of(reviewContext).popUntil((route) => route.isFirst);
             },
-            onContinueToPayment: FeatureFlags.demoPayment
+            onContinueToPayment: FeatureFlags.paymentsEnabled
                 ? () => unawaited(_openPayment(reviewContext, lines, details))
                 : null,
           ),
@@ -489,6 +523,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           Navigator.of(routeContext).popUntil((route) => route.isFirst);
           _selectDestination(destination);
         }
+
         final showMobileHeader = constraints.maxWidth < 768;
 
         return Scaffold(
@@ -534,7 +569,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _openPayment(
-    BuildContext reviewContext,
+    BuildContext sourceContext,
     List<ResolvedQuoteLine> lines,
     CoordinationDetails details,
   ) async {
@@ -542,8 +577,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (accounts == null) return;
     final profile = await accounts.currentProfile();
     if (profile == null) {
-      if (!reviewContext.mounted) return;
-      final authenticated = await Navigator.of(reviewContext).push<bool>(
+      if (!sourceContext.mounted) return;
+      final authenticated = await Navigator.of(sourceContext).push<bool>(
         MaterialPageRoute<bool>(
           builder: (accountContext) => Scaffold(
             body: SafeArea(
@@ -558,13 +593,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           ),
         ),
       );
-      if (authenticated != true || !reviewContext.mounted) return;
+      if (authenticated != true || !sourceContext.mounted) return;
     }
-    if (!mounted || !reviewContext.mounted) return;
+    if (!mounted || !sourceContext.mounted) return;
     final store = context.read<AppStore>();
-    final service = SimulatedPaymentService();
+    final service = SimulatedPaymentService(
+      referencePrefix: FeatureFlags.appEndToEnd ? 'PAG' : 'SIM',
+    );
     final amount = lines.fold<double>(0, (sum, line) => sum + line.total);
-    Navigator.of(reviewContext).push(
+    Navigator.of(sourceContext).push(
       MaterialPageRoute<void>(
         builder: (paymentContext) => Scaffold(
           body: SafeArea(
@@ -679,7 +716,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       targetKey: _guideNavigationKey(2),
       imageAsset: 'assets/images/jashy_chibi_writing.webp',
     ),
-    if (FeatureFlags.customerAccounts)
+    if (FeatureFlags.accountsEnabled)
       JashyTourStep(
         title: 'Cuenta',
         message: 'Revisa tus compras guardadas.',
@@ -689,7 +726,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     JashyTourStep(
       title: 'Ayuda',
       message: 'Encuentra respuestas o escríbenos.',
-      targetKey: _guideNavigationKey(FeatureFlags.customerAccounts ? 4 : 3),
+      targetKey: _guideNavigationKey(FeatureFlags.accountsEnabled ? 4 : 3),
       imageAsset: 'assets/images/jashy_chibi_question.webp',
     ),
     JashyTourStep(
@@ -702,26 +739,26 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   JashyTourStep _sectionGuideStep({required bool hasQuote}) {
     final messages = <String>[
-      'Busca por nombre, color o código.',
+      'Busca por nombre, color o modelo.',
       'Toca un producto, elige y agrega. Precio por volumen: docena, medio cajón o cajón completo.',
       hasQuote
           ? 'Cambia cantidades y toca Continuar.'
           : 'Agrega productos desde Catálogo.',
-      if (FeatureFlags.customerAccounts) 'Inicia sesión y revisa tus compras.',
+      if (FeatureFlags.accountsEnabled) 'Inicia sesión y revisa tus compras.',
       'Abre una pregunta o escríbenos.',
     ];
     final titles = <String>[
       'Inicio',
       'Catálogo',
       'Carrito',
-      if (FeatureFlags.customerAccounts) 'Cuenta',
+      if (FeatureFlags.accountsEnabled) 'Cuenta',
       'Ayuda',
     ];
     final assets = <String>[
       'assets/images/jashy_chibi_assistant.webp',
       'assets/images/jashy_chibi_book.webp',
       'assets/images/jashy_chibi_writing.webp',
-      if (FeatureFlags.customerAccounts)
+      if (FeatureFlags.accountsEnabled)
         'assets/images/jashy_chibi_writing.webp',
       'assets/images/jashy_chibi_question.webp',
     ];
@@ -771,7 +808,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final tipsBySection = <int, List<String>>{
       0: [
         '¡Bienvenido a Expresiones! 💕 Encuentra aquí los mejores materiales y rosas eternas.',
-        '🔍 Tip: Escribe un color o código en el buscador para hallarlo al instante.',
+        '🔍 Tip: Escribe el nombre o el color del producto que buscas.',
         '🚚 Realizamos envíos diarios a todo el Perú por Shalom y Olva Courier.',
       ],
       1: [
@@ -780,12 +817,16 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         '🎨 Toca cualquier producto para elegir el tono que más te guste.',
       ],
       2: [
-        '🛒 Revisa las cantidades de tus materiales antes de enviar tu cotización.',
-        '💬 Al confirmar, tu pedido se enviará ordenado por WhatsApp para coordinar la entrega.',
+        FeatureFlags.appEndToEnd
+            ? '🛒 Revisa las cantidades de tus materiales antes de continuar al pago.'
+            : '🛒 Revisa las cantidades de tus materiales antes de enviar tu cotización.',
+        FeatureFlags.appEndToEnd
+            ? '💳 Al confirmar, pagas dentro de la app y tu pedido queda registrado.'
+            : '💬 Al confirmar, tu pedido se enviará ordenado por WhatsApp para coordinar la entrega.',
         '🚚 Elige recojo local en Huancayo o envío a tu agencia favorita.',
       ],
       3: [
-        if (FeatureFlags.customerAccounts)
+        if (FeatureFlags.accountsEnabled)
           '👤 Revisa tu historial de compras y pedidos registrados.'
         else
           '❓ ¿Tienes dudas sobre pagos o envíos? Revisa las preguntas frecuentes.',
@@ -811,10 +852,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final store = context.watch<AppStore>();
 
-    if (FeatureFlags.customerAccounts && !_customerAuthReady) {
+    if (FeatureFlags.loginGate && !_customerAuthReady) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (FeatureFlags.customerAccounts && _customerProfile == null) {
+    if (FeatureFlags.loginGate && _customerProfile == null) {
       return Scaffold(
         body: SafeArea(
           child: AccountScreen(
@@ -858,8 +899,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onOpenHelp: _showHelp,
         quoteQuantity: store.cartQuantity,
         onZeroResultSearch: store.recordZeroResultSearch,
-        lastOrder: FeatureFlags.demoPayment ? store.lastOrder : null,
-        onOpenLastOrder: FeatureFlags.demoPayment ? _openLastOrder : null,
+        lastOrder: FeatureFlags.paymentsEnabled ? store.lastOrder : null,
+        onOpenLastOrder: FeatureFlags.paymentsEnabled ? _openLastOrder : null,
       ),
       1 => CatalogScreen(
         settings: store.storefrontSettings,
@@ -878,8 +919,20 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onOpenQuote: _showQuote,
         onOpenHelp: _showHelp,
         onZeroResultSearch: store.recordZeroResultSearch,
+        onAddToCart: (product, variantId) {
+          final added = store.addProduct(product, variantId: variantId);
+          showAppNotice(
+            context,
+            added
+                ? '${product.name} agregado al carrito.'
+                : 'Revisa la disponibilidad o el límite del carrito.',
+            actionLabel: added ? 'Ver carrito' : null,
+            onAction: added ? _showQuote : null,
+          );
+        },
       ),
       2 => QuoteScreen(
+        showOrderSummary: kIsWeb,
         settings: store.storefrontSettings,
         lines: store.resolvedLines,
         onQuantityChanged: store.updateQuantity,
@@ -890,7 +943,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onSelectCategory: _showCatalog,
         onOpenHelp: _showHelp,
       ),
-      3 when FeatureFlags.customerAccounts => AccountScreen(
+      3 when FeatureFlags.accountsEnabled => AccountScreen(
         repository: _customerAccounts!,
       ),
       _ => HelpScreen(
@@ -1009,10 +1062,10 @@ class _MobileStoreMenu extends StatelessWidget {
               (0, Icons.home_outlined, 'Inicio'),
               (1, Icons.grid_view_outlined, 'Catálogo'),
               (2, Icons.shopping_bag_outlined, 'Carrito'),
-              if (FeatureFlags.customerAccounts)
+              if (FeatureFlags.accountsEnabled)
                 (3, Icons.person_outline_rounded, 'Cuenta'),
               (
-                FeatureFlags.customerAccounts ? 4 : 3,
+                FeatureFlags.accountsEnabled ? 4 : 3,
                 Icons.help_outline_rounded,
                 'Ayuda',
               ),
@@ -1182,7 +1235,7 @@ class _MobileNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final helpIndex = FeatureFlags.customerAccounts ? 4 : 3;
+    final helpIndex = FeatureFlags.accountsEnabled ? 4 : 3;
     return NavigationBar(
       selectedIndex: selectedIndex,
       onDestinationSelected: onSelect,
@@ -1213,7 +1266,7 @@ class _MobileNavigation extends StatelessWidget {
           ),
           label: 'Carrito',
         ),
-        if (FeatureFlags.customerAccounts)
+        if (FeatureFlags.accountsEnabled)
           NavigationDestination(
             key: itemKeys?[3],
             icon: const Icon(Icons.person_outline_rounded),
@@ -1283,7 +1336,7 @@ class _DesktopNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final helpIndex = FeatureFlags.customerAccounts ? 4 : 3;
+    final helpIndex = FeatureFlags.accountsEnabled ? 4 : 3;
     final isMaterialsSelected =
         currentIndex == 1 &&
         (catalogCategory == ProductCategory.materials ||
@@ -1371,7 +1424,7 @@ class _DesktopNavigation extends StatelessWidget {
                       badgeCount: quoteQuantity,
                       onTap: () => onSelect(2),
                     ),
-                    if (FeatureFlags.customerAccounts) ...[
+                    if (FeatureFlags.accountsEnabled) ...[
                       const SizedBox(height: 4),
                       _DesktopNavigationItem(
                         key: itemKeys?[3],
@@ -1411,21 +1464,21 @@ class _DesktopNavigation extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
-                    FeatureFlags.customerAccounts
+                    FeatureFlags.accountsEnabled
                         ? Icons.account_circle_outlined
                         : Icons.lock_open_rounded,
                     size: 20,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    FeatureFlags.customerAccounts
+                    FeatureFlags.accountsEnabled
                         ? settings.text(StorefrontText.homeSidebarTitle)
                         : 'Cotiza libremente',
                     style: Theme.of(context).textTheme.labelLarge,
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    FeatureFlags.customerAccounts
+                    FeatureFlags.accountsEnabled
                         ? settings.text(StorefrontText.homeSidebarBody)
                         : 'Elige materiales y prepara tu cotización sin iniciar sesión.',
                     style: Theme.of(context).textTheme.bodySmall,
@@ -1469,7 +1522,7 @@ class _DesktopNavigationItemState extends State<_DesktopNavigationItem> {
   Widget build(BuildContext context) {
     final isSelected = widget.selected;
     final bgColor = isSelected
-        ? AppColors.ink
+        ? AppColors.rose
         : (_isHovered
               ? AppColors.pinkSoft.withValues(alpha: 0.6)
               : Colors.transparent);

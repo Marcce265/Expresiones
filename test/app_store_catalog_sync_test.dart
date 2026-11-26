@@ -216,5 +216,8 @@ class _FakeCapacityRepository implements CapacityRepository {
   final ProductionCapacitySnapshot snapshot;
 
   @override
+  Future<ProductionCapacitySnapshot> load() async => snapshot;
+
+  @override
   Stream<ProductionCapacitySnapshot> watch() => Stream.value(snapshot);
 }

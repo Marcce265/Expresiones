@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/feature_flags.dart';
 import '../models/checkout_order.dart';
 import '../models/coordination_details.dart';
 import '../models/storefront_settings.dart';
@@ -161,16 +162,24 @@ class _SuccessHero extends StatelessWidget {
                   ? CrossAxisAlignment.center
                   : CrossAxisAlignment.start,
               children: [
-                Eyebrow(settings.text(StorefrontText.successEyebrow)),
+                Eyebrow(
+                  FeatureFlags.appEndToEnd
+                      ? 'PEDIDO CONFIRMADO'
+                      : settings.text(StorefrontText.successEyebrow),
+                ),
                 const SizedBox(height: 6),
                 Text(
-                  settings.text(StorefrontText.successTitle),
+                  FeatureFlags.appEndToEnd
+                      ? '¡Gracias por tu compra!'
+                      : settings.text(StorefrontText.successTitle),
                   textAlign: compact ? TextAlign.center : TextAlign.start,
                   style: Theme.of(context).textTheme.headlineLarge,
                 ),
                 const SizedBox(height: 7),
                 Text(
-                  settings.text(StorefrontText.successBody),
+                  FeatureFlags.appEndToEnd
+                      ? 'Tu pedido quedó registrado y lo estamos preparando.'
+                      : settings.text(StorefrontText.successBody),
                   textAlign: compact ? TextAlign.center : TextAlign.start,
                   style: Theme.of(context).textTheme.bodyMedium
                       ?.copyWith(color: AppColors.muted),
@@ -184,7 +193,9 @@ class _SuccessHero extends StatelessWidget {
                 borderRadius: BorderRadius.circular(99),
               ),
               child: Text(
-                'PASO 5 DE 5 · LISTO',
+                FeatureFlags.appEndToEnd
+                    ? 'PASO 4 DE 4 · LISTO'
+                    : 'PASO 5 DE 5 · LISTO',
                 style: Theme.of(context).textTheme.labelMedium,
               ),
             );
@@ -257,7 +268,9 @@ class _OrderReceiptCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Resumen de tu compra',
+                        FeatureFlags.appEndToEnd
+                            ? 'Resumen de tu pedido'
+                            : 'Resumen de tu compra',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
@@ -277,7 +290,7 @@ class _OrderReceiptCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(99),
                   ),
                   child: Text(
-                    'DEMO',
+                    FeatureFlags.appEndToEnd ? 'CONFIRMADO' : 'DEMO',
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ),
@@ -330,7 +343,7 @@ class _OrderReceiptCard extends StatelessWidget {
               child: Divider(),
             ),
             _ReceiptAmountRow(
-              label: 'Total simulado',
+              label: FeatureFlags.appEndToEnd ? 'Total' : 'Total simulado',
               value: order.simulatedTotal,
               emphasized: true,
             ),
@@ -538,7 +551,9 @@ class _ActionsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              settings.text(StorefrontText.successPaymentLabel),
+              FeatureFlags.appEndToEnd
+                  ? 'Pago'
+                  : settings.text(StorefrontText.successPaymentLabel),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 14),
@@ -578,39 +593,41 @@ class _ActionsCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
-            InfoBanner(
-              title: 'No se realizó ningún cobro',
-              message: settings.text(StorefrontText.successNoCharge),
-              icon: Icons.shield_outlined,
-            ),
-            const SizedBox(height: 18),
-            if (onSendWhatsapp != null) ...[
+            if (!FeatureFlags.appEndToEnd) ...[
+              const SizedBox(height: 14),
+              InfoBanner(
+                title: 'No se realizó ningún cobro',
+                message: settings.text(StorefrontText.successNoCharge),
+                icon: Icons.shield_outlined,
+              ),
+              const SizedBox(height: 18),
+              if (onSendWhatsapp != null) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: sending ? null : onSendWhatsapp,
+                    icon: const Icon(Icons.chat_outlined),
+                    label: const Text('Enviar por WhatsApp'),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
               SizedBox(
                 width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: sending ? null : onSendWhatsapp,
-                  icon: const Icon(Icons.chat_outlined),
-                  label: const Text('Enviar por WhatsApp'),
+                child: OutlinedButton.icon(
+                  onPressed: copying ? null : onCopySummary,
+                  icon: copying
+                      ? const SizedBox.square(
+                          dimension: 17,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.copy_rounded, size: 18),
+                  label: Text(copying ? 'Copiando…' : 'Copiar resumen'),
                 ),
               ),
               const SizedBox(height: 10),
+              OrderExportButtons(order: order),
             ],
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: copying ? null : onCopySummary,
-                icon: copying
-                    ? const SizedBox.square(
-                        dimension: 17,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.copy_rounded, size: 18),
-                label: Text(copying ? 'Copiando…' : 'Copiar resumen'),
-              ),
-            ),
-            const SizedBox(height: 10),
-            OrderExportButtons(order: order),
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 18),
               child: Divider(),
@@ -627,7 +644,9 @@ class _ActionsCard extends StatelessWidget {
                   onPressed: onNewOrder,
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: Text(
-                    settings.text(StorefrontText.successNewOrderButton),
+                    FeatureFlags.appEndToEnd
+                        ? 'Seguir comprando'
+                        : settings.text(StorefrontText.successNewOrderButton),
                   ),
                 );
                 if (stack) {

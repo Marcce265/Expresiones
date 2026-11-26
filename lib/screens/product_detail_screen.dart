@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/catalog_models.dart';
@@ -134,15 +135,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget build(BuildContext context) {
     final detailImage =
         variant?.imageUrl ??
-        product.imageUrl ??
         variant?.thumbnailUrl ??
+        product.imageUrl ??
         product.thumbnailUrl;
     final previewImage =
         variant?.thumbnailUrl ?? product.thumbnailUrl ?? detailImage;
     final title = variant == null ? product.name : variantDisplayName(variant!);
-    final hideInternalPaletteCode =
-        variant?.attributes.containsKey('paletteNumber') ?? false;
-    final sku = hideInternalPaletteCode ? null : variant?.sku ?? product.sku;
     final total = product.totalFor(_quantity, variantId: _variantId);
     final canAdd = product.canRequest(_quantity, variantId: _variantId);
     final imageFit = productImageFit(product, variant: variant);
@@ -154,7 +152,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               delegate: SliverChildListDelegate.fixed([
                 // Breadcrumbs y barra superior
                 ResponsivePage.storefront(
-                  top: 14,
+                  top: 12,
                   bottom: 8,
                   child: AppBreadcrumbBar(
                     onBack: () => Navigator.maybePop(context),
@@ -252,7 +250,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Categoría y Código SKU
+                            // Categoría
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -308,17 +306,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.ink,
                                     height: 1.18,
-                                  ),
-                            ),
-                            const SizedBox(height: 6),
-
-                            // SKU
-                            Text(
-                              'SKU: ${sku ?? product.id.toUpperCase()}',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: AppColors.muted,
-                                    letterSpacing: 0.5,
                                   ),
                             ),
                             const SizedBox(height: 16),
@@ -453,7 +440,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         foregroundColor: AppColors.ink,
                                       ),
                                       child: const Text(
-                                        'Comprar ahora',
+                                        kIsWeb
+                                            ? 'Cotizar ahora'
+                                            : 'Comprar ahora',
                                         style: TextStyle(
                                           fontWeight: FontWeight.w700,
                                           fontSize: 14,

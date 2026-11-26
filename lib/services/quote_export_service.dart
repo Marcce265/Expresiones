@@ -219,7 +219,36 @@ abstract final class QuoteExportService {
     DateTime? generatedAt,
   }) async {
     final createdAt = generatedAt ?? DateTime.now();
-    final subtotal = _subtotal(lines);
+    final amounts = quoteAmounts(lines, details.deliveryMethod);
+    final bold = pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold);
+    final rows = <List<dynamic>>[
+      for (final item in lines)
+        [
+          _productDescription(item),
+          item.product.unitLabel,
+          item.line.quantity.toString(),
+          _money(item.unitPrice),
+          _money(item.total),
+        ],
+      ['Subtotal de productos', '', '', '', _money(amounts.subtotal)],
+      if (details.deliveryMethod == DeliveryMethod.shalom)
+        [
+          'Transporte y embalaje',
+          '',
+          '',
+          '',
+          _money(amounts.transportAndPacking),
+        ]
+      else
+        ['Entrega', '', '', '', 'Recojo gratis'],
+      [
+        pw.Text('Total', style: bold),
+        '',
+        '',
+        '',
+        pw.Text(_money(amounts.total), style: bold),
+      ],
+    ];
     final (regularFont, boldFont) = await _loadFonts();
     final document = pw.Document(
       title: 'Cotización $quoteId',
@@ -231,7 +260,10 @@ abstract final class QuoteExportService {
     document.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        theme: pw.ThemeData.withFont(base: regularFont, bold: boldFont),
+        theme: pw.ThemeData.withFont(
+          base: regularFont,
+          bold: boldFont,
+        ).copyWith(defaultTextStyle: const pw.TextStyle(fontSize: 11)),
         margin: const pw.EdgeInsets.all(40),
         footer: (context) => pw.Align(
           alignment: pw.Alignment.centerRight,
@@ -241,74 +273,32 @@ abstract final class QuoteExportService {
           ),
         ),
         build: (context) => [
-          pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Expanded(
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(
-                      'Expresiones',
-                      style: pw.TextStyle(
-                        fontSize: 26,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
-                    ),
-                    pw.SizedBox(height: 4),
-                    pw.Text('Materiales y detalles artesanales · Huancayo'),
-                  ],
-                ),
-              ),
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: pw.BoxDecoration(
-                  color: PdfColor.fromHex('#F7E7ED'),
-                  borderRadius: pw.BorderRadius.circular(8),
-                ),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.end,
-                  children: [
-                    pw.Text(
-                      quoteId,
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                    ),
-                    pw.Text(
-                      DateFormat('dd/MM/yyyy HH:mm').format(createdAt),
-                      style: const pw.TextStyle(fontSize: 9),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          pw.SizedBox(height: 24),
           pw.Text(
-            'Cotización de productos',
-            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+            'Resumen de cotización - $quoteId',
+            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
           ),
-          pw.SizedBox(height: 10),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            '${DateFormat('dd/MM/yyyy HH:mm').format(createdAt)}'
+            ' · Cotización comercial sin valor tributario',
+            style: const pw.TextStyle(fontSize: 9),
+          ),
+          pw.SizedBox(height: 12),
           pw.TableHelper.fromTextArray(
             headers: const [
-              'Producto',
-              'Código',
+              'Descripción',
+              'Unidad',
               'Cantidad',
-              'Precio unit.',
+              'Precio unitario',
               'Importe',
             ],
-            data: [
-              for (final item in lines)
-                [
-                  _productDescription(item),
-                  item.code ?? '',
-                  item.line.quantity.toString(),
-                  _money(item.unitPrice),
-                  _money(item.total),
-                ],
-            ],
+            data: rows,
+            cellAlignments: const {
+              1: pw.Alignment.center,
+              2: pw.Alignment.centerRight,
+              3: pw.Alignment.centerRight,
+              4: pw.Alignment.centerRight,
+            },
             headerDecoration: pw.BoxDecoration(
               color: PdfColor.fromHex('#201A1B'),
             ),
@@ -317,64 +307,37 @@ abstract final class QuoteExportService {
               fontWeight: pw.FontWeight.bold,
               fontSize: 9,
             ),
-            cellStyle: const pw.TextStyle(fontSize: 9),
-            cellPadding: const pw.EdgeInsets.all(7),
+            cellStyle: const pw.TextStyle(fontSize: 10),
+            cellPadding: const pw.EdgeInsets.symmetric(
+              horizontal: 7,
+              vertical: 5,
+            ),
+            cellDecoration: (_, _, row) => row == rows.length
+                ? pw.BoxDecoration(color: PdfColor.fromHex('#F7E7ED'))
+                : const pw.BoxDecoration(),
             columnWidths: const {
-              0: pw.FlexColumnWidth(3.4),
-              1: pw.FlexColumnWidth(1.3),
-              2: pw.FlexColumnWidth(1),
-              3: pw.FlexColumnWidth(1.4),
-              4: pw.FlexColumnWidth(1.4),
+              0: pw.FlexColumnWidth(),
+              1: pw.FixedColumnWidth(84),
+              2: pw.FixedColumnWidth(63),
+              3: pw.FixedColumnWidth(84),
+              4: pw.FixedColumnWidth(77),
             },
           ),
-          pw.SizedBox(height: 14),
-          pw.Align(
-            alignment: pw.Alignment.centerRight,
-            child: pw.Container(
-              width: 220,
-              padding: const pw.EdgeInsets.all(12),
-              decoration: pw.BoxDecoration(
-                border: pw.Border.all(color: PdfColors.grey400),
-                borderRadius: pw.BorderRadius.circular(8),
-              ),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'Subtotal',
-                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                  ),
-                  pw.Text(
-                    _money(subtotal),
-                    style: pw.TextStyle(
-                      fontSize: 15,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          pw.SizedBox(height: 24),
+          pw.SizedBox(height: 18),
           pw.Text(
             'Coordinación',
-            style: pw.TextStyle(fontSize: 15, fontWeight: pw.FontWeight.bold),
+            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 8),
           _pdfDetail('Nombres y apellidos', details.name.trim()),
           _pdfDetail('Teléfono', details.phone.trim()),
-          _pdfDetail('Entrega', details.deliveryLabel),
+          if (details.deliveryMethod == DeliveryMethod.shalom)
+            _pdfDetail('Entrega', details.deliveryLabel),
           if (details.deliveryMethod == DeliveryMethod.shalom &&
               details.shalomAgencyId.isNotEmpty) ...[
             _pdfDetail('Agencia', details.shalomAgencyName),
             _pdfDetail('Ubicación', details.shalomAgencyLocality),
             _pdfDetail('Dirección', details.shalomAgencyAddress),
-            if (details.shalomAgencyLatitude != null &&
-                details.shalomAgencyLongitude != null)
-              _pdfDetail(
-                'Geolocalización',
-                '${details.shalomAgencyLatitude}, ${details.shalomAgencyLongitude}',
-              ),
           ],
           _pdfDetail(
             'Fecha deseada',
@@ -388,25 +351,6 @@ abstract final class QuoteExportService {
               _pdfDetail(entry.key, entry.value.trim()),
           if (details.note.trim().isNotEmpty)
             _pdfDetail('Nota', details.note.trim()),
-          pw.SizedBox(height: 24),
-          pw.Container(
-            width: double.infinity,
-            padding: const pw.EdgeInsets.all(12),
-            decoration: pw.BoxDecoration(
-              color: PdfColor.fromHex('#F5F1EE'),
-              borderRadius: pw.BorderRadius.circular(8),
-            ),
-            child: pw.Text(
-              details.deliveryMethod == DeliveryMethod.shalom
-                  ? 'Envío por Shalom: costo adicional desde S/ 5.00. El '
-                        'monto final depende del tamaño y peso del pedido y se '
-                        'confirma por WhatsApp. Esta cotización no confirma '
-                        'stock ni disponibilidad final.'
-                  : 'Esta cotización no confirma la solicitud. Stock, precio '
-                        'final y fecha se coordinan por WhatsApp.',
-              style: const pw.TextStyle(fontSize: 9),
-            ),
-          ),
         ],
       ),
     );
@@ -451,19 +395,13 @@ abstract final class QuoteExportService {
 
     _setText(sheet, 0, 0, 'EXPRESIONES', style: titleStyle);
     _setText(sheet, 0, 1, 'Cotización de productos');
-    _setText(sheet, 3, 0, 'Código', style: labelStyle);
-    _setText(sheet, 4, 0, quoteId);
-    _setText(sheet, 3, 1, 'Generada', style: labelStyle);
-    _setText(sheet, 4, 1, DateFormat('dd/MM/yyyy HH:mm').format(createdAt));
+    _setText(sheet, 2, 0, 'Cotización', style: labelStyle);
+    _setText(sheet, 3, 0, quoteId);
+    _setText(sheet, 2, 1, 'Generada', style: labelStyle);
+    _setText(sheet, 3, 1, DateFormat('dd/MM/yyyy HH:mm').format(createdAt));
 
     const tableRow = 3;
-    const headers = [
-      'Producto',
-      'Código',
-      'Cantidad',
-      'Precio unitario',
-      'Importe',
-    ];
+    const headers = ['Producto', 'Cantidad', 'Precio unitario', 'Importe'];
     for (var column = 0; column < headers.length; column++) {
       _setText(sheet, column, tableRow, headers[column], style: headerStyle);
     }
@@ -472,15 +410,14 @@ abstract final class QuoteExportService {
       final item = lines[index];
       final row = tableRow + index + 1;
       _setText(sheet, 0, row, _productDescription(item));
-      _setText(sheet, 1, row, item.code ?? '');
-      _setInt(sheet, 2, row, item.line.quantity);
-      _setDouble(sheet, 3, row, item.unitPrice, style: moneyStyle);
-      _setDouble(sheet, 4, row, item.total, style: moneyStyle);
+      _setInt(sheet, 1, row, item.line.quantity);
+      _setDouble(sheet, 2, row, item.unitPrice, style: moneyStyle);
+      _setDouble(sheet, 3, row, item.total, style: moneyStyle);
     }
 
     final totalRow = tableRow + lines.length + 2;
-    _setText(sheet, 3, totalRow, 'Subtotal', style: labelStyle);
-    _setDouble(sheet, 4, totalRow, _subtotal(lines), style: moneyStyle);
+    _setText(sheet, 2, totalRow, 'Subtotal', style: labelStyle);
+    _setDouble(sheet, 3, totalRow, _subtotal(lines), style: moneyStyle);
 
     final detailStart = totalRow + 3;
     final detailsRows = <(String, String)>[
@@ -524,9 +461,8 @@ abstract final class QuoteExportService {
 
     sheet.setColumnWidth(0, 46);
     sheet.setColumnWidth(1, 22);
-    sheet.setColumnWidth(2, 12);
-    sheet.setColumnWidth(3, 18);
-    sheet.setColumnWidth(4, 18);
+    sheet.setColumnWidth(2, 18);
+    sheet.setColumnWidth(3, 20);
 
     final bytes = workbook.encode();
     if (bytes == null) {

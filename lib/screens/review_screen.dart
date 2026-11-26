@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../config/feature_flags.dart';
 import '../models/catalog_models.dart';
 import '../models/coordination_details.dart';
 import '../models/quote_line.dart';
 import '../models/storefront_settings.dart';
 import '../services/quote_pdf_share_service.dart';
+import '../services/quote_message.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_components.dart';
 import '../widgets/app_notice.dart';
@@ -13,6 +13,7 @@ import '../widgets/breadcrumb_bar.dart';
 import '../widgets/quote_export_buttons.dart';
 import '../widgets/shalom_embedded_map.dart';
 import '../widgets/store_footer.dart';
+import 'quote_screen.dart';
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({
@@ -23,7 +24,6 @@ class ReviewScreen extends StatefulWidget {
     required this.message,
     this.onSharePdf,
     this.onSendWhatsapp,
-    required this.onCopyMessage,
     required this.onEditQuote,
     this.onContinueToPayment,
     this.onSelectCategory,
@@ -38,7 +38,6 @@ class ReviewScreen extends StatefulWidget {
   final Future<QuotePdfShareOutcome> Function(Rect sharePositionOrigin)?
   onSharePdf;
   final Future<void> Function()? onSendWhatsapp;
-  final VoidCallback onCopyMessage;
   final VoidCallback onEditQuote;
   final VoidCallback? onContinueToPayment;
   final ValueChanged<ProductCategory>? onSelectCategory;
@@ -52,9 +51,6 @@ class ReviewScreen extends StatefulWidget {
 class _ReviewScreenState extends State<ReviewScreen> {
   bool _sharing = false;
   bool _sending = false;
-
-  double get _subtotal =>
-      widget.lines.fold(0, (sum, resolved) => sum + resolved.total);
 
   Future<void> _send() async {
     final send = widget.onSendWhatsapp;
@@ -102,11 +98,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
     }
   }
 
-  void _copy() {
-    widget.onCopyMessage();
-    _showNotice('Mensaje copiado.');
-  }
-
   void _showNotice(
     String message, {
     AppNoticeTone tone = AppNoticeTone.success,
@@ -120,6 +111,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       child: Column(
         children: [
           ResponsivePage.storefront(
+            top: 12,
             bottom: 48,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +133,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     final wide = constraints.maxWidth >= 980;
                     final overview = Column(
                       children: [
-                        _RequestCard(lines: widget.lines, subtotal: _subtotal),
+                        CheckoutOrderSummary(
+                          lines: widget.lines,
+                          deliveryMethod: widget.details.deliveryMethod,
+                        ),
                         const SizedBox(height: 14),
                         _CoordinationCard(
                           details: widget.details,
@@ -158,7 +153,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       sending: _sending,
                       onSharePdf: widget.onSharePdf == null ? null : _sharePdf,
                       onSend: widget.onSendWhatsapp == null ? null : _send,
-                      onCopy: _copy,
                       onEdit: widget.onEditQuote,
                       onContinueToPayment: widget.onContinueToPayment,
                       settings: widget.settings,
@@ -200,148 +194,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }
 }
 
-class _RequestCard extends StatelessWidget {
-  const _RequestCard({required this.lines, required this.subtotal});
-
-  final List<ResolvedQuoteLine> lines;
-  final double subtotal;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(22),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(
-                    color: AppColors.pinkSoft,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.inventory_2_outlined, size: 21),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Productos y subtotal',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      Text(
-                        '${lines.length} ${lines.length == 1 ? 'producto seleccionado' : 'productos seleccionados'}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 18),
-              child: Divider(),
-            ),
-            if (lines.isEmpty)
-              Text(
-                'No hay productos en la cotización.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              )
-            else
-              for (var index = 0; index < lines.length; index++) ...[
-                _ReviewLine(resolved: lines[index]),
-                if (index != lines.length - 1)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(),
-                  ),
-              ],
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Divider(),
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Subtotal de productos',
-                    style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.muted),
-                  ),
-                ),
-                PriceText(subtotal),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Envío y disponibilidad por confirmar.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ReviewLine extends StatelessWidget {
-  const _ReviewLine({required this.resolved});
-
-  final ResolvedQuoteLine resolved;
-
-  @override
-  Widget build(BuildContext context) {
-    final code = resolved.code;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 34,
-          height: 34,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: AppColors.canvas,
-            shape: BoxShape.circle,
-          ),
-          child: Text(
-            '${resolved.line.quantity}×',
-            style: Theme.of(context).textTheme.labelMedium,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                resolved.displayName,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              if (code != null)
-                Text(code, style: Theme.of(context).textTheme.bodySmall),
-              if (resolved.line.customization.trim().isNotEmpty)
-                Text(
-                  resolved.line.customization.trim(),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          'S/ ${resolved.total.toStringAsFixed(2)}',
-          style: AppTheme.priceStyle(fontSize: 15.5),
-        ),
-      ],
-    );
-  }
-}
-
 class _CoordinationCard extends StatelessWidget {
   const _CoordinationCard({required this.details, required this.settings});
 
@@ -375,7 +227,8 @@ class _CoordinationCard extends StatelessWidget {
                     children: [
                       Text(
                         settings.text(StorefrontText.reviewContactTitle),
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontSize: 14),
                       ),
                       Text(
                         settings.text(StorefrontText.reviewContactBody),
@@ -424,13 +277,6 @@ class _CoordinationCard extends StatelessWidget {
                   height: 250,
                 ),
               ],
-              const SizedBox(height: 12),
-              const _DetailRow(
-                icon: Icons.payments_outlined,
-                label:
-                    'Envío desde S/ 5.00. El monto final depende del tamaño '
-                    'y peso del pedido y se confirma por WhatsApp.',
-              ),
             ],
             const SizedBox(height: 12),
             _DetailRow(
@@ -477,7 +323,7 @@ class _DetailRow extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: AppColors.muted),
         const SizedBox(width: 10),
-        Expanded(child: Text(label)),
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 12))),
       ],
     );
   }
@@ -493,7 +339,6 @@ class _SendPanel extends StatelessWidget {
     required this.sending,
     required this.onSharePdf,
     required this.onSend,
-    required this.onCopy,
     required this.onEdit,
     this.onContinueToPayment,
     required this.settings,
@@ -507,54 +352,26 @@ class _SendPanel extends StatelessWidget {
   final bool sending;
   final Future<void> Function(BuildContext buttonContext)? onSharePdf;
   final VoidCallback? onSend;
-  final VoidCallback onCopy;
   final VoidCallback onEdit;
   final VoidCallback? onContinueToPayment;
   final StorefrontSettings settings;
 
   @override
   Widget build(BuildContext context) {
+    final heading = QuoteMessageBuilder.heading(quoteId);
+    final preview = message.startsWith(heading)
+        ? message.substring(heading.length).trimLeft()
+        : message;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        settings.text(StorefrontText.reviewMessageTitle),
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      Text(
-                        FeatureFlags.customerAccounts
-                            ? settings.text(StorefrontText.reviewMessageBody)
-                            : 'Detalle listo para guardar, copiar o exportar',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                if (quoteId.trim().isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.pinkSoft,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: Text(
-                      '#${quoteId.trim()}',
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                  ),
-              ],
+            Text(
+              heading,
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontSize: 14),
             ),
             const SizedBox(height: 14),
             Container(
@@ -568,8 +385,9 @@ class _SendPanel extends StatelessWidget {
               child: SingleChildScrollView(
                 child: SelectionArea(
                   child: Text(
-                    message,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    preview,
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(fontSize: 12),
                   ),
                 ),
               ),
@@ -637,20 +455,6 @@ class _SendPanel extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 18),
               child: Divider(),
             ),
-            Text(
-              'También puedes guardar o copiar la cotización',
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onCopy,
-                icon: const Icon(Icons.copy_rounded, size: 18),
-                label: const Text('Copiar mensaje'),
-              ),
-            ),
-            const SizedBox(height: 8),
             QuoteExportButtons(
               quoteId: quoteId,
               lines: lines,

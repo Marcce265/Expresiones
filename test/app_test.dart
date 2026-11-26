@@ -7,16 +7,73 @@ import 'package:expresiones/models/quote_line.dart';
 import 'package:expresiones/models/storefront_settings.dart';
 import 'package:expresiones/screens/catalog_screen.dart';
 import 'package:expresiones/screens/home_screen.dart';
+import 'package:expresiones/screens/quote_screen.dart';
 import 'package:expresiones/services/quote_message.dart';
 import 'package:expresiones/state/app_store.dart';
 import 'package:expresiones/theme/app_theme.dart';
+import 'package:expresiones/widgets/breadcrumb_bar.dart';
 import 'package:expresiones/widgets/product_visual.dart';
+import 'package:expresiones/widgets/store_footer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  testWidgets('el catálogo ofrece añadir rápido solo en fichas individuales', (
+    tester,
+  ) async {
+    final family = CatalogProduct(
+      id: 'family-qa',
+      name: 'Familia prueba',
+      category: ProductCategory.materials,
+      basePrice: 5,
+      unitLabel: 'paquete',
+      variants: [
+        ProductVariant(id: 'a', name: 'A'),
+        ProductVariant(id: 'b', name: 'B'),
+      ],
+    );
+    final single = CatalogProduct(
+      id: 'single-qa',
+      name: 'Individual prueba',
+      category: ProductCategory.materials,
+      basePrice: 5,
+      unitLabel: 'unidad',
+    );
+    final added = <String>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CatalogScreen(
+            products: [family, single],
+            onProduct: (_, _) =>
+                fail('La acción rápida no debe abrir la ficha'),
+            onBack: () {},
+            onOpenQuote: () {},
+            onAddToCart: (product, _) => added.add(product.id),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Añadir FAMILIA PRUEBA al carrito'), findsNothing);
+    final openFamily = find.widgetWithIcon(
+      IconButton,
+      Icons.arrow_forward_rounded,
+    );
+    final addIndividual = find.widgetWithIcon(
+      IconButton,
+      Icons.add_shopping_cart_rounded,
+    );
+    expect(tester.getSize(openFamily), const Size.square(39));
+    expect(tester.getSize(addIndividual), tester.getSize(openFamily));
+    expect(tester.getCenter(addIndividual).dy, tester.getCenter(openFamily).dy);
+    await tester.tap(find.byTooltip('Añadir INDIVIDUAL PRUEBA al carrito'));
+    expect(added, [single.id]);
+  });
+
   test('aplica automáticamente los precios por volumen', () {
     final product = seedCatalogProducts.first;
 
@@ -109,7 +166,9 @@ void main() {
       cinta.variants.every(
         (variant) =>
             variant.imageUrl != null &&
-            variant.imageUrl!.contains('cinta-satinada-100m/variants/optimized/'),
+            variant.imageUrl!.contains(
+              'cinta-satinada-100m/variants/optimized/',
+            ),
       ),
       isTrue,
     );
@@ -219,6 +278,32 @@ void main() {
     expect(message, contains('S/ 54.00'));
     expect(message, contains('Recojo en Huancayo'));
   });
+
+  testWidgets(
+    'el carrito vacío conserva el encabezado arriba y el pie al fondo',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1440, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: QuoteScreen(
+              lines: const [],
+              onQuantityChanged: (_, _) {},
+              onRemove: (_) {},
+              onContinue: () {},
+              onBrowse: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.getTopLeft(find.byType(AppBreadcrumbBar)).dy, 12);
+      expect(tester.getBottomRight(find.byType(StoreFooter)).dy, 900);
+      expect(find.text('0 productos'), findsNothing);
+    },
+  );
 
   testWidgets('muestra el inicio y la navegación principal', (tester) async {
     SharedPreferences.setMockInitialValues({});
@@ -341,12 +426,18 @@ void main() {
 
     expect(find.bySemanticsLabel('Expresiones, ir al inicio'), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
-    expect(find.byIcon(Icons.shopping_bag_outlined).hitTestable(), findsOneWidget);
+    expect(
+      find.byIcon(Icons.shopping_bag_outlined).hitTestable(),
+      findsOneWidget,
+    );
     final cartBadge = find.descendant(
       of: find.byTooltip('Abrir carrito'),
       matching: find.byType(Badge),
     );
-    expect(tester.widget<Badge>(cartBadge).backgroundColor, AppColors.pinkStrong);
+    expect(
+      tester.widget<Badge>(cartBadge).backgroundColor,
+      AppColors.pinkStrong,
+    );
     await tester.tap(find.byTooltip('Abrir menú'));
     await tester.pumpAndSettle();
     final drawer = find.byType(Drawer);
@@ -420,6 +511,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
+    final added = <(String, String?)>[];
     Widget catalog(List<CatalogProduct> products) => MaterialApp(
       home: Scaffold(
         body: CatalogScreen(
@@ -427,6 +519,8 @@ void main() {
           onProduct: (_, _) {},
           onBack: () {},
           onOpenQuote: () {},
+          onAddToCart: (product, variantId) =>
+              added.add((product.id, variantId)),
         ),
       ),
     );
@@ -450,6 +544,33 @@ void main() {
     expect(find.text('S/ 4.30 c/u'), findsOneWidget);
     expect(find.text('S/ 4.00 c/u'), findsOneWidget);
     expect(find.text('S/ 5.00'), findsNothing);
+
+    final family = seedCatalogProducts.firstWhere(
+      (product) => product.id == 'limpiapipas-premium-8mm',
+    );
+    final variant = family.variants.first;
+    final quickAdd = find.byTooltip(
+      'Añadir ${variantDisplayName(variant)} al carrito',
+    );
+    await tester.scrollUntilVisible(
+      quickAdd,
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    final cartButton = find.ancestor(
+      of: quickAdd,
+      matching: find.byType(IconButton),
+    );
+    expect(tester.getSize(cartButton), const Size.square(39));
+    expect(find.textContaining('Código XS-1'), findsNothing);
+    await tester.ensureVisible(cartButton);
+    await tester.pumpAndSettle();
+    await tester.tap(cartButton);
+    expect(added, [(family.id, variant.id)]);
+    tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position
+        .jumpTo(0);
 
     final updatedProducts = [
       for (final product in seedCatalogProducts)

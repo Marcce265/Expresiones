@@ -10,6 +10,7 @@ class QuantityInput extends StatefulWidget {
     this.onDecrease,
     this.onIncrease,
     this.backgroundColor,
+    this.compact = false,
   });
 
   final int value;
@@ -17,6 +18,7 @@ class QuantityInput extends StatefulWidget {
   final VoidCallback? onDecrease;
   final VoidCallback? onIncrease;
   final Color? backgroundColor;
+  final bool compact;
 
   @override
   State<QuantityInput> createState() => _QuantityInputState();
@@ -63,7 +65,7 @@ class _QuantityInputState extends State<QuantityInput> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 48,
+      height: widget.compact ? 28 : 48,
       decoration: BoxDecoration(
         color: widget.backgroundColor ?? Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -73,6 +75,7 @@ class _QuantityInputState extends State<QuantityInput> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _QuantityButton(
+            compact: widget.compact,
             tooltip: 'Reducir cantidad',
             icon: Icons.remove,
             onTap: widget.onDecrease,
@@ -103,6 +106,7 @@ class _QuantityInputState extends State<QuantityInput> {
             ),
           ),
           _QuantityButton(
+            compact: widget.compact,
             tooltip: 'Aumentar cantidad',
             icon: Icons.add,
             onTap: widget.onIncrease,
@@ -120,12 +124,14 @@ class _QuantityButton extends StatelessWidget {
   const _QuantityButton({
     required this.tooltip,
     required this.icon,
+    required this.compact,
     this.onTap,
     this.onLongPress,
   });
 
   final String tooltip;
   final IconData icon;
+  final bool compact;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
@@ -143,11 +149,11 @@ class _QuantityButton extends StatelessWidget {
           onLongPress: onLongPress,
           borderRadius: BorderRadius.circular(13),
           child: SizedBox(
-            width: 44,
-            height: 46,
+            width: compact ? 26 : 44,
+            height: compact ? 26 : 46,
             child: Icon(
               icon,
-              size: 19,
+              size: compact ? 15 : 19,
               color: enabled
                   ? Theme.of(context).colorScheme.onSurface
                   : Theme.of(context).disabledColor,

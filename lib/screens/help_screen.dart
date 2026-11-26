@@ -38,7 +38,9 @@ class HelpScreen extends StatelessWidget {
       (
         icon: Icons.receipt_long_outlined,
         title: settings.text(StorefrontText.helpFaqTitle(1)),
-        body: FeatureFlags.demoPayment
+        body: FeatureFlags.appEndToEnd
+            ? 'Elige productos y cantidades. La app calcula el subtotal y te guía hasta el pago.'
+            : FeatureFlags.paymentsEnabled
             ? settings.text(StorefrontText.helpFaqBody(1))
             : 'Elige productos y cantidades. La app calcula el subtotal y prepara tu cotización.',
       ),
@@ -62,11 +64,13 @@ class HelpScreen extends StatelessWidget {
         title: settings.text(StorefrontText.helpFaqTitle(5)),
         body: settings.text(StorefrontText.helpFaqBody(5)),
       ),
-      if (FeatureFlags.demoPayment)
+      if (FeatureFlags.paymentsEnabled)
         (
           icon: Icons.payments_outlined,
           title: settings.text(StorefrontText.helpFaqTitle(6)),
-          body: settings.text(StorefrontText.helpFaqBody(6)),
+          body: FeatureFlags.appEndToEnd
+              ? 'Paga dentro de la app con tarjeta o Yape. Tus datos quedan protegidos.'
+              : settings.text(StorefrontText.helpFaqBody(6)),
         ),
     ];
 
@@ -97,10 +101,10 @@ class HelpScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 InfoBanner(
-                  title: FeatureFlags.customerAccounts
+                  title: FeatureFlags.accountsEnabled
                       ? settings.text(StorefrontText.helpBannerTitle)
                       : 'Cotización sin registro',
-                  message: FeatureFlags.customerAccounts
+                  message: FeatureFlags.accountsEnabled
                       ? settings.text(StorefrontText.helpBannerBody)
                       : 'Puedes explorar, calcular cantidades y preparar tu cotización sin iniciar sesión.',
                   icon: Icons.lock_open_rounded,

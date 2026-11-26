@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../config/feature_flags.dart';
 import '../data/customer_account_repository.dart';
 import '../services/legal_consent_service.dart';
 import '../theme/app_theme.dart';
@@ -182,9 +183,15 @@ class _AccountScreenState extends State<AccountScreen> {
         const SizedBox(height: 6),
         Text(
           widget.accessGate
-              ? 'Inicia sesión o crea una cuenta para entrar al catálogo.'
+              ? FeatureFlags.appEndToEnd
+                    ? 'Inicia sesión o crea una cuenta para entrar a la tienda.'
+                    : 'Inicia sesión o crea una cuenta para entrar al catálogo.'
               : widget.checkoutMode
-              ? 'Inicia sesión o crea una cuenta para continuar al pago simulado.'
+              ? FeatureFlags.appEndToEnd
+                    ? 'Inicia sesión o crea una cuenta para continuar con tu compra.'
+                    : 'Inicia sesión o crea una cuenta para continuar al pago simulado.'
+              : FeatureFlags.appEndToEnd
+              ? 'Consulta tus compras desde cualquier dispositivo.'
               : 'Consulta tus compras simuladas desde cualquier dispositivo.',
           style: Theme.of(context).textTheme.bodyLarge
               ?.copyWith(color: AppColors.muted),
@@ -374,7 +381,9 @@ class _AccountScreenState extends State<AccountScreen> {
           InfoBanner(
             icon: Icons.check_circle_outline_rounded,
             title: 'Cuenta lista',
-            message: 'Ya puedes continuar al pago simulado.',
+            message: FeatureFlags.appEndToEnd
+                ? 'Ya puedes continuar con tu compra.'
+                : 'Ya puedes continuar al pago simulado.',
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -392,10 +401,12 @@ class _AccountScreenState extends State<AccountScreen> {
         ),
         const SizedBox(height: 12),
         if (_orders.isEmpty)
-          const EmptyState(
+          EmptyState(
             icon: Icons.receipt_long_outlined,
             title: 'Aún no hay compras',
-            message: 'Las compras simuladas completadas aparecerán aquí.',
+            message: FeatureFlags.appEndToEnd
+                ? 'Tus compras completadas aparecerán aquí.'
+                : 'Las compras simuladas completadas aparecerán aquí.',
           )
         else
           ..._orders.map(
