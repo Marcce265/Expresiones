@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/storefront_settings.dart';
 import '../security/rate_limiter.dart';
@@ -140,32 +139,6 @@ class _PickupLocationMapState extends State<PickupLocationMap> {
                         ),
                       ),
                     ],
-                  ),
-                  SafeArea(
-                    child: Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Material(
-                        color: Colors.white.withValues(alpha: .9),
-                        child: InkWell(
-                          onTap: () => launchUrl(
-                            Uri.parse(
-                              'https://www.openstreetmap.org/copyright',
-                            ),
-                            mode: LaunchMode.externalApplication,
-                          ),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 3,
-                            ),
-                            child: Text(
-                              '© OpenStreetMap',
-                              style: TextStyle(fontSize: 9),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                   ),
                 ],
               ),

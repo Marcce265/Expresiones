@@ -1,73 +1,11 @@
 import 'package:expresiones/models/shalom_agency.dart';
 import 'package:expresiones/screens/shalom_destination_picker.dart';
-import 'package:expresiones/services/device_location_service.dart';
 import 'package:expresiones/widgets/shalom_embedded_map.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:geolocator/geolocator.dart';
 
 void main() {
-  testWidgets('Agencia cercana rellena los filtros y ordena tres destinos', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(1000, 900));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    final catalog = ShalomAgencyCatalog.fromJson({
-      'agencies': [
-        _agency('4', 'Lejana', latitude: -13),
-        _agency('3', 'Tercera', latitude: -12.18),
-        _agency('1', 'Primera', latitude: -12.07),
-        _agency('2', 'Segunda', district: 'CHILCA', latitude: -12.1),
-        _agency('5', 'Solo origen', latitude: -12.06, canReceive: false),
-      ],
-    });
-    ShalomAgency? selected;
-    final location = _TestLocation();
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: StatefulBuilder(
-              builder: (context, setState) => ShalomDestinationPicker(
-                selectedId: selected?.id ?? '',
-                showError: false,
-                loadCatalog: () async => catalog,
-                locationService: location,
-                onSelected: (agency) => setState(() => selected = agency),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(location.requests, 0);
-    await tester.tap(find.text('Agencia cercana'));
-    await tester.pumpAndSettle();
-
-    String? value(String label) => tester
-        .widget<DropdownButton<String>>(find.byKey(ValueKey(label)))
-        .value;
-    expect(value('Departamento'), 'JUNIN');
-    expect(value('Provincia'), 'HUANCAYO');
-    expect(value('Distrito'), 'EL TAMBO');
-    expect(find.byType(Radio<String>), findsNWidgets(3));
-    expect(find.text('Lejana'), findsNothing);
-    expect(find.text('Solo origen'), findsNothing);
-    expect(selected, isNull);
-    final first = find.text('Primera');
-    final second = find.text('Segunda');
-    expect(tester.getTopLeft(first).dy, lessThan(tester.getTopLeft(second).dy));
-    await tester.tap(second);
-    await tester.pumpAndSettle();
-    expect(selected?.id, '2');
-    expect(value('Distrito'), 'CHILCA');
-    final map = find.byType(ShalomEmbeddedMap);
-    expect(tester.getTopLeft(map).dx, greaterThan(tester.getTopLeft(first).dx));
-    expect(tester.widget<ShalomEmbeddedMap>(map).selectedAgencyId, '2');
-  });
-
   testWidgets('muestra tres agencias y permite desplazar hasta las demás', (
     tester,
   ) async {
@@ -93,6 +31,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     final list = find.byKey(const ValueKey('agency-results'));
+    expect(find.text('Agencia cercana'), findsNothing);
     expect(find.text('Agencia 3').hitTestable(), findsOneWidget);
     expect(find.text('Agencia 4').hitTestable(), findsNothing);
     final firstCard = find.byWidget(
@@ -121,6 +60,40 @@ void main() {
     await tester.drag(list, const Offset(0, -220));
     await tester.pumpAndSettle();
     expect(find.text('Agencia 5').hitTestable(), findsOneWidget);
+  });
+
+  testWidgets('en celular el mapa es opcional mediante el botón Ver mapa', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final catalog = ShalomAgencyCatalog.fromJson({
+      'agencies': [_agency('1', 'El Tambo Centro', latitude: -12.06)],
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: ShalomDestinationPicker(
+              selectedId: '1',
+              showError: false,
+              onSelected: (_) {},
+              loadCatalog: () async => catalog,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ShalomEmbeddedMap), findsNothing);
+    expect(find.text('Ver mapa'), findsOneWidget);
+
+    await tester.tap(find.text('Ver mapa'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ShalomEmbeddedMap), findsOneWidget);
+    expect(find.text('Ocultar mapa'), findsOneWidget);
   });
 
   testWidgets('filtra por ubicación y limpia la agencia al cambiar de zona', (
@@ -215,24 +188,3 @@ Map<String, Object> _agency(
   'latitude': ?latitude,
   if (latitude != null) 'longitude': -75.21,
 };
-
-class _TestLocation implements DeviceLocationService {
-  int requests = 0;
-
-  @override
-  Future<Position> currentPosition() async {
-    requests++;
-    return Position(
-      latitude: -12.06,
-      longitude: -75.21,
-      timestamp: DateTime.utc(2026, 11, 26),
-      accuracy: 20,
-      altitude: 0,
-      altitudeAccuracy: 0,
-      heading: 0,
-      headingAccuracy: 0,
-      speed: 0,
-      speedAccuracy: 0,
-    );
-  }
-}

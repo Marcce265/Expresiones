@@ -124,6 +124,7 @@ void main() {
       final changeAgency = find.text('Cambiar agencia');
       await tester.ensureVisible(changeAgency);
       await tester.tap(changeAgency);
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Agencias Shalom'), findsOneWidget);
       Navigator.of(tester.element(find.text('Agencias Shalom'))).pop();

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
-import 'package:url_launcher/url_launcher.dart';
 
 import '../data/shalom_agency_repository.dart';
 import '../models/shalom_agency.dart';
@@ -140,13 +139,6 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
     super.dispose();
   }
 
-  Future<void> _openAttribution() async {
-    await launchUrl(
-      Uri.parse('https://www.openstreetmap.org/copyright'),
-      mode: LaunchMode.externalApplication,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Semantics(
@@ -208,14 +200,6 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
                           ? _selectedPoint
                           : null,
                     ),
-                    SimpleAttributionWidget(
-                      source: const Text(
-                        'OpenStreetMap',
-                        style: TextStyle(fontSize: 9),
-                      ),
-                      onTap: _openAttribution,
-                      backgroundColor: Colors.white.withValues(alpha: .88),
-                    ),
                   ],
                 ),
               ),
@@ -240,11 +224,6 @@ class _ShalomEmbeddedMapState extends State<ShalomEmbeddedMap> {
                   onZoomIn: () => _changeZoom(1),
                   onZoomOut: () => _changeZoom(-1),
                 ),
-              ),
-              const Positioned(
-                left: 12,
-                bottom: 12,
-                child: _MapLegend(color: _shalomRed),
               ),
             ],
           ),
@@ -504,43 +483,6 @@ class _ZoomControls extends StatelessWidget {
             icon: const Icon(Icons.remove_rounded, size: 20),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _MapLegend extends StatelessWidget {
-  const _MapLegend({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .92),
-        borderRadius: BorderRadius.circular(99),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: .1), blurRadius: 10),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              'Agencias Shalom',
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
-          ],
-        ),
       ),
     );
   }
