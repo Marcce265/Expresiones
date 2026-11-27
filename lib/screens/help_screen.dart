@@ -78,6 +78,7 @@ class HelpScreen extends StatelessWidget {
       child: Column(
         children: [
           ResponsivePage.storefront(
+            top: 12,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

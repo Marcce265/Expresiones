@@ -101,9 +101,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   final _guidePreferences = const GuidePreferences();
   final _navigationKeys = List<GlobalKey>.generate(5, (_) => GlobalKey());
   final _assistantButtonKey = GlobalKey();
-  final _mobileMenuKey = GlobalKey();
   final _mobileSearchKey = GlobalKey();
   final _mobileCartKey = GlobalKey();
+  final _mobileHelpKey = GlobalKey();
   final _mobileHomeKey = GlobalKey();
   int _catalogSearchRequest = 0;
   CustomerAccountRepository? _customerAccounts;
@@ -182,15 +182,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       _catalogFamilyId = product.id;
       _catalogSearchRequest = 0;
       _index = 1;
-    });
-  }
-
-  void _openCatalogSearch() {
-    setState(() {
-      _index = 1;
-      _catalogFamilyId = null;
-      _catalogCategory ??= ProductCategory.materials;
-      _catalogSearchRequest++;
     });
   }
 
@@ -529,17 +520,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         return Scaffold(
           appBar: showMobileHeader
               ? _MobileStoreHeader(
+                  selectedIndex: 2,
                   quoteQuantity: store.cartQuantity,
                   onHome: () => leaveCheckout(0),
-                  onSearch: () {
-                    leaveCheckout(1);
-                    _openCatalogSearch();
-                  },
+                  onCatalog: () => leaveCheckout(1),
                   onCart: () => leaveCheckout(2),
+                  onHelp: () =>
+                      leaveCheckout(FeatureFlags.accountsEnabled ? 4 : 3),
                 )
-              : null,
-          drawer: showMobileHeader
-              ? _MobileStoreMenu(selectedIndex: 2, onSelect: leaveCheckout)
               : null,
           body: SafeArea(
             child: Row(
@@ -962,23 +950,20 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       builder: (context, constraints) {
         final desktop = constraints.maxWidth >= 1024;
         final showMobileHeader = constraints.maxWidth < 768;
+        final helpIndex = FeatureFlags.accountsEnabled ? 4 : 3;
         return Scaffold(
           appBar: showMobileHeader
               ? _MobileStoreHeader(
+                  selectedIndex: _index,
                   quoteQuantity: store.cartQuantity,
                   onHome: () => _selectDestination(0),
-                  onSearch: _openCatalogSearch,
+                  onCatalog: () => _selectDestination(1),
                   onCart: _showQuote,
-                  menuKey: _mobileMenuKey,
-                  searchKey: _mobileSearchKey,
+                  onHelp: () => _selectDestination(helpIndex),
+                  catalogKey: _mobileSearchKey,
                   cartKey: _mobileCartKey,
+                  helpKey: _mobileHelpKey,
                   homeKey: _mobileHomeKey,
-                )
-              : null,
-          drawer: showMobileHeader
-              ? _MobileStoreMenu(
-                  selectedIndex: _index,
-                  onSelect: _selectDestination,
                 )
               : null,
           body: SafeArea(
@@ -1035,106 +1020,72 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   GlobalKey _guideNavigationKey(int index) {
-    if (MediaQuery.sizeOf(context).width >= 768) return _navigationKeys[index];
+    if (MediaQuery.sizeOf(context).width >= 768) {
+      return _navigationKeys[index];
+    }
     return switch (index) {
       0 => _mobileHomeKey,
       1 => _mobileSearchKey,
       2 => _mobileCartKey,
-      _ => _mobileMenuKey,
+      _ => _mobileHelpKey,
     };
-  }
-}
-
-class _MobileStoreMenu extends StatelessWidget {
-  const _MobileStoreMenu({required this.selectedIndex, required this.onSelect});
-
-  final int selectedIndex;
-  final ValueChanged<int> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      child: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          children: [
-            for (final destination in [
-              (0, Icons.home_outlined, 'Inicio'),
-              (1, Icons.grid_view_outlined, 'Catálogo'),
-              (2, Icons.shopping_bag_outlined, 'Carrito'),
-              if (FeatureFlags.accountsEnabled)
-                (3, Icons.person_outline_rounded, 'Cuenta'),
-              (
-                FeatureFlags.accountsEnabled ? 4 : 3,
-                Icons.help_outline_rounded,
-                'Ayuda',
-              ),
-            ])
-              ListTile(
-                leading: Icon(destination.$2),
-                title: Text(destination.$3),
-                selected: selectedIndex == destination.$1,
-                onTap: () {
-                  Scaffold.of(context).closeDrawer();
-                  onSelect(destination.$1);
-                },
-              ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
 class _MobileStoreHeader extends StatelessWidget
     implements PreferredSizeWidget {
   const _MobileStoreHeader({
+    required this.selectedIndex,
     required this.quoteQuantity,
     required this.onHome,
-    required this.onSearch,
+    required this.onCatalog,
     required this.onCart,
-    this.menuKey,
-    this.searchKey,
+    required this.onHelp,
+    this.catalogKey,
     this.cartKey,
+    this.helpKey,
     this.homeKey,
   });
 
+  final int selectedIndex;
   final int quoteQuantity;
   final VoidCallback onHome;
-  final VoidCallback onSearch;
+  final VoidCallback onCatalog;
   final VoidCallback onCart;
-  final Key? menuKey;
-  final Key? searchKey;
+  final VoidCallback onHelp;
+  final Key? catalogKey;
   final Key? cartKey;
+  final Key? helpKey;
   final Key? homeKey;
 
   @override
-  Size get preferredSize => const Size.fromHeight(64);
+  Size get preferredSize => const Size.fromHeight(60);
 
   @override
   Widget build(BuildContext context) {
+    final helpIndex = FeatureFlags.accountsEnabled ? 4 : 3;
+    final catalogActive = selectedIndex == 1;
+    final cartActive = selectedIndex == 2;
+    final helpActive = selectedIndex == helpIndex;
+
+    ButtonStyle iconStyle(bool active) => IconButton.styleFrom(
+      backgroundColor: active ? AppColors.pinkSoft : Colors.transparent,
+      foregroundColor: active ? AppColors.roseDeep : AppColors.ink,
+      minimumSize: const Size.square(42),
+      padding: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+
     return AppBar(
       automaticallyImplyLeading: false,
       toolbarHeight: preferredSize.height,
       backgroundColor: AppColors.surface,
-      titleSpacing: 8,
+      titleSpacing: 12,
       title: Row(
         children: [
-          SizedBox(
-            width: 96,
+          Expanded(
             child: Align(
               alignment: Alignment.centerLeft,
-              child: IconButton(
-                key: menuKey,
-                tooltip: 'Abrir menú',
-                color: AppColors.ink,
-                onPressed: () => Scaffold.of(context).openDrawer(),
-                icon: const _HamburgerMenuIcon(color: AppColors.ink),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Center(
               child: InkWell(
                 key: homeKey,
                 onTap: onHome,
@@ -1143,9 +1094,9 @@ class _MobileStoreHeader extends StatelessWidget
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Image.asset(
                     'assets/images/brand/expresiones_mobile_v2.png',
-                    width: 220,
-                    height: 54,
+                    height: 44,
                     fit: BoxFit.contain,
+                    alignment: Alignment.centerLeft,
                     semanticLabel: 'Expresiones, ir al inicio',
                   ),
                 ),
@@ -1153,21 +1104,38 @@ class _MobileStoreHeader extends StatelessWidget
             ),
           ),
           IconButton(
-            key: searchKey,
-            tooltip: 'Buscar productos',
-            onPressed: onSearch,
-            icon: const Icon(Icons.search_rounded),
+            key: catalogKey,
+            tooltip: 'Abrir catálogo',
+            style: iconStyle(catalogActive),
+            onPressed: onCatalog,
+            icon: catalogActive
+                ? const Icon(Icons.grid_view_rounded)
+                : const Icon(Icons.grid_view_outlined),
           ),
+          const SizedBox(width: 2),
           IconButton(
             key: cartKey,
             tooltip: 'Abrir carrito',
+            style: iconStyle(cartActive),
             onPressed: onCart,
             icon: Badge.count(
-              backgroundColor: AppColors.pinkStrong,
+              backgroundColor: AppColors.rose,
               count: quoteQuantity,
               isLabelVisible: quoteQuantity > 0,
-              child: const Icon(Icons.shopping_bag_outlined),
+              child: cartActive
+                  ? const Icon(Icons.shopping_cart_rounded)
+                  : const Icon(Icons.shopping_cart_outlined),
             ),
+          ),
+          const SizedBox(width: 2),
+          IconButton(
+            key: helpKey,
+            tooltip: 'Abrir ayuda',
+            style: iconStyle(helpActive),
+            onPressed: onHelp,
+            icon: helpActive
+                ? const Icon(Icons.help_rounded)
+                : const Icon(Icons.help_outline_rounded),
           ),
         ],
       ),
@@ -1177,47 +1145,6 @@ class _MobileStoreHeader extends StatelessWidget
       ),
     );
   }
-}
-
-/// Ícono hamburguesa vectorial nativo que no depende de la caché de
-/// MaterialIcons-Regular.otf en navegadores móviles.
-class _HamburgerMenuIcon extends StatelessWidget {
-  const _HamburgerMenuIcon({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: const Size(22, 16),
-      painter: _HamburgerMenuPainter(color: color),
-    );
-  }
-}
-
-class _HamburgerMenuPainter extends CustomPainter {
-  const _HamburgerMenuPainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 2.1
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-
-    const ys = [0.12, 0.5, 0.88];
-    for (final factor in ys) {
-      final y = size.height * factor;
-      canvas.drawLine(Offset(1.5, y), Offset(size.width - 1.5, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _HamburgerMenuPainter oldDelegate) =>
-      oldDelegate.color != color;
 }
 
 class _MobileNavigation extends StatelessWidget {
@@ -1236,50 +1163,59 @@ class _MobileNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final helpIndex = FeatureFlags.accountsEnabled ? 4 : 3;
-    return NavigationBar(
-      selectedIndex: selectedIndex,
-      onDestinationSelected: onSelect,
-      destinations: [
-        NavigationDestination(
-          key: itemKeys?[0],
-          icon: const Icon(Icons.home_outlined),
-          selectedIcon: const Icon(Icons.home_rounded),
-          label: 'Inicio',
-        ),
-        NavigationDestination(
-          key: itemKeys?[1],
-          icon: const Icon(Icons.grid_view_outlined),
-          selectedIcon: const Icon(Icons.grid_view_rounded),
-          label: 'Catálogo',
-        ),
-        NavigationDestination(
-          key: itemKeys?[2],
-          icon: Badge.count(
-            count: quoteQuantity,
-            isLabelVisible: quoteQuantity > 0,
-            child: const Icon(Icons.shopping_bag_outlined),
-          ),
-          selectedIcon: Badge.count(
-            count: quoteQuantity,
-            isLabelVisible: quoteQuantity > 0,
-            child: const Icon(Icons.shopping_bag_rounded),
-          ),
-          label: 'Carrito',
-        ),
-        if (FeatureFlags.accountsEnabled)
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      child: NavigationBar(
+        height: 68,
+        selectedIndex: selectedIndex,
+        onDestinationSelected: onSelect,
+        destinations: [
           NavigationDestination(
-            key: itemKeys?[3],
-            icon: const Icon(Icons.person_outline_rounded),
-            selectedIcon: const Icon(Icons.person_rounded),
-            label: 'Cuenta',
+            key: itemKeys?[0],
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home_rounded),
+            label: 'Inicio',
           ),
-        NavigationDestination(
-          key: itemKeys?[helpIndex],
-          icon: const Icon(Icons.help_outline_rounded),
-          selectedIcon: const Icon(Icons.help_rounded),
-          label: 'Ayuda',
-        ),
-      ],
+          NavigationDestination(
+            key: itemKeys?[1],
+            icon: const Icon(Icons.grid_view_outlined),
+            selectedIcon: const Icon(Icons.grid_view_rounded),
+            label: 'Catálogo',
+          ),
+          NavigationDestination(
+            key: itemKeys?[2],
+            icon: Badge.count(
+              backgroundColor: AppColors.rose,
+              count: quoteQuantity,
+              isLabelVisible: quoteQuantity > 0,
+              child: const Icon(Icons.shopping_cart_outlined),
+            ),
+            selectedIcon: Badge.count(
+              backgroundColor: AppColors.rose,
+              count: quoteQuantity,
+              isLabelVisible: quoteQuantity > 0,
+              child: const Icon(Icons.shopping_cart_rounded),
+            ),
+            label: 'Carrito',
+          ),
+          if (FeatureFlags.accountsEnabled)
+            NavigationDestination(
+              key: itemKeys?[3],
+              icon: const Icon(Icons.person_outline_rounded),
+              selectedIcon: const Icon(Icons.person_rounded),
+              label: 'Cuenta',
+            ),
+          NavigationDestination(
+            key: itemKeys?[helpIndex],
+            icon: const Icon(Icons.help_outline_rounded),
+            selectedIcon: const Icon(Icons.help_rounded),
+            label: 'Ayuda',
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1417,8 +1353,8 @@ class _DesktopNavigation extends StatelessWidget {
                     _DesktopNavigationItem(
                       key: itemKeys?[2],
                       icon: currentIndex == 2
-                          ? Icons.shopping_bag_rounded
-                          : Icons.shopping_bag_outlined,
+                          ? Icons.shopping_cart_rounded
+                          : Icons.shopping_cart_outlined,
                       label: 'Carrito',
                       selected: currentIndex == 2,
                       badgeCount: quoteQuantity,

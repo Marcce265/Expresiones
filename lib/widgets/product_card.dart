@@ -99,12 +99,17 @@ class _ProductCardState extends State<ProductCard> {
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            icon: Icon(
-              widget.onAdd == null
-                  ? widget.trailingIcon
-                  : Icons.add_shopping_cart_rounded,
-              size: 17,
-            ),
+            icon: widget.onAdd == null
+                ? Icon(
+                    widget.trailingIcon,
+                    size: 17,
+                    color: AppColors.roseDeep,
+                  )
+                : const Icon(
+                    Icons.add_shopping_cart_rounded,
+                    size: 17,
+                    color: AppColors.roseDeep,
+                  ),
           );
 
     return Semantics(

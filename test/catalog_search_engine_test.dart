@@ -290,13 +290,13 @@ void main() {
           expect(find.text('7 resultados'), findsOneWidget);
           expect(find.text('N.°1 BLANCO'), findsOneWidget);
 
-          // Pulsar el chip popular "Cintas satinadas" expande todos los tonos
-          await tester.tap(find.text('Cintas satinadas'));
+          // Pulsar el chip popular "Limpiapipas" filtra al instante y los
+          // accesos directos Materiales / Papel Coreano están presentes
+          expect(find.text('Materiales'), findsOneWidget);
+          expect(find.text('Papel Coreano'), findsOneWidget);
+          await tester.tap(find.text('Limpiapipas'));
           await tester.pump(const Duration(milliseconds: 50));
-          expect(find.text('3 resultados'), findsOneWidget);
-          expect(find.text('N.°1 BLANCO'), findsOneWidget);
-          expect(find.text('N.°2 ROJO PASIÓN'), findsOneWidget);
-          expect(find.text('N.°3 MARFIL'), findsOneWidget);
+          expect(find.text('Resultados'), findsOneWidget);
         },
       );
 

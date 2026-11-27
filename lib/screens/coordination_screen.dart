@@ -874,7 +874,9 @@ class _CoordinationScreenState extends State<CoordinationScreen> {
             final dateSection = _FormSectionCard(
               number: '3',
               icon: Icons.calendar_month_outlined,
-              title: widget.settings.text(StorefrontText.coordinationDateTitle),
+              title: _deliveryMethod == DeliveryMethod.pickup
+                  ? 'Fecha de recojo'
+                  : 'Fecha de envío',
               description:
                   widget.settings.texts[StorefrontText.coordinationDateBody]
                           ?.trim()

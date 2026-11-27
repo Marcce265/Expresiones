@@ -130,7 +130,7 @@ abstract final class StorefrontText {
     coordinationPickupBody: 'Coordinamos lugar y horario',
     coordinationShalomTitle: 'Envío por Shalom',
     coordinationShalomBody: 'Elige una agencia en cualquier ciudad',
-    coordinationDateTitle: 'Fecha deseada',
+    coordinationDateTitle: 'Fecha de envío',
     coordinationDateBody:
         'Consulta la primera fecha estimada y elige el día que prefieres.',
     coordinationDetailsTitle: 'Detalles finales',

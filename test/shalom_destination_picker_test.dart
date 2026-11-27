@@ -101,11 +101,18 @@ void main() {
   ) async {
     final catalog = ShalomAgencyCatalog.fromJson({
       'agencies': [
-        _agency('1', 'El Tambo Centro'),
-        _agency('2', 'El Tambo Norte'),
-        _agency('3', 'Chilca Centro', district: 'CHILCA'),
+        _agency('1', 'Concepción Centro'),
+        _agency('2', 'Concepción Norte'),
+        _agency('3', 'Matahuasi Centro', district: 'MATAHUASI'),
         _agency('4', 'Solo origen', canReceive: false),
         _agency('5', 'Lima Centro', department: 'LIMA', province: 'LIMA'),
+        _agency(
+          '6',
+          'Huancayo Local',
+          department: 'JUNIN',
+          province: 'HUANCAYO',
+          district: 'EL TAMBO',
+        ),
       ],
     });
     ShalomAgency? selected;
@@ -144,14 +151,15 @@ void main() {
       isNull,
     );
     await choose('Departamento', 'JUNIN');
-    await choose('Provincia', 'HUANCAYO');
-    await choose('Distrito', 'EL TAMBO');
+    await choose('Provincia', 'CONCEPCION');
+    await choose('Distrito', 'CONCEPCION');
 
     expect(find.byType(Radio<String>), findsNWidgets(2));
-    expect(find.text('Chilca Centro'), findsNothing);
+    expect(find.text('Matahuasi Centro'), findsNothing);
+    expect(find.text('Huancayo Local'), findsNothing);
     expect(find.text('Solo origen'), findsNothing);
     expect(find.text('Lima Centro'), findsNothing);
-    await tester.tap(find.text('El Tambo Norte'));
+    await tester.tap(find.text('Concepción Norte'));
     await tester.pumpAndSettle();
     expect(selected?.id, '2');
 
@@ -173,8 +181,8 @@ Map<String, Object> _agency(
   String id,
   String name, {
   String department = 'JUNIN',
-  String province = 'HUANCAYO',
-  String district = 'EL TAMBO',
+  String province = 'CONCEPCION',
+  String district = 'CONCEPCION',
   bool canReceive = true,
   double? latitude,
 }) => {

@@ -330,14 +330,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('Expresiones, ir al inicio'), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
-    await tester.tap(find.byTooltip('Abrir menú'));
-    await tester.pumpAndSettle();
-    for (final label in ['Inicio', 'Catálogo', 'Carrito', 'Ayuda']) {
-      expect(
-        find.descendant(of: find.byType(Drawer), matching: find.text(label)),
-        findsOneWidget,
-      );
-    }
+    expect(find.byTooltip('Abrir catálogo'), findsOneWidget);
+    expect(find.byTooltip('Abrir carrito'), findsOneWidget);
+    expect(find.byTooltip('Abrir ayuda'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(
@@ -372,11 +367,7 @@ void main() {
     await tester.tap(find.byTooltip('Cerrar ayuda de Jashy'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Abrir menú'));
-    await tester.pumpAndSettle();
-    await tester.tap(
-      find.descendant(of: find.byType(Drawer), matching: find.text('Ayuda')),
-    );
+    await tester.tap(find.byTooltip('Abrir ayuda'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Repetir guía de Jashy'));
     await tester.tap(find.text('Repetir guía de Jashy'));
@@ -407,7 +398,7 @@ void main() {
     expect(find.byTooltip('Abrir ayuda de Jashy'), findsOneWidget);
   });
 
-  testWidgets('la cabecera móvil abre el menú y enfoca la búsqueda', (
+  testWidgets('la cabecera móvil agrupa inicio, catálogo, carrito y ayuda arriba', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -425,39 +416,22 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('Expresiones, ir al inicio'), findsOneWidget);
+    expect(find.byTooltip('Abrir menú'), findsNothing);
     expect(find.byType(NavigationBar), findsNothing);
-    expect(
-      find.byIcon(Icons.shopping_bag_outlined).hitTestable(),
-      findsOneWidget,
-    );
+    expect(find.byIcon(Icons.shopping_cart_outlined), findsOneWidget);
     final cartBadge = find.descendant(
       of: find.byTooltip('Abrir carrito'),
       matching: find.byType(Badge),
     );
-    expect(
-      tester.widget<Badge>(cartBadge).backgroundColor,
-      AppColors.pinkStrong,
-    );
-    await tester.tap(find.byTooltip('Abrir menú'));
-    await tester.pumpAndSettle();
-    final drawer = find.byType(Drawer);
-    expect(drawer, findsOneWidget);
-    await tester.tap(
-      find.descendant(of: drawer, matching: find.text('Catálogo')),
-    );
-    await tester.pumpAndSettle();
-    expect(drawer, findsNothing);
+    expect(tester.widget<Badge>(cartBadge).backgroundColor, AppColors.rose);
 
-    await tester.tap(find.byTooltip('Buscar productos'));
+    await tester.tap(find.byTooltip('Abrir catálogo'));
     await tester.pumpAndSettle();
-    final field = find.descendant(
-      of: find.byType(CatalogScreen),
-      matching: find.byType(TextField),
-    );
-    expect(tester.widget<TextField>(field).focusNode?.hasFocus, isTrue);
+    expect(find.byType(CatalogScreen), findsOneWidget);
 
     await tester.tap(find.byTooltip('Abrir carrito'));
     await tester.pumpAndSettle();
+    expect(find.byType(NavigationBar), findsNothing);
     expect(find.text('Tu carrito está vacío'), findsOneWidget);
     expect(tester.takeException(), isNull);
 

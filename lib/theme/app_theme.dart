@@ -245,13 +245,17 @@ abstract final class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
+          backgroundColor: AppColors.rose,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.border,
+          disabledForegroundColor: AppColors.muted,
           minimumSize: const Size(0, 50),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
           shape: const StadiumBorder(),
           textStyle: const TextStyle(
             fontFamily: bodyFont,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.15,
           ),
         ),
       ),
@@ -271,7 +275,7 @@ abstract final class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           minimumSize: const Size(44, 44),
-          foregroundColor: AppColors.ink,
+          foregroundColor: AppColors.roseDeep,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -292,7 +296,7 @@ abstract final class AppTheme {
       ),
       chipTheme: base.chipTheme.copyWith(
         backgroundColor: AppColors.surface,
-        selectedColor: AppColors.ink,
+        selectedColor: AppColors.rose,
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
@@ -305,7 +309,7 @@ abstract final class AppTheme {
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.ink,
+        selectedItemColor: AppColors.roseDeep,
         unselectedItemColor: AppColors.muted,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
@@ -319,25 +323,27 @@ abstract final class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 72,
+        height: 68,
         backgroundColor: AppColors.surface,
         surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         indicatorColor: AppColors.pinkSoft,
+        indicatorShape: const StadiumBorder(),
         elevation: 0,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           return IconThemeData(
             color: states.contains(WidgetState.selected)
-                ? AppColors.ink
+                ? AppColors.roseDeep
                 : AppColors.muted,
-            size: 23,
+            size: 24,
           );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           return TextStyle(
             fontFamily: bodyFont,
             color: states.contains(WidgetState.selected)
-                ? AppColors.ink
+                ? AppColors.roseDeep
                 : AppColors.muted,
             fontSize: 11,
             fontWeight: states.contains(WidgetState.selected)
@@ -349,11 +355,11 @@ abstract final class AppTheme {
       navigationRailTheme: const NavigationRailThemeData(
         backgroundColor: AppColors.surface,
         indicatorColor: AppColors.pinkSoft,
-        selectedIconTheme: IconThemeData(color: AppColors.ink),
+        selectedIconTheme: IconThemeData(color: AppColors.roseDeep),
         unselectedIconTheme: IconThemeData(color: AppColors.muted),
         selectedLabelTextStyle: TextStyle(
           fontFamily: bodyFont,
-          color: AppColors.ink,
+          color: AppColors.roseDeep,
           fontWeight: FontWeight.w700,
         ),
         unselectedLabelTextStyle: TextStyle(
@@ -362,7 +368,7 @@ abstract final class AppTheme {
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.ink,
+        backgroundColor: AppColors.rose,
         foregroundColor: Colors.white,
         elevation: 5,
         shape: RoundedRectangleBorder(
@@ -381,10 +387,54 @@ abstract final class AppTheme {
         ),
         waitDuration: const Duration(milliseconds: 450),
       ),
-      snackBarTheme: const SnackBarThemeData(
+      snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.ink,
-        contentTextStyle: TextStyle(fontFamily: bodyFont, color: Colors.white),
+        contentTextStyle: const TextStyle(
+          fontFamily: bodyFont,
+          color: Colors.white,
+        ),
+        actionTextColor: AppColors.pinkSoft,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: true,
+        dragHandleColor: AppColors.border,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        ),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.rose,
+        linearTrackColor: AppColors.pinkSoft,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? Colors.white
+              : AppColors.muted,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.rose
+              : AppColors.border,
+        ),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? AppColors.rose : null,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.rose
+              : AppColors.muted,
+        ),
       ),
     );
   }

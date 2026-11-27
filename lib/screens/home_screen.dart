@@ -108,19 +108,15 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           ResponsivePage.storefront(
-            top: 14,
+            top: 12,
             bottom: 36,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (!usesDesktopNavigation &&
                     MediaQuery.sizeOf(context).width >= 768) ...[
-                  _TopBar(
-                    settings: widget.settings,
-                    quoteQuantity: widget.quoteQuantity,
-                    onOpenQuote: widget.onOpenQuote,
-                  ),
-                  const SizedBox(height: 28),
+                  _AppHomeTopBar(onBrowse: widget.onBrowse),
+                  const SizedBox(height: 18),
                 ],
                 if (widget.lastOrder != null &&
                     widget.onOpenLastOrder != null) ...[
@@ -136,6 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   query: _query,
                   onSearchChanged: _onSearchChanged,
                   onSearchSubmitted: _onSearchSubmitted,
+                  onBrowse: widget.onBrowse,
                   onClearSearch: () {
                     _filterDebounce?.cancel();
                     _telemetryDebounce?.cancel();
@@ -330,52 +327,87 @@ class _LastOrderCard extends StatelessWidget {
   }
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({
-    required this.settings,
-    required this.quoteQuantity,
-    required this.onOpenQuote,
-  });
+class _AppHomeTopBar extends StatelessWidget {
+  const _AppHomeTopBar({required this.onBrowse});
 
-  final StorefrontSettings settings;
-  final int quoteQuantity;
-  final VoidCallback onOpenQuote;
+  final ValueChanged<ProductCategory> onBrowse;
 
   @override
   Widget build(BuildContext context) {
-    final usesDesktopNavigation = MediaQuery.sizeOf(context).width >= 1024;
-    return LayoutBuilder(
-      builder: (context, constraints) => Row(
+    return SizedBox(
+      height: 44,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (!usesDesktopNavigation)
-            Expanded(
-              child: Text(
-                settings.text(StorefrontText.brandName),
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w500,
-                ),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Image.asset(
+                'assets/images/brand/expresiones_mobile_v2.png',
+                height: 38,
+                fit: BoxFit.contain,
+                alignment: Alignment.centerLeft,
+                semanticLabel: 'Expresiones, ir al inicio',
               ),
-            )
-          else
-            const Spacer(),
-          Badge.count(
-            count: quoteQuantity,
-            isLabelVisible: quoteQuantity > 0,
-            backgroundColor: AppColors.pinkStrong,
-            child: constraints.maxWidth >= 560
-                ? OutlinedButton.icon(
-                    onPressed: onOpenQuote,
-                    icon: const Icon(Icons.shopping_bag_outlined, size: 19),
-                    label: const Text('Mi carrito'),
-                  )
-                : IconButton.outlined(
-                    onPressed: onOpenQuote,
-                    tooltip: 'Mi carrito',
-                    icon: const Icon(Icons.shopping_bag_outlined, size: 20),
-                  ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          _CategoryQuickChip(
+            icon: Icons.auto_awesome_rounded,
+            label: 'Materiales',
+            onTap: () => onBrowse(ProductCategory.materials),
+          ),
+          const SizedBox(width: 8),
+          _CategoryQuickChip(
+            icon: Icons.layers_rounded,
+            label: 'Papel',
+            onTap: () => onBrowse(ProductCategory.koreanPaper),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CategoryQuickChip extends StatelessWidget {
+  const _CategoryQuickChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.pinkSoft,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 15, color: AppColors.roseDeep),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontFamily: AppTheme.bodyFont,
+                  fontSize: 12.5,
+                  height: 1.1,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.roseDeep,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -388,6 +420,7 @@ class _HomeIntro extends StatelessWidget {
     required this.query,
     required this.onSearchChanged,
     required this.onSearchSubmitted,
+    required this.onBrowse,
     required this.onClearSearch,
     required this.showHero,
   });
@@ -397,6 +430,7 @@ class _HomeIntro extends StatelessWidget {
   final String query;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onSearchSubmitted;
+  final ValueChanged<ProductCategory> onBrowse;
   final VoidCallback onClearSearch;
   final bool showHero;
 
@@ -453,6 +487,7 @@ class _HomeIntro extends StatelessWidget {
               _PopularSearches(
                 controller: searchController,
                 onSelected: onSearchSubmitted,
+                onBrowse: onBrowse,
               ),
             ],
           ),
@@ -677,14 +712,18 @@ class _HomeSearchField extends StatelessWidget {
 }
 
 class _PopularSearches extends StatelessWidget {
-  const _PopularSearches({required this.controller, required this.onSelected});
+  const _PopularSearches({
+    required this.controller,
+    required this.onSelected,
+    required this.onBrowse,
+  });
 
   final TextEditingController controller;
   final ValueChanged<String> onSelected;
+  final ValueChanged<ProductCategory> onBrowse;
 
   @override
   Widget build(BuildContext context) {
-    const searches = ['Limpiapipas', 'Cintas satinadas'];
     return Wrap(
       spacing: 7,
       runSpacing: 7,
@@ -694,42 +733,66 @@ class _PopularSearches extends StatelessWidget {
           'Popular:',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10),
         ),
-        for (final search in searches)
-          _PopularChip(
-            label: search,
-            onTap: () {
-              controller.value = TextEditingValue(
-                text: search,
-                selection: TextSelection.collapsed(offset: search.length),
-              );
-              onSelected(search);
-            },
-          ),
+        _PopularChip(
+          label: 'Limpiapipas',
+          onTap: () {
+            const search = 'Limpiapipas';
+            controller.value = const TextEditingValue(
+              text: search,
+              selection: TextSelection.collapsed(offset: search.length),
+            );
+            onSelected(search);
+          },
+        ),
+        _PopularChip(
+          icon: Icons.auto_awesome_rounded,
+          label: 'Materiales',
+          onTap: () => onBrowse(ProductCategory.materials),
+        ),
+        _PopularChip(
+          icon: Icons.layers_rounded,
+          label: 'Papel Coreano',
+          onTap: () => onBrowse(ProductCategory.koreanPaper),
+        ),
       ],
     );
   }
 }
 
 class _PopularChip extends StatelessWidget {
-  const _PopularChip({required this.label, required this.onTap});
+  const _PopularChip({required this.label, required this.onTap, this.icon});
 
   final String label;
   final VoidCallback onTap;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.canvas,
-      shape: StadiumBorder(side: BorderSide(color: AppColors.border)),
+      color: AppColors.pinkSoft,
+      shape: const StadiumBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(color: AppColors.ink, fontSize: 9.5, height: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 12.5, color: AppColors.roseDeep),
+                const SizedBox(width: 5),
+              ],
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.roseDeep,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 10.5,
+                  height: 1,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -776,24 +839,24 @@ class _HomeTrustRow extends StatelessWidget {
   static const _items = [
     _TrustContent(
       icon: Icons.check_rounded,
-      iconBackground: AppColors.ink,
-      iconColor: Colors.white,
+      iconBackground: AppColors.pinkSoft,
+      iconColor: AppColors.roseDeep,
       title: 'Cotiza sin registro',
       description:
           'Selecciona tus materiales y coordina directo sin contraseñas.',
     ),
     _TrustContent(
       icon: Icons.percent_rounded,
-      iconBackground: AppColors.ink,
-      iconColor: Colors.white,
+      iconBackground: AppColors.pinkSoft,
+      iconColor: AppColors.roseDeep,
       title: 'Precios por volumen',
       description:
           'Escalas automáticas por mayor en limpiapipas, cintas y accesorios.',
     ),
     _TrustContent(
       icon: Icons.local_shipping_outlined,
-      iconBackground: AppColors.ink,
-      iconColor: Colors.white,
+      iconBackground: AppColors.pinkSoft,
+      iconColor: AppColors.roseDeep,
       title: 'Recojo y envíos Shalom',
       description:
           'Recojo en nuestro local de Huancayo o envío seguro a todo el Perú.',
@@ -1040,7 +1103,7 @@ class _FeaturedProducts extends StatelessWidget {
                 ? 304
                 : isTablet
                 ? 304
-                : 250,
+                : 288,
             crossAxisSpacing: isDesktop ? 16 : 12,
             mainAxisSpacing: isDesktop ? 16 : 12,
           ),
@@ -1091,7 +1154,7 @@ class _SearchResults extends StatelessWidget {
             itemCount: results.length,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: constraints.maxWidth < 600 ? 210 : 250,
-              mainAxisExtent: constraints.maxWidth < 600 ? 248 : 292,
+              mainAxisExtent: constraints.maxWidth < 600 ? 286 : 292,
               crossAxisSpacing: constraints.maxWidth < 600 ? 12 : 16,
               mainAxisSpacing: constraints.maxWidth < 600 ? 12 : 16,
             ),

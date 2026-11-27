@@ -47,7 +47,8 @@ class _ShalomDestinationPickerState extends State<ShalomDestinationPicker> {
               agency.canReceive &&
               agency.department.isNotEmpty &&
               agency.province.isNotEmpty &&
-              agency.district.isNotEmpty,
+              agency.district.isNotEmpty &&
+              agency.province.trim().toUpperCase() != 'HUANCAYO',
         )
         .toList(growable: false);
     if (mounted &&
@@ -171,55 +172,47 @@ class _ShalomDestinationPickerState extends State<ShalomDestinationPicker> {
               final wide = constraints.maxWidth >= 760;
               final medium = constraints.maxWidth >= 560;
 
-              final locationSection = Container(
-                padding: EdgeInsets.all(wide ? 18 : 14),
-                decoration: BoxDecoration(
-                  color: AppColors.canvas,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      '¿A dónde enviamos tu pedido?',
-                      style: text.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.ink,
-                      ),
+              final locationSection = Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    '¿A dónde enviamos tu pedido?',
+                    style: text.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Elige tu departamento, provincia y distrito.',
-                      style: text.bodySmall?.copyWith(color: AppColors.muted),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Elige tu departamento, provincia y distrito.',
+                    style: text.bodySmall?.copyWith(color: AppColors.muted),
+                  ),
+                  const SizedBox(height: 12),
+                  if (medium)
+                    Row(
+                      children: [
+                        Expanded(child: deptField),
+                        const SizedBox(width: 12),
+                        Expanded(child: provField),
+                        const SizedBox(width: 12),
+                        Expanded(child: distField),
+                      ],
+                    )
+                  else
+                    Column(
+                      children: [
+                        deptField,
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(child: provField),
+                            const SizedBox(width: 10),
+                            Expanded(child: distField),
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 14),
-                    if (medium)
-                      Row(
-                        children: [
-                          Expanded(child: deptField),
-                          const SizedBox(width: 12),
-                          Expanded(child: provField),
-                          const SizedBox(width: 12),
-                          Expanded(child: distField),
-                        ],
-                      )
-                    else
-                      Column(
-                        children: [
-                          deptField,
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(child: provField),
-                              const SizedBox(width: 10),
-                              Expanded(child: distField),
-                            ],
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
+                ],
               );
 
               final listTitle = district != null
@@ -319,7 +312,7 @@ class _ShalomDestinationPickerState extends State<ShalomDestinationPicker> {
                 ],
               );
 
-              const desktopPanelHeight = 302.0;
+              const mapHeight = 320.0;
 
               final mapWidget = ShalomEmbeddedMap(
                 selectedAgencyId: selected?.id ?? '',
@@ -333,7 +326,7 @@ class _ShalomDestinationPickerState extends State<ShalomDestinationPicker> {
                     : '',
                 latitude: selected?.latitude,
                 longitude: selected?.longitude,
-                height: wide ? desktopPanelHeight : 230,
+                height: mapHeight,
               );
 
               return Column(
@@ -345,10 +338,10 @@ class _ShalomDestinationPickerState extends State<ShalomDestinationPicker> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(flex: 11, child: agenciesList),
+                        Expanded(flex: 9, child: agenciesList),
                         const SizedBox(width: 20),
                         Expanded(
-                          flex: 10,
+                          flex: 11,
                           child: Padding(
                             padding: const EdgeInsets.only(top: 30),
                             child: mapWidget,
@@ -499,7 +492,7 @@ class _AgencyResultsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scrollable = agencies.length > visibleCount;
-    const itemHeight = 94.0;
+    const itemHeight = 100.0;
     const itemGap = 10.0;
     final listHeight = scrollable
         ? (itemHeight * visibleCount) + (itemGap * (visibleCount - 1))
@@ -566,8 +559,8 @@ class _AgencyOptionCard extends StatelessWidget {
     );
     final shortTransit = _shortTransitLabel(agency.transitEstimateFromHuancayo);
 
-    return SizedBox(
-      height: 94,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 100),
       child: Card(
         margin: EdgeInsets.zero,
         elevation: 0,
@@ -605,7 +598,7 @@ class _AgencyOptionCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               cleanName,
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: text.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w700,
@@ -641,11 +634,9 @@ class _AgencyOptionCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         cleanAddress,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                         style: text.bodySmall?.copyWith(
                           color: AppColors.muted,
-                          height: 1.35,
+                          height: 1.38,
                         ),
                       ),
                     ],

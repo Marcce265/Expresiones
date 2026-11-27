@@ -13,8 +13,8 @@ class BreadcrumbItem {
 }
 
 /// Barra de ruta uniforme para todos los módulos de la tienda (sin "INICIO").
-/// Mantiene el botón de retroceso redondeado, tipografía en mayúsculas a 13.5px,
-/// espaciado de 0.8 y separadores chevron consistentes en toda la aplicación.
+/// Altura fija de 44px, botón de retroceso rosado suave y píldora activa en
+/// rosado para mantener el mismo nivel vertical y tipografía en toda la web.
 class AppBreadcrumbBar extends StatelessWidget {
   const AppBreadcrumbBar({
     super.key,
@@ -29,47 +29,66 @@ class AppBreadcrumbBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      child: Row(
-        children: [
-          if (onBack != null) ...[
-            IconButton.outlined(
-              onPressed: onBack,
-              tooltip: 'Volver',
-              icon: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 18,
+    return SizedBox(
+      height: 44,
+      child: Material(
+        type: MaterialType.transparency,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (onBack != null) ...[
+              IconButton.filledTonal(
+                onPressed: onBack,
+                tooltip: 'Volver',
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.pinkSoft,
+                  foregroundColor: AppColors.roseDeep,
+                  minimumSize: const Size.square(40),
+                  fixedSize: const Size.square(40),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 16,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-          ],
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (var i = 0; i < items.length; i++) ...[
-                    if (i > 0)
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        size: 18,
-                        color: AppColors.muted,
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    for (var i = 0; i < items.length; i++) ...[
+                      if (i > 0)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 2),
+                          child: Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                      _BreadcrumbSegment(
+                        item: items[i],
+                        isActive: i == items.length - 1,
                       ),
-                    _BreadcrumbSegment(
-                      item: items[i],
-                      isActive: i == items.length - 1,
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
-          if (trailing != null) ...[
-            const SizedBox(width: 12),
-            trailing!,
+            if (trailing != null) ...[
+              const SizedBox(width: 12),
+              trailing!,
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -87,21 +106,32 @@ class _BreadcrumbSegment extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = TextStyle(
-      fontSize: 13.5,
-      color: isActive ? AppColors.ink : AppColors.muted,
+      fontFamily: AppTheme.bodyFont,
+      fontSize: 12.5,
+      height: 1.1,
+      color: isActive ? AppColors.roseDeep : AppColors.muted,
       fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-      letterSpacing: 0.8,
+      letterSpacing: 0.7,
     );
 
-    final text = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+    final text = Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isActive ? 12 : 4,
+        vertical: isActive ? 7 : 4,
+      ),
+      decoration: isActive
+          ? BoxDecoration(
+              color: AppColors.pinkSoft,
+              borderRadius: BorderRadius.circular(99),
+            )
+          : null,
       child: Text(item.label.toUpperCase(), style: style),
     );
 
     if (isActive || item.onTap == null) return text;
     return InkWell(
       onTap: item.onTap,
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(99),
       child: text,
     );
   }
